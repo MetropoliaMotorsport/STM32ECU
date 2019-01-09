@@ -1,0 +1,10 @@
+stm32h7xx_hal_flash_ex.c:581:13:FLASH_MassErase	0	static
+stm32h7xx_hal_flash_ex.c:344:19:HAL_FLASHEx_OBProgram	32	static
+stm32h7xx_hal_flash_ex.c:472:6:HAL_FLASHEx_OBGetConfig	16	static
+stm32h7xx_hal_flash_ex.c:506:19:HAL_FLASHEx_Unlock_Bank1	0	static
+stm32h7xx_hal_flash_ex.c:526:19:HAL_FLASHEx_Lock_Bank1	0	static
+stm32h7xx_hal_flash_ex.c:537:19:HAL_FLASHEx_Unlock_Bank2	0	static
+stm32h7xx_hal_flash_ex.c:557:19:HAL_FLASHEx_Lock_Bank2	0	static
+stm32h7xx_hal_flash_ex.c:639:6:FLASH_Erase_Sector	12	static
+stm32h7xx_hal_flash_ex.c:160:19:HAL_FLASHEx_Erase	32	static
+stm32h7xx_hal_flash_ex.c:260:19:HAL_FLASHEx_Erase_IT	16	static

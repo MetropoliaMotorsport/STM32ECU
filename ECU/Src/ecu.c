@@ -1,0 +1,1333 @@
+/*
+ * ecu.c
+ *
+ *  Created on: 30 Dec 2018
+ *      Author: Visa
+ */
+
+#include "fdcan.h"
+#include "tim.h"
+#include "adc.h"
+#include "ecu.h"
+
+//variables that need to be accessible in ISR's
+
+// variables for button debounce interrupts
+volatile static char InButtonpress;
+static uint16_t ButtonpressPin;
+
+// ADC conversion buffer/
+ALIGN_32BYTES (static uint32_t aADCxConvertedData[ADC_CONVERTED_DATA_BUFFER_SIZE]);
+
+
+
+// deal with endianness for canbus
+// function from https://stackoverflow.com/questions/39622332/reading-big-endian-files-in-little-endian-system
+void swapByteOrder_int16(double *current, const int16_t *rawsignal, size_t length)
+{
+    for (size_t i = 0; i < length; i++)
+    {
+        int16_t x = rawsignal[2*i];
+        x = (x*1u << 8) | (x*1u >> 8);
+        current[i] = x;
+    }
+}
+
+int16_t linearInteropolate(uint16_t Input[], int16_t Output[], uint16_t count, uint16_t RawADCInput)
+{
+    int i;
+
+    if(RawADCInput < Input[0])
+    {  // if input less than first table value return first.
+        return Output[0];
+    }
+
+    if(RawADCInput > Input[count-1])
+    { // if input larger than last table value return last.
+        return Output[count-1];
+    }
+
+    // loop through input values table till we find space where requested fits.
+    for (i = 0; i < count-1; i++)
+    {
+        if (Input[i+1] > RawADCInput)
+        {
+            break;
+        }
+    }
+
+    int dx,dy;
+
+    /* interpolate */
+    dx = Input[i+1] - Input[i];
+    dy = Output[i+1] - Output[i];
+    return Output[i] + ((RawADCInput - Input[i]) * dy / dx);
+
+}
+
+
+int8_t getSteeringAngle(uint16_t RawADCInput)
+{
+    static uint16_t SteeringInput[] = { 1210,1270,1320,1360,1400,1450,1500,1540,1570,1630,1680,1720,1770,2280,2700,3150,3600,4100,4700,5000,5500 };
+    static int16_t SteeringOutput[] = { -100,-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100 };
+    static int count = sizeof(SteeringInput)/sizeof(SteeringInput[0]);
+
+    return linearInteropolate(SteeringInput, SteeringOutput, count, RawADCInput);
+}
+
+uint8_t getBrakeF(uint16_t RawADCInput)
+{
+    static uint16_t BrakeFInput[] = { 385, 1940 };
+    static int16_t BrakeFOutput[] = { 0, 250 };
+    static int count = sizeof(BrakeFInput)/sizeof(BrakeFInput[0]);
+
+    return linearInteropolate(BrakeFInput, BrakeFOutput, count, RawADCInput);
+}
+
+void setTorqueReqPerc(uint16_t RawADCInputL, uint16_t RawADCInputR)
+{
+    static uint16_t TorqueReqLInput[] = { 140, 660 };
+    static int16_t TOrqueReqLOutput[] = { 0, 100 };
+    static int countL = sizeof(TorqueReqLInput)/sizeof(TorqueReqLInput[0]);
+
+    static uint16_t TorqueReqRInput[] = { 250, 710 };
+    static int16_t TOrqueReqROutput[] = { 0, 100 };
+    static int countR = sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
+
+    if( RawADCInputL >= TorqueReqLInput[0] && RawADCInputR > 0 ) // RawADCInputR >= TorqueReqRInput[0] check this, looks wrong to me in simulink
+    {
+    	ADCState.Torque_Req_L_Percent = linearInteropolate(TorqueReqLInput, TOrqueReqLOutput, countL, RawADCInputL);
+    	ADCState.Torque_Req_R_Percent = linearInteropolate(TorqueReqRInput, TOrqueReqROutput, countR, RawADCInputR);
+    	ADCState.Torque_Req_L = ADCState.Torque_Req_L_Percent * CarState.Torque_Req_Max * 0.01;
+    	ADCState.Torque_Req_R = ADCState.Torque_Req_R_Percent * CarState.Torque_Req_Max * 0.01;
+    } else
+    {
+    	ADCState.Torque_Req_L_Percent = 0;
+    	ADCState.Torque_Req_R_Percent = 0;
+    	ADCState.Torque_Req_L = 0;
+    	ADCState.Torque_Req_R = 0;
+    }
+
+}
+
+
+uint8_t getBrakeR(uint16_t RawADCInput)
+{
+    static uint16_t BrakeRInput[] = { 380, 1915 };
+    static int16_t BrakeROutput[] = { 0, 250 };
+    static int count = sizeof(BrakeRInput)/sizeof(BrakeRInput[0]);
+
+    return linearInteropolate(BrakeRInput, BrakeROutput, count, RawADCInput);
+}
+
+uint32_t getBrakeBalance(uint16_t RawADCInputF, uint16_t RawADCInputR){
+	// should this be with raw values?
+	return (RawADCInputF * 100) / ( RawADCInputF + RawADCInputR );
+}
+
+uint8_t getDrivingMode(uint16_t RawADCInput)
+{ // torq_req_max, call once a second
+
+	// why is there not 1600,65 to keep hard steps
+
+    static const uint16_t DrivingModeInput[] = { 100,300,470,690,900,1200,1600,1800 };
+    static const uint8_t DrivingModeOutput[] = { 5,10,15,20,25,30,45,65 };
+
+    static const int count = sizeof(DrivingModeInput)/sizeof(DrivingModeInput[0]);
+
+    int i;
+
+    for(i=0;(DrivingModeInput[i] < RawADCInput) && (i < count-1);i++) { };
+
+    //return this position in output table, no interpolation needed
+
+    return DrivingModeOutput[i];
+
+}
+
+uint8_t getCoolantTemp(uint16_t RawADCInput)
+{
+    static uint16_t CoolantInput[] = { 53,67,85,109,140,182,239,313,413,537,698,882,1095,1313 };
+    static int16_t CoolantOutput[] = { 130,120,110,100,90,80,70,60,50,40,30,20,10,0 };
+    static int count = sizeof(CoolantInput)/sizeof(CoolantInput[0]);
+
+    if ( RawADCInput < CoolantInput[0] ) { return 0; }
+
+    if ( RawADCInput > CoolantInput[count-1] ) { return 0; }
+
+    return linearInteropolate(CoolantInput, CoolantOutput, count, RawADCInput);
+}
+
+
+GPIO_TypeDef* getGpioPort(int output)
+{
+	switch ( output ) { // set gpio values for requested port
+		case 1 :
+			return Output1_GPIO_Port;
+		case 2 :
+			return Output2_GPIO_Port;
+		case 3 :
+			return Output3_GPIO_Port;
+		case 4 :
+			return Output4_GPIO_Port;
+		case 5 :
+			return Output5_GPIO_Port;
+		case 6 :
+			return Output6_GPIO_Port;
+		case 7 :
+			return Output7_GPIO_Port;
+		case 8 :
+			return Output8_GPIO_Port;
+		case 9 :
+			return Output9_GPIO_Port;
+		case 10 :
+			return Output10_GPIO_Port;
+		case 11 :
+			return Output11_GPIO_Port;
+		case 12 :
+			return Output12_GPIO_Port;
+		case 13 :
+			return LD1_GPIO_Port;
+		case 14 :
+			return LD2_GPIO_Port;
+		case 15 :
+			return LD3_GPIO_Port;
+		default :
+			return 0;
+	}
+
+}
+
+int getGpioPin(int output)
+{
+	switch ( output ) { // set gpio values for requested port
+		case 1 :
+			return Output1_Pin;
+		case 2 :
+			return Output2_Pin;
+		case 3 :
+			return Output3_Pin;
+		case 4 :
+			return Output4_Pin;
+		case 5 :
+			return Output5_Pin;
+		case 6 :
+			return Output6_Pin;
+		case 7 :
+			return Output7_Pin;
+		case 8 :
+			return Output8_Pin;
+		case 9 :
+			return Output9_Pin;
+		case 10 :
+			return Output10_Pin;
+		case 11 :
+			return Output11_Pin;
+		case 12 :
+			return Output12_Pin;
+		case 13 :
+			return LD1_Pin;
+		case 14 :
+			return LD2_Pin;
+		case 15 :
+			return LD3_Pin;
+		default :
+			return 0;
+	}
+
+}
+
+void setOutput(int output, char state)
+{
+	if(getGpioPin(output) != 0) {
+		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), state);
+	}
+}
+void toggleOutput(int output)
+{
+	if(getGpioPin(output) != 0) {
+		HAL_GPIO_TogglePin(getGpioPort(output), getGpioPin(output));
+	}
+}
+
+void setupLEDs( void )
+{
+	LED1.blinking = 0;
+	LED1.pin = LD1_Pin;
+
+	LED2.blinking = 0;
+	LED2.pin = LD2_Pin;
+
+	LED3.blinking = 0;
+	LED3.pin = LD3_Pin;
+
+	TS_LED.blinking = 0;
+	TS_LED.pin = TSALLED_Output;
+
+	RTDM_LED.blinking = 0;
+	RTDM_LED.pin = RTDMLED_Output;
+
+	STOP_LED.blinking = 0;
+	STOP_LED.pin = STOPLED_Output;
+
+	BMS_LED.blinking = 0;
+	BMS_LED.pin = BMSLED_Output;
+
+	IMD_LED.blinking = 0;
+	IMD_LED.pin = IMDLED_Output;
+
+	BSPD_LED.blinking = 0;
+	BSPD_LED.pin = BSPDLED_Output;
+
+}
+
+void setLEDs( void )
+{
+	setOutput(BMS_LED.pin, CarState.BMS_relay_status);
+	setOutput(IMD_LED.pin, CarState.IMD_relay_status);
+	setOutput(BSPD_LED.pin, CarState.BSPD_relay_status);
+
+	if ( CarState.TSALLeftInvLED == 1 && CarState.TSALRightInvLED == 1 )
+	{
+		TS_LED.blinking = 1;
+	} else if ( CarState.TSALLeftInvLED >= 2 && CarState.TSALRightInvLED >= 2)
+	{
+		setOutput(TS_LED.pin, 1);
+		TS_LED.blinking = 0;
+
+	} else
+	{
+		setOutput(TS_LED.pin, 0);
+		TS_LED.blinking = 0;
+	}
+
+	if ( CarState.RtdmLeftInvLED == 1 && CarState.RtdmRightInvLED == 1 )
+	{
+			RTDM_LED.blinking = 1;
+	} else if ( CarState.RtdmLeftInvLED >= 2 && CarState.RtdmRightInvLED >= 2)
+	{
+		setOutput(RTDM_LED.pin, 1);
+		RTDM_LED.blinking  = 0;
+
+	} else
+	{
+		setOutput(RTDM_LED.pin, 0);
+		RTDM_LED.blinking  = 0;
+	}
+
+	setOutput(STOP_LED.pin, CarState.StopLED);
+}
+
+void resetButton( struct ButtonData button )
+{
+	button.lastpressed = 0;
+	button.count = 0;
+	button.pressed = 0;
+}
+
+/**
+ * returns total ms since turnon to use as comparison timestamp
+ */
+uint32_t gettimer(void)
+{
+	 return (secondson*5000) + __HAL_TIM_GetCounter(&htim3);
+}
+
+void debouncebutton( volatile struct ButtonData *button )
+{
+		if( !button -> pressed ){ // only process new button press if last not read
+				if(HAL_GPIO_ReadPin(button -> port, button -> pin ) ){ // only process as input if button down
+					button -> pressed = 1;
+					button -> lastpressed=gettimer();
+					button -> count++;
+			}
+		}
+}
+
+
+void setupButtons(void)
+{
+	UserBtn.port = USER_Btn_GPIO_Port;
+	UserBtn.pin = USER_Btn_Pin;
+	Input1.port = Input1_GPIO_Port;
+	Input1.pin = Input1_Pin;
+	Input2.port = Input2_GPIO_Port;
+	Input2.pin = Input2_Pin;
+	Input3.port = Input3_GPIO_Port;
+	Input3.pin = Input3_Pin;
+	resetButton(UserBtn);
+	resetButton(Input1);
+	resetButton(Input2);
+	resetButton(Input3);
+	resetButton(Input4);
+	resetButton(Input5);
+	resetButton(Input6);
+}
+
+void FDCAN1_start(void){
+  FDCAN_FilterTypeDef			sFilterConfig1;
+
+  if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler();
+  }
+
+  /* Configure Rx filter to accept everything, filter it in software. */
+  sFilterConfig1.IdType = FDCAN_STANDARD_ID;
+  sFilterConfig1.FilterIndex = 0;
+  sFilterConfig1.FilterType = FDCAN_FILTER_MASK;
+  sFilterConfig1.FilterConfig = FDCAN_FILTER_TO_RXFIFO0; // set can1 to receive via fifo0
+  sFilterConfig1.FilterID1 = 0x0;
+ // sFilterConfig1.FilterID2 = 0x7FF;
+  sFilterConfig1.FilterID2 = 0x0;
+
+  //HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_ACCEPT_IN_RX_FIFO0, FDCAN_ACCEPT_IN_RX_FIFO0, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE);
+
+  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
+  {
+    /* Filter configuration Error */
+    Error_Handler();
+  }
+
+  /* Start the FDCAN module */
+  if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK)
+  {
+    /* Start Error */
+    Error_Handler();
+  }
+
+  if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
+  {
+    /* Notification Error */
+    Error_Handler();
+  }
+
+  /* Prepare Tx Headers */
+
+  // header for sending time base
+  TxHeaderTime.Identifier = 0x1;
+  TxHeaderTime.IdType = FDCAN_STANDARD_ID;
+  TxHeaderTime.TxFrameType = FDCAN_DATA_FRAME;
+  TxHeaderTime.DataLength = FDCAN_DLC_BYTES_1;
+  TxHeaderTime.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+  TxHeaderTime.BitRateSwitch = FDCAN_BRS_OFF;
+  TxHeaderTime.FDFormat = FDCAN_CLASSIC_CAN;
+  TxHeaderTime.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+  TxHeaderTime.MessageMarker = 0;
+
+  // general purpose debug tx header
+  TxHeader1.Identifier = 0x1;
+  TxHeader1.IdType = FDCAN_STANDARD_ID;
+  TxHeader1.TxFrameType = FDCAN_DATA_FRAME;
+  TxHeader1.DataLength = FDCAN_DLC_BYTES_8;
+  TxHeader1.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+  TxHeader1.BitRateSwitch = FDCAN_BRS_OFF;
+  TxHeader1.FDFormat = FDCAN_CLASSIC_CAN;
+  TxHeader1.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+  TxHeader1.MessageMarker = 0;
+
+  TxHeader2.Identifier = 0x2;
+  TxHeader2.IdType = FDCAN_STANDARD_ID;
+  TxHeader2.TxFrameType = FDCAN_DATA_FRAME;
+  TxHeader2.DataLength = FDCAN_DLC_BYTES_8;
+  TxHeader2.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+  TxHeader2.BitRateSwitch = FDCAN_BRS_OFF;
+  TxHeader2.FDFormat = FDCAN_CLASSIC_CAN;
+  TxHeader2.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+  TxHeader2.MessageMarker = 0;
+
+}
+
+void FDCAN2_start(void)
+{
+  FDCAN_FilterTypeDef sFilterConfig2;
+
+  if (HAL_FDCAN_Init(&hfdcan2) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler();
+  }
+
+  /* Configure Rx filter for can2*/
+  sFilterConfig2.IdType = FDCAN_STANDARD_ID;
+  sFilterConfig2.FilterIndex = 0;
+  sFilterConfig2.FilterType = FDCAN_FILTER_MASK;
+  sFilterConfig2.FilterConfig = FDCAN_FILTER_TO_RXFIFO1; // set can2 to receive into fifo1
+  sFilterConfig2.FilterID1 = 0x0;
+  sFilterConfig2.FilterID2 = 0x0;
+
+//  HAL_FDCAN_ConfigInterruptLines
+
+  if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
+  {
+    /* Filter configuration Error */
+    Error_Handler();
+  }
+
+  /* Start the FDCAN module */
+  if (HAL_FDCAN_Start(&hfdcan2) != HAL_OK)
+  {
+    /* Start Error */
+    Error_Handler();
+  }
+
+  if (HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0) != HAL_OK)
+  {
+    /* Notification Error */
+    Error_Handler();
+  }
+
+}
+
+
+
+void resetCanTx(uint8_t CANTxData[8])
+{
+	for(int i = 0;i < 8;i++){
+		CANTxData[i]=0;
+	}
+}
+
+char CAN1Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData )
+{
+	if (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) > 0)
+		{
+		    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, pTxHeader, pTxData) != HAL_OK)
+		        {
+		          /* Transmission request Error */
+  			      HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
+  			      return 1;
+  //			      HAL_Delay(1);
+		          Error_Handler();
+		        }
+		}
+	return 0;
+}
+
+char CAN2Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData )
+{
+	if (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) > 0)
+		{
+		    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, pTxHeader, pTxData) != HAL_OK)
+		        {
+		          /* Transmission request Error */
+  			      HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
+  			      return 1;
+  //			      HAL_Delay(1);
+		          Error_Handler();
+		        }
+		}
+	return 0;
+}
+
+
+char CANKeepAlive( void )
+{
+	// send can id 0x80 to can 0 value 1. Marked Info to PDM in Simulink. Call once per second.
+	// datalength?
+	FDCAN_TxHeaderTypeDef TxHeaderPDM;
+
+	TxHeaderPDM.Identifier = 0x80;
+	TxHeaderPDM.IdType = FDCAN_STANDARD_ID;
+	TxHeaderPDM.TxFrameType = FDCAN_DATA_FRAME;
+	TxHeaderPDM.DataLength = FDCAN_DLC_BYTES_1; // only one byte defined, check this
+	TxHeaderPDM.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	TxHeaderPDM.BitRateSwitch = FDCAN_BRS_OFF;
+	TxHeaderPDM.FDFormat = FDCAN_CLASSIC_CAN;
+	TxHeaderPDM.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	TxHeaderPDM.MessageMarker = 0;
+
+	uint8_t CANTxData[1] = { 1 };
+	return CAN1Send( &TxHeaderPDM, CANTxData );
+}
+
+char CANSendState( char buzz, char highvoltage )
+{
+	FDCAN_TxHeaderTypeDef TxHeaderHV;
+
+	TxHeaderHV.Identifier = 0x118;
+	TxHeaderHV.IdType = FDCAN_STANDARD_ID;
+	TxHeaderHV.TxFrameType = FDCAN_DATA_FRAME;
+	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_2; // only two bytes defined in send protocol, check this
+	TxHeaderHV.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	TxHeaderHV.BitRateSwitch = FDCAN_BRS_OFF;
+	TxHeaderHV.FDFormat = FDCAN_CLASSIC_CAN;
+	TxHeaderHV.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	TxHeaderHV.MessageMarker = 0;
+
+	uint8_t CANTxData[8] = { highvoltage, buzz, 0, 0, 0, 0, 0, 0 };
+	return CAN1Send( &TxHeaderHV, CANTxData );
+}
+
+char CAN_NMT( void )
+{
+	FDCAN_TxHeaderTypeDef TxHeaderNMT;
+
+	TxHeaderNMT.Identifier = 0x0;
+	TxHeaderNMT.IdType = FDCAN_STANDARD_ID;
+	TxHeaderNMT.TxFrameType = FDCAN_DATA_FRAME;
+	TxHeaderNMT.DataLength = FDCAN_DLC_BYTES_1; // only two bytes defined in send protocol, check this
+	TxHeaderNMT.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	TxHeaderNMT.BitRateSwitch = FDCAN_BRS_OFF;
+	TxHeaderNMT.FDFormat = FDCAN_CLASSIC_CAN;
+	TxHeaderNMT.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	TxHeaderNMT.MessageMarker = 0;
+
+	uint8_t CANTxData[1] = { 1 };
+	return CAN2Send( &TxHeaderNMT, CANTxData );
+}
+
+char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter )
+{
+	FDCAN_TxHeaderTypeDef TxHeaderInverter;
+
+	if(inverter==0)
+	{
+		TxHeaderInverter.Identifier = 0x47E;
+	} else
+	{
+		TxHeaderInverter.Identifier = 0x47F;
+	}
+
+	TxHeaderInverter.IdType = FDCAN_STANDARD_ID;
+	TxHeaderInverter.TxFrameType = FDCAN_DATA_FRAME;
+	TxHeaderInverter.DataLength = FDCAN_DLC_BYTES_2; // only two bytes defined in send protocol, check this
+	TxHeaderInverter.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	TxHeaderInverter.BitRateSwitch = FDCAN_BRS_OFF;
+	TxHeaderInverter.FDFormat = FDCAN_CLASSIC_CAN;
+	TxHeaderInverter.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	TxHeaderInverter.MessageMarker = 0;
+
+	uint8_t CANTxData[8];
+
+	resetCanTx(CANTxData);
+
+	storeLEint16(response,&CANTxData[0]);
+	storeLEint16(request,&CANTxData[2]);
+
+	return CAN2Send( &TxHeaderInverter, CANTxData );
+}
+
+char CANTorqueRequest( uint16_t request )
+{
+  if( AllowedToDrive()){
+	  CANSendInverter(  CarState.LeftInv, request, LeftInverter );
+	  CANSendInverter(  CarState.LeftInv, request, RightInverter );
+  } else
+  {
+	  CANSendInverter(  CarState.LeftInv, 0, LeftInverter );
+	  CANSendInverter(  CarState.LeftInv, 0, RightInverter );
+  }
+  return 0;
+}
+
+void RTDMCheck( void )
+{
+	// EV4.11.2 RTDM Check
+	if (!RTDM_Switch.pressed
+	    	&& ADCState.BrakeR >= 40
+			&& CarState.ReadyToDrive_Allowed
+			&& CarState.ReadyToDrive_Allowed1)
+	{
+		CarState.Buzzer_Sounding = 1;
+		CarState.ReadyToDrive_Ready = 1;
+	}
+
+	if( !TS_Switch.pressed      // debounce needs to be changed to show button held or released?
+			&& CarState.HighVoltageOn_Allowed
+		    && CarState.HighVoltageOn_Allowed1
+		    && !CarState.IMD_relay_status
+		    && !CarState.BMS_relay_status
+		    && !CarState.BSPD_relay_status)
+		{
+			CarState.HighVoltageOn_Ready = 10;
+		} else
+		{
+			CarState.HighVoltageOn_Ready = 0;
+		}
+
+		// output 10 to can0 0x118 offset 0 && HighVoltageOn_Ready state
+
+		CANSendState(CarState.Buzzer_Sounding, CarState.HighVoltageOn_Ready);
+
+}
+
+/*
+ * Direct translation of Simulink code, look to rewrite.
+ */
+uint16_t PedalTorqueRequest( void )
+{
+	static char No_Torque_Until_Pedal_Released = 0; // persistent local variable
+	uint16_t Torque_drivers_request = 0;
+
+	//The absolute value of the difference between the APPS (Accelerator Pedal Position Sensors)
+
+	int difference = ADCState.Torque_Req_L_Percent - ADCState.Torque_Req_R_Percent;
+
+	//The average value of the APPS
+	int AverageTorqueRequestPercent = (ADCState.Torque_Req_L_Percent + ADCState.Torque_Req_R_Percent) /2;
+
+	char status=0;
+
+	//   -Implausibility Test Failure : In case of more than 10 percent implausbility between the APPS,torque request is 0
+	//   -Implausbility allowed : more than 10 percent
+	//   -Brake Pressure allowed : less than 65
+	//   -Torque-Brake Violation : Free
+	if( difference>10
+	    || (ADCState.Torque_Req_R_Percent==0 && ADCState.Torque_Req_L_Percent>0)
+		|| (ADCState.Torque_Req_L_Percent==0 && ADCState.Torque_Req_R_Percent >0) )
+	{
+	    Torque_drivers_request = 0;
+	    status=1;
+	}
+
+	//   -Normal Driving Conditions
+	//   -Implausbility allowed : less or equal to 10 percent
+	//   -Brake Pressure allowed : less than 65
+	//   -Torque-Brake Violation : Free
+
+	else if( difference<=10
+			&& ADCState.BrakeR < 30
+			&& No_Torque_Until_Pedal_Released==0 )
+	{
+		Torque_drivers_request = ADCState.Torque_Req_L*1000/65;
+	    status=2;
+	}
+	//   -Torque-Brake Violation : Accelerator Pedal and Brake Pedal pressed at the same time
+	//   -Accelerator Pedal Travel : More than 25 percent
+	//   -Brake Pressure allowed : more than 140
+	//   -Torque-Brake Violation : Occured and marked
+
+	else if( difference<=10
+			 && ADCState.BrakeR > 70
+			 && AverageTorqueRequestPercent>=25 )
+	{
+		Torque_drivers_request=0;
+		No_Torque_Until_Pedal_Released=1;
+	    status=3;
+	}
+
+	//   -After torque-brake violation :  Even if brake pedal is released, and the APPS are more than 5 percent, no torque is allowed
+	//   -Accelerator Pedal Travel : More than 5 percent
+	//   -Brake Pressure allowed : less than 65
+	//   -Torque-Brake Violation : Still exists and won't be freed
+	else if( difference<=10
+			 && ADCState.BrakeR  < 30
+			 && No_Torque_Until_Pedal_Released==1
+			 && AverageTorqueRequestPercent >=5 )
+	{
+		Torque_drivers_request=0;
+	    status=4;
+	}
+
+	//   -After torque-brake violation and the release of the brake pedal, torque is allowed when APPS are less than 5 percent
+	//   -Accelerator Pedal Travel : Less than 5 percent
+	//   -Brake Pressure allowed : less than 65
+	//   -Torque-Brake Violation : Occured and will be freed
+
+	else if ( difference<=10
+			  && ADCState.BrakeR  < 30
+			  && No_Torque_Until_Pedal_Released==1
+			  && AverageTorqueRequestPercent < 5 )
+	{
+		No_Torque_Until_Pedal_Released=0;
+	    Torque_drivers_request = ADCState.Torque_Req_L*1000/65;
+	    status=5;
+	}
+
+	//  -Any other undefined condition, should never end up here
+
+	else
+	{
+	    Torque_drivers_request=0;
+	    status=6;
+	}
+
+	// can send status
+
+	return Torque_drivers_request;
+
+//	if(ADCState.)
+}
+
+char AllowedToDrive( void )
+{
+
+	if(CarState.LeftInv == 15 && CarState.RightInv == 15)
+	{
+		return 1;
+	} else
+	{
+		return 0;
+	}
+}
+
+
+/*
+ * Direct translation of Simulink code, look to rewrite.
+ */
+char InverterStateMachine( int8_t Inverter )
+{
+	uint16_t Status, TXStatus;
+	char HighVoltageOnAllowed, ReadyToDriveAllowed, TsLed, RtdmLed;
+
+	if( Inverter == 0 ) // left inverter
+	{
+		Status = Status_Left_Inverter.data.longint;
+	} else if ( Inverter == 1 ) // right inverter
+	{
+		Status = Status_Right_Inverter.data.longint;
+	} else return 0; // invalid inverter
+
+
+	// can1 write 0x47e inv1 0x47f inv2 dlc2 bytes,  0,16LE
+
+	int u1 = Status & 79;              // Switch On Disabled , 100 1111b
+	int u2 = Status & 47;              // Ready To Switch On ,  10 1111b
+	int u3 = Status & 111;             // Switched on,         110 1111b
+	int u4 = Status & 111;            // Operation Enable,    110 1111b
+	int u5 = Status & 31;             // Checking for faults,   1 1111b
+	int u6 = Status & 8;               // Checking for faults,     1000b
+	int u7 = Status & 71;              // Checking for faults, 100 1000b
+
+
+	if(u1==64){
+		//Checks if it is Switched On Disabled state
+	    HighVoltageOnAllowed=0;         //High Voltage is not allowed
+	    ReadyToDriveAllowed=0;          //Ready to drive is not allowed
+	    TsLed=1;                     //TS LED starts blinking
+	    RtdmLed=0;                   //RTMD LED is off
+	    TXStatus=6;                   //Shutdown, Switched On Disabled -> Ready to Switch On
+	} else if (u2==33 &&  CarState.HighVoltageOn_Ready==0)
+	{//Checks if it is Ready to Switch On state and TS button has NOT been pressed
+	    HighVoltageOnAllowed=1;          //High voltage is allowed to be applied
+	    ReadyToDriveAllowed=0;          //Ready to drive is not allowed
+	    TsLed=1;                     //TS LED continues blinking
+	    RtdmLed=0;                   //RTMD LED off
+	    TXStatus=6;                   //Shutdown, Switched On Disabled -> Ready to Switch On
+	} else if(u2==33 &&  CarState.HighVoltageOn_Ready==1)
+	{//Checks if it is Ready to Switch On state and TS button has been pressed after the blinking LED
+	    HighVoltageOnAllowed=1;          //High voltage is allowed
+	    ReadyToDriveAllowed=1;           //Ready to drive is allowed
+	    TsLed=2;                     //TS LED is continuously on
+	    RtdmLed=0;                   //RTMD LED is off
+	    TXStatus=7;                   //Switch on, Ready to Switch On -> Switched on. High voltage is applied to the left inverter.
+	} else if(u3==35 && CarState.ReadyToDrive_Ready==0)
+	{//Checks if it is Switched On State and car is NOT set to ready to drive mode after the blinking LED
+	    HighVoltageOnAllowed=1;          //High voltage is allowed
+	    ReadyToDriveAllowed=1;           //Ready to drive is allowed
+	    TsLed=2;                     //TS LED is continuously on
+	    RtdmLed=1;                   //RTMD LED starts blinking
+	    TXStatus=7;                   //Switch on, Ready to Switch On -> Switched on. High voltage is applied to the left inverter.
+	} else if(u3==35 && CarState.ReadyToDrive_Ready==1 )
+	{//Checks if it is Switched On State and car is set to ready to drive mode after the blinking LED
+	   HighVoltageOnAllowed=1;
+	   ReadyToDriveAllowed=1;
+	   TsLed=2;                      //TS LED is continuously on
+	   RtdmLed=1;                    //RTMD LED is blinking
+	   TXStatus=15;                   //Enable operation, Switched on -> Operation Enable
+	} else if(u4==39  && CarState.ReadyToDrive_Ready==1  &&   CarState.HighVoltageOn_Ready==1)
+	{
+	   HighVoltageOnAllowed=1;
+	   ReadyToDriveAllowed=1;
+	   TsLed=2;                     //TS LED is continuously on
+	   RtdmLed=2;                    //RTMD LED is continuously on
+	   TXStatus=15;                   //Keep inverters on
+	} else if(u4==7 || u5==19 || u6==8 || u7==8)
+	{
+	   HighVoltageOnAllowed=0;
+	   ReadyToDriveAllowed=0;
+	   TsLed=0;                      //TS LED is off
+	   RtdmLed=0;                    //RTMD LED is off
+	   TXStatus=128;                  //Reset
+	}
+
+	//elseif(u4==39 && StopMotorsRequested==1)                        //Checks if is Operation Enable state and stop motors buttons have been pressed
+	//   CWInv_temp=7;                  //Disable operation, Operation Enable -> Switched on
+	//   CW=uint16(CWInv_temp);
+	//   StopMotors_Led=2;
+
+	else
+	{
+	    HighVoltageOnAllowed=0;
+	    ReadyToDriveAllowed=0;
+	    TsLed=0;                      //TS LED is off
+	    RtdmLed=0;                    //RTMD LED is off
+	    TXStatus=128;                 //Reset
+	}
+
+	if( Inverter == 0 ) // left inverter
+	{
+//		CANSendInverter( TXStatus, 0 );
+		CarState.HighVoltageOn_Allowed=HighVoltageOnAllowed;
+		CarState.ReadyToDrive_Allowed=ReadyToDriveAllowed;
+		CarState.RtdmLeftInvLED = RtdmLed;
+		CarState.TSALLeftInvLED = TsLed;
+		CarState.LeftInv = TXStatus;
+
+	} else if ( Inverter == 1 ) // right inverter
+	{
+//		CANSendInverter( TXStatus, 1 );
+		CarState.HighVoltageOn_Allowed1=HighVoltageOnAllowed;
+		CarState.ReadyToDrive_Allowed1=ReadyToDriveAllowed;
+		CarState.RtdmRightInvLED = RtdmLed;
+		CarState.TSALRightInvLED = TsLed;
+		CarState.RightInv = TXStatus;
+	}
+
+	return 1;
+}
+
+void processCANData( void )
+{
+
+	if(IMD_relay_status.newdata){
+		IMD_relay_status.newdata = 0;
+		CarState.IMD_relay_status = IMD_relay_status.data.longint;
+	}
+
+	if(BMS_relay_status.newdata){
+		BMS_relay_status.newdata = 0;
+		CarState.BMS_relay_status = BMS_relay_status.data.longint;
+	}
+
+	if(BSPD_relay_status.newdata){
+		BSPD_relay_status.newdata = 0;
+		CarState.BSPD_relay_status = BSPD_relay_status.data.longint;
+	}
+}
+
+void RearSpeedCalculation( void )
+{
+	CarState.Wheel_Speed_Right_Calculated = Speed_Right_Inverter.data.longint * (1/4194304) * 60;
+	CarState.Wheel_Speed_Left_Calculated = Speed_Left_Inverter.data.longint * (1/4194304) * 60;
+	CarState.Wheel_Speed_Rear_Average = (CarState.Wheel_Speed_Right_Calculated  + CarState.Wheel_Speed_Left_Calculated)/2;
+}
+
+static char getByte(uint32_t input, int8_t returnbyte)
+{
+	union {
+		uint32_t integer;
+		unsigned char bytearray[4];
+	} data;
+	data.integer = input;
+	return data.bytearray[returnbyte];
+}
+
+void storeBEint32(uint32_t input, uint8_t Data[4])
+{
+	Data[0] = getByte(input,3);
+	Data[1] = getByte(input,2);
+	Data[2] = getByte(input,1);
+	Data[3] = getByte(input,0);
+}
+
+void storeBEint16(uint16_t input, uint8_t Data[2])
+{
+	Data[0] = getByte(input,1);
+	Data[1] = getByte(input,0);
+}
+
+void storeLEint32(uint32_t input, uint8_t Data[4])
+{
+	Data[0] = getByte(input,0);
+	Data[1] = getByte(input,1);
+	Data[2] = getByte(input,2);
+	Data[3] = getByte(input,3);
+}
+
+void storeLEint16(uint16_t input, uint8_t Data[2])
+{
+	Data[0] = getByte(input,0);
+	Data[1] = getByte(input,1);
+}
+
+
+char CANLogData( void )
+{
+	// build data logging blocks
+	FDCAN_TxHeaderTypeDef TxHeaderLog;
+	uint8_t CANTxData[8];
+
+	TxHeaderLog.IdType = FDCAN_STANDARD_ID;
+	TxHeaderLog.TxFrameType = FDCAN_DATA_FRAME;
+	TxHeaderLog.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
+	TxHeaderLog.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	TxHeaderLog.BitRateSwitch = FDCAN_BRS_OFF;
+	TxHeaderLog.FDFormat = FDCAN_CLASSIC_CAN;
+	TxHeaderLog.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	TxHeaderLog.MessageMarker = 0;
+
+	resetCanTx(CANTxData);
+	TxHeaderLog.Identifier = 0x7C6;
+	storeBEint16(ADCState.Torque_Req_L, &CANTxData[0]); 	//torq_req_l can0 0x7C6 0,16be
+	storeBEint16(ADCState.Torque_Req_R, &CANTxData[2]); 	//torq_req_r can0 0x7C6 16,16be
+
+	storeBEint16(ADCState.BrakeF, &CANTxData[4]); 	//brk_press_f can0 0x7C6 32,16bee
+	storeBEint16(ADCState.BrakeF, &CANTxData[6]); 	//brk_press_r can0 0x7C6 48,16be
+
+	CAN1Send( &TxHeaderLog, CANTxData );
+
+	resetCanTx(CANTxData);
+	TxHeaderLog.Identifier = 0x7C7;
+	storeBEint32(CarState.Wheel_Speed_Right_Calculated, &CANTxData[0]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
+	storeBEint32(CarState.Wheel_Speed_Left_Calculated, &CANTxData[4]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
+	CAN1Send( &TxHeaderLog, CANTxData );
+
+	resetCanTx(CANTxData);
+	TxHeaderLog.Identifier = 0x7C8;
+	CANTxData[0] = ADCState.CoolantTemp1; //temp_sensor1 can0 0x7c8 0,8
+	CANTxData[1] = CarState.Torque_Req_Max; //torq_req_max can0 0x7c8 8,8
+	CANTxData[2] = ADCState.CoolantTemp2; 	//temp_sensor_2 can0 0x7c8 16,8
+	CANTxData[3] = ADCState.Future_Torque_Req_Max; //future_torq_req_max can0 0x7c8 24,8
+	storeBEint16(ADCState.Torque_Req_L_Percent, &CANTxData[4]); //torq_req_l_perc can0 0x7c8 32,16be
+	storeBEint16(ADCState.Torque_Req_R_Percent, &CANTxData[6]); //torq_req_r_perc can0 0x7c8 48,16be
+	CAN1Send( &TxHeaderLog, CANTxData );
+
+	resetCanTx(CANTxData);
+	TxHeaderLog.Identifier = 0x7C9;
+
+	CAN1Send( &TxHeaderLog, CANTxData );
+	storeBEint16(Actual_Torque_Left_Inverter_Raw.data.longint, &CANTxData[0]); //actual_torque_left_inverter_raw can0 0x7c9 0,16be
+	storeBEint16(Actual_Torque_Right_Inverter_Raw.data.longint, &CANTxData[2]); //actual_torque_right_inverter_raw can0 0x7c9 16,16be
+
+	resetCanTx(CANTxData);
+	TxHeaderLog.Identifier = 0x7CA; // not being sent in current simulink, but is set?
+	storeBEint32(CarState.brake_balance,&CANTxData[0]); //brake_balance can0 0x7CA 0,32be
+	//CAN1Send( &TxHeaderLog, CANTxData );
+
+	return 0;
+}
+
+void processADCInput( void )
+{
+	ADCState.SteeringAngle = getSteeringAngle(ADC_Data[SteeringADC]);
+
+	ADCState.BrakeF = getBrakeF(ADC_Data[ThrottleLADC]);
+	ADCState.BrakeR = getBrakeR(ADC_Data[ThrottleRADC]);
+	CarState.brake_balance = ( ADCState.BrakeF * 100 ) / (ADCState.BrakeF + ADCState.BrakeR);
+	ADCState.CoolantTemp1 = getCoolantTemp(ADC_Data[CoolantTemp1ADC]);
+	ADCState.CoolantTemp2 = getCoolantTemp(ADC_Data[CoolantTemp2ADC]);
+
+	ADCState.Future_Torque_Req_Max = getDrivingMode(ADC_Data[DrivingModeADC]);
+	setTorqueReqPerc(ADC_Data[ThrottleLADC],ADC_Data[ThrottleRADC]);
+//	ADCState.Torque_Req_L_Percent = getTorqueReqLPerc(ADC_Data[ThrottleLADC]);
+//	ADCState.Torque_Req_R_Percent = getTorqueReqRPerc(ADC_Data[ThrottleRADC]);
+}
+
+void startupLEDs(void)
+{
+	 //small led display to indicate board startup
+	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, 1);
+	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 1);
+	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 1);
+	  HAL_Delay(300);
+	  HAL_GPIO_WritePin(LD1_GPIO_Port,LD1_Pin, 0);
+	  HAL_Delay(300);
+	  HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 0);
+	  HAL_Delay(300);
+	  HAL_GPIO_WritePin(LD3_GPIO_Port,LD3_Pin, 0);
+
+	  // display status LED's for two seconds to indicate power on.
+	  setOutput(1,1);
+	  setOutput(2,1);
+	  setOutput(3,1);
+
+	 // HAL_Delay(2000);
+	  HAL_Delay(500);
+	  for(int i=1;i<=12;i++){
+		  setOutput(i, 0);
+	  }
+}
+
+void setupInterrupts( void )
+{
+	InButtonpress = 1;
+
+	// enable and start timer interrupt
+	HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(TIM3_IRQn);
+
+	// enable button interrupts
+	HAL_NVIC_SetPriority(USER_Btn_EXTI_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(USER_Btn_EXTI_IRQn);
+
+	HAL_NVIC_SetPriority(Input1_EXTI_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(Input1_EXTI_IRQn);
+
+	HAL_NVIC_SetPriority(Input2_EXTI_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(Input2_EXTI_IRQn);
+
+	HAL_NVIC_SetPriority(Input3_EXTI_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(Input3_EXTI_IRQn);
+
+
+	if ( HAL_TIM_Base_Start_IT(&htim3) != HAL_OK){
+		  Error_Handler();
+	}
+	InButtonpress = 0;
+}
+
+void startADC(void)
+{
+	// start ADC conversion
+	  if (HAL_ADC_Start_DMA(&hadc1,(uint32_t *)aADCxConvertedData,ADC_CONVERTED_DATA_BUFFER_SIZE) != HAL_OK)
+	  {
+	      Error_Handler();
+	  }
+}
+
+void setupCarState( void )
+{
+	CarState.brake_balance=0;
+
+	CarState.ReadyToDrive_Ready = 0;
+
+	CarState.HighVoltageOn_Allowed = 0;
+	CarState.HighVoltageOn_Allowed1 = 0;
+
+	CarState.ReadyToDrive_Allowed = 0;
+	CarState.ReadyToDrive_Allowed1 = 0;
+
+	CarState.HighVoltageOn_Ready = 0;
+
+	CarState.Buzzer_Sounding = 0;
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+	for (int i = 0; i<NumADCChan;i++)
+	{
+		int sum = 0;
+
+		for( int j = 0; j < SampleSize; j++)
+		{
+			sum =  sum + (aADCxConvertedData[i+NumADCChan*j]);  // store the values in adc_val from buffer averaged over 10 samples
+		}
+		ADC_Data[i] = sum/SampleSize;
+	}
+	ADCState.newdata = 1;
+//    ADCcount++;
+}
+
+/**
+ * interrupt rx callback for canbus0
+ */
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
+{
+	FDCAN_RxHeaderTypeDef RxHeader;
+	uint8_t CANRxData[8];
+	HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
+
+	if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET)
+	{
+    /* Retreive Rx messages from RX FIFO0 */
+		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, CANRxData) != HAL_OK)
+		{
+			/* Reception Error */
+			Error_Handler();
+		}
+
+		// process incoming packet
+		switch ( RxHeader.Identifier ){
+
+			case 	0xF :  // BMS can0 id 0xF
+	//			offset 0 length 32: power
+    //			offset 32 length 16 big endian: BatAmps
+	//			offset 48 length 16: BatVoltage
+				power.time = gettimer();
+				power.newdata = 1;
+				power.data.longint = CANRxData[0]*16777216+CANRxData[1]*65536+CANRxData[2]*256+CANRxData[3];
+
+				BatAmps.time = gettimer();
+				BatAmps.newdata = 1;
+				BatAmps.data.longint = CANRxData[4]*256+CANRxData[5];
+
+				BatVoltage.time = gettimer();
+				BatVoltage.newdata = 1;
+				BatVoltage.data.longint = 65536+CANRxData[6]*256+CANRxData[7];
+				break;
+
+			case	0x520 : // PDM can0
+				//	0x520,0,8 -> BMS_relay_status
+				//	0x520,8,8 -> IMD_relay_status
+				//	0x520,16,8 -> BSPD_relay_status
+				BMS_relay_status.time = gettimer();
+				BMS_relay_status.newdata = 1;
+				BMS_relay_status.data.longint = CANRxData[0];
+
+				IMD_relay_status.time = gettimer();
+				IMD_relay_status.newdata = 1;
+				IMD_relay_status.data.longint = CANRxData[1];
+
+				BSPD_relay_status.time = gettimer();
+				BSPD_relay_status.newdata = 1;
+				BSPD_relay_status.data.longint = CANRxData[2];
+				break;
+			case	0x521 : // IVT Can0 0x521,24,24BE * 0.001 -> Accu_Voltage
+				Accu_Voltage.time = gettimer();
+				Accu_Voltage.newdata = 1;
+				Accu_Voltage.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
+				break;
+			case	0x523 : // IVT Can0 0x523,24,24BE * 0.001 -> Accu_Current
+				Accu_Current.time = gettimer();
+				Accu_Current.newdata = 1;
+				Accu_Current.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
+				break;
+			default :
+				break;
+		}
+
+		if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
+		{
+      /* Notification Error */
+			Error_Handler();
+		}
+	}
+}
+
+/**
+ * interrupt rx callback for canbus1
+ */
+void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
+{
+	FDCAN_RxHeaderTypeDef RxHeader;
+	uint8_t CANRxData[8];
+	HAL_GPIO_WritePin(LD3_GPIO_Port,LD3_Pin, 1);
+
+	if((RxFifo1ITs & FDCAN_IT_RX_FIFO1_NEW_MESSAGE) != RESET)
+	{
+		//timercount = __HAL_TIM_GetCounter(&htim3);
+		/* Retreive Rx messages from RX FIFO0 */
+		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO1, &RxHeader, CANRxData) != HAL_OK)
+		{
+			/* Reception Error */
+			Error_Handler();
+		}
+
+		// check rest of header data? Can2 is inverter information
+		switch ( RxHeader.Identifier ){
+
+			case 	0x0 :  // id 0x0,0,8 -> nmt_status
+				nmt_status.time = gettimer();
+				nmt_status.data.longint = CANRxData[0];
+				nmt_status.newdata = 1;
+				break;
+			case	0x1FE : // 0x1FE,0,16LE -> Status_Right_Inverter
+				Status_Right_Inverter.time = gettimer();
+				Status_Right_Inverter.newdata = 1;
+				Status_Right_Inverter.data.longint = CANRxData[1]*256+CANRxData[0];
+				break;
+			case	0x1FF :  // 0x1FF,0,16LE -> Status_Left_Inverter
+				Status_Left_Inverter.time = gettimer();
+				Status_Left_Inverter.newdata = 1;
+				Status_Left_Inverter.data.longint = CANRxData[1]*256+CANRxData[0];
+				break;
+			case	0x2FE :  // 0x2FE,16,32LE -> Speed_Right_Inverter
+				Speed_Right_Inverter.time = gettimer();
+				Speed_Right_Inverter.newdata = 1;
+				Speed_Right_Inverter.data.longint = CANRxData[5]*16777216+CANRxData[4]*65536+CANRxData[3]*256+CANRxData[2];
+				break;
+			case	0x2FF :  // 0x2FF,16,32LE -> Speed_Left_Inverter
+				Speed_Left_Inverter.time = gettimer();
+				Speed_Left_Inverter.newdata = 1;
+				Speed_Left_Inverter.data.longint = CANRxData[5]*16777216+CANRxData[4]*65536+CANRxData[3]*256+CANRxData[2];
+				break;
+
+			case	0x77E : // 0x77E,8,16LE -> Actual_Torque_Right_Inverter_Raw
+				Actual_Torque_Right_Inverter_Raw.time = gettimer();
+				Actual_Torque_Right_Inverter_Raw.newdata = 1;
+				Actual_Torque_Right_Inverter_Raw.data.longint = CANRxData[2]*256+CANRxData[1];
+				break;
+
+			case	0x77F :	//0x77F,8,16LE -> Actual_Torque_Left_Inverter_Raw
+				Actual_Torque_Left_Inverter_Raw.time = gettimer();
+				Actual_Torque_Left_Inverter_Raw.newdata = 1;
+				Actual_Torque_Left_Inverter_Raw.data.longint = CANRxData[2]*256+CANRxData[1];
+				break;
+			default : // any other received packets
+				break;
+		}
+
+	/*	if ((RxHeader2.Identifier == 0x2) && (RxHeader2.IdType == FDCAN_STANDARD_ID) && (RxHeader2.DataLength == FDCAN_DLC_BYTES_1))
+		{
+		//	ubKeyNumber = CANRxData[0];
+		} */
+
+		if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0) != HAL_OK)
+		{
+			/* Notification Error */
+			Error_Handler();
+		}
+	}
+}
+
+
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if (!InButtonpress ) {
+		InButtonpress = 1; // stop processing further button presses till debounce time given
+		ButtonpressPin = GPIO_Pin;
+
+		if ( HAL_TIM_Base_Start_IT(&htim7) != HAL_OK){
+			Error_Handler();
+		}
+
+	}
+}
+
+//irq handler for timer3
+void TIM3_IRQHandler()
+{
+    HAL_TIM_IRQHandler(&htim3);
+}
+
+
+/**
+ * @brief timer interrupt to keep a timebase.
+ */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	if ( htim->Instance == TIM3 ){
+		secondson = secondson + 1; // increment global time counter
+		HAL_GPIO_TogglePin(LD1_GPIO_Port,LD1_Pin); // toggle led to indicate board active
+
+		if ( TS_LED.blinking ) { toggleOutput(TS_LED.pin); }
+
+		if ( RTDM_LED.blinking ) { toggleOutput(RTDM_LED.pin); }
+
+	} else if ( htim->Instance == TIM7 ){
+	  // timer7
+		InButtonpress = 0;
+
+		switch ( ButtonpressPin ) {
+
+		case USER_Btn_Pin :
+			debouncebutton(&UserBtn);
+			break;
+		case Input1_Pin:
+			debouncebutton(&Input1);
+			break;
+		case Input2_Pin:
+			debouncebutton(&Input2);
+			break;
+		case Input3_Pin:
+			debouncebutton(&Input3);
+			break;
+		case Input4_Pin:
+			debouncebutton(&Input4);
+			break;
+		case Input5_Pin:
+			debouncebutton(&Input5);
+			break;
+		case Input6_Pin:
+			debouncebutton(&Input6);
+			break;
+		default :
+			break;
+		}
+	}
+
+}

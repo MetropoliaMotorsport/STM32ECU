@@ -1,0 +1,11 @@
+stm32h7xx_hal_hsem.c:154:20:HAL_HSEM_Take	16	static
+stm32h7xx_hal_hsem.c:179:19:HAL_HSEM_FastTake	8	static
+stm32h7xx_hal_hsem.c:200:10:HAL_HSEM_IsSemTaken	0	static
+stm32h7xx_hal_hsem.c:212:7:HAL_HSEM_Release	16	static
+stm32h7xx_hal_hsem.c:229:6:HAL_HSEM_ReleaseAll	8	static
+stm32h7xx_hal_hsem.c:261:7:HAL_HSEM_SetClearKey	0	static
+stm32h7xx_hal_hsem.c:273:10:HAL_HSEM_GetClearKey	0	static
+stm32h7xx_hal_hsem.c:300:6:HAL_HSEM_ActivateNotification	0	static
+stm32h7xx_hal_hsem.c:311:6:HAL_HSEM_DeactivateNotification	0	static
+stm32h7xx_hal_hsem.c:345:13:HAL_HSEM_FreeCallback	0	static
+stm32h7xx_hal_hsem.c:322:6:HAL_HSEM_IRQHandler	8	static
