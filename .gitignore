@@ -33,6 +33,7 @@
 
 # Debug files
 *.dSYM/
+*.su
 
 # Project stuff
 .bin
