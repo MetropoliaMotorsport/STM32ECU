@@ -12,7 +12,7 @@
 
 //variables that need to be accessible in ISR's
 
-// variables for button debounce interrupts
+// variables for button debounce interrupts, need to be global to be seen in timer interrupt
 volatile static char InButtonpress;
 static uint16_t ButtonpressPin;
 
@@ -21,8 +21,10 @@ ALIGN_32BYTES (static uint32_t aADCxConvertedData[ADC_CONVERTED_DATA_BUFFER_SIZE
 
 
 
-// deal with endianness for canbus
-// function from https://stackoverflow.com/questions/39622332/reading-big-endian-files-in-little-endian-system
+/** deal with endianness for canbus
+ * function from https://stackoverflow.com/questions/39622332/reading-big-endian-files-in-little-endian-system
+ * not actually being currently used
+ */
 void swapByteOrder_int16(double *current, const int16_t *rawsignal, size_t length)
 {
     for (size_t i = 0; i < length; i++)
@@ -33,6 +35,9 @@ void swapByteOrder_int16(double *current, const int16_t *rawsignal, size_t lengt
     }
 }
 
+/**
+ * function to perform a linear interpolation using given input/output value arrays and raw data.
+ */
 int16_t linearInteropolate(uint16_t Input[], int16_t Output[], uint16_t count, uint16_t RawADCInput)
 {
     int i;
@@ -62,35 +67,65 @@ int16_t linearInteropolate(uint16_t Input[], int16_t Output[], uint16_t count, u
     dx = Input[i+1] - Input[i];
     dy = Output[i+1] - Output[i];
     return Output[i] + ((RawADCInput - Input[i]) * dy / dx);
-
 }
 
-
+/**
+ * convert raw steering ADC input into a steering percentage left/right.
+ * -- is there a deadzone?
+ */
 int8_t getSteeringAngle(uint16_t RawADCInput)
 {
+	// calibrated input range for steering, from left lock to center to right lock.
+	// check if this can be simplified?
     static uint16_t SteeringInput[] = { 1210,1270,1320,1360,1400,1450,1500,1540,1570,1630,1680,1720,1770,2280,2700,3150,3600,4100,4700,5000,5500 };
+    // output steering range. +-100%
     static int16_t SteeringOutput[] = { -100,-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100 };
     static int count = sizeof(SteeringInput)/sizeof(SteeringInput[0]);
 
     return linearInteropolate(SteeringInput, SteeringOutput, count, RawADCInput);
 }
 
+/**
+ * convert raw front brake reading into calibrated brake position
+ */
 uint8_t getBrakeF(uint16_t RawADCInput)
 {
-    static uint16_t BrakeFInput[] = { 385, 1940 };
-    static int16_t BrakeFOutput[] = { 0, 250 };
+    static uint16_t BrakeFInput[] = { 385, 1940 }; // calibrated input range
+    static int16_t BrakeFOutput[] = { 0, 250 }; // output range
     static int count = sizeof(BrakeFInput)/sizeof(BrakeFInput[0]);
 
     return linearInteropolate(BrakeFInput, BrakeFOutput, count, RawADCInput);
 }
 
+/**
+ * convert raw rear brake reading into calibrated brake position
+ */
+uint8_t getBrakeR(uint16_t RawADCInput)
+{
+    static uint16_t BrakeRInput[] = { 380, 1915 }; // calibrated input range
+    static int16_t BrakeROutput[] = { 0, 250 }; // output range
+    static int count = sizeof(BrakeRInput)/sizeof(BrakeRInput[0]);
+
+    return linearInteropolate(BrakeRInput, BrakeROutput, count, RawADCInput);
+}
+
+/**
+ * convert front/rear brake inputs into brake balance percentage.
+ */
+
+uint32_t getBrakeBalance(uint16_t RawADCInputF, uint16_t RawADCInputR){
+	// should this be with raw values?
+	return (RawADCInputF * 100) / ( RawADCInputF + RawADCInputR );
+}
+
+
 void setTorqueReqPerc(uint16_t RawADCInputL, uint16_t RawADCInputR)
 {
-    static uint16_t TorqueReqLInput[] = { 140, 660 };
+    static uint16_t TorqueReqLInput[] = { 140, 660 }; // calibration values for left input
     static int16_t TOrqueReqLOutput[] = { 0, 100 };
     static int countL = sizeof(TorqueReqLInput)/sizeof(TorqueReqLInput[0]);
 
-    static uint16_t TorqueReqRInput[] = { 250, 710 };
+    static uint16_t TorqueReqRInput[] = { 250, 710 }; // calibration values for right input
     static int16_t TOrqueReqROutput[] = { 0, 100 };
     static int countR = sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
 
@@ -110,20 +145,9 @@ void setTorqueReqPerc(uint16_t RawADCInputL, uint16_t RawADCInputR)
 
 }
 
-
-uint8_t getBrakeR(uint16_t RawADCInput)
-{
-    static uint16_t BrakeRInput[] = { 380, 1915 };
-    static int16_t BrakeROutput[] = { 0, 250 };
-    static int count = sizeof(BrakeRInput)/sizeof(BrakeRInput[0]);
-
-    return linearInteropolate(BrakeRInput, BrakeROutput, count, RawADCInput);
-}
-
-uint32_t getBrakeBalance(uint16_t RawADCInputF, uint16_t RawADCInputR){
-	// should this be with raw values?
-	return (RawADCInputF * 100) / ( RawADCInputF + RawADCInputR );
-}
+/**
+ * process driving mode selector input, adjusts max possible torque request. Equivalent to gears.
+ */
 
 uint8_t getDrivingMode(uint16_t RawADCInput)
 { // torq_req_max, call once a second
@@ -158,6 +182,9 @@ uint8_t getCoolantTemp(uint16_t RawADCInput)
     return linearInteropolate(CoolantInput, CoolantOutput, count, RawADCInput);
 }
 
+/**
+ * returns gpio port for given output number.
+ */
 
 GPIO_TypeDef* getGpioPort(int output)
 {
@@ -178,14 +205,6 @@ GPIO_TypeDef* getGpioPort(int output)
 			return Output7_GPIO_Port;
 		case 8 :
 			return Output8_GPIO_Port;
-		case 9 :
-			return Output9_GPIO_Port;
-		case 10 :
-			return Output10_GPIO_Port;
-		case 11 :
-			return Output11_GPIO_Port;
-		case 12 :
-			return Output12_GPIO_Port;
 		case 13 :
 			return LD1_GPIO_Port;
 		case 14 :
@@ -197,6 +216,10 @@ GPIO_TypeDef* getGpioPort(int output)
 	}
 
 }
+
+/**
+ * returns gpio pin for given output number.
+ */
 
 int getGpioPin(int output)
 {
@@ -217,14 +240,6 @@ int getGpioPin(int output)
 			return Output7_Pin;
 		case 8 :
 			return Output8_Pin;
-		case 9 :
-			return Output9_Pin;
-		case 10 :
-			return Output10_Pin;
-		case 11 :
-			return Output11_Pin;
-		case 12 :
-			return Output12_Pin;
 		case 13 :
 			return LD1_Pin;
 		case 14 :
@@ -237,12 +252,19 @@ int getGpioPin(int output)
 
 }
 
+/**
+ * @brief sets specific output state of the state of specified GPIO output using programs defined input numbering
+ */
 void setOutput(int output, char state)
 {
 	if(getGpioPin(output) != 0) {
 		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), state);
 	}
 }
+
+/**
+ * @brief Toggles the state of specified GPIO output using programs defined input numbering
+ */
 void toggleOutput(int output)
 {
 	if(getGpioPin(output) != 0) {
@@ -250,6 +272,9 @@ void toggleOutput(int output)
 	}
 }
 
+/**
+ * @brief setup start state of LED's to off.
+ */
 void setupLEDs( void )
 {
 	LED1.blinking = 0;
@@ -278,9 +303,11 @@ void setupLEDs( void )
 
 	BSPD_LED.blinking = 0;
 	BSPD_LED.pin = BSPDLED_Output;
-
 }
 
+/**
+ * @brief set the current state of LED's as defined by carstate variables.
+ */
 void setLEDs( void )
 {
 	setOutput(BMS_LED.pin, CarState.BMS_relay_status);
@@ -318,6 +345,9 @@ void setLEDs( void )
 	setOutput(STOP_LED.pin, CarState.StopLED);
 }
 
+/**
+ * @brief set status of a button to not activated
+ */
 void resetButton( struct ButtonData button )
 {
 	button.lastpressed = 0;
@@ -326,13 +356,16 @@ void resetButton( struct ButtonData button )
 }
 
 /**
- * returns total ms since turnon to use as comparison timestamp
+ * returns total 0.1ms since turnon to use as comparison timestamp
  */
-uint32_t gettimer(void)
+volatile uint32_t gettimer(void)
 {
-	 return (secondson*5000) + __HAL_TIM_GetCounter(&htim3);
+	 return (secondson*10000) + __HAL_TIM_GetCounter(&htim3);
 }
 
+/**
+ * @brief only process button input if input registered
+ */
 void debouncebutton( volatile struct ButtonData *button )
 {
 		if( !button -> pressed ){ // only process new button press if last not read
@@ -344,6 +377,9 @@ void debouncebutton( volatile struct ButtonData *button )
 		}
 }
 
+/**
+ * startup routine to ensure all buttons are initialised to unset state.
+ */
 
 void setupButtons(void)
 {
@@ -364,49 +400,82 @@ void setupButtons(void)
 	resetButton(Input6);
 }
 
-void FDCAN1_start(void){
-  FDCAN_FilterTypeDef			sFilterConfig1;
+/**
+ * @brief set filter states and start CAN module and it's interrupt for CANBUS1
+ */
+void FDCAN1_start(void)
+{
+  FDCAN_FilterTypeDef	sFilterConfig1;
 
   if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK)
   {
-    /* Initialization Error */
+    // Initialization Error
     Error_Handler();
   }
 
-  /* Configure Rx filter to accept everything, filter it in software. */
-  sFilterConfig1.IdType = FDCAN_STANDARD_ID;
-  sFilterConfig1.FilterIndex = 0;
-  sFilterConfig1.FilterType = FDCAN_FILTER_MASK;
-  sFilterConfig1.FilterConfig = FDCAN_FILTER_TO_RXFIFO0; // set can1 to receive via fifo0
-  sFilterConfig1.FilterID1 = 0x0;
- // sFilterConfig1.FilterID2 = 0x7FF;
-  sFilterConfig1.FilterID2 = 0x0;
+  if (HAL_FDCAN_Init(&hfdcan2) != HAL_OK) // if can2 not initialised before filters set they seem to be lost
+  {
+    // Initialization Error
+    Error_Handler();
+  }
 
-  //HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_ACCEPT_IN_RX_FIFO0, FDCAN_ACCEPT_IN_RX_FIFO0, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE);
+  HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, DISABLE, DISABLE);
+
+
+  // Configure Rx filter to only accept expected ID's into receive interrupt
+  sFilterConfig1.IdType = FDCAN_STANDARD_ID; // standard, not extended FD frame filter.
+  sFilterConfig1.FilterType = FDCAN_FILTER_RANGE; // filter all the id's between id1 and id2 in filter definition.
+  sFilterConfig1.FilterConfig = FDCAN_FILTER_TO_RXFIFO0; // FDCAN_FILTER_TO_RXFIFO0; // set can1 to receive via fifo0
+
+  sFilterConfig1.FilterIndex = 1;
+  sFilterConfig1.FilterID1 = 0xF; // 0xf 0x0 for all
+  sFilterConfig1.FilterID2 = 0xF; // 07ff  0x0 for all
+
 
   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
   {
-    /* Filter configuration Error */
+    // Filter configuration Error
+    Error_Handler();
+  }
+
+  sFilterConfig1.FilterIndex++; // filter for
+  sFilterConfig1.FilterID1 = 0x520;
+  sFilterConfig1.FilterID2 = 0x523;
+
+  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
+  {
+    // Filter configuration Error
+    Error_Handler();
+  }
+
+  sFilterConfig1.FilterIndex++; // filter for fake canbus ADC id's
+  sFilterConfig1.FilterID1 = 0x600;
+  sFilterConfig1.FilterID2 = 0x605;
+
+  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
+  {
+    // Filter configuration Error
     Error_Handler();
   }
 
   /* Start the FDCAN module */
   if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK)
   {
-    /* Start Error */
+    // Start Error
     Error_Handler();
   }
 
+  // start can receive interrupt for CAN1
   if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
   {
-    /* Notification Error */
+    // Notification Error
     Error_Handler();
   }
 
-  /* Prepare Tx Headers */
+  // Prepare Tx Headers
 
   // header for sending time base
-  TxHeaderTime.Identifier = 0x1;
+  TxHeaderTime.Identifier = 0x100;
   TxHeaderTime.IdType = FDCAN_STANDARD_ID;
   TxHeaderTime.TxFrameType = FDCAN_DATA_FRAME;
   TxHeaderTime.DataLength = FDCAN_DLC_BYTES_1;
@@ -417,7 +486,7 @@ void FDCAN1_start(void){
   TxHeaderTime.MessageMarker = 0;
 
   // general purpose debug tx header
-  TxHeader1.Identifier = 0x1;
+  TxHeader1.Identifier = 0x101;
   TxHeader1.IdType = FDCAN_STANDARD_ID;
   TxHeader1.TxFrameType = FDCAN_DATA_FRAME;
   TxHeader1.DataLength = FDCAN_DLC_BYTES_8;
@@ -427,7 +496,7 @@ void FDCAN1_start(void){
   TxHeader1.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
   TxHeader1.MessageMarker = 0;
 
-  TxHeader2.Identifier = 0x2;
+  TxHeader2.Identifier = 0x102;
   TxHeader2.IdType = FDCAN_STANDARD_ID;
   TxHeader2.TxFrameType = FDCAN_DATA_FRAME;
   TxHeader2.DataLength = FDCAN_DLC_BYTES_8;
@@ -443,44 +512,93 @@ void FDCAN2_start(void)
 {
   FDCAN_FilterTypeDef sFilterConfig2;
 
-  if (HAL_FDCAN_Init(&hfdcan2) != HAL_OK)
-  {
-    /* Initialization Error */
-    Error_Handler();
-  }
+#ifdef ONECAN
+  // hfdcan2 = hfdcan1;
+#endif
 
-  /* Configure Rx filter for can2*/
+ /* if (HAL_FDCAN_Init(&hfdcan2) != HAL_OK) // initted already in fdcan1_start
+  {
+    // Initialization Error
+    Error_Handler();
+  } */
+
+
+  HAL_FDCAN_ConfigGlobalFilter(&hfdcan2, FDCAN_REJECT, FDCAN_REJECT, DISABLE, DISABLE);
+
+  // Configure Rx filter for can2
   sFilterConfig2.IdType = FDCAN_STANDARD_ID;
-  sFilterConfig2.FilterIndex = 0;
-  sFilterConfig2.FilterType = FDCAN_FILTER_MASK;
+  sFilterConfig2.FilterIndex = 64;
+  sFilterConfig2.FilterType = FDCAN_FILTER_RANGE;
   sFilterConfig2.FilterConfig = FDCAN_FILTER_TO_RXFIFO1; // set can2 to receive into fifo1
-  sFilterConfig2.FilterID1 = 0x0;
-  sFilterConfig2.FilterID2 = 0x0;
+  sFilterConfig2.FilterID1 = 0x1;
+  sFilterConfig2.FilterID2 = 0x1;
 
 //  HAL_FDCAN_ConfigInterruptLines
 
   if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
   {
-    /* Filter configuration Error */
+    // Filter configuration Error
     Error_Handler();
   }
 
-  /* Start the FDCAN module */
+
+  sFilterConfig2.FilterIndex++;
+  sFilterConfig2.FilterID1 = 0x1FE;
+  sFilterConfig2.FilterID2 = 0x1FF;
+
+  if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
+  {
+    // Filter configuration Error
+    Error_Handler();
+  }
+
+  sFilterConfig2.FilterIndex++;
+  sFilterConfig2.FilterID1 = 0x2FE;
+  sFilterConfig2.FilterID2 = 0x2FF;
+
+  if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
+  {
+    // Filter configuration Error
+    Error_Handler();
+  }
+
+  sFilterConfig2.FilterIndex++;
+  sFilterConfig2.FilterID1 = 0x77E;
+  sFilterConfig2.FilterID2 = 0x77F;
+
+  if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
+  {
+    // Filter configuration Error
+    Error_Handler();
+  }
+
+  sFilterConfig2.FilterIndex++;
+  sFilterConfig2.FilterID1 = 0xF;
+  sFilterConfig2.FilterID2 = 0xF;
+
+  if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
+  {
+    // Filter configuration Error
+    Error_Handler();
+  }
+
+#ifndef ONECAN
+  // Start the FDCAN module
   if (HAL_FDCAN_Start(&hfdcan2) != HAL_OK)
   {
-    /* Start Error */
+    //  Start Error
     Error_Handler();
   }
+#endif
 
-  if (HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0) != HAL_OK)
+  // start can receive interrupt for second can's messages
+  if (HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO1_NEW_MESSAGE , 0) != HAL_OK)
   {
-    /* Notification Error */
+    // Notification Error
     Error_Handler();
   }
 
 }
-
-
 
 void resetCanTx(uint8_t CANTxData[8])
 {
@@ -495,8 +613,8 @@ char CAN1Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData )
 		{
 		    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, pTxHeader, pTxData) != HAL_OK)
 		        {
-		          /* Transmission request Error */
-  			      HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
+		          // Transmission request Error
+  			 //     HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
   			      return 1;
   //			      HAL_Delay(1);
 		          Error_Handler();
@@ -507,12 +625,12 @@ char CAN1Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData )
 
 char CAN2Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData )
 {
-	if (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) > 0)
+	if (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2) > 0)
 		{
-		    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, pTxHeader, pTxData) != HAL_OK)
+		    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, pTxHeader, pTxData) != HAL_OK)
 		        {
 		          /* Transmission request Error */
-  			      HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
+  	//		      HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
   			      return 1;
   //			      HAL_Delay(1);
 		          Error_Handler();
@@ -627,16 +745,16 @@ void RTDMCheck( void )
 	// EV4.11.2 RTDM Check
 	if (!RTDM_Switch.pressed
 	    	&& ADCState.BrakeR >= 40
-			&& CarState.ReadyToDrive_Allowed
-			&& CarState.ReadyToDrive_Allowed1)
+			&& CarState.ReadyToDrive_AllowedR
+			&& CarState.ReadyToDrive_AllowedL)
 	{
 		CarState.Buzzer_Sounding = 1;
 		CarState.ReadyToDrive_Ready = 1;
 	}
 
 	if( !TS_Switch.pressed      // debounce needs to be changed to show button held or released?
-			&& CarState.HighVoltageOn_Allowed
-		    && CarState.HighVoltageOn_Allowed1
+			&& CarState.HighVoltageOn_AllowedR
+		    && CarState.HighVoltageOn_AllowedL
 		    && !CarState.IMD_relay_status
 		    && !CarState.BMS_relay_status
 		    && !CarState.BSPD_relay_status)
@@ -860,8 +978,8 @@ char InverterStateMachine( int8_t Inverter )
 	if( Inverter == 0 ) // left inverter
 	{
 //		CANSendInverter( TXStatus, 0 );
-		CarState.HighVoltageOn_Allowed=HighVoltageOnAllowed;
-		CarState.ReadyToDrive_Allowed=ReadyToDriveAllowed;
+		CarState.HighVoltageOn_AllowedR=HighVoltageOnAllowed;
+		CarState.ReadyToDrive_AllowedR=ReadyToDriveAllowed;
 		CarState.RtdmLeftInvLED = RtdmLed;
 		CarState.TSALLeftInvLED = TsLed;
 		CarState.LeftInv = TXStatus;
@@ -869,8 +987,8 @@ char InverterStateMachine( int8_t Inverter )
 	} else if ( Inverter == 1 ) // right inverter
 	{
 //		CANSendInverter( TXStatus, 1 );
-		CarState.HighVoltageOn_Allowed1=HighVoltageOnAllowed;
-		CarState.ReadyToDrive_Allowed1=ReadyToDriveAllowed;
+		CarState.HighVoltageOn_AllowedL=HighVoltageOnAllowed;
+		CarState.ReadyToDrive_AllowedL=ReadyToDriveAllowed;
 		CarState.RtdmRightInvLED = RtdmLed;
 		CarState.TSALRightInvLED = TsLed;
 		CarState.RightInv = TXStatus;
@@ -967,13 +1085,13 @@ char CANLogData( void )
 	storeBEint16(ADCState.BrakeF, &CANTxData[4]); 	//brk_press_f can0 0x7C6 32,16bee
 	storeBEint16(ADCState.BrakeF, &CANTxData[6]); 	//brk_press_r can0 0x7C6 48,16be
 
-	CAN1Send( &TxHeaderLog, CANTxData );
+	CAN2Send( &TxHeaderLog, CANTxData );
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7C7;
 	storeBEint32(CarState.Wheel_Speed_Right_Calculated, &CANTxData[0]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
 	storeBEint32(CarState.Wheel_Speed_Left_Calculated, &CANTxData[4]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
-	CAN1Send( &TxHeaderLog, CANTxData );
+	CAN2Send( &TxHeaderLog, CANTxData );
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7C8;
@@ -983,37 +1101,41 @@ char CANLogData( void )
 	CANTxData[3] = ADCState.Future_Torque_Req_Max; //future_torq_req_max can0 0x7c8 24,8
 	storeBEint16(ADCState.Torque_Req_L_Percent, &CANTxData[4]); //torq_req_l_perc can0 0x7c8 32,16be
 	storeBEint16(ADCState.Torque_Req_R_Percent, &CANTxData[6]); //torq_req_r_perc can0 0x7c8 48,16be
-	CAN1Send( &TxHeaderLog, CANTxData );
+	CAN2Send( &TxHeaderLog, CANTxData );
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7C9;
 
-	CAN1Send( &TxHeaderLog, CANTxData );
+	CAN2Send( &TxHeaderLog, CANTxData );
 	storeBEint16(Actual_Torque_Left_Inverter_Raw.data.longint, &CANTxData[0]); //actual_torque_left_inverter_raw can0 0x7c9 0,16be
 	storeBEint16(Actual_Torque_Right_Inverter_Raw.data.longint, &CANTxData[2]); //actual_torque_right_inverter_raw can0 0x7c9 16,16be
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7CA; // not being sent in current simulink, but is set?
-	storeBEint32(CarState.brake_balance,&CANTxData[0]); //brake_balance can0 0x7CA 0,32be
-	//CAN1Send( &TxHeaderLog, CANTxData );
+	// storeBEint32(CarState.brake_balance,&CANTxData[0]); //brake_balance can0 0x7CA 0,32be
+	CANTxData[0] = ADCState.SteeringAngle;
+	CAN1Send( &TxHeaderLog, CANTxData );
 
 	return 0;
 }
 
 void processADCInput( void )
 {
-	ADCState.SteeringAngle = getSteeringAngle(ADC_Data[SteeringADC]);
+	if(ADCState.newdata){
+		ADCState.newdata = 0;
+		ADCState.SteeringAngle = getSteeringAngle(ADC_Data[SteeringADC]);
 
-	ADCState.BrakeF = getBrakeF(ADC_Data[ThrottleLADC]);
-	ADCState.BrakeR = getBrakeR(ADC_Data[ThrottleRADC]);
-	CarState.brake_balance = ( ADCState.BrakeF * 100 ) / (ADCState.BrakeF + ADCState.BrakeR);
-	ADCState.CoolantTemp1 = getCoolantTemp(ADC_Data[CoolantTemp1ADC]);
-	ADCState.CoolantTemp2 = getCoolantTemp(ADC_Data[CoolantTemp2ADC]);
+		ADCState.BrakeF = getBrakeF(ADC_Data[ThrottleLADC]);
+		ADCState.BrakeR = getBrakeR(ADC_Data[ThrottleRADC]);
+		CarState.brake_balance = ( ADCState.BrakeF * 100 ) / (ADCState.BrakeF + ADCState.BrakeR);
+		ADCState.CoolantTemp1 = getCoolantTemp(ADC_Data[CoolantTemp1ADC]);
+		ADCState.CoolantTemp2 = getCoolantTemp(ADC_Data[CoolantTemp2ADC]);
 
-	ADCState.Future_Torque_Req_Max = getDrivingMode(ADC_Data[DrivingModeADC]);
-	setTorqueReqPerc(ADC_Data[ThrottleLADC],ADC_Data[ThrottleRADC]);
-//	ADCState.Torque_Req_L_Percent = getTorqueReqLPerc(ADC_Data[ThrottleLADC]);
-//	ADCState.Torque_Req_R_Percent = getTorqueReqRPerc(ADC_Data[ThrottleRADC]);
+		ADCState.Future_Torque_Req_Max = getDrivingMode(ADC_Data[DrivingModeADC]);
+		setTorqueReqPerc(ADC_Data[ThrottleLADC],ADC_Data[ThrottleRADC]);
+	//	ADCState.Torque_Req_L_Percent = getTorqueReqLPerc(ADC_Data[ThrottleLADC]);
+	//	ADCState.Torque_Req_R_Percent = getTorqueReqRPerc(ADC_Data[ThrottleRADC]);
+	}
 }
 
 void startupLEDs(void)
@@ -1078,17 +1200,26 @@ void startADC(void)
 	  }
 }
 
+void stopADC( void )
+{
+	  if (HAL_ADC_Stop_DMA(&hadc1) != HAL_OK)
+	  {
+	      Error_Handler();
+	  }
+}
+
+
 void setupCarState( void )
 {
 	CarState.brake_balance=0;
 
 	CarState.ReadyToDrive_Ready = 0;
 
-	CarState.HighVoltageOn_Allowed = 0;
-	CarState.HighVoltageOn_Allowed1 = 0;
+	CarState.HighVoltageOn_AllowedR = 0;
+	CarState.HighVoltageOn_AllowedL = 0;
 
-	CarState.ReadyToDrive_Allowed = 0;
-	CarState.ReadyToDrive_Allowed1 = 0;
+	CarState.ReadyToDrive_AllowedR = 0;
+	CarState.ReadyToDrive_AllowedL = 0;
 
 	CarState.HighVoltageOn_Ready = 0;
 
@@ -1103,9 +1234,9 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 
 		for( int j = 0; j < SampleSize; j++)
 		{
-			sum =  sum + (aADCxConvertedData[i+NumADCChan*j]);  // store the values in adc_val from buffer averaged over 10 samples
+			sum =  sum + (aADCxConvertedData[i+NumADCChan*j]); // calculate sum of sample data  for one ADC channel
 		}
-		ADC_Data[i] = sum/SampleSize;
+		ADC_Data[i] = sum/SampleSize; // store the value in ADC_Data from buffer averaged over 10 samples
 	}
 	ADCState.newdata = 1;
 //    ADCcount++;
@@ -1118,14 +1249,18 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
 	FDCAN_RxHeaderTypeDef RxHeader;
 	uint8_t CANRxData[8];
-	HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
+	if(hfdcan->Instance == FDCAN1){
+		setOutput(15,1);
+	} else if(hfdcan->Instance == FDCAN2) {
+//		setOutput(14,1);
+	}
 
 	if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET)
 	{
-    /* Retreive Rx messages from RX FIFO0 */
+    // Retreive Rx messages from RX FIFO0
 		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, CANRxData) != HAL_OK)
 		{
-			/* Reception Error */
+			// Reception Error
 			Error_Handler();
 		}
 
@@ -1175,13 +1310,71 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				Accu_Current.newdata = 1;
 				Accu_Current.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
 				break;
-			default :
+			case 	0x600 : // debug ID to send arbitraty 'ADC' values for testing.
+				if( CANRxData[0] ) // if received value in ID is not 0 assume true and switch to fakeADC over CAN.
+				{
+					stopADC(); //  disable ADC DMA interrupt to stop processing ADC input.
+					usecanADC = 1; // set global state to use fake canbus ADC
+					for(int i = 0; i < NumADCChan;i++)
+					{
+						ADC_Data[i] = 0;   // blank out the currently random ADC data when disable ADC reading.
+					}
+				} else // value of 0 received, switch back to real ADC.
+				{
+					usecanADC = 0;
+					startADC(); // restart ADC DMA interrupt.
+				}
+				break;
+			case	0x601 : // debug ID for steering data.
+				if( usecanADC )  // check if we're operating on fake canbus ADC
+				{
+					ADC_Data[SteeringADC] = CANRxData[0]*256+CANRxData[1]; // set ADC_Data for steering
+					ADCState.newdata = 1;
+				}
+				break;
+			case	0x602 : // debug ID for accelerator data.
+				if( usecanADC )
+				{
+					ADC_Data[ThrottleLADC] = CANRxData[0]*256+CANRxData[1]; // set ADC_data for Left Throttle
+					ADC_Data[ThrottleLADC] = CANRxData[2]*256+CANRxData[3]; // set ADC_data for Right Throttle
+					ADCState.newdata = 1;
+				}
+				break;
+			case 	0x603 : // debug ID for brake data.
+				if( usecanADC )
+				{
+					ADC_Data[BrakeFADC] = CANRxData[0]*256+CANRxData[1]; // set ADC_data for Front Brake
+					ADC_Data[BrakeRADC] = CANRxData[2]*256+CANRxData[3]; // set ADC_data for Rear Brake
+					ADCState.newdata = 1;
+				}
+				break;
+			case	0x604 : // debug ID for steering data.
+				if( usecanADC )
+				{
+					ADC_Data[DrivingModeADC] = CANRxData[0]*256+CANRxData[1]; // set ADC_Data for steering
+					ADCState.newdata = 1;
+				}
+				break;
+			case 	0x605 : // debug ID for temperature data.
+				if( usecanADC )
+				{
+					ADC_Data[CoolantTemp1ADC] = CANRxData[0]*256+CANRxData[1]; // set ADC_data for First Coolant Temp
+					ADC_Data[CoolantTemp2ADC] = CANRxData[2]*256+CANRxData[3]; // set ADC_data for Second Coolant Temp
+					ADCState.newdata = 1;
+				}
+				break;
+
+			default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
+
 				break;
 		}
 
+		RxHeader.Identifier = 0; // workaround: rx header does not seem to get reset properly?
+								 // receiving e.g. 15 after 1314 seems to result in 1315
+
 		if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
 		{
-      /* Notification Error */
+      // Notification Error
 			Error_Handler();
 		}
 	}
@@ -1194,12 +1387,12 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 {
 	FDCAN_RxHeaderTypeDef RxHeader;
 	uint8_t CANRxData[8];
-	HAL_GPIO_WritePin(LD3_GPIO_Port,LD3_Pin, 1);
+	setOutput(14,1); // turn on internal LED to indicate can receive activity.
 
-	if((RxFifo1ITs & FDCAN_IT_RX_FIFO1_NEW_MESSAGE) != RESET)
+	if((RxFifo1ITs & FDCAN_IT_RX_FIFO1_NEW_MESSAGE) != RESET) // if there is a message waiting process it
 	{
 		//timercount = __HAL_TIM_GetCounter(&htim3);
-		/* Retreive Rx messages from RX FIFO0 */
+		/* Retrieve Rx message from RX FIFO1 */
 		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO1, &RxHeader, CANRxData) != HAL_OK)
 		{
 			/* Reception Error */
@@ -1207,7 +1400,7 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 		}
 
 		// check rest of header data? Can2 is inverter information
-		switch ( RxHeader.Identifier ){
+		switch ( RxHeader.Identifier ){ // identify which data packet we are processing.
 
 			case 	0x0 :  // id 0x0,0,8 -> nmt_status
 				nmt_status.time = gettimer();
@@ -1255,6 +1448,10 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 		//	ubKeyNumber = CANRxData[0];
 		} */
 
+		RxHeader.Identifier = 0; // workaround: rx header does not seem to get reset properly?
+								 // receiving e.g. 15 after 1314 seems to result in 1315
+
+		// send notification that can message has been read
 		if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0) != HAL_OK)
 		{
 			/* Notification Error */
@@ -1263,13 +1460,31 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 	}
 }
 
+void HAL_FDCAN_ErrorCallback(FDCAN_HandleTypeDef *canp) {
 
+// Re-enable receive interrupts!
 
+// (The error handling code in HAL_CAN_IRQHandler() disables this for some reason!)
+ setOutput(15,1);
+ setOutput(14,1);
+ setOutput(13,1);
+ while ( 1 ){
+
+ }
+//__HAL_CAN_ENABLE_IT(canp, FDCAN_I FDCAN_IT_FMP1);
+// (or only re-enable the one you are using)
+
+}
+
+/**
+ * @brief Interrupt handler fired when a button input line is triggered
+ */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	if (!InButtonpress ) {
+	if (!InButtonpress ) { // do nothing if already in middle of processing a previous button input
+		// should ideally be able to manage multiple at once, with seperate timer channels, or timers.
 		InButtonpress = 1; // stop processing further button presses till debounce time given
-		ButtonpressPin = GPIO_Pin;
+		ButtonpressPin = GPIO_Pin; // assign the button input being handled so it can be referenced in from timer interrupt
 
 		if ( HAL_TIM_Base_Start_IT(&htim7) != HAL_OK){
 			Error_Handler();
@@ -1278,7 +1493,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 }
 
-//irq handler for timer3
+/**
+ * @brief IRQ handler for timer3 used to keep timebase.
+ */
 void TIM3_IRQHandler()
 {
     HAL_TIM_IRQHandler(&htim3);
@@ -1286,23 +1503,25 @@ void TIM3_IRQHandler()
 
 
 /**
- * @brief timer interrupt to keep a timebase.
+ * @brief timer interrupt to keep a timebase and process button debouncing.
  */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if ( htim->Instance == TIM3 ){
+		setOutput(15,0);
+		setOutput(14,0);
 		secondson = secondson + 1; // increment global time counter
 		HAL_GPIO_TogglePin(LD1_GPIO_Port,LD1_Pin); // toggle led to indicate board active
 
-		if ( TS_LED.blinking ) { toggleOutput(TS_LED.pin); }
-
+		if ( TS_LED.blinking ) { toggleOutput(TS_LED.pin); } // process the blinking of car state LED's
+		// could possibly be changed to PWM to take out of interrupt processing?
 		if ( RTDM_LED.blinking ) { toggleOutput(RTDM_LED.pin); }
 
 	} else if ( htim->Instance == TIM7 ){
-	  // timer7
-		InButtonpress = 0;
-
-		switch ( ButtonpressPin ) {
+	  // timer7, being used for button input debouncings
+		InButtonpress = 0;  // reset status of button processing after timer elapsed,
+							// to indicate not processing input to allow triggering new timer.
+		switch ( ButtonpressPin ) {  // process the button that was pressed to start the debounce timer.
 
 		case USER_Btn_Pin :
 			debouncebutton(&UserBtn);
@@ -1325,7 +1544,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		case Input6_Pin:
 			debouncebutton(&Input6);
 			break;
-		default :
+		default : // shouldn't get here, but catch and ignore any other input
 			break;
 		}
 	}

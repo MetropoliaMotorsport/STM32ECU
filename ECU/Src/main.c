@@ -44,8 +44,11 @@
 #include "dma.h"
 #include "fdcan.h"
 #include "i2c.h"
+#include "sdmmc.h"
 #include "spi.h"
 #include "tim.h"
+#include "usart.h"
+#include "usb_otg.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -93,7 +96,7 @@ static void checkButton(void){
 
 	if (curtime>(UserBtn.lastpressed+10000)){
 		// 3 seconds since button last pressed, turn led on.
-	    HAL_GPIO_WritePin(LD3_GPIO_Port,LD3_Pin, 1);
+	//    HAL_GPIO_WritePin(LD3_GPIO_Port,LD3_Pin, 1);
 	}
 
 /*	if(TS_Switch.pressed){
@@ -166,8 +169,12 @@ int main(void)
   MX_TIM3_Init();
   MX_FDCAN2_Init();
   MX_I2C2_Init();
-  MX_SPI2_Init();
   MX_TIM7_Init();
+  MX_USB_OTG_FS_PCD_Init();
+  MX_SDMMC1_SD_Init();
+  MX_SPI5_Init();
+  MX_USART2_UART_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 
   setupCarState();
@@ -181,7 +188,9 @@ int main(void)
   startupLEDs();
 
   // initialise second counter.
-  long loopsecond = gettimer();
+  volatile long unsigned loopsecond = gettimer();
+
+  usecanADC = 0;
 
   uint8_t CANTxData[8];
 
@@ -197,14 +206,11 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	resetCanTx(CANTxData);
-	if( ADCState.newdata )
+	if(  0 ) // ADCState.newdata )
 	{
-		ADCState.newdata = 0;
-
 		checkButton();
 		processCANData();
 
-		CAN_NMT(); // unclear on function, simulink NMT to both CAN_Open slaves
 		InverterStateMachine(LeftInverter);
 		InverterStateMachine(RightInverter);
 
@@ -222,22 +228,23 @@ int main(void)
 
 	}
 
-	if(loopsecond < gettimer()+10000) // once per second processes.
+	if( loopsecond + 10000 < gettimer() ) // once per second processes.
 	{
 		// only process driving mode selecgtor once a second
 
 		CarState.Torque_Req_Max = ADCState.Future_Torque_Req_Max;
 
 		loopsecond = gettimer();
-		CANKeepAlive();
+	//	CAN_NMT(); // unclear on function, simulink NMT to both CAN_Open slaves
+//		CANKeepAlive();
 
 		CANTxData[0] = gettimer()/10000;
 
 		CAN1Send( &TxHeaderTime, CANTxData );
-		CAN2Send( &TxHeaderTime, CANTxData );
+		CAN2Send( &TxHeader1, CANTxData );
 
 	}
-//	HAL_Delay(10);
+	HAL_Delay(10);
 
   }
   /* USER CODE END 3 */
@@ -269,9 +276,10 @@ void SystemClock_Config(void)
   __HAL_RCC_PLL_PLLSOURCE_CONFIG(RCC_PLLSOURCE_HSI);
   /**Initializes the CPU, AHB and APB busses clocks 
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_DIV1;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLM = 4;
@@ -303,8 +311,10 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_FDCAN|RCC_PERIPHCLK_SPI2
-                              |RCC_PERIPHCLK_I2C2|RCC_PERIPHCLK_ADC;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_FDCAN
+                              |RCC_PERIPHCLK_SPI5|RCC_PERIPHCLK_SPI2
+                              |RCC_PERIPHCLK_SDMMC|RCC_PERIPHCLK_I2C2
+                              |RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_USB;
   PeriphClkInitStruct.PLL2.PLL2M = 4;
   PeriphClkInitStruct.PLL2.PLL2N = 10;
   PeriphClkInitStruct.PLL2.PLL2P = 1;
@@ -313,9 +323,13 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_3;
   PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
   PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
+  PeriphClkInitStruct.SdmmcClockSelection = RCC_SDMMCCLKSOURCE_PLL;
   PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL;
+  PeriphClkInitStruct.Spi45ClockSelection = RCC_SPI45CLKSOURCE_D2PCLK1;
   PeriphClkInitStruct.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL2;
+  PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_D2PCLK1;
   PeriphClkInitStruct.I2c123ClockSelection = RCC_I2C123CLKSOURCE_D2PCLK1;
+  PeriphClkInitStruct.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
   PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL2;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
@@ -335,7 +349,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-
+	setOutput(1,1);
   /* USER CODE END Error_Handler_Debug */
 }
 

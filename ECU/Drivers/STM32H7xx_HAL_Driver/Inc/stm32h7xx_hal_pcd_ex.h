@@ -1,11 +1,12 @@
-/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    stm32h7xx_it.h
-  * @brief   This file contains the headers of the interrupt handlers.
+  * @file    stm32h7xx_hal_pcd_ex.h
+  * @author  MCD Application Team
+  * @brief   Header file of PCD HAL module.
   ******************************************************************************
+  * @attention
   *
-  * COPYRIGHT(c) 2018 STMicroelectronics
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -30,64 +31,86 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */
-/* USER CODE END Header */
+  */ 
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32H7xx_IT_H
-#define __STM32H7xx_IT_H
+#ifndef __STM32H7xx_HAL_PCD_EX_H
+#define __STM32H7xx_HAL_PCD_EX_H
 
 #ifdef __cplusplus
  extern "C" {
-#endif 
+#endif
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
+/* Includes ------------------------------------------------------------------*/
+#include "stm32h7xx_hal_def.h"
+   
+/** @addtogroup STM32H7xx_HAL_Driver
+  * @{
+  */
 
-/* USER CODE END Includes */
-
+/** @addtogroup PCDEx
+  * @{
+  */
 /* Exported types ------------------------------------------------------------*/
-/* USER CODE BEGIN ET */
+typedef enum  
+{
+  PCD_LPM_L0_ACTIVE = 0x00U, /* on */
+  PCD_LPM_L1_ACTIVE = 0x01U, /* LPM L1 sleep */
+}PCD_LPM_MsgTypeDef;
 
-/* USER CODE END ET */
+
+typedef enum  
+{
+  PCD_BCD_ERROR                     = 0xFF, 
+  PCD_BCD_CONTACT_DETECTION         = 0xFE,
+  PCD_BCD_STD_DOWNSTREAM_PORT       = 0xFD,
+  PCD_BCD_CHARGING_DOWNSTREAM_PORT  = 0xFC,
+  PCD_BCD_DEDICATED_CHARGING_PORT   = 0xFB,
+  PCD_BCD_DISCOVERY_COMPLETED       = 0x00,
+  
+}PCD_BCD_MsgTypeDef;
+
 
 /* Exported constants --------------------------------------------------------*/
-/* USER CODE BEGIN EC */
+/* Exported macros -----------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
+/** @addtogroup PCDEx_Exported_Functions PCDEx Exported Functions
+  * @{
+  */
+/** @addtogroup PCDEx_Exported_Functions_Group1 Peripheral Control functions
+  * @{
+  */
+HAL_StatusTypeDef HAL_PCDEx_SetTxFiFo(PCD_HandleTypeDef *hpcd, uint8_t fifo, uint16_t size);
+HAL_StatusTypeDef HAL_PCDEx_SetRxFiFo(PCD_HandleTypeDef *hpcd, uint16_t size);
+HAL_StatusTypeDef HAL_PCDEx_ActivateLPM(PCD_HandleTypeDef *hpcd);
+HAL_StatusTypeDef HAL_PCDEx_DeActivateLPM(PCD_HandleTypeDef *hpcd);
+HAL_StatusTypeDef HAL_PCDEx_ActivateBCD(PCD_HandleTypeDef *hpcd);
+HAL_StatusTypeDef HAL_PCDEx_DeActivateBCD(PCD_HandleTypeDef *hpcd);
+void HAL_PCDEx_BCD_VBUSDetect(PCD_HandleTypeDef *hpcd);
+void HAL_PCDEx_LPM_Callback(PCD_HandleTypeDef *hpcd, PCD_LPM_MsgTypeDef msg);
+void HAL_PCDEx_BCD_Callback(PCD_HandleTypeDef *hpcd, PCD_BCD_MsgTypeDef msg);
 
-/* USER CODE END EC */
+/**
+  * @}
+  */ 
 
-/* Exported macro ------------------------------------------------------------*/
-/* USER CODE BEGIN EM */
+/**
+  * @}
+  */ 
 
-/* USER CODE END EM */
+/**
+  * @}
+  */ 
 
-/* Exported functions prototypes ---------------------------------------------*/
-void NMI_Handler(void);
-void HardFault_Handler(void);
-void MemManage_Handler(void);
-void BusFault_Handler(void);
-void UsageFault_Handler(void);
-void SVC_Handler(void);
-void DebugMon_Handler(void);
-void PendSV_Handler(void);
-void SysTick_Handler(void);
-void EXTI0_IRQHandler(void);
-void EXTI1_IRQHandler(void);
-void EXTI2_IRQHandler(void);
-void EXTI3_IRQHandler(void);
-void DMA1_Stream0_IRQHandler(void);
-void FDCAN1_IT0_IRQHandler(void);
-void FDCAN2_IT0_IRQHandler(void);
-void EXTI15_10_IRQHandler(void);
-void TIM7_IRQHandler(void);
-/* USER CODE BEGIN EFP */
-
-/* USER CODE END EFP */
+/**
+  * @}
+  */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __STM32H7xx_IT_H */
+
+#endif /* __STM32H7xx_HAL_PCD_EX_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

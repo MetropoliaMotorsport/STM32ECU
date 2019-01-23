@@ -11,6 +11,7 @@
 #define ECU_H_
 
 #define debugrun
+//#define ONECAN // only use CAN1 to ease testing.
 
 #define SteeringADC      	0
 #define ThrottleLADC		1
@@ -48,6 +49,9 @@
 
 // interrupt timebase variable
 volatile uint32_t secondson;
+
+// debug assist.
+volatile char usecanADC;
 
 struct CanData {
 	union {
@@ -95,11 +99,11 @@ volatile struct CarState {
 	uint32_t	brake_balance;
 	char ReadyToDrive_Ready;
 
-	char HighVoltageOn_Allowed;
-	char HighVoltageOn_Allowed1;
+	char HighVoltageOn_AllowedR;
+	char HighVoltageOn_AllowedL;
 
-	char ReadyToDrive_Allowed;
-	char ReadyToDrive_Allowed1;
+	char ReadyToDrive_AllowedR;
+	char ReadyToDrive_AllowedL;
 
 	char HighVoltageOn_Ready;
 	char Buzzer_Sounding;
@@ -158,7 +162,7 @@ void storeLEint32(uint32_t input, uint8_t Data[4]);
 void storeLEint16(uint16_t input, uint8_t Data[2]);
 
 int16_t linearInteropolate(uint16_t Input[], int16_t Output[], uint16_t count, uint16_t RawADCInput);
-uint32_t gettimer(void);
+volatile uint32_t gettimer(void);
 
 // adc converters
 int8_t getSteeringAngle(uint16_t RawADCInput);
@@ -182,6 +186,7 @@ void debouncebutton( volatile struct ButtonData *button );
 void resetCanTx(uint8_t CANTxData[8]);
 char CAN1Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData );
 char CAN2Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData );
+char CAN_NMT( void );
 char CANKeepAlive( void );
 char CANSendState( char buzz, char highvoltage );
 char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter );
@@ -208,5 +213,6 @@ void FDCAN2_start(void);
 void setupButtons(void);
 void setupLEDs( void );
 void startADC(void);
+void stopADC( void );
 
 #endif /* ECU_H_ */

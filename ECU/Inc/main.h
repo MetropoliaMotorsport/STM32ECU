@@ -49,6 +49,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal.h"
+#include "stm32h7xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -80,12 +81,14 @@ uint32_t gettimer(void);
 /* Private defines -----------------------------------------------------------*/
 #define Input5_Pin GPIO_PIN_2
 #define Input5_GPIO_Port GPIOE
+#define Input5_EXTI_IRQn EXTI2_IRQn
 #define Input9_Pin GPIO_PIN_3
 #define Input9_GPIO_Port GPIOE
-#define Output10_Pin GPIO_PIN_4
-#define Output10_GPIO_Port GPIOE
-#define Output11_Pin GPIO_PIN_5
-#define Output11_GPIO_Port GPIOE
+#define Input9_EXTI_IRQn EXTI3_IRQn
+#define Input7_Pin GPIO_PIN_4
+#define Input7_GPIO_Port GPIOE
+#define Input8_Pin GPIO_PIN_5
+#define Input8_GPIO_Port GPIOE
 #define USER_Btn_Pin GPIO_PIN_13
 #define USER_Btn_GPIO_Port GPIOC
 #define USER_Btn_EXTI_IRQn EXTI15_10_IRQn
@@ -103,14 +106,14 @@ uint32_t gettimer(void);
 #define RMII_RXD1_GPIO_Port GPIOC
 #define LD1_Pin GPIO_PIN_0
 #define LD1_GPIO_Port GPIOB
-#define Input7_Pin GPIO_PIN_13
-#define Input7_GPIO_Port GPIOF
-#define Input8_Pin GPIO_PIN_14
-#define Input8_GPIO_Port GPIOF
 #define Output2_Pin GPIO_PIN_15
 #define Output2_GPIO_Port GPIOF
-#define Output12_Pin GPIO_PIN_0
-#define Output12_GPIO_Port GPIOG
+#define Input1_Pin GPIO_PIN_0
+#define Input1_GPIO_Port GPIOG
+#define Input1_EXTI_IRQn EXTI0_IRQn
+#define Input2_Pin GPIO_PIN_1
+#define Input2_GPIO_Port GPIOG
+#define Input2_EXTI_IRQn EXTI1_IRQn
 #define Output5_Pin GPIO_PIN_7
 #define Output5_GPIO_Port GPIOE
 #define Output4_Pin GPIO_PIN_8
@@ -168,12 +171,6 @@ uint32_t gettimer(void);
 #define SWO_GPIO_Port GPIOB
 #define LD2_Pin GPIO_PIN_7
 #define LD2_GPIO_Port GPIOB
-#define Input1_Pin GPIO_PIN_8
-#define Input1_GPIO_Port GPIOB
-#define Input1_EXTI_IRQn EXTI9_5_IRQn
-#define Input2_Pin GPIO_PIN_9
-#define Input2_GPIO_Port GPIOB
-#define Input2_EXTI_IRQn EXTI9_5_IRQn
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
