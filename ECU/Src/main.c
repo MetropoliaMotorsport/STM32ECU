@@ -94,6 +94,14 @@ static void checkButton(void){
 //	uint8_t CANTxData[8];
 	int curtime = gettimer();
 
+//	The driver must be able to activate and deactivate the TS, see EV 4.10.2 and EV 4.10.3,
+//	from within the cockpit without the assistance of any other person. - deactivation not handled atm?
+
+//	Closing the shutdown circuit by any part defined in EV 6.1.2 must not (re-)activate the TS.
+//	Additional action must be required.
+
+	// deactivate
+
 	if (curtime>(UserBtn.lastpressed+10000)){
 		// 3 seconds since button last pressed, turn led on.
 	//    HAL_GPIO_WritePin(LD3_GPIO_Port,LD3_Pin, 1);
@@ -198,11 +206,11 @@ int main(void)
 
   FDCAN1_start();
   FDCAN2_start();
-  setupButtons();
   setupInterrupts();
   startADC();
 
   startupLEDs();
+  setupButtons(); // moved later, during startup sequence inputs were being triggered
 
   // initialise second counter.
   volatile long unsigned loopsecond = gettimer();
