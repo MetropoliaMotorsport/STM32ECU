@@ -261,6 +261,8 @@ int main(void)
 		// only process driving mode selecgtor once a second
 
 		CarState.Torque_Req_Max = ADCState.Future_Torque_Req_Max;
+		ADCState.newdata = 1;
+		// why was this variable not set directly, but rather with some delay from changing switch?
 
 		loopsecond = gettimer();
 //		CANKeepAlive();

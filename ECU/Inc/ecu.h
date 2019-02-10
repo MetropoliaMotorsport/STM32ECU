@@ -28,15 +28,17 @@
 #define Debouncetime 10000 // only allow one button press every 20ms
 
 #define TS_Switch Input1
-#define StopMotors_Switch Input2
-#define RTDM_Switch Input3
+#define RTDM_Switch Input2
+#define StopMotors_Switch Input3
 
 #define BMSLED_Output 		1
 #define IMDLED_Output		2
 #define BSPDLED_Output		3
+
 #define TSALLED_Output		4
 #define RTDMLED_Output		5
 #define STOPLED_Output		6
+
 #define LED1_Output			13
 #define LED2_Output			14
 #define LED3_Output			15

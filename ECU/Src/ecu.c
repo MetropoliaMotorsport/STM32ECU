@@ -123,17 +123,17 @@ uint32_t getBrakeBalance(uint16_t RawADCInputF, uint16_t RawADCInputR)
 void setTorqueReqPerc(uint16_t RawADCInputL, uint16_t RawADCInputR)
 {
     static uint16_t TorqueReqLInput[] = { 140, 660 }; // calibration values for left input
-    static int16_t TOrqueReqLOutput[] = { 0, 100 };
+    static int16_t TorqueReqLOutput[] = { 0, 100 };
     static int countL = sizeof(TorqueReqLInput)/sizeof(TorqueReqLInput[0]);
 
     static uint16_t TorqueReqRInput[] = { 250, 710 }; // calibration values for right input
-    static int16_t TOrqueReqROutput[] = { 0, 100 };
+    static int16_t TorqueReqROutput[] = { 0, 100 };
     static int countR = sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
 
     if( RawADCInputL >= TorqueReqLInput[0] && RawADCInputR > 0 ) // RawADCInputR >= TorqueReqRInput[0] check this, looks wrong to me in simulink
     {
-    	ADCState.Torque_Req_L_Percent = linearInteropolate(TorqueReqLInput, TOrqueReqLOutput, countL, RawADCInputL);
-    	ADCState.Torque_Req_R_Percent = linearInteropolate(TorqueReqRInput, TOrqueReqROutput, countR, RawADCInputR);
+    	ADCState.Torque_Req_L_Percent = linearInteropolate(TorqueReqLInput, TorqueReqLOutput, countL, RawADCInputL);
+    	ADCState.Torque_Req_R_Percent = linearInteropolate(TorqueReqRInput, TorqueReqROutput, countR, RawADCInputR);
     	ADCState.Torque_Req_L = ADCState.Torque_Req_L_Percent * CarState.Torque_Req_Max * 0.01;
     	ADCState.Torque_Req_R = ADCState.Torque_Req_R_Percent * CarState.Torque_Req_Max * 0.01;
     } else
@@ -314,6 +314,9 @@ void setupLEDs( void )
  */
 void setLEDs( void )
 {
+
+	// Check. 10 second delay for IMD led in simulink. IMD Light power off delay. missed earlier, significance?
+
 	setOutput(BMS_LED.pin, CarState.BMS_relay_status);
 	setOutput(IMD_LED.pin, CarState.IMD_relay_status);
 	setOutput(BSPD_LED.pin, CarState.BSPD_relay_status);
@@ -808,17 +811,36 @@ void RTDMCheck( void )
 			CarState.ReadyToDrive_Ready = 0;
 		}
 
+	if ( StopMotors_Switch.pressed ) // request TS off
+	{
+		CarState.HighVoltageOn_Ready = 0;
+		CarState.ReadyToDrive_Ready = 0;
+		CarState.Buzzer_Sounding = 0;
+		CANTorqueRequest(0);
+		StopMotors_Switch.pressed = 0;
+	}
+
 		// output 10 to can0 0x118 offset 0 && HighVoltageOn_Ready state
 
 		CANSendState(CarState.Buzzer_Sounding, CarState.HighVoltageOn_Ready);
-
 }
 
 /*
- * Direct translation of Simulink code, look to rewrite.
+ * APPS Check
+ *
+ * Direct translation of Simulink code, look to rewrite?
  */
 uint16_t PedalTorqueRequest( void )
 {
+
+	//T 11.8.8:  If an implausibility occurs between the values of the APPSs and persists for more than 100 ms
+
+	//[EV ONLY] The power to the motor(s) must be immediately shut down completely.
+	//It is not necessary to completely deactivate the tractive system, the motor controller(s)
+	// shutting down the power to the motor(s) is sufficient.
+
+	// current code immediately orders no torque from motors if check fails.
+
 	static char No_Torque_Until_Pedal_Released = 0; // persistent local variable
 	uint16_t Torque_drivers_request = 0;
 
@@ -1429,11 +1451,10 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				break;
 			case	0x612 : // debug id for fake third button
 				if(CANRxData[0]){
-					TS_Switch.pressed = 1;
-					TS_Switch.lastpressed = gettimer();
+					StopMotors_Switch.pressed = 1;
+					StopMotors_Switch.lastpressed = gettimer();
 				}
 				break;
-
 
 			default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
 
