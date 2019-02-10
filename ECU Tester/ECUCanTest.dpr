@@ -1,4 +1,4 @@
-program WinCanTest;
+program ECUCanTest;
 
 uses
   Vcl.Forms,

@@ -272,6 +272,32 @@ object MainForm: TMainForm
       TabOrder = 14
       OnClick = SendInverterClick
     end
+    object SendIMD: TButton
+      Left = 344
+      Top = 344
+      Width = 89
+      Height = 25
+      Caption = 'Send IMD Error'
+      TabOrder = 15
+      OnClick = SendIMDClick
+    end
+    object DriveMode: TComboBox
+      Left = 208
+      Top = 299
+      Width = 145
+      Height = 22
+      Style = csDropDownList
+      TabOrder = 16
+      Items.Strings = (
+        '5'
+        '10'
+        '15'
+        '20'
+        '25'
+        '30'
+        '45'
+        '65')
+    end
   end
   object Timer1: TTimer
     Left = 120

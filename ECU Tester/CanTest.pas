@@ -42,6 +42,8 @@ type
     CanReceive47e: TLabel;
     CanReceive47f: TLabel;
     SendInverter: TButton;
+    SendIMD: TButton;
+    DriveMode: TComboBox;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -54,6 +56,7 @@ type
     procedure RTDMClick(Sender: TObject);
     procedure StopMotorsClick(Sender: TObject);
     procedure SendInverterClick(Sender: TObject);
+    procedure SendIMDClick(Sender: TObject);
   private
     { Private declarations }
     StartTime: TDateTime;
@@ -166,6 +169,7 @@ const
   BrakeID = $603;
   DrivingModeID = $604;
   TemperatureID = $605;
+  DrivingModeValue : array[0..7] of word = ( 100,300,470,690,900,1200,1600,1800 );
 begin
   msg[1] := 1;
   with CanChannel1 do begin
@@ -194,7 +198,7 @@ begin
       msg[3] := B[0];
       Check(Write(BrakeID,msg,4,0), 'Write failed');
 
-      W := 300;
+      W := DrivingModeValue[DriveMode.ItemIndex];
       msg[0] := B[1];
       msg[1] := B[0];
       Check(Write(DrivingModeID,msg,2,0), 'Write failed');
@@ -207,9 +211,25 @@ begin
       msg[3] := B[0];
       Check(Write(TemperatureID,msg,4,0), 'Write failed');
 
+
+
     end;
 
   end;
+end;
+
+procedure TMainForm.SendIMDClick(Sender: TObject);
+var
+  msg: array[0..7] of byte;
+begin
+{  0x520,0,8 -> BMS_relay_status
+				//	0x520,8,8 -> IMD_relay_status
+				//	0x520,16,8 -> BSPD_relay_status        }
+  msg[1] := 1;
+  with CanChannel1 do begin
+    Check(Write($520, msg, 3, 0), 'Write failed');
+  end;
+
 end;
 
 procedure TMainForm.SendInverterClick(Sender: TObject);
@@ -226,9 +246,9 @@ begin
           7:  InverterLStatus := 51;
 
           15:  begin
-                  if InverterLStatus = 55 then
-                     InverterLStatus := 104
-                  else
+             {     if InverterLStatus = 55 then
+                     InverterLStatus := 104    -- shutdown?
+                  else         }
                       InverterLStatus := 55;
                 end;
         else
@@ -250,9 +270,9 @@ begin
           7:  InverterRStatus := 51;
 
           15:  begin
-                  if InverterRStatus = 55 then
+             {     if InverterRStatus = 55 then
                      InverterRStatus := 104
-                  else
+                  else }
                       InverterRStatus := 55;
                 end;
         else
@@ -366,13 +386,14 @@ begin
 
         $47E : begin
                  InverterLStatusRequest := msg[0];
-                 CanReceive47e.Caption := IntToStr(msg[0]) + ' ' + IntToStr(msg[1]);
-
+                 CanReceive47e.Caption := IntToStr(msg[0]) + ' ' + IntToStr(msg[1])
+                                + ' ' +  IntToStr(msg[2]) + ' ' + IntToStr(msg[3]) + ' ' + TimeToStr(System.SysUtils.Now);
                end;
 
         $47F : begin
                  InverterRStatusRequest := msg[0];
-                 CanReceive47f.Caption := IntToStr(msg[0]) + ' ' + IntToStr(msg[1]);
+                 CanReceive47f.Caption := IntToStr(msg[0]) + ' ' + IntToStr(msg[1])
+                                +  ' '  +  IntToStr(msg[2]) + ' ' + IntToStr(msg[3]) + ' ' + TimeToStr(System.SysUtils.Now);
                end;
 
         $118 : begin
