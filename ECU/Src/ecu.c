@@ -759,11 +759,11 @@ char CANTorqueRequest( uint16_t request )
 {
   if( AllowedToDrive()){
 	  CANSendInverter(  CarState.LeftInv, request, LeftInverter );
-	  CANSendInverter(  CarState.LeftInv, request, RightInverter );
+	  CANSendInverter(  CarState.RightInv, request, RightInverter );
   } else
   {
 	  CANSendInverter(  CarState.LeftInv, 0, LeftInverter );
-	  CANSendInverter(  CarState.LeftInv, 0, RightInverter );
+	  CANSendInverter(  CarState.RightInv, 0, RightInverter );
   }
   return 0;
 }
@@ -780,6 +780,9 @@ void RTDMCheck( void )
 	{
 		CarState.Buzzer_Sounding = 1;
 		CarState.ReadyToDrive_Ready = 1;
+	} else
+	{
+		RTDM_Switch.pressed = 0; // reset switch if we didn't meet allowed enable state.
 	}
 
 // this is bouncing between states for some reason, debug.
@@ -791,6 +794,10 @@ void RTDMCheck( void )
 		    && !CarState.BSPD_relay_status)
 		{
 			CarState.HighVoltageOn_Ready = 10;
+		} else
+		{
+			TS_Switch.pressed =  0; // reset switch if we didn't meet allowed turn on state.
+
 		}
 
 	if ( CarState.IMD_relay_status
@@ -817,7 +824,7 @@ uint16_t PedalTorqueRequest( void )
 
 	//The absolute value of the difference between the APPS (Accelerator Pedal Position Sensors)
 
-	int difference = ADCState.Torque_Req_L_Percent - ADCState.Torque_Req_R_Percent;
+	int difference = abs(ADCState.Torque_Req_L_Percent - ADCState.Torque_Req_R_Percent);
 
 	//The average value of the APPS
 	int AverageTorqueRequestPercent = (ADCState.Torque_Req_L_Percent + ADCState.Torque_Req_R_Percent) /2;
