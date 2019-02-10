@@ -3,6 +3,7 @@
 *.ko
 *.obj
 *.elf
+*.dcu
 
 # Precompiled Headers
 *.gch
@@ -43,6 +44,11 @@
 .mxproject
 TrueSTUDIO/
 /Debug/
+__history/
+__recovery/
+*.stat
 
 # Generated files
 Inc/version.h
+*.dprod.local
+*.identcache
