@@ -133,6 +133,23 @@ static void checkButton(void){
 	}
 }
 
+
+char CheckCPUEndian()
+{
+    unsigned short x;
+    unsigned char c;
+    char CPUEndian;
+
+    x = 0x0001;
+    c = *(unsigned char *)(&x);
+    if( c == 0x01 )
+        CPUEndian = 1; // little_endian; <- stm32
+    else
+        CPUEndian = 0; //  big_endian;
+
+    return CPUEndian;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -171,7 +188,7 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM7_Init();
   MX_USB_OTG_FS_PCD_Init();
-  MX_SDMMC1_SD_Init();
+//  MX_SDMMC1_SD_Init();
   MX_SPI5_Init();
   MX_USART2_UART_Init();
   MX_SPI2_Init();
@@ -204,12 +221,15 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	cancount = 0;
 
 	resetCanTx(CANTxData);
-	if(  0 ) // ADCState.newdata )
+	// if( ADCState.newdata )
 	{
 		checkButton();
 		processCANData();
+
+		CAN_NMT(); // wake up / keep alive to inverter.
 
 		InverterStateMachine(LeftInverter);
 		InverterStateMachine(RightInverter);
@@ -218,7 +238,7 @@ int main(void)
 		RTDMCheck();
 
 		RearSpeedCalculation();
-		CANTorqueRequest(PedalTorqueRequest());
+		CANTorqueRequest(PedalTorqueRequest()); // pedaltorquerequest = statutory requirements block in simulink.
 
 		CANLogData();
 
@@ -235,16 +255,18 @@ int main(void)
 		CarState.Torque_Req_Max = ADCState.Future_Torque_Req_Max;
 
 		loopsecond = gettimer();
-	//	CAN_NMT(); // unclear on function, simulink NMT to both CAN_Open slaves
 //		CANKeepAlive();
 
 		CANTxData[0] = gettimer()/10000;
+		CANTxData[1] = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1);
+	//   CANTxData[2] = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2);
+	    CANTxData[2] = CheckCPUEndian();
 
 		CAN1Send( &TxHeaderTime, CANTxData );
 		CAN2Send( &TxHeader1, CANTxData );
-
 	}
-	HAL_Delay(10);
+
+	HAL_Delay(200); // slow down loop for testing.
 
   }
   /* USER CODE END 3 */
@@ -349,7 +371,15 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+
 	setOutput(1,1);
+	setOutput(LED1_Output,1);
+	NVIC_DisableIRQ(TIM3_IRQn); // stop the timebase to stop blinking led and show hung for error.
+	while( 1 )
+	{
+
+	}
+
   /* USER CODE END Error_Handler_Debug */
 }
 

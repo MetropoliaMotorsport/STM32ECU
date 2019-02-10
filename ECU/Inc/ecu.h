@@ -30,8 +30,6 @@
 #define TS_Switch Input1
 #define StopMotors_Switch Input2
 #define RTDM_Switch Input3
-#define SLIP_CTRLplus Input4
-#define SLIP_CTRLminus Input5
 
 #define BMSLED_Output 		1
 #define IMDLED_Output		2
@@ -52,6 +50,8 @@ volatile uint32_t secondson;
 
 // debug assist.
 volatile char usecanADC;
+
+int cancount;
 
 struct CanData {
 	union {

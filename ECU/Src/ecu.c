@@ -113,7 +113,8 @@ uint8_t getBrakeR(uint16_t RawADCInput)
  * convert front/rear brake inputs into brake balance percentage.
  */
 
-uint32_t getBrakeBalance(uint16_t RawADCInputF, uint16_t RawADCInputR){
+uint32_t getBrakeBalance(uint16_t RawADCInputF, uint16_t RawADCInputR)
+{
 	// should this be with raw values?
 	return (RawADCInputF * 100) / ( RawADCInputF + RawADCInputR );
 }
@@ -223,7 +224,8 @@ GPIO_TypeDef* getGpioPort(int output)
 
 int getGpioPin(int output)
 {
-	switch ( output ) { // set gpio values for requested port
+	switch ( output )
+	{ // set gpio values for requested port
 		case 1 :
 			return Output1_Pin;
 		case 2 :
@@ -257,7 +259,8 @@ int getGpioPin(int output)
  */
 void setOutput(int output, char state)
 {
-	if(getGpioPin(output) != 0) {
+	if(getGpioPin(output) != 0)
+	{
 		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), state);
 	}
 }
@@ -267,7 +270,8 @@ void setOutput(int output, char state)
  */
 void toggleOutput(int output)
 {
-	if(getGpioPin(output) != 0) {
+	if(getGpioPin(output) != 0)
+	{
 		HAL_GPIO_TogglePin(getGpioPort(output), getGpioPin(output));
 	}
 }
@@ -368,8 +372,10 @@ volatile uint32_t gettimer(void)
  */
 void debouncebutton( volatile struct ButtonData *button )
 {
-		if( !button -> pressed ){ // only process new button press if last not read
-				if(HAL_GPIO_ReadPin(button -> port, button -> pin ) ){ // only process as input if button down
+		if( !button -> pressed )
+		{ // only process new button press if last not read
+				if(HAL_GPIO_ReadPin(button -> port, button -> pin ) )
+				{ // only process as input if button down
 					button -> pressed = 1;
 					button -> lastpressed=gettimer();
 					button -> count++;
@@ -458,6 +464,16 @@ void FDCAN1_start(void)
     Error_Handler();
   }
 
+  sFilterConfig1.FilterIndex++; // filter for fake canbus ADC id's
+  sFilterConfig1.FilterID1 = 0x610;
+  sFilterConfig1.FilterID2 = 0x612;
+
+  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
+  {
+    // Filter configuration Error
+    Error_Handler();
+  }
+
   /* Start the FDCAN module */
   if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK)
   {
@@ -478,7 +494,7 @@ void FDCAN1_start(void)
   TxHeaderTime.Identifier = 0x100;
   TxHeaderTime.IdType = FDCAN_STANDARD_ID;
   TxHeaderTime.TxFrameType = FDCAN_DATA_FRAME;
-  TxHeaderTime.DataLength = FDCAN_DLC_BYTES_1;
+  TxHeaderTime.DataLength = FDCAN_DLC_BYTES_3;
   TxHeaderTime.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
   TxHeaderTime.BitRateSwitch = FDCAN_BRS_OFF;
   TxHeaderTime.FDFormat = FDCAN_CLASSIC_CAN;
@@ -609,33 +625,45 @@ void resetCanTx(uint8_t CANTxData[8])
 
 char CAN1Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData )
 {
+	// loop till free slot if none, rather than give up as currently set. Let watchdog catch if gets into loop unable to send?
+	// perhaps have two send routines, critical and non critical.
+
+	while (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) < 1 )
+	{
+// wait for can buffer slot.
+	}
 	if (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) > 0)
+	{
+
+		if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, pTxHeader, pTxData) != HAL_OK)
 		{
-		    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, pTxHeader, pTxData) != HAL_OK)
-		        {
 		          // Transmission request Error
   			 //     HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
-  			      return 1;
+			return 1;
   //			      HAL_Delay(1);
-		          Error_Handler();
-		        }
+		    Error_Handler();
 		}
+	}
 	return 0;
 }
 
 char CAN2Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData )
 {
+	while (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2) < 1 )
+	{
+// wait for can slot.
+	}
 	if (HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2) > 0)
+	{
+		if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, pTxHeader, pTxData) != HAL_OK)
 		{
-		    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, pTxHeader, pTxData) != HAL_OK)
-		        {
 		          /* Transmission request Error */
-  	//		      HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
-  			      return 1;
-  //			      HAL_Delay(1);
-		          Error_Handler();
-		        }
+			//HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
+			return 1;
+
+			Error_Handler();
 		}
+	}
 	return 0;
 }
 
@@ -685,14 +713,14 @@ char CAN_NMT( void )
 	TxHeaderNMT.Identifier = 0x0;
 	TxHeaderNMT.IdType = FDCAN_STANDARD_ID;
 	TxHeaderNMT.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderNMT.DataLength = FDCAN_DLC_BYTES_1; // only two bytes defined in send protocol, check this
+	TxHeaderNMT.DataLength = FDCAN_DLC_BYTES_2; // only two bytes defined in send protocol, check this
 	TxHeaderNMT.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
 	TxHeaderNMT.BitRateSwitch = FDCAN_BRS_OFF;
 	TxHeaderNMT.FDFormat = FDCAN_CLASSIC_CAN;
 	TxHeaderNMT.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
 	TxHeaderNMT.MessageMarker = 0;
 
-	uint8_t CANTxData[1] = { 1 };
+	uint8_t CANTxData[1] = { 1,0 };
 	return CAN2Send( &TxHeaderNMT, CANTxData );
 }
 
@@ -710,7 +738,7 @@ char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter )
 
 	TxHeaderInverter.IdType = FDCAN_STANDARD_ID;
 	TxHeaderInverter.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderInverter.DataLength = FDCAN_DLC_BYTES_2; // only two bytes defined in send protocol, check this
+	TxHeaderInverter.DataLength = FDCAN_DLC_BYTES_4; // only two bytes defined in send protocol, check this // four seen in logs
 	TxHeaderInverter.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
 	TxHeaderInverter.BitRateSwitch = FDCAN_BRS_OFF;
 	TxHeaderInverter.FDFormat = FDCAN_CLASSIC_CAN;
@@ -743,7 +771,7 @@ char CANTorqueRequest( uint16_t request )
 void RTDMCheck( void )
 {
 	// EV4.11.2 RTDM Check
-	if (!RTDM_Switch.pressed
+	if (RTDM_Switch.pressed   // removed !
 	    	&& ADCState.BrakeR >= 40
 			&& CarState.ReadyToDrive_AllowedR
 			&& CarState.ReadyToDrive_AllowedL)
@@ -752,7 +780,8 @@ void RTDMCheck( void )
 		CarState.ReadyToDrive_Ready = 1;
 	}
 
-	if( !TS_Switch.pressed      // debounce needs to be changed to show button held or released?
+// this is bouncing between states for some reason, debug.
+	if( TS_Switch.pressed      // debounce needs to be changed to show button held or released? // removed !
 			&& CarState.HighVoltageOn_AllowedR
 		    && CarState.HighVoltageOn_AllowedL
 		    && !CarState.IMD_relay_status
@@ -760,10 +789,15 @@ void RTDMCheck( void )
 		    && !CarState.BSPD_relay_status)
 		{
 			CarState.HighVoltageOn_Ready = 10;
-		} else
-		{
-			CarState.HighVoltageOn_Ready = 0;
-		}
+		} //else {}
+
+
+	if ( CarState.IMD_relay_status
+	    || CarState.BMS_relay_status
+	    || CarState.BSPD_relay_status)
+	{
+		CarState.HighVoltageOn_Ready = 0;
+	}
 
 		// output 10 to can0 0x118 offset 0 && HighVoltageOn_Ready state
 
@@ -898,61 +932,59 @@ char InverterStateMachine( int8_t Inverter )
 		Status = Status_Right_Inverter.data.longint;
 	} else return 0; // invalid inverter
 
-
 	// can1 write 0x47e inv1 0x47f inv2 dlc2 bytes,  0,16LE
 
-	int u1 = Status & 79;              // Switch On Disabled , 100 1111b
-	int u2 = Status & 47;              // Ready To Switch On ,  10 1111b
-	int u3 = Status & 111;             // Switched on,         110 1111b
+	int u1 = Status & 79;             // Switch On Disabled , 100 1111b
+	int u2 = Status & 47;             // Ready To Switch On ,  10 1111b
+	int u3 = Status & 111;            // Switched on,         110 1111b
 	int u4 = Status & 111;            // Operation Enable,    110 1111b
 	int u5 = Status & 31;             // Checking for faults,   1 1111b
-	int u6 = Status & 8;               // Checking for faults,     1000b
-	int u7 = Status & 71;              // Checking for faults, 100 1000b
-
+	int u6 = Status & 8;              // Checking for faults,     1000b
+	int u7 = Status & 71;             // Checking for faults, 100 1000b
 
 	if(u1==64){
 		//Checks if it is Switched On Disabled state
-	    HighVoltageOnAllowed=0;         //High Voltage is not allowed
-	    ReadyToDriveAllowed=0;          //Ready to drive is not allowed
+	    HighVoltageOnAllowed=0;      //High Voltage is not allowed
+	    ReadyToDriveAllowed=0;       //Ready to drive is not allowed
 	    TsLed=1;                     //TS LED starts blinking
 	    RtdmLed=0;                   //RTMD LED is off
-	    TXStatus=6;                   //Shutdown, Switched On Disabled -> Ready to Switch On
+	    TXStatus=6;                  //Shutdown, Switched On Disabled -> Ready to Switch On
 	} else if (u2==33 &&  CarState.HighVoltageOn_Ready==0)
 	{//Checks if it is Ready to Switch On state and TS button has NOT been pressed
-	    HighVoltageOnAllowed=1;          //High voltage is allowed to be applied
-	    ReadyToDriveAllowed=0;          //Ready to drive is not allowed
+	    HighVoltageOnAllowed=1;      //High voltage is allowed to be applied
+	    ReadyToDriveAllowed=0;       //Ready to drive is not allowed
 	    TsLed=1;                     //TS LED continues blinking
 	    RtdmLed=0;                   //RTMD LED off
-	    TXStatus=6;                   //Shutdown, Switched On Disabled -> Ready to Switch On
-	} else if(u2==33 &&  CarState.HighVoltageOn_Ready==1)
+	    TXStatus=6;                  //Shutdown, Switched On Disabled -> Ready to Switch On
+	} else if(u2==33 &&  CarState.HighVoltageOn_Ready>=1)
 	{//Checks if it is Ready to Switch On state and TS button has been pressed after the blinking LED
-	    HighVoltageOnAllowed=1;          //High voltage is allowed
-	    ReadyToDriveAllowed=1;           //Ready to drive is allowed
+	    HighVoltageOnAllowed=1;      //High voltage is allowed
+	    ReadyToDriveAllowed=1;       //Ready to drive is allowed
 	    TsLed=2;                     //TS LED is continuously on
 	    RtdmLed=0;                   //RTMD LED is off
-	    TXStatus=7;                   //Switch on, Ready to Switch On -> Switched on. High voltage is applied to the left inverter.
-	} else if(u3==35 && CarState.ReadyToDrive_Ready==0)
+	    TXStatus=7;                  //Switch on, Ready to Switch On -> Switched on. High voltage is applied to the inverter.
+	} else if(u3==35 && CarState.HighVoltageOn_Ready>=1 && CarState.ReadyToDrive_Ready==0)  // added high voltage to be sure.
 	{//Checks if it is Switched On State and car is NOT set to ready to drive mode after the blinking LED
-	    HighVoltageOnAllowed=1;          //High voltage is allowed
-	    ReadyToDriveAllowed=1;           //Ready to drive is allowed
+	    HighVoltageOnAllowed=1;      //High voltage is allowed
+	    ReadyToDriveAllowed=1;       //Ready to drive is allowed
 	    TsLed=2;                     //TS LED is continuously on
 	    RtdmLed=1;                   //RTMD LED starts blinking
-	    TXStatus=7;                   //Switch on, Ready to Switch On -> Switched on. High voltage is applied to the left inverter.
-	} else if(u3==35 && CarState.ReadyToDrive_Ready==1 )
+	    TXStatus=7;                  //Switch on, Ready to Switch On -> Switched on. High voltage is applied to the inverter.
+	} else if(u3==35 && CarState.HighVoltageOn_Ready>=1 && CarState.ReadyToDrive_Ready==1 )
 	{//Checks if it is Switched On State and car is set to ready to drive mode after the blinking LED
 	   HighVoltageOnAllowed=1;
 	   ReadyToDriveAllowed=1;
 	   TsLed=2;                      //TS LED is continuously on
 	   RtdmLed=1;                    //RTMD LED is blinking
-	   TXStatus=15;                   //Enable operation, Switched on -> Operation Enable
-	} else if(u4==39  && CarState.ReadyToDrive_Ready==1  &&   CarState.HighVoltageOn_Ready==1)
+	   TXStatus=15;                  //Enable operation, Switched on -> Operation Enable
+	} else if(u4==39  && CarState.ReadyToDrive_Ready==1 && CarState.HighVoltageOn_Ready>=1)
 	{
 	   HighVoltageOnAllowed=1;
 	   ReadyToDriveAllowed=1;
-	   TsLed=2;                     //TS LED is continuously on
+	   TsLed=2;                      //TS LED is continuously on
 	   RtdmLed=2;                    //RTMD LED is continuously on
-	   TXStatus=15;                   //Keep inverters on
-	} else if(u4==7 || u5==19 || u6==8 || u7==8)
+	   TXStatus=15;                  //Keep inverters on
+	} else if(u4==7 || u5==19 || u6==8 || u7==8) // jumps here when status 0
 	{
 	   HighVoltageOnAllowed=0;
 	   ReadyToDriveAllowed=0;
@@ -961,7 +993,7 @@ char InverterStateMachine( int8_t Inverter )
 	   TXStatus=128;                  //Reset
 	}
 
-	//elseif(u4==39 && StopMotorsRequested==1)                        //Checks if is Operation Enable state and stop motors buttons have been pressed
+	//elseif(u4==39 && StopMotorsRequested==1) //Checks if is Operation Enable state and stop motors buttons have been pressed
 	//   CWInv_temp=7;                  //Disable operation, Operation Enable -> Switched on
 	//   CW=uint16(CWInv_temp);
 	//   StopMotors_Led=2;
@@ -978,17 +1010,17 @@ char InverterStateMachine( int8_t Inverter )
 	if( Inverter == 0 ) // left inverter
 	{
 //		CANSendInverter( TXStatus, 0 );
-		CarState.HighVoltageOn_AllowedR=HighVoltageOnAllowed;
-		CarState.ReadyToDrive_AllowedR=ReadyToDriveAllowed;
+		CarState.HighVoltageOn_AllowedL=HighVoltageOnAllowed;
+		CarState.ReadyToDrive_AllowedL=ReadyToDriveAllowed;
 		CarState.RtdmLeftInvLED = RtdmLed;
 		CarState.TSALLeftInvLED = TsLed;
 		CarState.LeftInv = TXStatus;
 
-	} else if ( Inverter == 1 ) // right inverter
+	} else if ( Inverter == 1 ) // right inverter   // disabled so both inverter statuses mirrored for testing.
 	{
 //		CANSendInverter( TXStatus, 1 );
-		CarState.HighVoltageOn_AllowedL=HighVoltageOnAllowed;
-		CarState.ReadyToDrive_AllowedL=ReadyToDriveAllowed;
+		CarState.HighVoltageOn_AllowedR=HighVoltageOnAllowed;
+		CarState.ReadyToDrive_AllowedR=ReadyToDriveAllowed;
 		CarState.RtdmRightInvLED = RtdmLed;
 		CarState.TSALRightInvLED = TsLed;
 		CarState.RightInv = TXStatus;
@@ -1072,10 +1104,12 @@ char CANLogData( void )
 	TxHeaderLog.TxFrameType = FDCAN_DATA_FRAME;
 	TxHeaderLog.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
 	TxHeaderLog.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderLog.BitRateSwitch = FDCAN_BRS_OFF;
+	TxHeaderLog.BitRateSwitch = FDCAN_BRS_OFF; // irrelevant to classic can
 	TxHeaderLog.FDFormat = FDCAN_CLASSIC_CAN;
 	TxHeaderLog.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
 	TxHeaderLog.MessageMarker = 0;
+    HAL_Delay(1); // for some reason without small delay here the first log ID 0x7C6 only sometimes sent
+    // investigate to find out why, perhaps fifo buffer not acting as expect?
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7C6;
@@ -1085,13 +1119,13 @@ char CANLogData( void )
 	storeBEint16(ADCState.BrakeF, &CANTxData[4]); 	//brk_press_f can0 0x7C6 32,16bee
 	storeBEint16(ADCState.BrakeF, &CANTxData[6]); 	//brk_press_r can0 0x7C6 48,16be
 
-	CAN2Send( &TxHeaderLog, CANTxData );
+	CAN1Send( &TxHeaderLog, CANTxData ); //lagging in sending
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7C7;
 	storeBEint32(CarState.Wheel_Speed_Right_Calculated, &CANTxData[0]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
 	storeBEint32(CarState.Wheel_Speed_Left_Calculated, &CANTxData[4]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
-	CAN2Send( &TxHeaderLog, CANTxData );
+	CAN1Send( &TxHeaderLog, CANTxData );
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7C8;
@@ -1101,17 +1135,21 @@ char CANLogData( void )
 	CANTxData[3] = ADCState.Future_Torque_Req_Max; //future_torq_req_max can0 0x7c8 24,8
 	storeBEint16(ADCState.Torque_Req_L_Percent, &CANTxData[4]); //torq_req_l_perc can0 0x7c8 32,16be
 	storeBEint16(ADCState.Torque_Req_R_Percent, &CANTxData[6]); //torq_req_r_perc can0 0x7c8 48,16be
-	CAN2Send( &TxHeaderLog, CANTxData );
+	CAN1Send( &TxHeaderLog, CANTxData );
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7C9;
+	CANTxData[6] = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1);
+    CANTxData[7] = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2);
 
-	CAN2Send( &TxHeaderLog, CANTxData );
+	CAN1Send( &TxHeaderLog, CANTxData );
 	storeBEint16(Actual_Torque_Left_Inverter_Raw.data.longint, &CANTxData[0]); //actual_torque_left_inverter_raw can0 0x7c9 0,16be
 	storeBEint16(Actual_Torque_Right_Inverter_Raw.data.longint, &CANTxData[2]); //actual_torque_right_inverter_raw can0 0x7c9 16,16be
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7CA; // not being sent in current simulink, but is set?
+	CANTxData[6] = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1);
+    CANTxData[7] = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2);
 	// storeBEint32(CarState.brake_balance,&CANTxData[0]); //brake_balance can0 0x7CA 0,32be
 	CANTxData[0] = ADCState.SteeringAngle;
 	CAN1Send( &TxHeaderLog, CANTxData );
@@ -1228,17 +1266,19 @@ void setupCarState( void )
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-	for (int i = 0; i<NumADCChan;i++)
-	{
-		int sum = 0;
-
-		for( int j = 0; j < SampleSize; j++)
+	if(!usecanADC){
+		for (int i = 0; i<NumADCChan;i++)
 		{
-			sum =  sum + (aADCxConvertedData[i+NumADCChan*j]); // calculate sum of sample data  for one ADC channel
+			int sum = 0;
+
+			for( int j = 0; j < SampleSize; j++)
+			{
+				sum =  sum + (aADCxConvertedData[i+NumADCChan*j]); // calculate sum of sample data  for one ADC channel
+			}
+			ADC_Data[i] = sum/SampleSize; // store the value in ADC_Data from buffer averaged over 10 samples
 		}
-		ADC_Data[i] = sum/SampleSize; // store the value in ADC_Data from buffer averaged over 10 samples
+		ADCState.newdata = 1;
 	}
-	ADCState.newdata = 1;
 //    ADCcount++;
 }
 
@@ -1313,7 +1353,8 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 			case 	0x600 : // debug ID to send arbitraty 'ADC' values for testing.
 				if( CANRxData[0] ) // if received value in ID is not 0 assume true and switch to fakeADC over CAN.
 				{
-					stopADC(); //  disable ADC DMA interrupt to stop processing ADC input.
+			//		stopADC(); //  disable ADC DMA interrupt to stop processing ADC input.
+					// crashing if breakpoint ADC interrupt after this, just check variable in interrupt handler for now.
 					usecanADC = 1; // set global state to use fake canbus ADC
 					for(int i = 0; i < NumADCChan;i++)
 					{
@@ -1322,7 +1363,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				} else // value of 0 received, switch back to real ADC.
 				{
 					usecanADC = 0;
-					startADC(); // restart ADC DMA interrupt.
+	//				startADC(); // restart ADC DMA interrupt.
 				}
 				break;
 			case	0x601 : // debug ID for steering data.
@@ -1336,7 +1377,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				if( usecanADC )
 				{
 					ADC_Data[ThrottleLADC] = CANRxData[0]*256+CANRxData[1]; // set ADC_data for Left Throttle
-					ADC_Data[ThrottleLADC] = CANRxData[2]*256+CANRxData[3]; // set ADC_data for Right Throttle
+					ADC_Data[ThrottleRADC] = CANRxData[2]*256+CANRxData[3]; // set ADC_data for Right Throttle
 					ADCState.newdata = 1;
 				}
 				break;
@@ -1348,10 +1389,10 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 					ADCState.newdata = 1;
 				}
 				break;
-			case	0x604 : // debug ID for steering data.
+			case	0x604 : // debug ID for driving mode data.
 				if( usecanADC )
 				{
-					ADC_Data[DrivingModeADC] = CANRxData[0]*256+CANRxData[1]; // set ADC_Data for steering
+					ADC_Data[DrivingModeADC] = CANRxData[0]*256+CANRxData[1]; // set ADC_Data for driving mode
 					ADCState.newdata = 1;
 				}
 				break;
@@ -1363,6 +1404,25 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 					ADCState.newdata = 1;
 				}
 				break;
+			case	0x610 : // debug id for fake can TS button
+				if(CANRxData[0]){
+					TS_Switch.pressed = 1;
+					TS_Switch.lastpressed = gettimer();
+				}
+				break;
+			case	0x611 : // debug id for fake can RTDM button
+				if(CANRxData[0]){
+					RTDM_Switch.pressed = 1;
+					RTDM_Switch.lastpressed = gettimer();
+				}
+				break;
+			case	0x612 : // debug id for fake third button
+				if(CANRxData[0]){
+					TS_Switch.pressed = 1;
+					TS_Switch.lastpressed = gettimer();
+				}
+				break;
+
 
 			default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
 
@@ -1427,14 +1487,17 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 				Speed_Left_Inverter.newdata = 1;
 				Speed_Left_Inverter.data.longint = CANRxData[5]*16777216+CANRxData[4]*65536+CANRxData[3]*256+CANRxData[2];
 				break;
+				// 0x3fe/f and 0x4fe/f also sent by inverters, ignored in elektrobit.
 
 			case	0x77E : // 0x77E,8,16LE -> Actual_Torque_Right_Inverter_Raw
+				// only seen once at start in can log.
 				Actual_Torque_Right_Inverter_Raw.time = gettimer();
 				Actual_Torque_Right_Inverter_Raw.newdata = 1;
 				Actual_Torque_Right_Inverter_Raw.data.longint = CANRxData[2]*256+CANRxData[1];
 				break;
 
 			case	0x77F :	//0x77F,8,16LE -> Actual_Torque_Left_Inverter_Raw
+				// not seen in can log
 				Actual_Torque_Left_Inverter_Raw.time = gettimer();
 				Actual_Torque_Left_Inverter_Raw.newdata = 1;
 				Actual_Torque_Left_Inverter_Raw.data.longint = CANRxData[2]*256+CANRxData[1];
