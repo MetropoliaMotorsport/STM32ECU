@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2019/01/30 18:59:37.000.756,=C:\Users\drago\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2019/01/30 19:00:07.000.127,C:\Users\drago\Documents\Embarcadero\Studio\Projects\Unit1.dfm=C:\Users\drago\Desktop\STM32ECU\Windows Test\CanTest.dfm</Transaction>
+    <Transaction>2019/01/30 19:00:07.000.127,C:\Users\drago\Documents\Embarcadero\Studio\Projects\Unit1.pas=C:\Users\drago\Desktop\STM32ECU\Windows Test\CanTest.pas</Transaction>
+    <Transaction>2019/01/30 19:18:18.000.938,C:\Users\drago\Documents\Embarcadero\Studio\Projects\Project1.dproj=C:\Users\drago\Desktop\STM32ECU\Windows Test\WinCanTest.dproj</Transaction>
+  </Transactions>
+</BorlandProject>
