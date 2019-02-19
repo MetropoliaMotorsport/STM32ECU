@@ -120,8 +120,13 @@ volatile struct CarState {
 	char RtdmLeftInvLED;
 	char RtdmRightInvLED;
 
-	uint16_t LeftInv;
-	uint16_t RightInv;
+	uint16_t LeftInvResponse;
+	uint16_t RightInvResponse;
+
+	uint8_t LeftInvState;
+	uint8_t RightInvState;
+
+
 
 	uint8_t Torque_Req_Max;
 

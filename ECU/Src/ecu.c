@@ -430,7 +430,6 @@ void FDCAN1_start(void)
 
   HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, DISABLE, DISABLE);
 
-
   // Configure Rx filter to only accept expected ID's into receive interrupt
   sFilterConfig1.IdType = FDCAN_STANDARD_ID; // standard, not extended FD frame filter.
   sFilterConfig1.FilterType = FDCAN_FILTER_RANGE; // filter all the id's between id1 and id2 in filter definition.
@@ -467,9 +466,9 @@ void FDCAN1_start(void)
     Error_Handler();
   }
 
-  sFilterConfig1.FilterIndex++; // filter for fake canbus ADC id's
+  sFilterConfig1.FilterIndex++; // filter for fake button presses id's + induce hang.
   sFilterConfig1.FilterID1 = 0x610;
-  sFilterConfig1.FilterID2 = 0x612;
+  sFilterConfig1.FilterID2 = 0x614;
 
   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
   {
@@ -723,7 +722,7 @@ char CAN_NMT( void )
 	TxHeaderNMT.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
 	TxHeaderNMT.MessageMarker = 0;
 
-	uint8_t CANTxData[1] = { 1,0 };
+	uint8_t CANTxData[2] = { 1,0 };
 	return CAN2Send( &TxHeaderNMT, CANTxData );
 }
 
@@ -761,12 +760,12 @@ char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter )
 char CANTorqueRequest( uint16_t request )
 {
   if( AllowedToDrive()){
-	  CANSendInverter(  CarState.LeftInv, request, LeftInverter );
-	  CANSendInverter(  CarState.RightInv, request, RightInverter );
+	  CANSendInverter(  CarState.LeftInvResponse, request, LeftInverter );
+	  CANSendInverter(  CarState.RightInvResponse, request, RightInverter );
   } else
   {
-	  CANSendInverter(  CarState.LeftInv, 0, LeftInverter );
-	  CANSendInverter(  CarState.RightInv, 0, RightInverter );
+	  CANSendInverter(  CarState.LeftInvResponse, 0, LeftInverter );
+	  CANSendInverter(  CarState.RightInvResponse, 0, RightInverter );
   }
   return 0;
 }
@@ -783,6 +782,7 @@ void RTDMCheck( void )
 	{
 		CarState.Buzzer_Sounding = 1;
 		CarState.ReadyToDrive_Ready = 1;
+		RTDM_Switch.pressed = 0;
 	} else
 	{
 		RTDM_Switch.pressed = 0; // reset switch if we didn't meet allowed enable state.
@@ -797,6 +797,7 @@ void RTDMCheck( void )
 		    && !CarState.BSPD_relay_status)
 		{
 			CarState.HighVoltageOn_Ready = 10;
+			TS_Switch.pressed =  0;
 		} else
 		{
 			TS_Switch.pressed =  0; // reset switch if we didn't meet allowed turn on state.
@@ -818,6 +819,8 @@ void RTDMCheck( void )
 		CarState.Buzzer_Sounding = 0;
 		CANTorqueRequest(0);
 		StopMotors_Switch.pressed = 0;
+		TS_Switch.pressed =  0;
+		RTDM_Switch.pressed =  0;
 	}
 
 		// output 10 to can0 0x118 offset 0 && HighVoltageOn_Ready state
@@ -937,7 +940,7 @@ uint16_t PedalTorqueRequest( void )
 char AllowedToDrive( void )
 {
 
-	if(CarState.LeftInv == 15 && CarState.RightInv == 15)
+	if(CarState.LeftInvResponse == 15 && CarState.RightInvResponse == 15)
 	{
 		return 1;
 	} else
@@ -947,116 +950,177 @@ char AllowedToDrive( void )
 }
 
 
+uint8_t GetState( uint16_t Status )
+{
+	// establish current state machine position from return status.
+	if ( ( Status & 0b01001111 ) == 0b01000000 )
+	{ // Switch on disabled
+		return 1;
+	}
+	else if ( ( Status & 0b01101111 ) == 0b00100001 )
+	{ // Ready to switch on
+		return 2;
+	}
+	else if ( ( Status & 0b01101111 ) == 0b00100011 )
+	{ // Switched on
+		return 3;
+	}
+	else if ( ( Status & 0b01101111 ) == 0b00100111 )
+	{ // Operation enabled. - perhaps move this to start of if/else chain, as it's primary state for loop.
+		return 4;
+	}
+	else if ( ( ( Status & 0b01101111 ) == 0b00000111 )
+			 || ( ( Status & 0b00011111 ) == 0b00010011 ) )
+	{ // Quick Stop Active
+		return 5;
+	}
+	else if  ( ( ( Status & 0b01001111 ) == 0b00001111 )
+			 || ( ( Status & 0b01001111 ) == 0b00001001 ) )
+	{ // fault reaction active, will move to fault status next
+		return 98;
+	}
+	else if  ( ( ( Status & 0b01001111 ) == 0b00001000 )
+			 || ( ( Status & 0b00001000 ) == 0b0001000 ) )
+	{ // fault status
+		return 99;
+		// send reset
+	} else
+	{ // unknown state
+		return 0; // state 0 will request reset to enter State 1,
+		// will fall here at start of loop and if unknown status.
+	}
+}
+
 /*
  * Direct translation of Simulink code, look to rewrite.
  */
 char InverterStateMachine( int8_t Inverter )
 {
 	uint16_t Status, TXStatus;
-	char HighVoltageOnAllowed, ReadyToDriveAllowed, TsLed, RtdmLed;
+	uint8_t State;
+
+	char HighVoltageOnAllowed, ReadyToDriveAllowed, TsLED, RtdmLED;
 
 	if( Inverter == 0 ) // left inverter
 	{
 		Status = Status_Left_Inverter.data.longint;
-	} else if ( Inverter == 1 ) // right inverter
+	}
+	else if ( Inverter == 1 ) // right inverter
 	{
 		Status = Status_Right_Inverter.data.longint;
-	} else return 0; // invalid inverter
-
-	// can1 write 0x47e inv1 0x47f inv2 dlc2 bytes,  0,16LE
-
-	// what do status 104, 72 and 200 mean
-
-	int u1 = Status & 79;             // Switch On Disabled , 100 1111b
-	int u2 = Status & 47;             // Ready To Switch On ,  10 1111b
-	int u3 = Status & 111;            // Switched on,         110 1111b
-	int u4 = Status & 111;            // Operation Enable,    110 1111b
-	int u5 = Status & 31;             // Checking for faults,   1 1111b
-	int u6 = Status & 8;              // Checking for faults,     1000b
-	int u7 = Status & 71;             // Checking for faults, 100 1000b
-
-	if(u1==64){
-		//Checks if it is Switched On Disabled state
-	    HighVoltageOnAllowed=0;      //High Voltage is not allowed
-	    ReadyToDriveAllowed=0;       //Ready to drive is not allowed
-	    TsLed=1;                     //TS LED starts blinking
-	    RtdmLed=0;                   //RTDM LED is off
-	    TXStatus=6;                  //Shutdown, Switched On Disabled -> Ready to Switch On
-	} else if (u2==33 &&  CarState.HighVoltageOn_Ready==0)
-	{//Checks if it is Ready to Switch On state and TS button has NOT been pressed
-	    HighVoltageOnAllowed=1;      //High voltage is allowed to be applied
-	    ReadyToDriveAllowed=0;       //Ready to drive is not allowed
-	    TsLed=1;                     //TS LED continues blinking
-	    RtdmLed=0;                   //RTDM LED off
-	    TXStatus=6;                  //Shutdown, Switched On Disabled -> Ready to Switch On
-	} else if(u2==33 &&  CarState.HighVoltageOn_Ready>=1)
-	{//Checks if it is Ready to Switch On state and TS button has been pressed after the blinking LED
-	    HighVoltageOnAllowed=1;      //High voltage is allowed
-	    ReadyToDriveAllowed=1;       //Ready to drive is allowed
-	    TsLed=2;                     //TS LED is continuously on
-	    RtdmLed=0;                   //RTDM LED is off
-	    TXStatus=7;                  //Switch on, Ready to Switch On -> Switched on. High voltage is applied to the inverter.
-	} else if(u3==35 && CarState.HighVoltageOn_Ready>=1 && CarState.ReadyToDrive_Ready==0)  // added high voltage to be sure.
-	{//Checks if it is Switched On State and car is NOT set to ready to drive mode after the blinking LED
-	    HighVoltageOnAllowed=1;      //High voltage is allowed
-	    ReadyToDriveAllowed=1;       //Ready to drive is allowed
-	    TsLed=2;                     //TS LED is continuously on
-	    RtdmLed=1;                   //RTDM LED starts blinking
-	    TXStatus=7;                  //Switch on, Ready to Switch On -> Switched on. High voltage is applied to the inverter.
-	} else if(u3==35 && CarState.HighVoltageOn_Ready>=1 && CarState.ReadyToDrive_Ready==1 )
-	{//Checks if it is Switched On State and car is set to ready to drive mode after the blinking LED
-	   HighVoltageOnAllowed=1;
-	   ReadyToDriveAllowed=1;
-	   TsLed=2;                      //TS LED is continuously on
-	   RtdmLed=1;                    //RTDM LED is blinking
-	   TXStatus=15;                  //Enable operation, Switched on -> Operation Enable
-	} else if(u4==39  && CarState.ReadyToDrive_Ready==1 && CarState.HighVoltageOn_Ready>=1)
-	{
-	   HighVoltageOnAllowed=1;
-	   ReadyToDriveAllowed=1;
-	   TsLed=2;                      //TS LED is continuously on
-	   RtdmLed=2;                    //RTDM LED is continuously on
-	   TXStatus=15;                  //Keep inverters on
-	} else if(u4==7 || u5==19 || u6==8 || u7==8) // jumps here when status 0
-	{
-	   HighVoltageOnAllowed=0;
-	   ReadyToDriveAllowed=0;
-	   TsLed=0;                      //TS LED is off
-	   RtdmLed=0;                    //RTDM LED is off
-	   TXStatus=128;                  //Reset
 	}
+	else return 0; // invalid inverter
 
-	//elseif(u4==39 && StopMotorsRequested==1) //Checks if is Operation Enable state and stop motors buttons have been pressed
-	//   CWInv_temp=7;                  //Disable operation, Operation Enable -> Switched on
-	//   CW=uint16(CWInv_temp);
-	//   StopMotors_Led=2;
+	// first check for fault status, and issue reset.
 
-	else
+	TXStatus = 0; // default  do nothing state.
+	// process regular state machine sequence
+	switch ( GetState(Status) )
 	{
-	    HighVoltageOnAllowed=0;
-	    ReadyToDriveAllowed=0;
-	    TsLed=0;                      //TS LED is off
-	    RtdmLed=0;                    //RTMD LED is off
-	    TXStatus=128;                 //Reset
-	}
+		case 0 : // state 0: Not ready to switch on, no can message. Internal state only at startup.
+		    HighVoltageOnAllowed = 0;  // High Voltage is not allowed
+		    ReadyToDriveAllowed = 0;  // Ready to drive is not allowed
+		    TsLED = 0;
+		    RtdmLED = 0; // No LED's for state 0
+		    TXStatus=0b10000000; // send bit 128 reset message to enter state 1 in case in fault.
+			break;
+
+		case 1 : // State 1: Switch on Disabled.
+			HighVoltageOnAllowed = 0;
+			ReadyToDriveAllowed = 0;
+			TsLED = 0;
+			RtdmLED = 0;
+			TXStatus = 0b00000110; // send 0110 shutdown message to request move to State 2.
+			break;
+
+		case 2 : // State 2: Ready to switch on
+		    HighVoltageOnAllowed = 1; // We are ready to turn on, so allow high voltage.
+			ReadyToDriveAllowed = 0; // RTDM not allowed still inverter is switched on.
+			TsLED = 1; // start blinking TS led to indicate it can be enabled.
+			RtdmLED = 0;
+
+			// we are in state 2, process.
+			// process shutdown request here, to move to move to state 1.
+			if ( CarState.HighVoltageOn_Ready )
+			{  // TS enable button pressed and both inverters are marked HV ready proceed to state 3.
+				TXStatus = 0b00000111; // request Switch on message, State 3..
+			} else
+			{
+				TXStatus = 0b00000110; // no change, continue to request State 2.
+			}
+			break;
+
+		case 3 : // State 3: Switched on
+			HighVoltageOnAllowed = 1;  // we are powered on, so allow high voltage.
+			ReadyToDriveAllowed = 1; // powered on, but not enabled, so not RTDM.
+			TsLED = 2; // steady TS led to indicate TS powered on.
+			RtdmLED = 1; // start blinking RTDM led to indicate it can be enabled.
+			if ( CarState.HighVoltageOn_Ready && CarState.ReadyToDrive_Ready)
+			{  // TS enable button has been pressed, proceed to request power on if both inverters on.
+				TXStatus = 0b00001111; // Request Enable operation, State 4.
+			}
+			else if ( !CarState.HighVoltageOn_Ready )
+			{ // return to switched on state.
+				TXStatus = 0b00000000; // request Disable Voltage., alternately Quick Stop 0b00000010
+			}
+			else
+			{  // no change, continue to request State 3.
+				TsLED = 2;
+				TXStatus = 0b00000111;
+			}
+			break;
+
+		case 4 : // State 4: Operation Enable
+			HighVoltageOnAllowed = 1; // we are powered on, so allow high voltage.
+			ReadyToDriveAllowed = 1; // inverters are enabled so we have to be in RTDM, and all LED's on.
+			TsLED = 2;
+			RtdmLED = 2;
+			if ( CarState.HighVoltageOn_Ready &&  !CarState.ReadyToDrive_Ready)
+			{ // taken out of ready to drive, move state down.
+				TXStatus = 0b00000111; // request state 3: Switched on.
+			}
+			else if ( !CarState.HighVoltageOn_Ready )
+			{ // full motor stop has been rewuested
+				TXStatus = 0b00000000; // request Disable Voltage., alternately Quick Stop 0b00000010
+			}
+			else
+			{ // no change, continue to request operation.
+				TXStatus = 0b00001111;
+			}
+			break;
+
+		case 5 : // Quick Stop Active - Fall through to default to reset state.
+
+		case 98 : // Fault Reason Active
+
+		case 99 : // Fault
+
+		default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
+			HighVoltageOnAllowed = 0;
+			ReadyToDriveAllowed = 0;
+			TsLED = 0;
+			RtdmLED = 0;
+			TXStatus = 0b10000000; // 128
+			break;
+		}
+
+	//  offset 0 length 32: power
 
 	if( Inverter == 0 ) // left inverter
 	{
-//		CANSendInverter( TXStatus, 0 );
 		CarState.HighVoltageOn_AllowedL=HighVoltageOnAllowed;
 		CarState.ReadyToDrive_AllowedL=ReadyToDriveAllowed;
-		CarState.RtdmLeftInvLED = RtdmLed;
-		CarState.TSALLeftInvLED = TsLed;
-		CarState.LeftInv = TXStatus;
+		CarState.RtdmLeftInvLED = RtdmLED;
+		CarState.TSALLeftInvLED = TsLED;
+		CarState.LeftInvResponse = TXStatus;
 
 	} else if ( Inverter == 1 ) // right inverter   // disabled so both inverter statuses mirrored for testing.
 	{
-//		CANSendInverter( TXStatus, 1 );
 		CarState.HighVoltageOn_AllowedR=HighVoltageOnAllowed;
 		CarState.ReadyToDrive_AllowedR=ReadyToDriveAllowed;
-		CarState.RtdmRightInvLED = RtdmLed;
-		CarState.TSALRightInvLED = TsLed;
-		CarState.RightInv = TXStatus;
+		CarState.RtdmRightInvLED = RtdmLED;
+		CarState.TSALRightInvLED = TsLED;
+		CarState.RightInvResponse = TXStatus;
 	}
 
 	return 1;
@@ -1295,11 +1359,16 @@ void setupCarState( void )
 	CarState.HighVoltageOn_Ready = 0;
 
 	CarState.Buzzer_Sounding = 0;
+
+	CarState.LeftInvState = 0;
+	CarState.RightInvState = 0;
+
+	usecanADC = 0;
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-	if(!usecanADC){
+	if(!usecanADC){ // don't process ADC values if ECU has been setup to use dummy values
 		for (int i = 0; i<NumADCChan;i++)
 		{
 			int sum = 0;
@@ -1308,7 +1377,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 			{
 				sum =  sum + (aADCxConvertedData[i+NumADCChan*j]); // calculate sum of sample data  for one ADC channel
 			}
-			ADC_Data[i] = sum/SampleSize; // store the value in ADC_Data from buffer averaged over 10 samples
+			ADC_Data[i] = sum/SampleSize; // store the value in ADC_Data from buffer averaged over 10 samples for better accuracy.
 		}
 		ADCState.newdata = 1;
 	}
@@ -1449,12 +1518,19 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 					RTDM_Switch.lastpressed = gettimer();
 				}
 				break;
-			case	0x612 : // debug id for fake third button
+			case	0x612 : // debug id for fake stop motors button
 				if(CANRxData[0]){
 					StopMotors_Switch.pressed = 1;
 					StopMotors_Switch.lastpressed = gettimer();
 				}
 				break;
+//REMOVE FROM LIVE CODE.
+			case	0x613 : // debug id to induce a hang state, for testing watchdog.
+				while ( 1 ){
+					// do nothing.
+				}
+				break;
+
 
 			default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
 

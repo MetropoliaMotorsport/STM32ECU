@@ -49,6 +49,7 @@
 #include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
+#include "wwdg.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -196,26 +197,25 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM7_Init();
   MX_USB_OTG_FS_PCD_Init();
-//  MX_SDMMC1_SD_Init();
+ // MX_SDMMC1_SD_Init();
   MX_SPI5_Init();
   MX_USART2_UART_Init();
   MX_SPI2_Init();
+// MX_WWDG1_Init();
   /* USER CODE BEGIN 2 */
 
-  setupCarState();
+  setupCarState(); // ensures all values for state machine etc are at sanitised defaults at start.
 
-  FDCAN1_start();
-  FDCAN2_start();
+  FDCAN1_start(); // sets up can ID filters and starts can bus 1
+  FDCAN2_start(); // starts up can bus 2
   setupInterrupts();
-  startADC();
+  startADC(); //  starts the ADC dma processing
 
-  startupLEDs();
+  startupLEDs(); // run little startup LED animation to indicate powered on.
   setupButtons(); // moved later, during startup sequence inputs were being triggered
 
   // initialise second counter.
   volatile long unsigned loopsecond = gettimer();
-
-  usecanADC = 0;
 
   uint8_t CANTxData[8];
 
