@@ -9,6 +9,7 @@
 #include "tim.h"
 #include "adc.h"
 #include "ecu.h"
+#include "vhd44780.h"
 
 //variables that need to be accessible in ISR's
 
@@ -823,7 +824,14 @@ void RTDMCheck( void )
 		RTDM_Switch.pressed =  0;
 	}
 
-		// output 10 to can0 0x118 offset 0 && HighVoltageOn_Ready state
+	if ( CarState.ReadyToDrive_Ready && (( Speed_Right_Inverter.time + 2000  < gettimer() ) || ( Speed_Left_Inverter.time + 2000  < gettimer() ) ) )
+	{
+		CarState.ReadyToDrive_Ready = 0; // not heard from inverters in 0.2 seconds, halt request
+		CarState.HighVoltageOn_Ready = 0;
+		// request full stop.
+	}
+
+		// output 10 to can0 0x118 offset 0 && HighVoltageOn_Ready state for PDM
 
 		CANSendState(CarState.Buzzer_Sounding, CarState.HighVoltageOn_Ready);
 }
@@ -950,7 +958,7 @@ char AllowedToDrive( void )
 }
 
 
-uint8_t GetState( uint16_t Status )
+uint8_t GetInverterState( uint16_t Status )
 {
 	// establish current state machine position from return status.
 	if ( ( Status & 0b01001111 ) == 0b01000000 )
@@ -1015,14 +1023,14 @@ char InverterStateMachine( int8_t Inverter )
 
 	TXStatus = 0; // default  do nothing state.
 	// process regular state machine sequence
-	switch ( GetState(Status) )
+	switch ( GetInverterState(Status) )
 	{
 		case 0 : // state 0: Not ready to switch on, no can message. Internal state only at startup.
-		    HighVoltageOnAllowed = 0;  // High Voltage is not allowed
-		    ReadyToDriveAllowed = 0;  // Ready to drive is not allowed
-		    TsLED = 0;
-		    RtdmLED = 0; // No LED's for state 0
-		    TXStatus=0b10000000; // send bit 128 reset message to enter state 1 in case in fault.
+			HighVoltageOnAllowed = 0;  // High Voltage is not allowed
+			ReadyToDriveAllowed = 0;  // Ready to drive is not allowed
+			TsLED = 0;
+			RtdmLED = 0; // No LED's for state 0
+			TXStatus=0b10000000; // send bit 128 reset message to enter state 1 in case in fault.
 			break;
 
 		case 1 : // State 1: Switch on Disabled.
@@ -1034,7 +1042,7 @@ char InverterStateMachine( int8_t Inverter )
 			break;
 
 		case 2 : // State 2: Ready to switch on
-		    HighVoltageOnAllowed = 1; // We are ready to turn on, so allow high voltage.
+			HighVoltageOnAllowed = 1; // We are ready to turn on, so allow high voltage.
 			ReadyToDriveAllowed = 0; // RTDM not allowed still inverter is switched on.
 			TsLED = 1; // start blinking TS led to indicate it can be enabled.
 			RtdmLED = 0;
@@ -1324,6 +1332,17 @@ void setupInterrupts( void )
 		  Error_Handler();
 	}
 	InButtonpress = 0;
+	// start LCD update Timer.
+	if ( HAL_TIM_Base_Start_IT(&htim6) != HAL_OK){
+		Error_Handler();
+	}
+
+	  HAL_NVIC_SetPriority(TIM17_IRQn, 0, 0);
+	  HAL_NVIC_EnableIRQ(TIM17_IRQn);
+
+	if ( HAL_TIM_Base_Start_IT(&htim17) != HAL_OK){
+		Error_Handler();
+	}
 }
 
 void startADC(void)
@@ -1586,6 +1605,8 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 				Status_Left_Inverter.data.longint = CANRxData[1]*256+CANRxData[0];
 				break;
 			case	0x2FE :  // 0x2FE,16,32LE -> Speed_Right_Inverter
+				// looking at logs, receiveing lots of data on this ID that seems to be varying
+				// investigate commissioning setup?
 				Speed_Right_Inverter.time = gettimer();
 				Speed_Right_Inverter.newdata = 1;
 				Speed_Right_Inverter.data.longint = CANRxData[5]*16777216+CANRxData[4]*65536+CANRxData[3]*256+CANRxData[2];
@@ -1672,6 +1693,10 @@ void TIM3_IRQHandler()
     HAL_TIM_IRQHandler(&htim3);
 }
 
+void TIM6_IRQHandler()
+{
+    HAL_TIM_IRQHandler(&htim6);
+}
 
 /**
  * @brief timer interrupt to keep a timebase and process button debouncing.
@@ -1718,6 +1743,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		default : // shouldn't get here, but catch and ignore any other input
 			break;
 		}
+	} else if ( htim->Instance == TIM6 )
+	{
+//		hd44780_irq();
+	} else if ( htim->Instance == TIM17 )
+	{
+			hd44780_Isr(); // call interrupt handler to run next clock tick for display.
+//	 		HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
 	}
 
 }

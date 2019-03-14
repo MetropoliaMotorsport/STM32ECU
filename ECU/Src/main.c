@@ -56,6 +56,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "ecu.h"
+#include "vhd44780.h"
 
 /* USER CODE END Includes */
 
@@ -90,6 +91,7 @@ static void checkButton(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
 
 static void checkButton(void){
 //	uint8_t CANTxData[8];
@@ -126,7 +128,7 @@ static void checkButton(void){
 
 	if(UserBtn.pressed){
 		UserBtn.pressed = 0;
-		HAL_GPIO_WritePin(LD3_GPIO_Port,LD3_Pin, 0);
+		HAL_GPIO_TogglePin(LD3_GPIO_Port,LD3_Pin);
 
 	//  if ( HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin) ) // use interrupt instead
 	//	  CANTxData[0] = 8;
@@ -158,6 +160,7 @@ char CheckCPUEndian()
 
     return CPUEndian;
 }
+
 
 /* USER CODE END 0 */
 
@@ -201,8 +204,11 @@ int main(void)
   MX_SPI5_Init();
   MX_USART2_UART_Init();
   MX_SPI2_Init();
-// MX_WWDG1_Init();
+//  MX_WWDG1_Init();
+  MX_TIM6_Init();
+  MX_TIM17_Init();
   /* USER CODE BEGIN 2 */
+  hd44780_Init();
 
   setupCarState(); // ensures all values for state machine etc are at sanitised defaults at start.
 
@@ -217,12 +223,21 @@ int main(void)
   // initialise second counter.
   volatile long unsigned loopsecond = gettimer();
 
+//  hd44780_init(HD44780_LINES_2, HD44780_FONT_5x8);
+ // hd44780_print("Test");
+
+  HAL_Delay(500);
+
   uint8_t CANTxData[8];
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+//  while (1){
+	  // test loop for LCD
+//  }
 
   while (1)
   {
@@ -260,6 +275,7 @@ int main(void)
 	{
 		// only process driving mode selecgtor once a second
 
+
 		CarState.Torque_Req_Max = ADCState.Future_Torque_Req_Max;
 		ADCState.newdata = 1;
 		// why was this variable not set directly, but rather with some delay from changing switch?
@@ -268,6 +284,12 @@ int main(void)
 //		CANKeepAlive();
 
 		CANTxData[0] = gettimer()/10000;
+
+		// testing lcd writing in main loop.
+		char buf[12];
+		sprintf(buf, "Counter %d", CANTxData[0]);
+		hd44780_writeline1(buf);
+
 		CANTxData[1] = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1);
 	//   CANTxData[2] = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2);
 	    CANTxData[2] = CheckCPUEndian();

@@ -92,8 +92,8 @@ uint32_t gettimer(void);
 #define USER_Btn_EXTI_IRQn EXTI15_10_IRQn
 #define LCD_D5_Pin GPIO_PIN_5
 #define LCD_D5_GPIO_Port GPIOF
-#define LCD_D7_Pin GPIO_PIN_10
-#define LCD_D7_GPIO_Port GPIOF
+#define LCD_D4_Pin GPIO_PIN_10
+#define LCD_D4_GPIO_Port GPIOF
 #define MCO_Pin GPIO_PIN_0
 #define MCO_GPIO_Port GPIOH
 #define RMII_MDC_Pin GPIO_PIN_1
@@ -142,10 +142,10 @@ uint32_t gettimer(void);
 #define Input4_Pin GPIO_PIN_15
 #define Input4_GPIO_Port GPIOD
 #define Input4_EXTI_IRQn EXTI15_10_IRQn
-#define LCD_RS_Pin GPIO_PIN_2
-#define LCD_RS_GPIO_Port GPIOG
-#define LCD_E_Pin GPIO_PIN_3
+#define LCD_E_Pin GPIO_PIN_2
 #define LCD_E_GPIO_Port GPIOG
+#define LCD_RS_Pin GPIO_PIN_3
+#define LCD_RS_GPIO_Port GPIOG
 #define USB_PowerSwitchOn_Pin GPIO_PIN_6
 #define USB_PowerSwitchOn_GPIO_Port GPIOG
 #define USB_OverCurrent_Pin GPIO_PIN_7
@@ -166,8 +166,8 @@ uint32_t gettimer(void);
 #define TCK_GPIO_Port GPIOA
 #define LCD_D6_Pin GPIO_PIN_3
 #define LCD_D6_GPIO_Port GPIOD
-#define LCD_D4_Pin GPIO_PIN_4
-#define LCD_D4_GPIO_Port GPIOD
+#define LCD_D7_Pin GPIO_PIN_4
+#define LCD_D7_GPIO_Port GPIOD
 #define Output3_Pin GPIO_PIN_9
 #define Output3_GPIO_Port GPIOG
 #define RMII_TXD0_Pin GPIO_PIN_13
