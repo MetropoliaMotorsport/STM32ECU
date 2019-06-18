@@ -5,161 +5,295 @@
  *      Author: Visa
  */
 
-#include "main.h"
-
 #ifndef ECU_H_
 #define ECU_H_
 
+
+// Calibration settings
+
+#define ACCELERATORLZERO 11000
+//#define ACCELERATORLMAX  51000
+#define ACCELERATORLMAX  50000
+
+#define ACCELERATORRZERO 11500
+//#define ACCELERATORRMAX  53000
+#define ACCELERATORRMAX  50000
+
+#define BRAKEZERO 14100 // 0 bar?
+#define BRAKEMAX  62914 // 240 bar settings.
+
+
+
+#define USEADC3
+//#include "ecumain.h"
+
+//#define sharedCAN // bench testing.
+//#define WATCHDOG
+#define STMADC
 #define debugrun
+//#define debug
+//#define errorLED
+
+#define everyloop
+
+// device enable/disable etc
+
+#define LOGGINGON
+#define IVTEnable				// if not defined, IVT ignored and assumed present, giving a nominal voltage.
+#define BMSEnable				// if not defined, BMS ignored and assumed present.
+#define retransmitIVT
+//#define FRONTSPEED				// enable front speed encoder reading.
+//#define NOTIMEOUT
+#define NOIVTTIMEOUT
+//#define SENDBADDATAERROR
+//#define RETRANSMITBADDATA
+#define CAN2ERRORSTATUS
+//#define RECOVERCAN
+
+//#define NOTORQUEREQUEST
+
+#define STATUSLOOPCOUNT 		10 // how many loops between regular status updates.
+#define LOGLOOPCOUNTFAST	 	1  // x many loops to send fast log data
+#define LOGLOOPCOUNTSLOW	 	10
+
+
+#define MINHV					500 // minimum voltage to allow TS enable.
 //#define ONECAN // only use CAN1 to ease testing.
 
-#define SteeringADC      	0
-#define ThrottleLADC		1
-#define ThrottleRADC		2
-#define BrakeFADC			3
-#define BrakeRADC			4
-#define DrivingModeADC		5
-#define CoolantTemp1ADC		6
-#define CoolantTemp2ADC		7
-
-#define NumADCChan 8
-#define SampleSize 10 // how many samples to average
-#define ADC_CONVERTED_DATA_BUFFER_SIZE   ((uint32_t) NumADCChan*SampleSize)   /* Size of array aADCxConvertedData[] */
-#define Debouncetime 10000 // only allow one button press every 20ms
-
-#define TS_Switch Input1
-#define RTDM_Switch Input2
-#define StopMotors_Switch Input3
-
-#define BMSLED_Output 		1
-#define IMDLED_Output		2
-#define BSPDLED_Output		3
-
-#define TSALLED_Output		4
-#define RTDMLED_Output		5
-#define STOPLED_Output		6
-
-#define LED1_Output			13
-#define LED2_Output			14
-#define LED3_Output			15
-
-#define LeftInverter		0
-#define RightInverter		1
+//50ms
 
 
-// interrupt timebase variable
-volatile uint32_t secondson;
+//#define SIM
+#ifdef SIM
+#define PDMTIMEOUT				5000
+#define BMSTIMEOUT				5000
+#define IVTTIMEOUT				5000
+#define IVTTIMEOUTLONG			5000
+#define IVTTIMEOUTWATTS			5000
+#define PROCESSLOOPTIME 		2000
+#define INVERTERTIMEOUT			1000
+#else
+#define PDMTIMEOUT				4500 //
+#define PROCESSLOOPTIME 		100 // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
+#define BMSTIMEOUT				50000 // 5 seconds
+#define IVTTIMEOUT				20000
+//#define IVTTIMEOUTLONG			800
+#define IVTTIMEOUTWATTS			50000
+#define INVERTERTIMEOUT			1000 // 10 cycles, 100ms.
+#define SICKTIMEOUT             200 // 2 cycles, then set speeds to zero.
+#define STMADC
+#endif
 
-// debug assist.
-volatile char usecanADC;
 
-int cancount;
+#define MaxRunningErrorCount    10
+#define ReduceErrorCountRate	10
 
-struct CanData {
-	union {
-	unsigned long longint;
-	unsigned char bytearray[4];
-	} data;
-	long time;
-	char newdata;
-};
+//#define NOAPPS
+//#define NOSTEERING
+//#define NOBRAKES
+//#define NOTEMPERATURE
+//#define NODRIVINGMODE
 
-struct ButtonData {
-	uint32_t lastpressed;
-	uint32_t count;
-	char pressed;
-	// define the hardware button for passing button data including reading it
-	GPIO_TypeDef * port;
-	uint16_t pin;
-};
 
-struct OutputData {
-	uint8_t pin;
-	volatile char blinking;
-};
+#define StartupState			0
+#define PreOperationalState		1
+#define OperationalReadyState	2
+#define IdleState				3
+#define TSActiveState			4
+#define RunningState			5
+#define ReceivingConfig			30
+#define TestingState			10
+#define LimpState				20
+#define OperationalErrorState   50
+#define FatalErrorState			99
 
-// ADC
+// APPS
 
-// averaged ADC data
-volatile uint32_t ADC_Data[NumADCChan];
+#define APPSBrakeHard			30 // 70
+#define APPSBrakeRelease		10 // 30
+#define RTDMBRAKEPRESSURE		30
 
-struct ADCState {
-	volatile char newdata;
-	int8_t SteeringAngle;
-	uint8_t BrakeF;
-	uint8_t BrakeR;
-	uint8_t Future_Torque_Req_Max;
-	uint8_t CoolantTemp1;
-	uint8_t CoolantTemp2;
-	uint8_t Torque_Req_L_Percent;
-	uint8_t Torque_Req_R_Percent;
-	uint16_t Torque_Req_L;
-	uint16_t Torque_Req_R;
-} ADCState;
+uint16_t ErrorCode; // global error code.
+
+// status codes to send for errors.
+
+#define OperationalStateOverrun		0xF
+#define PowerOnRequestBeforeReady 	0x10
+#define PowerOnRequestTimeout   	0x11
+
+
+#define BrakeFErrorBit			0
+#define BrakeRErrorBit			1
+#define CoolantLErrorBit		2
+#define CoolantRErrorBit		3
+#define SteeringAngleErrorBit	4
+#define AccelLErrorBit			5
+#define AccelRErrorBit			6
+#define DrivingModeErrorBit	    7
+
+
+#define InverterLErrorBit		9
+#define InverterRErrorBit		10
+
+#define BMSVoltageErrorBit		11
+
+#define PDMReceived				0
+#define BMSReceived				1
+#define InverterReceived		2
+#define InverterLReceived		2
+#define FLeftSpeedReceived		3
+#define FRightSpeedReceived		4
+#define PedalADCReceived		5
+#define IVTReceived				6
+#define InverterRReceived		7
+//#define YAWReceived			8
+
+
+#define LeftInverter			0
+#define RightInverter			1
+
+#define INVERTERDISABLED		1
+#define INVERTERREADY			2 // preoperation, ready for TS.
+#define INVERTERON				3 // operating but not on, TS enabled.
+#define INVERTEROPERATING		4 // output enabled ( RTDM only )
+#define INVERTERERROR			-99
+
+extern volatile uint32_t ADCloops;
 
 volatile struct CarState {
-	uint32_t	brake_balance;
-	char ReadyToDrive_Ready;
+	uint8_t brake_balance;
 
-	char HighVoltageOn_AllowedR;
-	char HighVoltageOn_AllowedL;
-
-	char ReadyToDrive_AllowedR;
-	char ReadyToDrive_AllowedL;
-
-	char HighVoltageOn_Ready;
-	char Buzzer_Sounding;
+	char HighVoltageAllowedR;
+	char HighVoltageAllowedL;
+	char HighVoltageReady;
 
 	char BMS_relay_status;
 	char IMD_relay_status;
 	char BSPD_relay_status;
+	char AIROpen;
 
-	char TSALLeftInvLED;
-	char TSALRightInvLED;
+	uint16_t LeftInvState;
+	uint16_t LeftInvBadStatus;
+	uint16_t LeftInvStateCheck;
+	uint16_t LeftInvStateCheck3;
+	uint16_t LeftInvCommand;
 
-	char RtdmLeftInvLED;
-	char RtdmRightInvLED;
+	uint16_t RightInvState;
+	uint16_t RightInvBadStatus;
+	uint16_t RightInvStateCheck;
+	uint16_t RightInvStateCheck3;
+	uint16_t RightInvCommand;
 
-	uint16_t LeftInvResponse;
-	uint16_t RightInvResponse;
-
-	uint8_t LeftInvState;
-	uint8_t RightInvState;
-
-
+	uint16_t Torque_Req_L;
+	uint16_t Torque_Req_R;
+	uint16_t LeftInvTorque;
+	uint16_t RightInvTorque;
 
 	uint8_t Torque_Req_Max;
+    uint8_t Torque_Req_CurrentMax;
+    
+	uint8_t APPSstatus;
+    
+    uint8_t LimpRequest;
+    uint8_t LimpActive;
 
-	int32_t Wheel_Speed_Left_Calculated;
-	int32_t Wheel_Speed_Right_Calculated;
-	int32_t Wheel_Speed_Rear_Average;
+	int32_t Current;
+	int32_t VoltageINV;
+	int32_t VoltageBMS;
+	int32_t VoltageIVTAccu;
+	int32_t Power;
 
-	char StopLED;
+	int32_t SpeedRL;
+	int32_t SpeedRR;
+	int32_t SpeedFL;
+	int32_t SpeedFR;
 
-} CarState;
+//	int32_t Wheel_Speed_Rear_Average;
+//	int32_t Wheel_Speed_Average;
 
-// CANBus
-FDCAN_TxHeaderTypeDef TxHeaderTime, TxHeader1, TxHeader2; //  TxHeader0,  TxHeader3
+//	uint8_t StopLED;
+} volatile CarState, LastCarState, ErrorCarState;
 
-volatile struct CanData nmt_status;
-volatile struct CanData Status_Right_Inverter;
-volatile struct CanData Status_Left_Inverter;
-volatile struct CanData Speed_Right_Inverter;
-volatile struct CanData Speed_Left_Inverter;
-volatile struct CanData Actual_Torque_Right_Inverter_Raw;
-volatile struct CanData Actual_Torque_Left_Inverter_Raw;
-volatile struct CanData BMS_relay_status;
-volatile struct CanData IMD_relay_status;
-volatile struct CanData BSPD_relay_status;
-volatile struct CanData power;
-volatile struct CanData BatAmps;
-volatile struct CanData BatVoltage;
-volatile struct CanData Accu_Voltage;
-volatile struct CanData Accu_Current;
 
-// button inputs
-volatile struct ButtonData UserBtn, Input1, Input2, Input3, Input4, Input5, Input6;
-struct OutputData LED1, LED2, LED3, TS_LED, RTDM_LED, STOP_LED, BMS_LED, IMD_LED, BSPD_LED;
+struct DeviceState {
+	char CAN1;
+	char CAN2;
+	char FrontSpeedSensors;
+	char IVTEnabled;
+	char BMSEnabled;
+	char LoggingEnabled;
+	char ADC;
+	char InverterL;
+	char InverterR;
+	char BMS;
+	char PDM;
+	char FLSpeed;
+	char FRSpeed;
+	char IVT;
+} volatile DeviceState;
+
+struct ErrorCount {
+	uint16_t OperationalReceiveError;
+	uint16_t State;
+	uint8_t  AllowReset;
+	uint16_t ErrorReason;
+	uint16_t ErrorPlace;
+
+	uint8_t  InverterError;
+
+	uint8_t InverterErrorHistory[8][8];
+	uint8_t InverterErrorHistoryPosition;
+	uint8_t InverterErrorHistoryID[8];
+
+	uint32_t CANError;
+	uint32_t CANCount1;
+	uint32_t CANCount2;
+	uint32_t CANTimeout;
+
+	uint16_t BMSError;
+	uint16_t BMSTimeout;
+	uint16_t BMSReceive;
+	uint16_t BMSReceiveMax;
+
+	uint32_t ADCError;
+	uint16_t ADCTimeout;
+	uint16_t ADCErrorState;
+
+	uint16_t IVTIReceive;
+	uint16_t IVTTimeout;
+
+	uint16_t IVTU1Receive;
+//	uint16_t IVTU1Timeout;
+
+	uint16_t IVTU2Receive;
+//	uint16_t IVTU2Timeout;
+
+	uint16_t IVTWReceive;
+//	uint16_t IVTWTimeout;
+
+	uint16_t INVLReceiveStatus;
+	uint16_t INVLReceiveSpd;
+	uint16_t INVLReceiveTorque;
+
+	uint16_t INVRReceiveStatus;
+	uint16_t INVRReceiveSpd;
+	uint16_t INVRReceiveTorque;
+
+	uint16_t PDMError;
+	uint16_t PDMTimeout;
+	uint16_t PDMReceive;
+
+	uint16_t FLSpeedError;
+	uint16_t FLSpeedTimeout;
+	uint16_t FLSpeedReceive;
+
+	uint16_t FRSpeedError;
+	uint16_t FRSpeedTimeout;
+	uint16_t FRSpeedReceive;
+	uint16_t CANSendError1;
+	uint16_t CANSendError2;
+
+} volatile Errors;
 
 // helpers
 void swapByteOrder_int16(double *current, const int16_t *rawsignal, size_t length);
@@ -168,58 +302,7 @@ void storeBEint16(uint16_t input, uint8_t Data[2]);
 void storeLEint32(uint32_t input, uint8_t Data[4]);
 void storeLEint16(uint16_t input, uint8_t Data[2]);
 
-int16_t linearInteropolate(uint16_t Input[], int16_t Output[], uint16_t count, uint16_t RawADCInput);
-volatile uint32_t gettimer(void);
+char getByte(uint32_t input, int8_t returnbyte);
 
-// adc converters
-int8_t getSteeringAngle(uint16_t RawADCInput);
-uint8_t getBrakeF(uint16_t RawADCInput);
-uint8_t getBrakeR(uint16_t RawADCInput);
-uint8_t getDrivingMode(uint16_t RawADCInput);
-uint8_t getCoolantTemp(uint16_t RawADCInput);
-uint8_t getTorqueReqPerc(uint16_t RawADCInput);
-
-// gpio
-
-GPIO_TypeDef* getGpioPort(int output);
-int getGpioPin(int output);
-void setOutput(int output, char state);
-void toggleOutput(int output);
-void resetButton( struct ButtonData button );
-void setLEDs( void );
-void debouncebutton( volatile struct ButtonData *button );
-
-//canbus
-void resetCanTx(uint8_t CANTxData[8]);
-char CAN1Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData );
-char CAN2Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData );
-char CAN_NMT( void );
-char CANKeepAlive( void );
-char CANSendState( char buzz, char highvoltage );
-char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter );
-char CANTorqueRequest( uint16_t request );
-char CANLogData( void );
-
-// car state
-
-void processADCInput( void );
-void processCANData( void );
-
-char AllowedToDrive( void );
-void RTDMCheck( void );
-char InverterStateMachine( int8_t Inverter );
-void RearSpeedCalculation( void );
-uint16_t PedalTorqueRequest( void );
-
-// initialisation
-void setupInterrupts( void );
-void setupCarState( void );
-void startupLEDs(void);
-void FDCAN1_start(void);
-void FDCAN2_start(void);
-void setupButtons(void);
-void setupLEDs( void );
-void startADC(void);
-void stopADC( void );
 
 #endif /* ECU_H_ */
