@@ -168,6 +168,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	static uint16_t readystate;
 	static uint32_t standstill;
 	static uint8_t allowstop;
+    static uint32_t limpcounter;
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
@@ -176,6 +177,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		blinkOutput(RTDMLED_Output,LEDON,0);
 		allowstop = 0;
 		standstill = 0;
+        limpcounter = 0;
 		// send buzzer as entering RTDM
 	}
 #ifndef everyloop
@@ -226,7 +228,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
     
     #define RTDMStopTime    3 // 3 seconds.ww
 
-	if ( CarState.SpeedRL < 100  && CarState.SpeedRR < 100 )
+	if ( CarState.SpeedRL < 100  && CarState.SpeedRR < 100 ) // untested
 	{
 		standstill++;
 		if ( standstill > RTDMStopTime*100 )
@@ -275,15 +277,39 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	CarState.Torque_Req_L = 0;  // APPS
         CarState.Torque_Req_R = CarState.Torque_Req_L;
 
-	if ( readystate == 0 )
+	if ( readystate == 0 ) // only start to request torque when inverters ready.
 	{
         // check if limp mode allowed ( don't want for acceleration test ), and if so, if BMS has requested.
         
-        if ( CarState.LimpRequest ) {
+        if ( CarState.LimpRequest && !CarState.LimpDisable ) {
             CarState.LimpActive = 1;
-     //       if ( CarState.Torque_Req_L < 5 ) CarState.Torque_Req_CurrentMax = 10;
             blinkOutput(BMSLED_Output,LEDBLINK_TWO,LEDBLINKNONSTOP); // start BMS led blinking to indicate limp mode.
         } // else CarState.Torque_Req_CurrentMax = CarState.Torque_Req_Max;
+        
+        
+        if ( CarState.LimpActive && CarState.Torque_Req_CurrentMax > 10 )
+        {
+            limpcounter++;
+            if ( ( limpcounter % 10 ) == 0 ) // every 100ms decrease nm request
+                Torque_Req_CurrentMax--;
+        }
+    
+#ifdef ALLOWLIMPCANCEL
+        // don't allow immiediete exit from limp mode if it was already triggered
+        if ( CarState.LimpActive && OperationLoops > 100 && CheckRTDMRequest() )
+        {
+            CarState.LimpDisable = 1;
+        }
+        
+        if ( !CarState.LimpActive && CarState.Torque_Req_CurrentMax < CarState.Torque_Req_Max )
+        {
+            limpcounter++;
+            if ( ( limpcounter % 10 ) == 0 ) // every 100ms increase nm request back to original setting.
+                Torque_Req_CurrentMax++;
+            if (Torque_Req_CurrentMax == Torque_Req_Max)
+                CarState.LimpActive = 0;
+        }
+#endif
         
         // add limp mode cancel potentially
         

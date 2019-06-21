@@ -33,6 +33,7 @@
 #define debugrun
 //#define debug
 //#define errorLED
+#define ALLOWLIMPCANCEL
 
 #define everyloop
 
@@ -196,6 +197,7 @@ volatile struct CarState {
     
     uint8_t LimpRequest;
     uint8_t LimpActive;
+    uint8_t LimpDisable;
 
 	int32_t Current;
 	int32_t VoltageINV;
@@ -235,7 +237,8 @@ struct DeviceState {
 struct ErrorCount {
 	uint16_t OperationalReceiveError;
 	uint16_t State;
-	uint8_t  AllowReset;
+	uint8_t  LeftInvAllowReset;
+    uint8_t  RightInvAllowReset;
 	uint16_t ErrorReason;
 	uint16_t ErrorPlace;
 

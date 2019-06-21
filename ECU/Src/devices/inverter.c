@@ -249,15 +249,32 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
 	// 00  10  81      DD  1E     03   -   00  00
 	if ( CANRxData[0] == 0 && CANRxData[1] == 0x10 && CANRxData[2] == 0x81 && CANRxData[6] == 0x00 && CANRxData[7] == 0 )
 	{
+        uint16_t ErrorCode = CANRxData[4]*256+CANRxData[5];
+        
+        uint8_t AllowReset = 0;
+        
+        switch ( ErrorCode )
+        {
+            30003 : // DC Underlink Voltage. HV dropped or dipped, allow reset attempt.
+                AllowReset = 1;
+                break;
+            default : // other unknown errors, don't allow reset attempt.
+                AllowReset = 0;
+        }
+        
 		switch ( Inverter )
 		{
 			case LeftInverter :
-				if ( GetInverterState(CarState.LeftInvState) >= 0)
+				if ( GetInverterState(CarState.LeftInvState) >= 0) //if inverter status not in error yet, put it there.
 				{
 					CarState.LeftInvState = 0xFE;
 				}
 				CarState.LeftInvBadStatus = 1;
 				DeviceState.InverterL = ERROR;
+                if ( Errors.LeftInvAllowReset == 1 )
+                {
+                    Errors.LeftInvAllowReset = AllowReset;
+                }
 				Errors.INVLReceiveStatus++;
 #ifdef SENDBADDATAERROR
 				CAN_SendErrorStatus(99,InverterLReceived+20,99);
@@ -268,10 +285,14 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
 				CarState.RightInvState = 0xFE;
 				CarState.RightInvBadStatus = 1;
 				DeviceState.InverterR = ERROR;
-#ifdef SENDBADDATAERROR
-				CAN_SendErrorStatus(99,InverterRReceived+20,99);
-#endif
+                if ( Errors.RightInvAllowReset == 1 )
+                {
+                    Errors.RightInvAllowReset = AllowReset;
+                }
 				Errors.INVRReceiveStatus++;
+#ifdef SENDBADDATAERROR
+                CAN_SendErrorStatus(99,InverterRReceived+20,99);
+#endif
 				break;
 		}
 

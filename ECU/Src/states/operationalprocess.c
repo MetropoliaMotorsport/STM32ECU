@@ -35,7 +35,8 @@ void ResetStateData( void ) // set default startup values for global state value
 	DeviceState.CAN1 = OPERATIONAL;
 	DeviceState.CAN2 = OPERATIONAL;
 
-	Errors.AllowReset = 0;
+	Errors.LeftInvAllowReset = 1;
+    Errors.RightInvAllowReset = 1;
 #ifdef FRONTSPEED
 	DeviceState.FrontSpeedSensors = ENABLED;
 	DeviceState.FLSpeed = OFFLINE;
@@ -109,6 +110,8 @@ void ResetStateData( void ) // set default startup values for global state value
 	CarState.Torque_Req_CurrentMax = 0;
 	CarState.LimpRequest = 0;
 	CarState.LimpActive = 0;
+    CarState.LimpDisable = 0;
+    
 
 
 	CarState.SpeedRL = 0;
@@ -314,20 +317,22 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		CAN_SendErrors();
 	}
 
-
 	receivePDM();
 
-	CheckErrors();
+//	CheckErrors();
 
-	// wait for restart message
-	// Errors.AllowReset == 1 &&
-	if ( checkReset() == 1 ) // try to resume after an error.
+	// wait for restart request if allowed by error state.
+	if ( errorPDM() == 0
+        && CheckADCSanity() == 0
+        && Errors.LeftInvAllowReset
+        && Errors.RightInvAllowReset
+        && checkReset() == 1 )      // check stop switches also?
 	{
-		setupButtons(); // moved later, during startup sequence inputs were being triggered early
+		setupButtons();
 		setupLEDs();
 		//loopcount = 0;
 		return StartupState;
-		// try to perform a full reset here on user request, probably easier  to just cycle power though.
+		// try to perform a full reset back to startup state here on user request.
 	}
 
 		// check for restart request. -> pre operation.
