@@ -255,7 +255,7 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
         
         switch ( ErrorCode )
         {
-            30003 : // DC Underlink Voltage. HV dropped or dipped, allow reset attempt.
+        case 30003 : // DC Underlink Voltage. HV dropped or dipped, allow reset attempt.
                 AllowReset = 1;
                 break;
             default : // other unknown errors, don't allow reset attempt.
