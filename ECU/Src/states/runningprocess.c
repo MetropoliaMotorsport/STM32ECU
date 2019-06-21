@@ -291,12 +291,12 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
         {
             limpcounter++;
             if ( ( limpcounter % 10 ) == 0 ) // every 100ms decrease nm request
-                Torque_Req_CurrentMax--;
+            	CarState.Torque_Req_CurrentMax--;
         }
     
 #ifdef ALLOWLIMPCANCEL
         // don't allow immiediete exit from limp mode if it was already triggered
-        if ( CarState.LimpActive && OperationLoops > 100 && CheckRTDMRequest() )
+        if ( CarState.LimpActive && OperationLoops > 100 && CheckRTDMActivationRequest() )
         {
             CarState.LimpDisable = 1;
         }
@@ -305,8 +305,8 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
         {
             limpcounter++;
             if ( ( limpcounter % 10 ) == 0 ) // every 100ms increase nm request back to original setting.
-                Torque_Req_CurrentMax++;
-            if (Torque_Req_CurrentMax == Torque_Req_Max)
+            	CarState.Torque_Req_CurrentMax++;
+            if (CarState.Torque_Req_CurrentMax == CarState.Torque_Req_Max)
                 CarState.LimpActive = 0;
         }
 #endif
