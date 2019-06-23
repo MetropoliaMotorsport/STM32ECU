@@ -23,6 +23,50 @@
   #include "vhd44780.h"
 #endif
 
+
+void setDriveMode(void)
+{
+	switch ( ADCState.DrivingMode )
+	{
+
+		SetupNormalTorque();
+
+		CarState.LimpDisable = 0;
+
+		case 1: // 5nm  5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    64,    65,   0
+			CarState.Torque_Req_Max = 5;
+		case 2: // 10nm
+			CarState.Torque_Req_Max = 10;
+			break;
+		case 3: // 15nm
+			CarState.Torque_Req_Max = 15;
+			break;
+		case 4: // 20nm
+			CarState.Torque_Req_Max = 20;
+			break;
+		case 5: // 25nm
+			CarState.Torque_Req_Max = 25;
+			break;
+		case 6: // 30nm
+			CarState.Torque_Req_Max = 30;
+			break;
+		case 7: // 65nm Track
+			CarState.Torque_Req_Max = 64;
+			SetupLargeLowRangeTorque();
+			break;
+		case 8: // 65nm Accel
+			CarState.Torque_Req_Max = 65;
+			CarState.LimpDisable = 1;
+			SetupLowTravelTorque();
+			break;
+
+	}
+
+	CarState.Torque_Req_CurrentMax = CarState.Torque_Req_Max;
+
+}
+
+
 static uint16_t DevicesOnline( uint16_t returnvalue )
 {
 // external devices ECU expects to be present on CAN
@@ -188,8 +232,10 @@ int PreOperation( uint32_t OperationLoops  )
 //		return OperationalErrorState; // if a device is in error state, quit to error handler to decide how to proceed.
 	}
 
-	CarState.Torque_Req_Max = ADCState.DrivingMode;
-	CarState.Torque_Req_CurrentMax = ADCState.DrivingMode;
+	// set drive mode
+
+	setDriveMode();
+
 	CarState.Torque_Req_L = PedalTorqueRequest();  // allow APPS checking before startup
 	CarState.Torque_Req_R = CarState.Torque_Req_L;
 	if ( CarState.APPSstatus ) setOutput(RTDMLED_Output,LEDON); else setOutput(RTDMLED_Output,LEDOFF);
@@ -222,6 +268,7 @@ int PreOperation( uint32_t OperationLoops  )
 				CarState.Torque_Req_R = 0;
 				setOutput(RTDMLED_Output,LEDOFF);
 				return OperationalReadyState; // normal operational state on request
+
 			}
 
 	} else

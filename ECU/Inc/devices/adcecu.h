@@ -112,11 +112,15 @@ int getCoolantTemp1(uint16_t RawADCInput);
 int getCoolantTemp2(uint16_t RawADCInput);
 int getTorqueReqPercL(uint16_t RawADCInputL);
 int getTorqueReqPercR(uint16_t RawADCInputR);
-int getTorqueCurve( uint16_t ADCInput );
+int getTorqueReqCurve( uint16_t ADCInput );
 
 // car state
 
 void SetupADCInterpolationTables( void );
+void SetupNormalTorque( void );
+void SetupLargeLowRangeTorque( void );
+void SetupLowTravelTorque( void );
+
 
 HAL_StatusTypeDef startADC(void);
 HAL_StatusTypeDef stopADC( void );

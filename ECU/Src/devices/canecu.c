@@ -656,7 +656,7 @@ char CAN_SENDINVERTERERRORS( void )
 #endif
 	CAN1Send( &TxHeaderHV, CANTxData );
 
-	for( int j=0;j<Errors.InverterError;j++)
+	for( int j=0;j<Errors.InverterErrorHistoryPosition;j++)
 	{
 		for( int i=0;i<8;i++){
 			CANTxData[i] = Errors.InverterErrorHistory[i][j];
@@ -669,7 +669,6 @@ char CAN_SENDINVERTERERRORS( void )
 
 	return 0;
 }
-
 
 
 char CAN_SendADCValue( uint16_t adcdata, uint8_t index )
@@ -937,41 +936,28 @@ char CANLogDataFast( void )
 	CANTxData[1] = CarState.Torque_Req_CurrentMax; // CarState.Torque_Req_Max; //torq_req_max can0 0x7c8 8,8
 	CANTxData[2] = ADCState.CoolantTempR; 	//temp_sensor_2 can0 0x7c8 16,8
 	CANTxData[3] = ADCState.DrivingMode; //future_torq_req_max can0 0x7c8 24,8
-	storeBEint16(ADCState.Torque_Req_L_Percent, &CANTxData[4]); //torq_req_l_perc can0 0x7c8 32,16be
-	storeBEint16(ADCState.Torque_Req_R_Percent, &CANTxData[6]); //torq_req_r_perc can0 0x7c8 48,16be
+	storeBEint16(ADCState.Torque_Req_L_Percent/10, &CANTxData[4]); //torq_req_l_perc can0 0x7c8 32,16be
+	storeBEint16(ADCState.Torque_Req_R_Percent/10, &CANTxData[6]); //torq_req_r_perc can0 0x7c8 48,16be
 	CAN1Send( &TxHeaderLog, CANTxData );
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7C9;
 	storeBEint16(CarState.LeftInvTorque, &CANTxData[0]); //actual_torque_left_inverter_raw can0 0x7c9 0,16be
 	storeBEint16(CarState.RightInvTorque, &CANTxData[2]); //actual_torque_right_inverter_raw can0 0x7c9 16,16be
-//	CANTxData[6] = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1);
-//    CANTxData[7] = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2);
 
 	CAN1Send( &TxHeaderLog, CANTxData );
 
 	resetCanTx(CANTxData);
 
-	// CarState.LeftInvTorque
-
 	TxHeaderLog.Identifier = 0x7CA; // not being sent in current simulink, but is set?
-//	CANTxData[6] = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1);
-//    CANTxData[7] = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2);
 	storeBEint32(CarState.brake_balance,&CANTxData[0]); //brake_balance can0 0x7CA 0,32be
 	storeBEint32(ADCState.SteeringAngle,&CANTxData[4]);
 
-//	CANTxData[7] = ADCState.SteeringAngle; // 32bit, [3]-[7];
 	CAN1Send( &TxHeaderLog, CANTxData );
 
 	resetCanTx(CANTxData);
 
 	TxHeaderLog.Identifier = 0x7CB; // IVT
-	/*
-	 *                 CurrentR.Caption := IntToStr(msg[1]+256*msg[0]);
-                   InvVR.Caption := IntToStr(msg[5]+256*msg[4]);
-                   BMSVR.Caption := IntToStr(msg[3]+256*msg[2]);
-                   PowerR.Caption := IntToStr(msg[7]+256*msg[6])
-	 */
 
 	storeBEint16(CarState.Current, &CANTxData[0]);
 	storeBEint16(CarState.VoltageINV, &CANTxData[2]);

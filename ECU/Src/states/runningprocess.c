@@ -30,18 +30,16 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 
 	//The absolute value of the difference between the APPS (Accelerator Pedal Position Sensors)
 
-	int difference = abs(ADCState.Torque_Req_L_Percent - ADCState.Torque_Req_R_Percent);
+	int difference = abs(ADCState.Torque_Req_L_Percent - ADCState.Torque_Req_R_Percent)/10;
 
 	//The average value of the APPS
-	int AverageTorqueRequestPercent = (ADCState.Torque_Req_L_Percent + ADCState.Torque_Req_R_Percent) /2;
+	int TorqueRequestPercent = ADCState.Torque_Req_R_Percent / 10; //(ADCState.Torque_Req_L_Percent + ADCState.Torque_Req_R_Percent) /2;
 
 	//   -Implausibility Test Failure : In case of more than 10 percent implausibility between the APPS,torque request is 0
 	//   -Implausibility allowed : more than 10 percent
 	//   -Brake Pressure allowed : less than 65
 	//   -Torque-Brake Violation : Free
-	if( difference>10 // this is triggering pressing pedal in normal use due to 0% + eg 2% on other pedal. non urgent fix.
-	    || (ADCState.Torque_Req_R_Percent==0 && ADCState.Torque_Req_L_Percent>0)
-		|| (ADCState.Torque_Req_L_Percent==0 && ADCState.Torque_Req_R_Percent>0) )
+	if( difference>10 )
 	{
 	    Torque_drivers_request = 0;
 	    CarState.APPSstatus=1;
@@ -66,7 +64,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 
 	else if( difference<=10
 			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )  // 70
-			 && ( AverageTorqueRequestPercent>=25 || CarState.Power >= 5000 ) )
+			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) )
 	{
 		Torque_drivers_request=0;
 		No_Torque_Until_Pedal_Released=1;
@@ -80,7 +78,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	else if( difference<=10
 			 && ( ADCState.BrakeR < APPSBrakeRelease && ADCState.BrakeF < APPSBrakeRelease ) // 30
 			 && No_Torque_Until_Pedal_Released==1
-			 && AverageTorqueRequestPercent >=5 )
+			 && TorqueRequestPercent >=5 )
 	{
 		Torque_drivers_request=0;
 		CarState.APPSstatus=4;
@@ -94,7 +92,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	else if ( difference<=10
 			  && ( ADCState.BrakeR < APPSBrakeRelease && ADCState.BrakeF < APPSBrakeRelease ) // 30
 			  && No_Torque_Until_Pedal_Released==1
-			  && AverageTorqueRequestPercent < 5 )
+			  && TorqueRequestPercent < 5 )
 	{
 		No_Torque_Until_Pedal_Released=0;
 	    Torque_drivers_request = 1;
@@ -103,7 +101,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	else if ( difference<=10
 			  && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard ) // 30
 			  && No_Torque_Until_Pedal_Released==0
-			  && AverageTorqueRequestPercent < 5 )
+			  && TorqueRequestPercent < 5 )
 	{ // brakes pressed without accelerator, don't allow torque.
 	    Torque_drivers_request=0;
 	    CarState.APPSstatus=5;
@@ -117,7 +115,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	// can send status
 
 	if ( Torque_drivers_request )
-	  return (ADCState.Torque_Req_R_Percent*CarState.Torque_Req_CurrentMax*0.01)*1000/65;
+	  return ((getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax*0.01)*1000/65)/10; // Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
 	else
 	  return 0;
 }
@@ -281,7 +279,8 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	{
         // check if limp mode allowed ( don't want for acceleration test ), and if so, if BMS has requested.
         
-        if ( CarState.LimpRequest && !CarState.LimpDisable ) {
+        if ( CarState.LimpRequest && !CarState.LimpDisable )
+        {
             CarState.LimpActive = 1;
             blinkOutput(BMSLED_Output,LEDBLINK_TWO,LEDBLINKNONSTOP); // start BMS led blinking to indicate limp mode.
         } // else CarState.Torque_Req_CurrentMax = CarState.Torque_Req_Max;

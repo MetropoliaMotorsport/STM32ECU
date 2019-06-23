@@ -28,40 +28,29 @@ int16_t BrakeROutput[] = {-1,     0,    0,     240,  255 }; // output range // 2
 uint16_t BrakeFInput[] = { 1024, 1025, BRAKEZERO,   BRAKEMAX, 65535 }; // calibrated input range //62914
 int16_t BrakeFOutput[] = { -1,     0,    0,     240,    255 }; // output range // 240
 
-
+// should be calibrated to actual min/max, use curve definitions to implement dead zone instead.
 uint16_t TorqueReqLInput[] = { 1999,  2000, ACCELERATORLZERO,   ACCELERATORLMAX,  64000,  64001 }; // calibration values for left input // 5800
-int16_t TorqueReqLOutput[] = {  -1,  0,     0,     100,      100,  101 };
+int16_t TorqueReqLOutput[] = {  -1,  0,     0,     1000,      1000,  1001 }; // range defined 0-1000 to allow percentage accuracy even if not using full travel range.
 
 // TorqueRMin(6798) / TorqueRMax(54369)
 uint16_t TorqueReqRInput[] = { 1999, 2000,    ACCELERATORRZERO,  ACCELERATORRMAX,   64000,   64001 }; // calibration values for right input // 6200
-int16_t TorqueReqROutput[] = { -1,      0,      0,      100,   100,   101 };
+int16_t TorqueReqROutput[] = { -1,      0,      0,      1000,   1000,   1001 };
 
 
-uint16_t TorqueCurveInput[] = {0,50,100};
-int16_t TorqueCurveOutput[] = {0,25,100};
+uint16_t TorqueLinearInput[] = {100,1000}; // start registered travel at 10%
+int16_t TorqueLinearOutput[] = {0,1000};
 
-// needs calibrating 20500 = 20c? approx 0.73v at room temp. ~2.1k
-//uint16_t CoolantInput[] = {0,1000,  14500, 25000, 25001 }; // { 51, 52, 53, 67, 85, 109,140,182,239,313,413,537, 698, 1130, 1314}; //, 9000, 9001 };
-//int16_t CoolantOutput[] = {-1, 120, 20, 0, -1 }; //{ 0, 255, 130,120,110,100,90 ,80, 70, 60, 50, 40,  30,  22,    0 };// ,   1, 0 };
+uint16_t TorqueLowTravelInput[] = {100,500, 1000}; // start registered travel at 10%
+int16_t TorqueLowTravelOutput[] = {0, 1000,1000};
+
+uint16_t TorqueLargelowRangeInput[] = {100,700, 1000}; // start registered travel at 10%
+int16_t TorqueLargelowRangeOutput[] = {0, 400,1000};
 
 uint16_t CoolantInput[] = { 1000,4235, 4851, 5661, 6889, 8952, 11246, 14262, 18894, 22968, 27081, 33576, 39050, 44819, 49192, 54011, 58954,  64113, 64112};
 int16_t CoolantOutput[] = { -1,   120,   115,  109,  101,   90,    82,    72,    60,    52,    46,    38,    32,    26,    22,    16,    11,    6, -1};
 
-
-/*
-DrivingMode:
-pos1~950
-pos2~9400
-pos3~18000
-pos4~27000
-pos5~36000
-pos6~44000
-pos7~54000
-pod8~~61000
-*/
-
 uint16_t DrivingModeInput[] = { 0 , 1022, 1023, 1024,4500, 13500, 23500, 33000, 40000, 49000, 57500, 65534, 65535 };
-int16_t DrivingModeOutput[] = { 5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    45,    65,   0 };
+int16_t DrivingModeOutput[] = { 1 , 1,    0,     1,   1,    2,    3,    4,   5,     6,    7,    8,   0 };
 
 void SetupADCInterpolationTables( void )
 {
@@ -95,11 +84,10 @@ void SetupADCInterpolationTables( void )
     ADCInterpolationTables.AccelR.Elements = sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
 
 
-    ADCInterpolationTables.TorqueCurve.Input = TorqueCurveInput;
-    ADCInterpolationTables.TorqueCurve.Output = TorqueCurveOutput;
+    ADCInterpolationTables.TorqueCurve.Input = TorqueLinearInput;
+    ADCInterpolationTables.TorqueCurve.Output = TorqueLinearOutput;
 
-    ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueCurveInput)/sizeof(TorqueCurveInput[0]);
-
+    ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLinearInput)/sizeof(TorqueLinearInput[0]);
 
     ADCInterpolationTables.CoolantL.Input = CoolantInput;
     ADCInterpolationTables.CoolantL.Output = CoolantOutput;
@@ -119,6 +107,26 @@ void SetupADCInterpolationTables( void )
     ADCInterpolationTables.ModeSelector.Elements = sizeof(DrivingModeInput)/sizeof(DrivingModeInput[0]);
 }
 
+void SetupNormalTorque( void )
+{
+	ADCInterpolationTables.TorqueCurve.Input = TorqueLinearInput;
+	ADCInterpolationTables.TorqueCurve.Output = TorqueLinearOutput;
+	ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLinearInput)/sizeof(TorqueLinearInput[0]);
+}
+
+void SetupLargeLowRangeTorque( void )
+{
+	ADCInterpolationTables.TorqueCurve.Input = TorqueLargelowRangeInput;
+	ADCInterpolationTables.TorqueCurve.Output = TorqueLargelowRangeOutput;
+	ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLargelowRangeInput)/sizeof(TorqueLargelowRangeInput[0]);
+}
+
+void SetupLowTravelTorque( void )
+{
+    ADCInterpolationTables.TorqueCurve.Input = TorqueLowTravelInput;
+    ADCInterpolationTables.TorqueCurve.Output = TorqueLowTravelOutput;
+    ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLowTravelInput)/sizeof(TorqueLowTravelInput[0]);
+}
 
 /**
  * function to perform a linear interpolation using given input/output value arrays and raw data.
@@ -273,7 +281,9 @@ int getTorqueReqPercL( uint16_t RawADCInputF )
 #endif
 }
 
-int getTorqueCurve( uint16_t ADCInput )
+
+
+int getTorqueReqCurve( uint16_t ADCInput )
 {
 	if( usecanADC )  // check if we're operating on fake canbus ADC
 	{
@@ -540,12 +550,12 @@ uint16_t CheckADCSanity( void )
         else returnvalue &= ~(0x1 << BrakeRErrorBit);
 
         ADCState.Torque_Req_R_Percent = getTorqueReqPercR(ADC_Data[ThrottleRADC]);
-        if ( ADCState.Torque_Req_R_Percent < 0 || ADCState.Torque_Req_R_Percent > 100 ) // if value is not between 0 and 100 then out of range error
+        if ( ADCState.Torque_Req_R_Percent < 0 || ADCState.Torque_Req_R_Percent > 1000 ) // if value is not between 0 and 100 then out of range error
             returnvalue |= 0x1 << AccelRErrorBit;
         else returnvalue &= ~(0x1 << AccelRErrorBit);
 
         ADCState.Torque_Req_L_Percent = getTorqueReqPercL(ADC_Data[ThrottleLADC]);
-        if ( ADCState.Torque_Req_L_Percent < 0 || ADCState.Torque_Req_L_Percent > 100 ) // if value is not between 0 and 100 then out of range error
+        if ( ADCState.Torque_Req_L_Percent < 0 || ADCState.Torque_Req_L_Percent > 1000 ) // if value is not between 0 and 100 then out of range error
             returnvalue |= 0x1 << AccelLErrorBit;
         else returnvalue &= ~(0x1 << AccelLErrorBit);
 

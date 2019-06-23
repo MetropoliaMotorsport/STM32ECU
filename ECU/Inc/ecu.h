@@ -192,6 +192,7 @@ volatile struct CarState {
 
 	uint8_t Torque_Req_Max;
     uint8_t Torque_Req_CurrentMax;
+    uint32_t PowerLimit;
     
 	uint8_t APPSstatus;
     
