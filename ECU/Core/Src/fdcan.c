@@ -20,7 +20,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "fdcan.h"
 
+
 /* USER CODE BEGIN 0 */
+
+#include "ecu.h"
 
 /* USER CODE END 0 */
 
@@ -39,8 +42,14 @@ void MX_FDCAN1_Init(void)
   hfdcan1.Init.ProtocolException = DISABLE;
   hfdcan1.Init.NominalPrescaler = 4;
   hfdcan1.Init.NominalSyncJumpWidth = 20;
-  hfdcan1.Init.NominalTimeSeg1 = 15; //14
-  hfdcan1.Init.NominalTimeSeg2 = 4; //5
+  hfdcan1.Init.NominalTimeSeg1 = 14;
+
+  uint16_t volatile * const chiprevision = (uint16_t *) DEBUGMCU+1;
+
+  if ( *chiprevision==REVV ) // revision V
+	  hfdcan1.Init.NominalTimeSeg2 = 4;
+  else // revision Y
+	  hfdcan1.Init.NominalTimeSeg2 = 5;
   hfdcan1.Init.DataPrescaler = 1;
   hfdcan1.Init.DataSyncJumpWidth = 1;
   hfdcan1.Init.DataTimeSeg1 = 1;
@@ -75,10 +84,17 @@ void MX_FDCAN2_Init(void)
   hfdcan2.Init.AutoRetransmission = ENABLE;
   hfdcan2.Init.TransmitPause = DISABLE;
   hfdcan2.Init.ProtocolException = DISABLE;
+
   hfdcan2.Init.NominalPrescaler = 4;
   hfdcan2.Init.NominalSyncJumpWidth = 20;
-  hfdcan2.Init.NominalTimeSeg1 = 15; //14
-  hfdcan2.Init.NominalTimeSeg2 = 4; //5
+  hfdcan2.Init.NominalTimeSeg1 = 14;
+
+  uint16_t volatile * const chiprevision = (uint16_t *) DEBUGMCU+1;
+
+  if ( *chiprevision==REVV ) // revision V
+	  hfdcan2.Init.NominalTimeSeg2 = 4;
+  else // revision Y
+	  hfdcan2.Init.NominalTimeSeg2 = 5;
   hfdcan2.Init.DataPrescaler = 1;
   hfdcan2.Init.DataSyncJumpWidth = 1;
   hfdcan2.Init.DataTimeSeg1 = 1;
@@ -129,7 +145,7 @@ void HAL_FDCAN_MspInit(FDCAN_HandleTypeDef* fdcanHandle)
     GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF9_FDCAN1;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 

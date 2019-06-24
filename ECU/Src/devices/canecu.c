@@ -1092,9 +1092,6 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 			case 0x511 : // IVT Control Message
 				//SetCanData((struct CanData *)&CanState.IVTMsg, CANRxData, RxHeader.DataLength );
-#ifdef retransmitIVT
-//				reTransmitOnCan1(0x511,CANRxData,RxHeader.DataLength);
-#endif
 				break;
 
 			case IVTI_ID : // IVT Current 0x521,24,24BE * 0.001 -> Accu_Voltage // not in current logs. -- current, not voltage.
@@ -1116,18 +1113,12 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				break;
 			case IVTT_ID : // IVT Temp 0x525
 				processIVT(CANRxData, RxHeader.DataLength, IVTT_ID );
-/*#ifdef retransmitIVT
-				reTransmitOnCan1(0x525,CANRxData,RxHeader.DataLength);
-#endif */
 				break;
 			case IVTW_ID : // IVT Wattage 0x526
 				processIVT(CANRxData, RxHeader.DataLength, IVTW_ID );
 				break;
 			case IVTAs_ID : // IVT As? 0x527
 				processIVT(CANRxData, RxHeader.DataLength, IVTAs_ID );
-/*#ifdef retransmitIVT
-				reTransmitOnCan1(0x527,CANRxData,RxHeader.DataLength);
-#endif */
 				break;
 			case IVTWh_ID : // IVT WattHours 0x528
 				processIVT(CANRxData, RxHeader.DataLength, IVTWh_ID );
@@ -1141,7 +1132,15 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				//	0x520,8,8 -> IMD_relay_status
 				//	0x520,16,8 -> BSPD_relay_status
 				processPDM(CANRxData, RxHeader.DataLength );
-//				SetCanData((struct CanData *)&CanState.PDM, CANRxData, RxHeader.DataLength );
+				break;
+
+
+				// PDMvolts
+
+			case 0x529 : // PDM can0
+				// 0x529,0,8 AIR Voltage
+				// 0x529,8,8 LV Voltage.
+				processPDMVolts(CANRxData, RxHeader.DataLength );
 				break;
 
 

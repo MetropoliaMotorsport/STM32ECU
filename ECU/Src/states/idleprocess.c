@@ -227,6 +227,9 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 			 blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP); // start blinking to indicate ready.
 	}
 
+	CarState.Torque_Req_L = PedalTorqueRequest();  // allow APPS checking before startup
+	CarState.Torque_Req_R = CarState.Torque_Req_L;
+
 	// fail process, inverters go from 33->60->68  when no HV supplied and request startup.
 
 	uint8_t InvHVPresent = 0;

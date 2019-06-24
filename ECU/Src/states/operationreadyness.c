@@ -218,7 +218,8 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 		 )
 		// everything is ok to continue.
 	{
-		CarState.Torque_Req_Max = ADCState.DrivingMode; // set max torque request before enter operational state.
+//		CarState.Torque_Req_Max = ADCState.DrivingMode; // set max torque request before enter operational state.
+//		CarState.Torque_Req_CurrentMax = ADCState.DrivingMode;
 		return IdleState; // ready to move onto TS activated but not operational state, idle waiting for RTDM activation.
 		// set TS ready for activation light.
 	}

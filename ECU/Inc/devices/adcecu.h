@@ -58,8 +58,8 @@ struct  {
 	uint8_t CoolantTempL;
 	uint8_t CoolantTempR;
 	uint16_t CoolantTempRRaw;
-	uint8_t Torque_Req_L_Percent;
-	uint8_t Torque_Req_R_Percent;
+	uint16_t Torque_Req_L_Percent;
+	uint16_t Torque_Req_R_Percent;
 	uint8_t DrivingMode;
 } ADCState;
 

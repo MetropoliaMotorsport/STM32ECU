@@ -100,6 +100,7 @@ volatile struct CanState {
 	volatile struct CanData FRightSpeedNMT;
 
 	volatile struct CanData PDM;
+	volatile struct CanData PDMVolts;
 
 	volatile struct CanData BMSVolt;
 	volatile struct CanData BMSError;

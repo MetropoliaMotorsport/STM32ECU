@@ -28,22 +28,25 @@ int16_t BrakeROutput[] = {-1,     0,    0,     240,  255 }; // output range // 2
 uint16_t BrakeFInput[] = { 1024, 1025, BRAKEZERO,   BRAKEMAX, 65535 }; // calibrated input range //62914
 int16_t BrakeFOutput[] = { -1,     0,    0,     240,    255 }; // output range // 240
 
-// should be calibrated to actual min/max, use curve definitions to implement dead zone instead.
-uint16_t TorqueReqLInput[] = { 1999,  2000, ACCELERATORLZERO,   ACCELERATORLMAX,  64000,  64001 }; // calibration values for left input // 5800
+// zero should be approx real pedal zero, zero is read below this to allow for some variance without triggering errors.
+// ditto max value.
+
+// define zero as 5% actual travel
+uint16_t TorqueReqLInput[] = { 1999,  2000, (ACCELERATORLMAX-ACCELERATORLZERO)/100*5+ACCELERATORLZERO,   ACCELERATORLMAX,  64000,  64001 }; // calibration values for left input // 5800
 int16_t TorqueReqLOutput[] = {  -1,  0,     0,     1000,      1000,  1001 }; // range defined 0-1000 to allow percentage accuracy even if not using full travel range.
 
 // TorqueRMin(6798) / TorqueRMax(54369)
-uint16_t TorqueReqRInput[] = { 1999, 2000,    ACCELERATORRZERO,  ACCELERATORRMAX,   64000,   64001 }; // calibration values for right input // 6200
+uint16_t TorqueReqRInput[] = { 1999, 2000, (ACCELERATORRMAX-ACCELERATORRZERO)/100*5+ACCELERATORRZERO,  ACCELERATORRMAX,   64000,   64001 }; // calibration values for right input // 6200
 int16_t TorqueReqROutput[] = { -1,      0,      0,      1000,   1000,   1001 };
 
 
-uint16_t TorqueLinearInput[] = {100,1000}; // start registered travel at 10%
+uint16_t TorqueLinearInput[] = {50,950}; // start registered travel at 8%
 int16_t TorqueLinearOutput[] = {0,1000};
 
-uint16_t TorqueLowTravelInput[] = {100,500, 1000}; // start registered travel at 10%
-int16_t TorqueLowTravelOutput[] = {0, 1000,1000};
+uint16_t TorqueLowTravelInput[] = {50,500}; // start registered travel at 10%
+int16_t TorqueLowTravelOutput[] = {0, 1000};
 
-uint16_t TorqueLargelowRangeInput[] = {100,700, 1000}; // start registered travel at 10%
+uint16_t TorqueLargelowRangeInput[] = {50,600, 950}; // start registered travel at 10%
 int16_t TorqueLargelowRangeOutput[] = {0, 400,1000};
 
 uint16_t CoolantInput[] = { 1000,4235, 4851, 5661, 6889, 8952, 11246, 14262, 18894, 22968, 27081, 33576, 39050, 44819, 49192, 54011, 58954,  64113, 64112};

@@ -53,6 +53,49 @@ void processPDM(uint8_t CANRxData[8], uint32_t DataLength )
 	}
 }
 
+void processPDMVolts(uint8_t CANRxData[8], uint32_t DataLength )
+{
+	static uint8_t receiveerror = 0;
+	CanState.PDM.time = gettimer();
+
+	if ( DataLength == FDCAN_DLC_BYTES_8
+//		&& CANRxData[0] < 2
+//		&& CANRxData[1] < 2
+		&& CANRxData[2] == 0
+		&& CANRxData[3] == 0
+		&& CANRxData[4] == 0
+		&& CANRxData[5] == 0
+		&& CANRxData[6] == 0
+		&& CANRxData[7] == 0
+		)
+	{
+		receiveerror=0;
+
+		DeviceState.PDM = OPERATIONAL; // received data without error bit set, so we can assume operational state
+		CarState.AIROpen = CANRxData[0];
+		CarState.LVVoltage = CANRxData[1];
+
+		CarState.AIROpen = CANRxData[7];
+
+		DeviceState.PDM = OPERATIONAL;
+	} else // bad data.
+	{
+		receiveerror++;
+		Errors.CANError++;
+		Errors.PDMReceive++;
+/*		if ( receiveerror > 10 ), device is still responding, so don't put it offline.
+		{
+			CarState.VoltageBMS=0;
+			DeviceState.BMS = OFFLINE;
+			return 0; // returnval = 0;
+		} */
+#ifdef SENDBADDATAERROR
+		CAN_SendStatus(99,PDMReceived,99);
+#endif
+		reTransmitError(99,CANRxData, DataLength);
+	}
+}
+
 
 int receivedPDM( void )
 {

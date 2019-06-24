@@ -9,15 +9,20 @@
 #define ECU_H_
 
 
+//#define REVY
+
 // Calibration settings
 
-#define ACCELERATORLZERO 11000
-//#define ACCELERATORLMAX  51000
-#define ACCELERATORLMAX  50000
+#define ACCELERATORLZERO 4200//3830
+//#define ACCELERATORLZERO 11000
+//#define ACCELERATORLMAX  50000
+#define ACCELERATORLMAX  53000
 
-#define ACCELERATORRZERO 11500
-//#define ACCELERATORRMAX  53000
-#define ACCELERATORRMAX  50000
+#define ACCELERATORRZERO 4800 //8000//4908
+//#define ACCELERATORRZERO 11500
+#define ACCELERATORRMAX  53000
+// #define ACCELERATORRMAX  50000
+
 
 #define BRAKEZERO 14100 // 0 bar?
 #define BRAKEMAX  62914 // 240 bar settings.
@@ -85,6 +90,10 @@
 #define STMADC
 #endif
 
+#define DEBUGMCU 0x5C001000
+
+#define REVV 					0x2003
+#define REVY 					0x1003
 
 #define MaxRunningErrorCount    10
 #define ReduceErrorCountRate	10
@@ -204,6 +213,7 @@ volatile struct CarState {
 	int32_t VoltageINV;
 	int32_t VoltageBMS;
 	int32_t VoltageIVTAccu;
+	int32_t LVVoltage;
 	int32_t Power;
 
 	int32_t SpeedRL;

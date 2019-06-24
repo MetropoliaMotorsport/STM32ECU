@@ -59,11 +59,14 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	}
 	//   -Torque-Brake Violation : Accelerator Pedal and Brake Pedal pressed at the same time
 	//   -Accelerator Pedal Travel : More than 25 percent or power > 5kW for more than 500ms
+
+	// time not taken into consideration.
+
 	//   -Brake Pressure allowed : more than 140
 	//   -Torque-Brake Violation : Occurred and marked
 
 	else if( difference<=10
-			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )  // 70
+			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )
 			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) )
 	{
 		Torque_drivers_request=0;
@@ -300,7 +303,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
             CarState.LimpDisable = 1;
         }
         
-        if ( !CarState.LimpActive && CarState.Torque_Req_CurrentMax < CarState.Torque_Req_Max )
+        if ( CarState.LimpDisable && CarState.Torque_Req_CurrentMax < CarState.Torque_Req_Max )
         {
             limpcounter++;
             if ( ( limpcounter % 10 ) == 0 ) // every 100ms increase nm request back to original setting.

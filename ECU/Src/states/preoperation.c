@@ -35,6 +35,7 @@ void setDriveMode(void)
 
 		case 1: // 5nm  5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    64,    65,   0
 			CarState.Torque_Req_Max = 5;
+			break;
 		case 2: // 10nm
 			CarState.Torque_Req_Max = 10;
 			break;
@@ -51,7 +52,7 @@ void setDriveMode(void)
 			CarState.Torque_Req_Max = 30;
 			break;
 		case 7: // 65nm Track
-			CarState.Torque_Req_Max = 64;
+			CarState.Torque_Req_Max = 65;
 			SetupLargeLowRangeTorque();
 			break;
 		case 8: // 65nm Accel
