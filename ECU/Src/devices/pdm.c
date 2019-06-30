@@ -153,8 +153,8 @@ int errorPDM( void )
 		setOutputNOW(BSPDLED_Output,LEDON);
 	} else setOutput(BSPDLED_Output,LEDOFF);
 
-	if (  CarState.VoltageINV  > 59 ||
-			CarState.AIROpen == 0 ) // doesn't effect error state, just updates as other PDM derived LED's updated here. SCS Signal, move to PDM ideally.
+	if (  CarState.VoltageINV  > 59 || CarState.VoltageIVTAccu > 59
+		|| CarState.AIROpen == 0 || DeviceState.IVT == OFFLINE ) // doesn't effect error state, just updates as other PDM derived LED's updated here. SCS Signal, move to PDM ideally.
         // currently will default to showing HV if timeout, which should make correct.
 	{
 		 setOutput(TSOFFLED_Output,LEDOFF);

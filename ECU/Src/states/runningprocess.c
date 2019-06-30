@@ -25,6 +25,8 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 
 	//100 ms, allow ~8 10ms loops before triggering?
 
+	static uint32_t APPSTriggerTime = 0;
+
 	static char No_Torque_Until_Pedal_Released = 0; // persistent local variable
 	uint16_t Torque_drivers_request = 0;
 
@@ -37,17 +39,16 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 
 	//   -Implausibility Test Failure : In case of more than 10 percent implausibility between the APPS,torque request is 0
 	//   -Implausibility allowed : more than 10 percent
-	//   -Brake Pressure allowed : less than 65
 	//   -Torque-Brake Violation : Free
 	if( difference>10 )
 	{
 	    Torque_drivers_request = 0;
-	    CarState.APPSstatus=1;
+	    CarState.APPSstatus = 1;
 	}
 
 	//   -Normal Driving Conditions
 	//   -Implausibility allowed : less or equal to 10 percent
-	//   -Brake Pressure allowed : less than 65
+	//   -Brake Pressure allowed : less than 30
 	//   -Torque-Brake Violation : Free
 
 	else if( difference<=10
@@ -55,41 +56,56 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 			&& No_Torque_Until_Pedal_Released==0 )
 	{
 		Torque_drivers_request = 1;
-		CarState.APPSstatus=0; // 2
+		APPSTriggerTime = 0;
+		CarState.APPSstatus = 0; // 2
 	}
 	//   -Torque-Brake Violation : Accelerator Pedal and Brake Pedal pressed at the same time
 	//   -Accelerator Pedal Travel : More than 25 percent or power > 5kW for more than 500ms
-
-	// time not taken into consideration.
-
-	//   -Brake Pressure allowed : more than 140
+	//   -Brake Pressure allowed : more than 30
 	//   -Torque-Brake Violation : Occurred and marked
 
 	else if( difference<=10
 			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )
-			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) )
+			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime == 0 )
 	{
-		Torque_drivers_request=0;
-		No_Torque_Until_Pedal_Released=1;
+		APPSTriggerTime = gettimer();
+		Torque_drivers_request = 1; // still sllow torque till timer elapsed.
 		CarState.APPSstatus=3;
+	}
+
+	else if( difference<=10
+			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )
+			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime < 4500 )
+	{
+		Torque_drivers_request = 1;
+		CarState.APPSstatus = 3;
+	}
+
+	else if( difference<=10
+			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )
+			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime >= 4500 )
+	{
+		Torque_drivers_request = 0; // near max allowed time of torque with braking, trigger no torque finally.
+		No_Torque_Until_Pedal_Released = 1;
+		CarState.APPSstatus = 4;
 	}
 
 	//   -After torque-brake violation :  Even if brake pedal is released, and the APPS are more than 5 percent, no torque is allowed
 	//   -Accelerator Pedal Travel : More than 5 percent
-	//   -Brake Pressure allowed : less than 65
+	//   -Brake Pressure allowed : less than 30
 	//   -Torque-Brake Violation : Still exists and won't be freed
 	else if( difference<=10
 			 && ( ADCState.BrakeR < APPSBrakeRelease && ADCState.BrakeF < APPSBrakeRelease ) // 30
 			 && No_Torque_Until_Pedal_Released==1
 			 && TorqueRequestPercent >=5 )
 	{
-		Torque_drivers_request=0;
-		CarState.APPSstatus=4;
+		Torque_drivers_request = 0;
+		CarState.APPSstatus = 5;
 	}
 
 	//   -After torque-brake violation and the release of the brake pedal, torque is allowed when APPS are less than 5 percent
 	//   -Accelerator Pedal Travel : Less than 5 percent
-	//   -Brake Pressure allowed : less than 65
+	//   -Brake Pressure allowed : less than 30
 	//   -Torque-Brake Violation : Occurred and will be freed
 
 	else if ( difference<=10
@@ -99,6 +115,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	{
 		No_Torque_Until_Pedal_Released=0;
 	    Torque_drivers_request = 1;
+	    APPSTriggerTime = 0;
 	    CarState.APPSstatus=0; // torque ok. // 5
 	}
 	else if ( difference<=10
@@ -106,13 +123,13 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 			  && No_Torque_Until_Pedal_Released==0
 			  && TorqueRequestPercent < 5 )
 	{ // brakes pressed without accelerator, don't allow torque.
-	    Torque_drivers_request=0;
-	    CarState.APPSstatus=5;
+	    Torque_drivers_request = 0;
+	    CarState.APPSstatus = 6;
 	}
 	else 		//  -Any other undefined condition, should never end up here
 	{
-	    Torque_drivers_request=0;
-	    CarState.APPSstatus=99; // 6
+	    Torque_drivers_request = 0;
+	    CarState.APPSstatus = 99; // 6
 	}
 
 	// can send status
