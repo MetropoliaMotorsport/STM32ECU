@@ -339,11 +339,13 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 	if ( errorstatetime + 20000 < gettimer() // ensure error state is seen for at least 2 seconds.
 		&& errorPDM() == 0
         && CheckADCSanity() == 0
-        && ( checkReset() == 1 // manual reset
         && CarState.ShutdownSwitchesClosed
-        || ( ( DeviceState.InverterL == Error || DeviceState.InverterR == Error ) // or automatic reset if allowed inverter error.
-        && ( Errors.LeftInvAllowReset && Errors.RightInvAllowReset ) )
-        ) )
+        && ( checkReset() == 1 // manual reset
+        		|| ( ( DeviceState.InverterL == ERROR || DeviceState.InverterR == ERROR ) // or automatic reset if allowed inverter error.
+        			 && ( Errors.LeftInvAllowReset && Errors.RightInvAllowReset )
+				   )
+           )
+		)
 	{
 		setupButtons();
 		setupLEDs();

@@ -53,7 +53,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 
 	else if( difference<=10
 			&& ( ADCState.BrakeR < APPSBrakeRelease || ADCState.BrakeF < APPSBrakeRelease ) // 30
-			&& No_Torque_Until_Pedal_Released==0 )
+			&& No_Torque_Until_Pedal_Released == 0 )
 	{
 		Torque_drivers_request = 1;
 		APPSTriggerTime = 0;
