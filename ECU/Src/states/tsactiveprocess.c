@@ -99,7 +99,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	uint32_t curtime = gettimer();
 
 	uint8_t prechargedone = 0;
-	if ( prechargetimer+70000 < curtime )
+	if ( prechargetimer+60000 < curtime )
 	{
 		prechargedone = 1;
 	}
@@ -119,7 +119,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 
 	if ( errors )
 	{
-		Errors.ErrorPlace = 0xEB;
+		Errors.ErrorPlace = 0xDB;
 		return OperationalErrorState; // something has triggered an error, drop to error state to deal with it.
 	}
 

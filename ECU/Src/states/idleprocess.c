@@ -215,11 +215,12 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	// at this state, everything is ready to be powered up.
 
 	if ( // !CheckErrors() && // this is done in receive loop already.
-			GetInverterState( CarState.LeftInvState ) == INVERTERREADY
+	     GetInverterState( CarState.LeftInvState ) == INVERTERREADY
 	  && GetInverterState( CarState.RightInvState ) == INVERTERREADY
-		&& !ReceiveNonCriticalError
+	  && !ReceiveNonCriticalError
 	  && CarState.VoltageBMS > MINHV
 	  && CarState.VoltageINV > 18
+	  && CarState.ShutdownSwitchesClosed // only allow TS enabling if shutdown switches are all closed.
 	  ) // minimum accumulator voltage to allow TS, set a little above BMS limit, so we can
 	{
 		readystate = 0;

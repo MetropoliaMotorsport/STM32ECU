@@ -179,6 +179,10 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		allowstop = 0;
 		standstill = 0;
         limpcounter = 0;
+
+    	if ( CarState.LimpRequest )
+    		 CarState.Torque_Req_CurrentMax = LIMPNM;
+
 		// send buzzer as entering RTDM
 	}
 #ifndef everyloop
@@ -267,6 +271,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		CANSendInverter( CarState.RightInvCommand, 0, RightInverter );
 
 		CANSendInverter( CarState.LeftInvCommand, 0, LeftInverter );
+		HAL_Delay(1); // make sure inverters had time to react.
 		return IdleState; // check if need to drop HV in a special order.
 	}
 
@@ -285,11 +290,9 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
         if ( CarState.LimpRequest && !CarState.LimpDisable )
         {
             CarState.LimpActive = 1;
-            blinkOutput(BMSLED_Output,LEDBLINK_TWO,LEDBLINKNONSTOP); // start BMS led blinking to indicate limp mode.
-        } // else CarState.Torque_Req_CurrentMax = CarState.Torque_Req_Max;
+        }
         
-        
-        if ( CarState.LimpActive && CarState.Torque_Req_CurrentMax > 10 )
+        if ( CarState.LimpActive && CarState.Torque_Req_CurrentMax > LIMPNM )
         {
             limpcounter++;
             if ( ( limpcounter % 10 ) == 0 ) // every 100ms decrease nm request
@@ -298,9 +301,10 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
     
 #ifdef ALLOWLIMPCANCEL
         // don't allow immiediete exit from limp mode if it was already triggered
-        if ( CarState.LimpActive && OperationLoops > 100 && CheckRTDMActivationRequest() )
+        if ( CarState.LimpActive && OperationLoops > 200 && CheckRTDMActivationRequest() )
         {
             CarState.LimpDisable = 1;
+            CarState.LimpActive = 0;
         }
         
         if ( CarState.LimpDisable && CarState.Torque_Req_CurrentMax < CarState.Torque_Req_Max )
@@ -308,6 +312,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
             limpcounter++;
             if ( ( limpcounter % 10 ) == 0 ) // every 100ms increase nm request back to original setting.
             	CarState.Torque_Req_CurrentMax++;
+
             if (CarState.Torque_Req_CurrentMax == CarState.Torque_Req_Max)
                 CarState.LimpActive = 0;
         }

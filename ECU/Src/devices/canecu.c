@@ -42,7 +42,7 @@ void FDCAN1_start(void)
   sFilterConfig1.FilterType = FDCAN_FILTER_RANGE; // filter all the id's between id1 and id2 in filter definition.
   sFilterConfig1.FilterConfig = FDCAN_FILTER_TO_RXFIFO0; // FDCAN_FILTER_TO_RXFIFO0; // set can1 to receive via fifo0
 
-  sFilterConfig1.FilterIndex = 1;
+  sFilterConfig1.FilterIndex = 1; // BMS CAN 1
   sFilterConfig1.FilterID1 = 0x8; // 0xf 0x0 for all
   sFilterConfig1.FilterID2 = 0xB; // 07ff  0x0 for all
 
@@ -59,7 +59,7 @@ void FDCAN1_start(void)
   sFilterConfig1.FilterType = FDCAN_FILTER_RANGE; // filter all the id's between id1 and id2 in filter definition.
   sFilterConfig1.FilterConfig = FDCAN_FILTER_TO_RXFIFO0; // FDCAN_FILTER_TO_RXFIFO0; // set can1 to receive via fifo0
 
-  sFilterConfig1.FilterIndex++;
+  sFilterConfig1.FilterIndex++; // ECU CAN 1
   sFilterConfig1.FilterID1 = ECU_CAN_ID;
   sFilterConfig1.FilterID2 = ECU_CAN_ID+1;
 
@@ -70,15 +70,16 @@ void FDCAN1_start(void)
     Error_Handler();
   }
 
-  sFilterConfig1.FilterIndex++; // filter for PDM/IVT. Has relay statuses and accumulator values.
-  sFilterConfig1.FilterID1 = 0x511;
-  sFilterConfig1.FilterID2 = 0x528;
+  sFilterConfig1.FilterIndex++; // filter for PDM CAN 1
+  sFilterConfig1.FilterID1 = 0x520;
+  sFilterConfig1.FilterID2 = 0x520;
 
   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
   {
     // Filter configuration Error
     Error_Handler();
   }
+
 
   sFilterConfig1.FilterIndex++; // filter for canbus ADC id's
   sFilterConfig1.FilterID1 = 0x600;
@@ -100,18 +101,29 @@ void FDCAN1_start(void)
     Error_Handler();
   }
 
-  /*
-  sFilterConfig1.FilterType = FDCAN_FILTER_MASK;  // configure CANOpen device filters by mask.
+  // Front WheelSpeed CANOpen Filters
 
-  sFilterConfig1.FilterIndex++;
-  sFilterConfig1.FilterID1 = InverterL_COBID;
-  sFilterConfig1.FilterID2 = 0b00001111111; // 0x1fe - 0x1ff   0x2fe  - 0x2ff    0x77e - 0x77f
+   sFilterConfig1.FilterType = FDCAN_FILTER_MASK;  // configure CANOpen device filters by mask.
 
-  if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
-  {
-    // Filter configuration Error
-    Error_Handler();
-  } */
+   sFilterConfig1.FilterIndex++;
+   sFilterConfig1.FilterID1 = FLSpeed_COBID;
+   sFilterConfig1.FilterID2 = 0b00001111111;
+
+   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
+   {
+     // Filter configuration Error
+     Error_Handler();
+   }
+
+   sFilterConfig1.FilterIndex++;
+   sFilterConfig1.FilterID1 = FRSpeed_COBID;
+   sFilterConfig1.FilterID2 = 0b00001111111;
+
+   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
+   {
+     // Filter configuration Error
+     Error_Handler();
+   }
 
 
 #ifndef ONECAN
@@ -182,11 +194,14 @@ void FDCAN2_start(void)
 
   HAL_FDCAN_ConfigGlobalFilter(&hfdcan2, FDCAN_REJECT, FDCAN_REJECT, DISABLE, DISABLE);
 
+
+  HAL_FDCAN_ConfigRxFifoOverwrite(&hfdcan2, FDCAN_RX_FIFO1, FDCAN_RX_FIFO_OVERWRITE);
+
   // Configure Rx filter for can2
   sFilterConfig2.IdType = FDCAN_STANDARD_ID;
   sFilterConfig2.FilterIndex = 64;
   sFilterConfig2.FilterType = FDCAN_FILTER_RANGE;
-  sFilterConfig2.FilterConfig = FDCAN_FILTER_TO_RXFIFO0; // set can2 to receive into fifo1
+  sFilterConfig2.FilterConfig = FDCAN_FILTER_TO_RXFIFO1; // set can2 to receive into fifo1
   sFilterConfig2.FilterID1 = 0x1;
   sFilterConfig2.FilterID2 = 0x1;
 
@@ -197,6 +212,28 @@ void FDCAN2_start(void)
     // Filter configuration Error
     Error_Handler();
   }
+
+
+   sFilterConfig2.FilterIndex++; // filter IVT MSG. CAN2
+   sFilterConfig2.FilterID1 = 0x511;
+   sFilterConfig2.FilterID2 = 0x511;
+
+   if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
+   {
+     // Filter configuration Error
+     Error_Handler();
+   }
+
+
+   sFilterConfig2.FilterIndex++; // IVT CAN2
+   sFilterConfig2.FilterID1 = 0x521;
+   sFilterConfig2.FilterID2 = 0x528;
+
+   if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
+   {
+     // Filter configuration Error
+     Error_Handler();
+   }
 
   // Inverter CANOpen Filters
 
@@ -222,30 +259,6 @@ void FDCAN2_start(void)
     Error_Handler();
   }
 
-  // Front WheelSpeed CANOpen Filters
-
-   sFilterConfig2.FilterType = FDCAN_FILTER_MASK;  // configure CANOpen device filters by mask.
-
-   sFilterConfig2.FilterIndex++;
-   sFilterConfig2.FilterID1 = FLSpeed_COBID;
-   sFilterConfig2.FilterID2 = 0b00001111111;
-
-   if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
-   {
-     // Filter configuration Error
-     Error_Handler();
-   }
-
-   sFilterConfig2.FilterIndex++;
-   sFilterConfig2.FilterID1 = FRSpeed_COBID;
-   sFilterConfig2.FilterID2 = 0b00001111111;
-
-   if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
-   {
-     // Filter configuration Error
-     Error_Handler();
-   }
-
   /*
   sFilterConfig2.FilterIndex++;
   sFilterConfig2.FilterID1 = 0x77E;
@@ -267,8 +280,7 @@ void FDCAN2_start(void)
 
   // start can receive interrupt for second can's messages
 
-  if (HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO0_NEW_MESSAGE , 0) != HAL_OK)
-//  if (HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO1_NEW_MESSAGE , 0) != HAL_OK)
+  if (HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO1_NEW_MESSAGE , 0) != HAL_OK)
   {
     // Notification Error
     Error_Handler();
@@ -647,7 +659,6 @@ char CAN_SENDINVERTERERRORS( void )
 	TxHeaderHV.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
 	TxHeaderHV.MessageMarker = 0;
 
-
     uint8_t CANTxData[8] =
     { CarState.LeftInvState, CarState.RightInvState, CarState.LeftInvStateCheck, CarState.RightInvStateCheck,0,0,0,0 };
 
@@ -659,12 +670,14 @@ char CAN_SENDINVERTERERRORS( void )
 	for( int j=0;j<Errors.InverterErrorHistoryPosition;j++)
 	{
 		for( int i=0;i<8;i++){
-			CANTxData[i] = Errors.InverterErrorHistory[i][j];
+			CANTxData[i] = Errors.InverterErrorHistory[j][i];
 		}
 #ifdef CAN2ERRORSTATUS
 		CAN2Send( &TxHeaderHV, CANTxData );
+		DWT_Delay(100);
 #endif
 		CAN1Send( &TxHeaderHV, CANTxData );
+		DWT_Delay(100);
 	}
 
 	return 0;
@@ -1029,7 +1042,6 @@ void SetCanData(volatile struct CanData *data, uint8_t *CANRxData, uint32_t Data
  * interrupt rx callback for canbus messages
  */
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
-// moved everything to one fifo.  consider using both for prioritisation
 {
 	FDCAN_RxHeaderTypeDef RxHeader;
 	uint8_t CANRxData[8];
@@ -1051,8 +1063,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	//		CAN_SendErrorStatus(103,103,103);
 		}
 
-
-		uint8_t bufferlevel = HAL_FDCAN_GetRxFifoFillLevel(&hfdcan1,FDCAN_RX_FIFO0);
+		uint8_t bufferlevel = HAL_FDCAN_GetRxFifoFillLevel(hfdcan,FDCAN_RX_FIFO0);
 		if (bufferlevel > 25 ) // buffer shouldn't fill up under normal use, not sending >30 messages per cycle.
 		{
 			// return error, can fifo full.
@@ -1131,6 +1142,8 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				//	0x520,0,8 -> BMS_relay_status
 				//	0x520,8,8 -> IMD_relay_status
 				//	0x520,16,8 -> BSPD_relay_status
+				//  0x529,24,8 AIR Voltage
+				//  0x529,32,8 LV Voltage.
 				processPDM(CANRxData, RxHeader.DataLength );
 				break;
 
@@ -1138,9 +1151,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				// PDMvolts
 
 			case 0x529 : // PDM can0
-				// 0x529,0,8 AIR Voltage
-				// 0x529,8,8 LV Voltage.
-				processPDMVolts(CANRxData, RxHeader.DataLength );
+
 				break;
 
 
@@ -1305,11 +1316,17 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
  *
  *
  */
-void __HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
+void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 {
 	FDCAN_RxHeaderTypeDef RxHeader;
 	uint8_t CANRxData[8];
-	setOutput(LED2_Output,LEDON); // turn on internal LED to indicate can receive activity.
+	if(hfdcan->Instance == FDCAN1){
+		toggleOutput(LED3_Output);
+		Errors.CANCount1++;
+	} else if(hfdcan->Instance == FDCAN2) {
+		toggleOutput(LED2_Output);
+		 Errors.CANCount2++;
+	}
 
 	if((RxFifo1ITs & FDCAN_IT_RX_FIFO1_NEW_MESSAGE) != RESET) // if there is a message waiting process it
 	{
@@ -1321,13 +1338,101 @@ void __HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1IT
 			Error_Handler();
 		}
 
+		uint8_t bufferlevel = HAL_FDCAN_GetRxFifoFillLevel(hfdcan,FDCAN_RX_FIFO1);
+		if (bufferlevel > 25 ) // buffer shouldn't fill up under normal use, not sending >30 messages per cycle.
+		{
+			// return error, can fifo full.
+//			CAN_SendErrorStatus( 111, 0, bufferlevel );
+			bufferlevel++;
+		}
+
+
 		// check rest of header data? Can2 is inverter information
 		switch ( RxHeader.Identifier ){ // identify which data packet we are processing.
 
+		// IVT
+
+					case 0x511 : // IVT Control Message
+						//SetCanData((struct CanData *)&CanState.IVTMsg, CANRxData, RxHeader.DataLength );
+						break;
+
+					case IVTI_ID : // IVT Current 0x521,24,24BE * 0.001 -> Accu_Voltage // not in current logs. -- current, not voltage.
+				        // Accu_Current.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
+						processIVT(CANRxData, RxHeader.DataLength, IVTI_ID );
+						break;
+
+					case IVTU1_ID : // IVT Voltage1 0x522
+						processIVT(CANRxData, RxHeader.DataLength, IVTU1_ID );
+						break;
+
+					case IVTU2_ID : // IVT Can0 0x523,24,24BE * 0.001 -> Accu_Current -- voltage, not current
+						// Accu_Voltage.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
+						processIVT(CANRxData, RxHeader.DataLength, IVTU2_ID );
+						break;
+
+					case IVTU3_ID : // IVT Voltage3 0x524
+						processIVT(CANRxData, RxHeader.DataLength, IVTU3_ID );
+						break;
+					case IVTT_ID : // IVT Temp 0x525
+						processIVT(CANRxData, RxHeader.DataLength, IVTT_ID );
+						break;
+					case IVTW_ID : // IVT Wattage 0x526
+						processIVT(CANRxData, RxHeader.DataLength, IVTW_ID );
+						break;
+					case IVTAs_ID : // IVT As? 0x527
+						processIVT(CANRxData, RxHeader.DataLength, IVTAs_ID );
+						break;
+					case IVTWh_ID : // IVT WattHours 0x528
+						processIVT(CANRxData, RxHeader.DataLength, IVTWh_ID );
+						break;
 
 
+						// Inverter CAN ID's
+									case 0x80 + InverterL_COBID :
+									    processINVError( CANRxData, RxHeader.DataLength, LeftInverter );
+										break;
 
+									case 0x80 + InverterR_COBID :
+						                processINVError( CANRxData, RxHeader.DataLength, RightInverter );
+								//		SetCanData((struct CanData *)&CanState.InverterRERR, CANRxData, RxHeader.DataLength );
+										break;
 
+									case 0x180 + InverterL_COBID : // 0x1FE,0,16LE -> Status_Right_Inverter
+									  	processINVStatus(CANRxData, RxHeader.DataLength, LeftInverter );
+										break;
+
+									case 0x180 + InverterR_COBID :  // 0x1FF,0,16LE -> Status_Left_Inverter;
+									    processINVStatus(CANRxData, RxHeader.DataLength, RightInverter );
+										break;
+
+									case 0x280 + InverterL_COBID :  // 0x2FE,16,32LE -> Speed_Right_Inverter
+									    processINVSpeed(CANRxData, RxHeader.DataLength, LeftInverter );
+										break;
+
+									// 0x3fe/f and 0x4fe/f also sent by inverters, ignored in elektrobit.
+
+									case 0x380 + InverterL_COBID :
+						                processINVTorque(CANRxData, RxHeader.DataLength, LeftInverter );
+										break;
+
+									case 0x480 + InverterL_COBID :  // not used
+										break;
+
+									case 0x280 + InverterR_COBID :  // 0x2FF,16,32LE -> Speed_Left_Inverter
+										processINVSpeed(CANRxData, RxHeader.DataLength, RightInverter );
+										break;
+
+									case 0x380 + InverterR_COBID :
+									    processINVTorque(CANRxData, RxHeader.DataLength, RightInverter );
+										break;
+
+									case 0x480 + InverterR_COBID : // not used
+										break;
+
+									case 0x700 + InverterL_COBID : // 0x77E,8,16LE -> // inverter NMT monitoring id
+									    processINVNMT(CANRxData, RxHeader.DataLength, LeftInverter );
+										/* Actual_Torque_Right_Inverter_Raw.data.longint = CANRxData[2]*256+CANRxData[1];? looks like wrong ID */
+										break;
 
 			default : // any other received packets, shouldn't be any due to filters.
 				break;

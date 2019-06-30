@@ -12,6 +12,12 @@
 
 #include "ecumain.h"
 
+uint8_t LastIVTI[6] = {0,0,0,0,0,0};
+uint8_t LastIVTU1[6] = {0,0,0,0,0,0};
+uint8_t LastIVTU2[6] = {0,0,0,0,0,0};
+uint8_t LastIVTU3[6] = {0,0,0,0,0,0};
+uint8_t LastIVTW[6] = {0,0,0,0,0,0};
+
 // IVTWh = 0x528
 
 uint8_t processIVT(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
@@ -99,13 +105,6 @@ uint8_t processIVT(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
 		//			Errors.IVTIReceive = 0;
 					DeviceState.IVT = OPERATIONAL;
 					break;
-		//		case IVTU1_ID : Errors.IVTU1Receive = 0; break;
-		//		case IVTU2_ID : Errors.IVTU2Receive = 0; break;
-		//		case IVTU3_ID : break;
-		//		case case IVTT_ID : break;
-		//		case IVTW_ID : Errors.IVTU2Receive = 0; break; break;
-		//		case IVTAs_ID : break;
-		//		case IVTWh_ID : break;
 			}
 
 		//	receiveerror = 0;
@@ -113,14 +112,36 @@ uint8_t processIVT(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
 			switch ( field ) // set state data.
 			{
 		//		IVTMsg_ID : ;
-				case IVTI_ID : CarState.Current = value; break;
+				case IVTI_ID :
+					CarState.Current = value;
+					for ( int i=0;i<6;i++)
+					{
+						LastIVTI[i] = CANRxData[i];
+					}
+					break;
 				case IVTU1_ID :
 					CarState.VoltageINV = value;
+					for ( int i=0;i<6;i++)
+					{
+						LastIVTU1[i] = CANRxData[i];
+					}
 					break;
-				case IVTU2_ID : CarState.VoltageIVTAccu = value; break;
+				case IVTU2_ID :
+					CarState.VoltageIVTAccu = value;
+					for ( int i=0;i<6;i++)
+					{
+						LastIVTU2[i] = CANRxData[i];
+					}
+					break;
 		//		case IVTU3_ID : break;
 		//		case case IVTT_ID : break;
-				case IVTW_ID : CarState.Power = value; break;
+				case IVTW_ID :
+					CarState.Power = value;
+					for ( int i = 0;i<6;i++)
+					{
+						LastIVTW[i] = CANRxData[i];
+					}
+					break;
 		//		case IVTAs_ID : break;
 				case IVTWh_ID : break;
 			}
@@ -182,29 +203,25 @@ int receiveIVT( void )
 		} else return 0;
 #endif
         
-		if ( time - CanState.IVT[0].time <= IVTTIMEOUT && DeviceState.IVT == OPERATIONAL ) // 5 second timeout should be enough.
+		if ( time - CanState.IVT[0].time <= IVTTIMEOUT && DeviceState.IVT == OPERATIONAL )
 		{
-			errorsent = 0;
+			errorsent = 0;  // IVT seen within timeout.
 			return 1;
 		} else
 		{
 
-	//		if ( time - CanState.IVTI.time > IVTTIMEOUT )
 			if ( DeviceState.IVT == OPERATIONAL )
 			{
 #ifdef errorLED
-                blinkOutput(BMSLED_Output,LEDBLINK_FOUR,255);
+                blinkOutput(IMDLED_Output,LEDBLINK_FOUR,255);
 #endif
 				if ( errorsent == 0 )
 				{
 					CAN_SendErrorStatus(200,IVTReceived+110,(time-CanState.IVT[0].time+IVTTIMEOUT)/10);
-	                blinkOutput(BMSLED_Output,LEDBLINK_FOUR,255);
 					errorsent = 1;
 					Errors.CANTimeout++;
 					Errors.IVTTimeout++;
 					DeviceState.IVT = OFFLINE;
-                    CarState.VoltageINV=540; // set an assumed voltage that forces TSOFF indicator to go out on timeout for SCS, ie, worst case value.
-            		CarState.VoltageIVTAccu=540;
             		CarState.Power=0;
             		CarState.Current=0;
 				}
@@ -212,6 +229,14 @@ int receiveIVT( void )
 			}
 
 #ifdef NOIVTTIMEOUT
+			if ( DeviceState.IVT == OFFLINE )
+			{
+				// retransmit last messages here to keep BMS operating if IVT Lost.
+
+				 reTransmitOnCan1(IVTI_ID,LastIVTI,FDCAN_DLC_BYTES_6);
+				 reTransmitOnCan1(IVTU1_ID,LastIVTU1,FDCAN_DLC_BYTES_6);
+				 reTransmitOnCan1(IVTU2_ID,LastIVTU2,FDCAN_DLC_BYTES_6);
+			}
 			return 1; // never time out, just set data non operational.
 #else
 			return 0;

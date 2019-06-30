@@ -401,24 +401,33 @@ HAL_StatusTypeDef startADC(void)
 	multimode.Mode=ADC_MODE_INDEPENDENT;
 	if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
 	{
-	/* Calibration Error */
-	Error_Handler();
+		/* Calibration Error */
+		Error_Handler();
 	}
 
 	if (HAL_ADCEx_Calibration_Start(&hadc3, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
 	{
-	/* Calibration Error */
-	Error_Handler();
+		/* Calibration Error */
+		Error_Handler();
 	}
-	HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode);
 
-	HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t *)aADCxConvertedData, ADC_CONVERTED_DATA_BUFFER_SIZE);
+	if ( HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
+	{
+		Error_Handler();
+	}
 
-	// start ADC conversion
-//	  return HAL_ADC_Start_DMA(&hadc1,(uint32_t *)aADCxConvertedData,ADC_CONVERTED_DATA_BUFFER_SIZE);
-	HAL_ADC_Start_DMA(&hadc3,(uint32_t *)aADCxConvertedDataADC3,ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3);
-
+	if ( HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t *)aADCxConvertedData, ADC_CONVERTED_DATA_BUFFER_SIZE)  != HAL_OK)
+	{
+		Error_Handler();
+	}
 	DeviceState.ADC = OPERATIONAL;
+	// start ADC conversion
+	//  return HAL_ADC_Start_DMA(&hadc1,(uint32_t *)aADCxConvertedData,ADC_CONVERTED_DATA_BUFFER_SIZE);
+	if ( HAL_ADC_Start_DMA(&hadc3,(uint32_t *)aADCxConvertedDataADC3,ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3) != HAL_OK)
+	{
+		Error_Handler();
+	}
+
 #endif
 
 	return 0;

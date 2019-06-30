@@ -228,6 +228,12 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
  *
  *							8  0    16 129      221  30     03
  */
+// 4b 75
+
+//	5d 75
+//	a5 78
+//	33 75
+
 
 	switch ( Inverter )
 	{
@@ -238,7 +244,7 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
 	if ( Errors.InverterErrorHistoryPosition < 8) // add error data to log.
 	{
 		for( int i=0;i<8;i++){
-			Errors.InverterErrorHistory[i][Errors.InverterErrorHistoryPosition] = CANRxData[i];
+			Errors.InverterErrorHistory[Errors.InverterErrorHistoryPosition][i] = CANRxData[i];
 			Errors.InverterErrorHistoryID[i] = errorid;
 		}
 		Errors.InverterErrorHistoryPosition++;
@@ -249,13 +255,13 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
 	// 00  10  81      DD  1E     03   -   00  00
 	if ( CANRxData[0] == 0 && CANRxData[1] == 0x10 && CANRxData[2] == 0x81 && CANRxData[6] == 0x00 && CANRxData[7] == 0 )
 	{
-        uint16_t ErrorCode = CANRxData[4]*256+CANRxData[5];
+        uint16_t ErrorCode = CANRxData[4]*256+CANRxData[3];
         
         uint8_t AllowReset = 0;
         
-        switch ( ErrorCode )
+        switch ( ErrorCode ) // 29954
         {
-        case 30003 : // DC Underlink Voltage. HV dropped or dipped, allow reset attempt.
+        	case 30003 : // DC Underlink Voltage. HV dropped or dipped, allow reset attempt.
                 AllowReset = 1;
                 break;
             default : // other unknown errors, don't allow reset attempt.

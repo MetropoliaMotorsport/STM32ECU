@@ -19,10 +19,12 @@ void processPDM(uint8_t CANRxData[8], uint32_t DataLength )
 		&& CANRxData[0] < 2
 		&& CANRxData[1] < 2
 		&& CANRxData[2] < 2
-		&& CANRxData[5] < 2
-		&& CANRxData[6] < 2
-		&& CANRxData[7] < 2
-		&& ( CANRxData[5] == CANRxData[6] && CANRxData[6] == CANRxData[7] ) // all three last bytes are sending AIR status to help verification.
+//		&& CANRxData[3] < 2 AIR voltage - should be between ~10-16v
+//		&& CANRxData[4] < 2 PDM voltage  - should be between
+//		&& CANRxData[5] < 2 PDM Current - should be between 0 - to maybe 6?
+		&& CANRxData[6] < 2 // shutdown switch status.
+		&& CANRxData[7] < 2 // shutdown switch status.
+		&& ( CANRxData[6] == CANRxData[7] ) // all three last bytes are sending AIR status to help verification.
 		)
 	{
 		receiveerror=0;
@@ -31,51 +33,17 @@ void processPDM(uint8_t CANRxData[8], uint32_t DataLength )
 		CarState.BMS_relay_status = CANRxData[0];
 		CarState.IMD_relay_status = CANRxData[1];
 		CarState.BSPD_relay_status = CANRxData[2];
+		CarState.VoltageLV = (CANRxData[4] * 1216)/10;
+		CarState.CurrentLV = CANRxData[5];
+		CarState.ShutdownSwitchesClosed = CANRxData[6];
 
-		CarState.AIROpen = CANRxData[7];
+		CarState.VoltageAIRPDM = (CANRxData[3] * 200);
 
-		DeviceState.PDM = OPERATIONAL;
-	} else // bad data.
-	{
-		receiveerror++;
-		Errors.CANError++;
-		Errors.PDMReceive++;
-/*		if ( receiveerror > 10 ), device is still responding, so don't put it offline.
-		{
-			CarState.VoltageBMS=0;
-			DeviceState.BMS = OFFLINE;
-			return 0; // returnval = 0;
-		} */
-#ifdef SENDBADDATAERROR
-		CAN_SendStatus(99,PDMReceived,99);
-#endif
-		reTransmitError(99,CANRxData, DataLength);
-	}
-}
 
-void processPDMVolts(uint8_t CANRxData[8], uint32_t DataLength )
-{
-	static uint8_t receiveerror = 0;
-	CanState.PDM.time = gettimer();
-
-	if ( DataLength == FDCAN_DLC_BYTES_8
-//		&& CANRxData[0] < 2
-//		&& CANRxData[1] < 2
-		&& CANRxData[2] == 0
-		&& CANRxData[3] == 0
-		&& CANRxData[4] == 0
-		&& CANRxData[5] == 0
-		&& CANRxData[6] == 0
-		&& CANRxData[7] == 0
-		)
-	{
-		receiveerror=0;
-
-		DeviceState.PDM = OPERATIONAL; // received data without error bit set, so we can assume operational state
-		CarState.AIROpen = CANRxData[0];
-		CarState.LVVoltage = CANRxData[1];
-
-		CarState.AIROpen = CANRxData[7];
+		if ( CarState.VoltageAIRPDM < CarState.VoltageLV*0.54 ) //  63% == contactors fully closed ~50% when all open., try to establish 1/2 closed?
+			CarState.AIROpen = 1;
+		else
+			CarState.AIROpen = 0;
 
 		DeviceState.PDM = OPERATIONAL;
 	} else // bad data.
@@ -95,7 +63,6 @@ void processPDMVolts(uint8_t CANRxData[8], uint32_t DataLength )
 		reTransmitError(99,CANRxData, DataLength);
 	}
 }
-
 
 int receivedPDM( void )
 {
@@ -186,7 +153,8 @@ int errorPDM( void )
 		setOutputNOW(BSPDLED_Output,LEDON);
 	} else setOutput(BSPDLED_Output,LEDOFF);
 
-	if ( CarState.VoltageINV  > 59 || CarState.AIROpen == 0 ) // doesn't effect error state, just updates as other PDM derived LED's updated here. SCS Signal, move to PDM ideally.
+	if (  CarState.VoltageINV  > 59 ||
+			CarState.AIROpen == 0 ) // doesn't effect error state, just updates as other PDM derived LED's updated here. SCS Signal, move to PDM ideally.
         // currently will default to showing HV if timeout, which should make correct.
 	{
 		 setOutput(TSOFFLED_Output,LEDOFF);

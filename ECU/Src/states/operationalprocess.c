@@ -76,6 +76,7 @@ void ResetStateData( void ) // set default startup values for global state value
 	CarState.BSPD_relay_status = 0;
 
 	CarState.AIROpen = 0;
+	CarState.ShutdownSwitchesClosed = 1;
 
 	CarState.brake_balance = 0;
 
@@ -280,6 +281,8 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	static uint16_t errorstate;
 
+	static uint32_t errorstatetime;
+
 #ifndef everyloop
 	if ( ( OperationLoops % LOGLOOPCOUNTSLOW ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
 #endif
@@ -309,6 +312,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 //		CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
 		blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
 		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+		errorstatetime = gettimer();
 	}
 
 	if ( Errors.InverterError )	CAN_SENDINVERTERERRORS();
@@ -319,14 +323,27 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	receivePDM();
 
+	if ( !CarState.ShutdownSwitchesClosed ) // indicate shutdown switch status with blinking rate.
+	{
+		blinkOutput(TSLED_Output,LEDBLINK_ONE,LEDBLINKNONSTOP);
+		blinkOutput(RTDMLED_Output,LEDBLINK_ONE,LEDBLINKNONSTOP);
+	} else
+	{
+		blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+	}
+
 //	CheckErrors();
 
 	// wait for restart request if allowed by error state.
-	if ( errorPDM() == 0
+	if ( errorstatetime + 20000 < gettimer() // ensure error state is seen for at least 2 seconds.
+		&& errorPDM() == 0
         && CheckADCSanity() == 0
-        && Errors.LeftInvAllowReset
-        && Errors.RightInvAllowReset
-        && checkReset() == 1 )      // check stop switches also?
+        && ( checkReset() == 1 // manual reset
+        && CarState.ShutdownSwitchesClosed
+        || ( ( DeviceState.InverterL == Error || DeviceState.InverterR == Error ) // or automatic reset if allowed inverter error.
+        && ( Errors.LeftInvAllowReset && Errors.RightInvAllowReset ) )
+        ) )
 	{
 		setupButtons();
 		setupLEDs();

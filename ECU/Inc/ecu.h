@@ -51,7 +51,7 @@
 //#define FRONTSPEED				// enable front speed encoder reading.
 //#define NOTIMEOUT
 #define NOIVTTIMEOUT
-//#define SENDBADDATAERROR
+#define SENDBADDATAERROR
 //#define RETRANSMITBADDATA
 #define CAN2ERRORSTATUS
 //#define RECOVERCAN
@@ -79,12 +79,11 @@
 #define PROCESSLOOPTIME 		2000
 #define INVERTERTIMEOUT			1000
 #else
-#define PDMTIMEOUT				4500 //
-#define PROCESSLOOPTIME 		100 // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
+#define PDMTIMEOUT				4500  //
+#define PROCESSLOOPTIME 		100   // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
 #define BMSTIMEOUT				50000 // 5 seconds
-#define IVTTIMEOUT				20000
-//#define IVTTIMEOUTLONG			800
-#define IVTTIMEOUTWATTS			50000
+#define IVTTIMEOUT				4500  // < 500ms for rules compliance on Power reading.
+#define IVTTIMEOUTWATTS			4500
 #define INVERTERTIMEOUT			1000 // 10 cycles, 100ms.
 #define SICKTIMEOUT             200 // 2 cycles, then set speeds to zero.
 #define STMADC
@@ -122,6 +121,7 @@
 #define APPSBrakeHard			30 // 70
 #define APPSBrakeRelease		10 // 30
 #define RTDMBRAKEPRESSURE		30
+#define LIMPNM					10
 
 uint16_t ErrorCode; // global error code.
 
@@ -181,6 +181,7 @@ volatile struct CarState {
 	char IMD_relay_status;
 	char BSPD_relay_status;
 	char AIROpen;
+	char ShutdownSwitchesClosed;
 
 	uint16_t LeftInvState;
 	uint16_t LeftInvBadStatus;
@@ -213,7 +214,9 @@ volatile struct CarState {
 	int32_t VoltageINV;
 	int32_t VoltageBMS;
 	int32_t VoltageIVTAccu;
-	int32_t LVVoltage;
+	int32_t VoltageLV;
+	int32_t CurrentLV;
+	int32_t VoltageAIRPDM;
 	int32_t Power;
 
 	int32_t SpeedRL;
@@ -277,13 +280,10 @@ struct ErrorCount {
 	uint16_t IVTTimeout;
 
 	uint16_t IVTU1Receive;
-//	uint16_t IVTU1Timeout;
 
 	uint16_t IVTU2Receive;
-//	uint16_t IVTU2Timeout;
 
 	uint16_t IVTWReceive;
-//	uint16_t IVTWTimeout;
 
 	uint16_t INVLReceiveStatus;
 	uint16_t INVLReceiveSpd;

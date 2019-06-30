@@ -250,7 +250,10 @@ int PreOperation( uint32_t OperationLoops  )
 	receiveINVTorque(LeftInverter);
 	receiveINVTorque(RightInverter);
 
-	if ( !errorPDM() && preoperationstate == 0 && CarState.LeftInvState != 0xFF && CarState.RightInvState != 0xFF) // everything is ready to move to next state.
+	if ( !errorPDM()
+			&& preoperationstate == 0
+			&& CarState.LeftInvState != 0xFF
+			&& CarState.RightInvState != 0xFF) // everything is ready to move to next state.
 	{
 		blinkOutput(TSLED_Output, LEDBLINK_ONE, 1);
 			// devices are ready and in pre operation state.
