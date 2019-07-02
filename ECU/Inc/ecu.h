@@ -47,7 +47,9 @@
 // Error state due to Coolant overtemp - no seperate indicator currently
 #define COOLANTSHUTDOWN
 
-// Coolant overtemp limit.
+// Coolant overtemp limits.
+#define COOLANTLIMPTEMP 75
+#define COOLANTLIMPEXITTEMP 70
 #define COOLANTMAXTEMP	80
 
 // Debug aids.

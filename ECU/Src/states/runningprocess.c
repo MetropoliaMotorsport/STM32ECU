@@ -309,7 +309,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	{
         // check if limp mode allowed ( don't want for acceleration test ), and if so, if BMS has requested.
         
-        if ( CarState.LimpRequest && !CarState.LimpDisable )
+        if ( ( CarState.LimpRequest && !CarState.LimpDisable ) || ADCState.CoolantTempR > COOLANTLIMPTEMP )
         {
             CarState.LimpActive = 1;
         }
@@ -323,12 +323,17 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
     
 #ifdef ALLOWLIMPCANCEL
         // don't allow immiediete exit from limp mode if it was already triggered
-        if ( CarState.LimpActive && OperationLoops > 200 && CheckRTDMActivationRequest() )
+        if ( CarState.LimpActive && !CarState.LimpRequest && ADCState.CoolantTempR < COOLANTLIMPEXITTEMP  )
+        {
+            CarState.LimpActive = 0;
+        }
+        
+        if ( CarState.LimpActive && CarState.Torque_Req_CurrentMax > LIMPNM  )
         {
             CarState.LimpDisable = 1;
             CarState.LimpActive = 0;
         }
-        
+
         if ( CarState.LimpDisable && CarState.Torque_Req_CurrentMax < CarState.Torque_Req_Max )
         {
             limpcounter++;
