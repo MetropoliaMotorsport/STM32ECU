@@ -891,6 +891,14 @@ end;
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
+  with CanChannel1 do
+  begin
+        BusActive := false;
+        onBus.Caption := 'Off bus';
+        goOnBus.Caption := 'Go on bus';
+        CanDevices.Enabled := true;
+        Close;
+  end;
   try
       if logOpen then
         CloseFile(logfile);
@@ -1153,28 +1161,29 @@ begin
                  end;
 
           $20+$12  :  begin
-                   WriteLn(adcdata, 'AccelLRRawError '+IntToStr(msg[1]*256+msg[0]));
+     {              WriteLn(adcdata, 'AccelLRRawError '+IntToStr(msg[1]*256+msg[0]));
                    WriteLn(adcdata, 'AccelRRRawError '+IntToStr(msg[3]*256+msg[2]));
                    WriteLn(adcdata, 'BrakeFRRawError '+IntToStr(msg[5]*256+msg[4]));
-                   WriteLn(adcdata, 'BrakeRRRawError '+IntToStr(msg[7]*256+msg[6]));
+                   WriteLn(adcdata, 'BrakeRRRawError '+IntToStr(msg[7]*256+msg[6]));   }
+                   Output.Items.Add('ADCSanityError()');
 
-                   Output.Items.Add('AccelLRRawError '+IntToStr(msg[1]*256+msg[0]));
+             {      Output.Items.Add('AccelLRRawError '+IntToStr(msg[1]*256+msg[0]));
                    Output.Items.Add('AccelRRRawError '+IntToStr(msg[3]*256+msg[2]));
                    Output.Items.Add('BrakeFRRawError '+IntToStr(msg[5]*256+msg[4]));
-                   Output.Items.Add('BrakeRRRawError '+IntToStr(msg[7]*256+msg[6]));
+                   Output.Items.Add('BrakeRRRawError '+IntToStr(msg[7]*256+msg[6]));   }
 
                  end;
 
           $20+$13  : begin
-                    WriteLn(adcdata, 'SteeringRRaw '+IntToStr(msg[1]*256+msg[0]));
+              {      WriteLn(adcdata, 'SteeringRRaw '+IntToStr(msg[1]*256+msg[0]));
                     WriteLn(adcdata, 'DrivemodeRRaw '+IntToStr(msg[3]*256+msg[2]));
                     WriteLn(adcdata, 'TempLRRaw '+IntToStr(msg[5]*256+msg[4]));
-                    WriteLn(adcdata, 'TempRRRaw '+IntToStr(msg[7]*256+msg[6]));
+                    WriteLn(adcdata, 'TempRRRaw '+IntToStr(msg[7]*256+msg[6]));    }
 
-                    Output.Items.Add('SteeringRRaw '+IntToStr(msg[1]*256+msg[0]));
+               {     Output.Items.Add('SteeringRRaw '+IntToStr(msg[1]*256+msg[0]));
                     Output.Items.Add('DrivemodeRRaw '+IntToStr(msg[3]*256+msg[2]));
                     Output.Items.Add('TempLRRaw '+IntToStr(msg[5]*256+msg[4]));
-                    Output.Items.Add('TempRRRaw '+IntToStr(msg[7]*256+msg[6]));
+                    Output.Items.Add('TempRRRaw '+IntToStr(msg[7]*256+msg[6]));     }
                  end;
 
           $20 :  begin
@@ -1317,10 +1326,10 @@ begin
 //               if Output.TopIndex > Output.Items.Count - 2 then
 //            Output.TopIndex := Output.Items.Count - 1;
 
-                    Output.Items.Add('CanMessageCount('+ IntToStr(msg[0]+256*msg[1])+','
+         {           Output.Items.Add('CanMessageCount('+ IntToStr(msg[0]+256*msg[1])+','
                               + IntToStr(msg[2]+256*msg[3])+','
                               + IntToStr(msg[4]+256*msg[5]+65536*msg[6]+16777216*msg[7])+')'+formattedDateTime);
-                   Output.TopIndex := Output.Items.Count - 1;
+                   Output.TopIndex := Output.Items.Count - 1;   }
                  end;
 
 

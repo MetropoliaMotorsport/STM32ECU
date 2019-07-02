@@ -220,7 +220,6 @@ int Startup( uint32_t OperationLoops  )
 	}
 
 	 return PreOperationalState;
-
 }
 
 uint16_t CheckErrors( void )
@@ -281,7 +280,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	static uint16_t errorstate;
 
-	static uint32_t errorstatetime;
+	static uint32_t errorstatetime = 0;
 
 #ifndef everyloop
 	if ( ( OperationLoops % LOGLOOPCOUNTSLOW ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing

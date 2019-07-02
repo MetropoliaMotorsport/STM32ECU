@@ -8,66 +8,97 @@
 #ifndef ECU_H_
 #define ECU_H_
 
+// Calibration settings for pedals.
 
-//#define REVY
-
-// Calibration settings
-
-#define ACCELERATORLZERO 4200//3830
-//#define ACCELERATORLZERO 11000
-//#define ACCELERATORLMAX  50000
+#define ACCELERATORLZERO 4200
 #define ACCELERATORLMAX  53000
 
-#define ACCELERATORRZERO 4800 //8000//4908
-//#define ACCELERATORRZERO 11500
+#define ACCELERATORRZERO 4800
 #define ACCELERATORRMAX  53000
-// #define ACCELERATORRMAX  50000
-
 
 #define BRAKEZERO 14100 // 0 bar?
 #define BRAKEMAX  62914 // 240 bar settings.
 
+// Minimum acceptable voltage on TS for startup.
+#define MINHV					500 // minimum voltage to allow TS enable.
 
-
+// Enable workaround to use second ADC for one of the APPS pedals due to shield issue.
 #define USEADC3
-//#include "ecumain.h"
 
-//#define sharedCAN // bench testing.
+// Use only one canbus for all functions, for bench testing. Not fully working.
+//#define ONECAN
+
+// Both CAN's are connected to one bus for bench testing, not entirely working.
+//#define sharedCAN
+
+// Use watchdog to reset if 10ms loop fails.
 //#define WATCHDOG
+
+// Use onboard ADC, else expect ADC values by CAN.
 #define STMADC
+
+// Debug aids.
+
 #define debugrun
 //#define debug
+// Show extra error LED statuses, non rules compliant.
 //#define errorLED
-#define ALLOWLIMPCANCEL
 
+// Send status message every cycle
 #define everyloop
 
-// device enable/disable etc
-
+// send log messages for AIM / remote reading of status
 #define LOGGINGON
+
+// Use IVT
+
 #define IVTEnable				// if not defined, IVT ignored and assumed present, giving a nominal voltage.
+
+// Use BMS Messages.
 #define BMSEnable				// if not defined, BMS ignored and assumed present.
+
+// Retransmit IVT messages for BMS
 #define retransmitIVT
+
+// Define whether front speed encoders are expected.
 //#define FRONTSPEED				// enable front speed encoder reading.
+
+// do not go to error state for non crucial can devices going offbus/timing out.
 //#define NOTIMEOUT
+
+// do not go to error state if IVT goes off bus.
 #define NOIVTTIMEOUT
+
+// Send an error on incorrect data received
 #define SENDBADDATAERROR
+
+// Retransmit any received data deemed incorrect or implausible
 //#define RETRANSMITBADDATA
+
+// Transmit error messages and status on 2nd CANBUS also.
 #define CAN2ERRORSTATUS
+
+
+// Allow a 450ms window of brake + apps before throttle is cut.
+#define APPSALLOW450MSBRAKE
+
+// Allow limp mode to be exited on request.
+#define ALLOWLIMPCANCEL
+
+// Try to restart CANBUS if ECU goes offbus.
 //#define RECOVERCAN
 
+// Do not send any torque request to inverters, for bench testing safely.
 //#define NOTORQUEREQUEST
 
+// How frequently to send status messages in loops
 #define STATUSLOOPCOUNT 		10 // how many loops between regular status updates.
-#define LOGLOOPCOUNTFAST	 	1  // x many loops to send fast log data
+
+// Log message frequency
+#define LOGLOOPCOUNTFAST	 	1
 #define LOGLOOPCOUNTSLOW	 	10
 
-
-#define MINHV					500 // minimum voltage to allow TS enable.
-//#define ONECAN // only use CAN1 to ease testing.
-
-//50ms
-
+// Timeout Values, for bench testing with App if SIM defined and real car if not.
 
 //#define SIM
 #ifdef SIM
@@ -79,7 +110,7 @@
 #define PROCESSLOOPTIME 		2000
 #define INVERTERTIMEOUT			1000
 #else
-#define PDMTIMEOUT				4500  //
+#define PDMTIMEOUT				4500 // 450ms to be rules compliant
 #define PROCESSLOOPTIME 		100   // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
 #define BMSTIMEOUT				50000 // 5 seconds
 #define IVTTIMEOUT				4500  // < 500ms for rules compliance on Power reading.

@@ -63,7 +63,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	//   -Accelerator Pedal Travel : More than 25 percent or power > 5kW for more than 500ms
 	//   -Brake Pressure allowed : more than 30
 	//   -Torque-Brake Violation : Occurred and marked
-
+#ifdef APPSALLOW450MSBRAKE
 	else if( difference<=10
 			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )
 			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime == 0 )
@@ -80,10 +80,15 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 		Torque_drivers_request = 1;
 		CarState.APPSstatus = 3;
 	}
+#endif
 
 	else if( difference<=10
 			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )
-			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime >= 4500 )
+			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 )
+#ifdef APPSALLOW450MSBRAKE
+			 && APPSTriggerTime >= 4500
+#endif
+			)
 	{
 		Torque_drivers_request = 0; // near max allowed time of torque with braking, trigger no torque finally.
 		No_Torque_Until_Pedal_Released = 1;
