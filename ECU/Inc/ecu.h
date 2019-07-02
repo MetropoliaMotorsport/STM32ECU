@@ -19,6 +19,13 @@
 #define BRAKEZERO 14100 // 0 bar?
 #define BRAKEMAX  62914 // 240 bar settings.
 
+// Brake pressure values
+
+#define APPSBrakeHard			30 // 70
+#define APPSBrakeRelease		10 // 30
+#define RTDMBRAKEPRESSURE		30
+#define LIMPNM					10
+
 // Minimum acceptable voltage on TS for startup.
 #define MINHV					500 // minimum voltage to allow TS enable.
 
@@ -31,11 +38,17 @@
 // Both CAN's are connected to one bus for bench testing, not entirely working.
 //#define sharedCAN
 
-// Use watchdog to reset if 10ms loop fails.
+// Use watchdog to reset if 10ms loop fails. -- timings currently not properly set.
 //#define WATCHDOG
 
 // Use onboard ADC, else expect ADC values by CAN.
 #define STMADC
+
+// Error state due to Coolant overtemp - no seperate indicator currently
+#define COOLANTSHUTDOWN
+
+// Coolant overtemp limit.
+#define COOLANTMAXTEMP	80
 
 // Debug aids.
 
@@ -67,7 +80,10 @@
 //#define NOTIMEOUT
 
 // do not go to error state if IVT goes off bus.
-#define NOIVTTIMEOUT
+// #define NOIVTTIMEOUT
+
+// Allow auto reset with shutdown buttons / DC Undervoltage on inverters.
+#define AUTORESET
 
 // Send an error on incorrect data received
 #define SENDBADDATAERROR
@@ -128,12 +144,20 @@
 #define MaxRunningErrorCount    10
 #define ReduceErrorCountRate	10
 
+// Do not process APPS position ADC
 //#define NOAPPS
-//#define NOSTEERING
-//#define NOBRAKES
-//#define NOTEMPERATURE
-//#define NODRIVINGMODE
 
+// Do not read steering angle ADC
+//#define NOSTEERING
+
+// Do not process Brake pressure ADC
+//#define NOBRAKES
+
+// Do not process Coolant temperature ADC
+//#define NOTEMPERATURE
+
+// Do not process Drive mode selector ADC
+//#define NODRIVINGMODE
 
 #define StartupState			0
 #define PreOperationalState		1
@@ -146,13 +170,6 @@
 #define LimpState				20
 #define OperationalErrorState   50
 #define FatalErrorState			99
-
-// APPS
-
-#define APPSBrakeHard			30 // 70
-#define APPSBrakeRelease		10 // 30
-#define RTDMBRAKEPRESSURE		30
-#define LIMPNM					10
 
 uint16_t ErrorCode; // global error code.
 

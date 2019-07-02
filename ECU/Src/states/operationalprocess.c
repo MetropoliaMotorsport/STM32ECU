@@ -224,6 +224,14 @@ int Startup( uint32_t OperationLoops  )
 
 uint16_t CheckErrors( void )
 {
+
+#ifdef COOLANTSHUTDOWN
+	if ( ADCState.CoolantTempR > COOLANTMAXTEMP )
+	{
+		return 97;
+	}
+#endif
+
 	if ( errorPDM() )
 	{
 		return 98; // PDM error, stop operation.
@@ -340,9 +348,11 @@ int OperationalErrorHandler( uint32_t OperationLoops )
         && CheckADCSanity() == 0
         && CarState.ShutdownSwitchesClosed
         && ( checkReset() == 1 // manual reset
+#ifdef AUTORESET
         		|| ( ( DeviceState.InverterL == ERROR || DeviceState.InverterR == ERROR ) // or automatic reset if allowed inverter error.
         			 && ( Errors.LeftInvAllowReset && Errors.RightInvAllowReset )
 				   )
+#endif
            )
 		)
 	{

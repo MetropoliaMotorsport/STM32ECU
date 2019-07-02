@@ -39,8 +39,7 @@ void processPDM(uint8_t CANRxData[8], uint32_t DataLength )
 
 		CarState.VoltageAIRPDM = (CANRxData[3] * 200);
 
-
-		if ( CarState.VoltageAIRPDM < CarState.VoltageLV*0.54 ) //  63% == contactors fully closed ~50% when all open., try to establish 1/2 closed?
+		if ( ( CarState.VoltageAIRPDM < CarState.VoltageLV*0.54 ) && ( CarState.VoltageAIRPDM > CarState.VoltageLV*0.46 ) ) //  63% == contactors fully closed ~50% when all open., try to establish 1/2 closed?
 			CarState.AIROpen = 1;
 		else
 			CarState.AIROpen = 0;
@@ -152,6 +151,17 @@ int errorPDM( void )
 		returnval +=8;
 		setOutputNOW(BSPDLED_Output,LEDON);
 	} else setOutput(BSPDLED_Output,LEDOFF);
+
+	/* EV 4.10.3
+	 * The TS is deactivated when ALL of the following conditions are true:
+	 * All accumulator isolation relays are opened.
+	 * The pre-charge relay, see EV 5.7.3, is opened.
+	 * The voltage outside the accumulator container(s) does not exceed 60V DC or 25V AC RMS.
+	 *
+	 * AIROpen indicates all relays
+	 * VoltageINV & VoltageIVTAccu indicate voltage outside accumulator, with fallback for IVT not working.
+	 */
+
 
 	if (  CarState.VoltageINV  > 59 || CarState.VoltageIVTAccu > 59
 		|| CarState.AIROpen == 0 || DeviceState.IVT == OFFLINE ) // doesn't effect error state, just updates as other PDM derived LED's updated here. SCS Signal, move to PDM ideally.
