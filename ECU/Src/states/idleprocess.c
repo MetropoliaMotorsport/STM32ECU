@@ -220,7 +220,9 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	  && !ReceiveNonCriticalError
 	  && CarState.VoltageBMS > MINHV
 	  && CarState.VoltageINV > 18
+#ifdef SHUTDOWNSWITCHCHECK
 	  && CarState.ShutdownSwitchesClosed // only allow TS enabling if shutdown switches are all closed.
+#endif
 	  ) // minimum accumulator voltage to allow TS, set a little above BMS limit, so we can
 	{
 		readystate = 0;

@@ -24,7 +24,7 @@
 #define APPSBrakeHard			30 // 70
 #define APPSBrakeRelease		10 // 30
 #define RTDMBRAKEPRESSURE		30
-#define LIMPNM					10
+#define LIMPNM					10 // limp mode torque
 
 // Minimum acceptable voltage on TS for startup.
 #define MINHV					500 // minimum voltage to allow TS enable.
@@ -46,6 +46,9 @@
 
 // Error state due to Coolant overtemp - no seperate indicator currently
 #define COOLANTSHUTDOWN
+
+// Check shutdown switches as part of error state.
+#define SHUTDOWNSWITCHCHECK
 
 // Coolant overtemp limits.
 #define COOLANTLIMPTEMP 75

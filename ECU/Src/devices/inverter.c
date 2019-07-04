@@ -217,12 +217,12 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
 	uint8_t errorid=0;
 
 /*handle inverter errors here.
- * 0         $fe         8   0  16 129  51 117   2   0   0    1863.183700 R
- * 0         $fe         8   0  16 129  93 117   2   0   0    1880.023720 R
+ * 0         $fe         8   0  16 129  51 117   2   0   0    1863.183700 R 30003 DC Underlink voltage, auto reset ok.
+ * 0         $fe         8   0  16 129  93 117   2   0   0    1880.023720 R 30045 Power unit: Supply undervoltage
  * 0         $fe         8   0  16 129  93 117   3   0   0    1880.027050 R
- * 0         $fe         8   0  16 129  88 117   2   0   0    1880.047530 R
- * 0         $fe         8   0  16 129 165 120   2   0   0    1880.076030 R
- * 0         $fe         8   0  16 129 141 124   2   0   0    1880.080460 R
+ * 0         $fe         8   0  16 129  88 117   2   0   0    1880.047530 R 30040 Power unit: Undervolt 24 V
+ * 0         $fe         8   0  16 129 165 120   2   0   0    1880.076030 R 30885 Encoder Cyclic data transfer error
+ * 0         $fe         8   0  16 129 141 124   2   0   0    1880.080460 R 31885 Encoder Cyclic data transfer error
  *
  *				 1    000000FE   8  00  10  81      DD  1E     03   -   00  00
  *
@@ -262,6 +262,8 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
         switch ( ErrorCode ) // 29954
         {
         	case 30003 : // DC Underlink Voltage. HV dropped or dipped, allow reset attempt.
+        	case 30040 : // Power unit: Undervolt 24 V
+        	case 30045 : // Power unit: Supply undervoltage
                 AllowReset = 1;
                 break;
             default : // other unknown errors, don't allow reset attempt.

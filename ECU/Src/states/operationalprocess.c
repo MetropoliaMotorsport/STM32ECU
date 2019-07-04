@@ -340,13 +340,16 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
 	}
 
-//	CheckErrors();
+
 
 	// wait for restart request if allowed by error state.
 	if ( errorstatetime + 20000 < gettimer() // ensure error state is seen for at least 2 seconds.
-		&& errorPDM() == 0
+		//&& errorPDM() == 0
+		&& ( CheckErrors() == 0 || CheckErrors() == 99 ) // inverter error checked in next step.
         && CheckADCSanity() == 0
-        && CarState.ShutdownSwitchesClosed
+#ifdef SHUTDOWNSWITCHCHECK
+        && CarState.ShutdownSwitchesClosed // only allow exiting error state if shutdown switches closed.
+#endif
         && ( checkReset() == 1 // manual reset
 #ifdef AUTORESET
         		|| ( ( DeviceState.InverterL == ERROR || DeviceState.InverterR == ERROR ) // or automatic reset if allowed inverter error.

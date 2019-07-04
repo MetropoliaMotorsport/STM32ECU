@@ -323,17 +323,18 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
     
 #ifdef ALLOWLIMPCANCEL
         // don't allow immiediete exit from limp mode if it was already triggered
-        if ( CarState.LimpActive && !CarState.LimpRequest && ADCState.CoolantTempR < COOLANTLIMPEXITTEMP  )
-        {
-            CarState.LimpActive = 0;
-        }
-        
-        if ( CarState.LimpActive && CarState.Torque_Req_CurrentMax > LIMPNM  )
+        if ( CarState.LimpActive && OperationLoops > 200 && CheckRTDMActivationRequest() )
         {
             CarState.LimpDisable = 1;
             CarState.LimpActive = 0;
         }
 
+        if ( CarState.LimpActive && !CarState.LimpRequest && ADCState.CoolantTempR < COOLANTLIMPEXITTEMP  )
+        {
+            CarState.LimpDisable = 1;
+            CarState.LimpActive = 0;
+        }
+        
         if ( CarState.LimpDisable && CarState.Torque_Req_CurrentMax < CarState.Torque_Req_Max )
         {
             limpcounter++;
