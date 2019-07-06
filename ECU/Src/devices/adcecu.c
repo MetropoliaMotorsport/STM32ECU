@@ -31,12 +31,12 @@ int16_t BrakeFOutput[] = { -1,     0,    0,     240,    255 }; // output range /
 // zero should be approx real pedal zero, zero is read below this to allow for some variance without triggering errors.
 // ditto max value.
 
-// define zero as 5% actual travel
-uint16_t TorqueReqLInput[] = { 1999,  2000, (ACCELERATORLMAX-ACCELERATORLZERO)/100*5+ACCELERATORLZERO,   ACCELERATORLMAX,  64000,  64001 }; // calibration values for left input // 5800
+// define zero as 5% actual travel and 100% as 95% of actual travel
+uint16_t TorqueReqLInput[] = { 1999,  2000, (ACCELERATORLMAX-ACCELERATORLZERO)/100*5+ACCELERATORLZERO,   (ACCELERATORLMAX-ACCELERATORLZERO)/100*98+ACCELERATORLZERO,  64000,  64001 }; // calibration values for left input // 5800
 int16_t TorqueReqLOutput[] = {  -1,  0,     0,     1000,      1000,  1001 }; // range defined 0-1000 to allow percentage accuracy even if not using full travel range.
 
 // TorqueRMin(6798) / TorqueRMax(54369)
-uint16_t TorqueReqRInput[] = { 1999, 2000, (ACCELERATORRMAX-ACCELERATORRZERO)/100*5+ACCELERATORRZERO,  ACCELERATORRMAX,   64000,   64001 }; // calibration values for right input // 6200
+uint16_t TorqueReqRInput[] = { 1999, 2000, (ACCELERATORRMAX-ACCELERATORRZERO)/100*5+ACCELERATORRZERO,  (ACCELERATORRMAX-ACCELERATORRZERO)/100*98+ACCELERATORRZERO,   64000,   64001 }; // calibration values for right input // 6200
 int16_t TorqueReqROutput[] = { -1,      0,      0,      1000,   1000,   1001 };
 
 

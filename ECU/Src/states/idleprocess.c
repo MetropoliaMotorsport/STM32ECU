@@ -219,7 +219,9 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	  && GetInverterState( CarState.RightInvState ) == INVERTERREADY
 	  && !ReceiveNonCriticalError
 	  && CarState.VoltageBMS > MINHV
+#ifdef IVTEnable
 	  && CarState.VoltageINV > 18
+#endif
 #ifdef SHUTDOWNSWITCHCHECK
 	  && CarState.ShutdownSwitchesClosed // only allow TS enabling if shutdown switches are all closed.
 #endif

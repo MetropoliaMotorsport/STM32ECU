@@ -880,7 +880,7 @@ char CAN_SendErrors( void )
 {
 	FDCAN_TxHeaderTypeDef TxHeaderNMT;
 
-	TxHeaderNMT.Identifier = 102;
+	TxHeaderNMT.Identifier = 0x66; // 102
 	TxHeaderNMT.IdType = FDCAN_STANDARD_ID;
 	TxHeaderNMT.TxFrameType = FDCAN_DATA_FRAME;
 	TxHeaderNMT.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
@@ -973,9 +973,12 @@ char CANLogDataFast( void )
 	TxHeaderLog.Identifier = 0x7CB; // IVT
 
 	storeBEint16(CarState.Current, &CANTxData[0]);
+#ifdef IVTEnable
 	storeBEint16(CarState.VoltageINV, &CANTxData[2]);
-	storeBEint16(CarState.VoltageBMS, &CANTxData[4]);
 	storeBEint16(CarState.VoltageIVTAccu, &CANTxData[6]);
+#endif
+	storeBEint16(CarState.VoltageBMS, &CANTxData[4]);
+
 //	storeBEint16(CarState.Power, &CANTxData[6]);
 //	storeBEint16(ADCloops, &CANTxData[6]);
 	ADCloops=0;

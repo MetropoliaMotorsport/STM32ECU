@@ -21,7 +21,11 @@
 int TSActiveINVLRequest( void )
 {
 	uint16_t command;
-	if ( GetInverterState( CarState.LeftInvState ) < INVERTERON && CarState.VoltageINV > 480 ) // should be in ready state, so request ON state.
+	if ( GetInverterState( CarState.LeftInvState ) < INVERTERON
+#ifdef IVTEnable
+			&& CarState.VoltageINV > 480
+#endif
+			) // should be in ready state, so request ON state.
 	{
 		command = InverterStateMachine( LeftInverter ); // request left inv state machine to On from ready.
 		CANSendInverter( command, 0, LeftInverter );
@@ -32,7 +36,11 @@ int TSActiveINVLRequest( void )
 int TSActiveINVRRequest( void )
 {
 	uint16_t command;
-	if ( GetInverterState( CarState.RightInvState ) < INVERTERON && CarState.VoltageINV > 480 ) // only allow request if HV actually present.
+	if ( GetInverterState( CarState.RightInvState ) < INVERTERON
+#ifdef IVTEnable
+			&& CarState.VoltageINV > 480
+#endif
+	) // only allow request if HV actually present.
 	{
 		command = InverterStateMachine( RightInverter );
 		CANSendInverter( command, 0, RightInverter );

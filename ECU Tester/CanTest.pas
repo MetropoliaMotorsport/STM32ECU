@@ -186,6 +186,7 @@ type
     InverterLStatusRequest : Word;
     InverterRStatus : Word;
     InverterRStatusRequest : Word;
+    ErrorPos : Word;
     procedure CanChannel1CanRx(Sender: TObject);
     function InterPolateSteering(SteeringAngle : Integer) : Word;
     procedure sendIVT(msg0, msg1, msg2, msg3 : byte);
@@ -1310,6 +1311,17 @@ begin
                    // status messages
                  end;
 
+
+           $66 : begin
+                    if msg[0]+256*msg[1] <> ErrorPos then
+                    begin
+                      ErrorPos := msg[0]+256*msg[1];
+                      Output.Items.Add('ErrorCode('+ IntToStr(msg[0]+256*msg[1])+','
+                                + IntToStr(msg[2]+256*msg[3])+')'+formattedDateTime);
+                      Output.TopIndex := Output.Items.Count - 1;
+                    end;
+                 end;
+
           $100 : begin
             //          Output.Items.Add(Format('Id=%d Len=%d %d', [id, dlc, msg[0]]));
        //               if Output.TopIndex > Output.Items.Count - 2 then
@@ -1331,6 +1343,8 @@ begin
                               + IntToStr(msg[4]+256*msg[5]+65536*msg[6]+16777216*msg[7])+')'+formattedDateTime);
                    Output.TopIndex := Output.Items.Count - 1;   }
                  end;
+
+
 
 
           $511 : begin
