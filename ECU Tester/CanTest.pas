@@ -138,7 +138,7 @@ type
     Label30: TLabel;
     SpeedFLR: TLabel;
     SpeedFRR: TLabel;
-    Button1: TButton;
+    HVForce: TButton;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -176,7 +176,7 @@ type
     procedure BrakePedalChange(Sender: TObject);
     procedure SendADCClick(Sender: TObject);
     procedure timer100msTimer(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
+    procedure HVForceClick(Sender: TObject);
   private
     { Private declarations }
     StartTime: TDateTime;
@@ -1021,7 +1021,7 @@ begin
  // PDMClick(nil);
 end;
 
-procedure TMainForm.Button1Click(Sender: TObject);
+procedure TMainForm.HVForceClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
 begin

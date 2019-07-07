@@ -1019,14 +1019,14 @@ object MainForm: TMainForm
       Caption = 'HV On'
       TabOrder = 34
     end
-    object Button1: TButton
+    object HVForce: TButton
       Left = 640
       Top = 478
       Width = 75
       Height = 25
-      Caption = 'Button1'
+      Caption = 'HV Toggle'
       TabOrder = 35
-      OnClick = Button1Click
+      OnClick = HVForceClick
     end
   end
   object timer200ms: TTimer
