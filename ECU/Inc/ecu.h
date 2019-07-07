@@ -112,6 +112,12 @@
 // Do not send any torque request to inverters, for bench testing safely.
 //#define NOTORQUEREQUEST
 
+// Very simple attempt at some control code.
+#define CONTROLTEST
+
+// continue to set DriveMode when not in TS active.
+#define SETDRIVEMODEINIDLE
+
 // How frequently to send status messages in loops
 #define STATUSLOOPCOUNT 		10 // how many loops between regular status updates.
 
@@ -229,6 +235,7 @@ volatile struct CarState {
 	char HighVoltageAllowedR;
 	char HighVoltageAllowedL;
 	char HighVoltageReady;
+	uint8_t TestHV;
 
 	char BMS_relay_status;
 	char IMD_relay_status;
@@ -256,6 +263,7 @@ volatile struct CarState {
 	uint8_t Torque_Req_Max;
     uint8_t Torque_Req_CurrentMax;
     uint32_t PowerLimit;
+    uint8_t DrivingMode;
     
 	uint8_t APPSstatus;
     

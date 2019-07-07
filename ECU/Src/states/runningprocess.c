@@ -323,7 +323,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
     
 #ifdef ALLOWLIMPCANCEL
         // don't allow immiediete exit from limp mode if it was already triggered
-        if ( CarState.LimpActive && OperationLoops > 200 && CheckRTDMActivationRequest() )
+        if ( CarState.LimpActive && OperationLoops > 200 && CheckRTDMActivationRequest() && ADCState.CoolantTempR < COOLANTLIMPTEMP)
         {
             CarState.LimpDisable = 1;
             CarState.LimpActive = 0;
@@ -345,9 +345,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
                 CarState.LimpActive = 0;
         }
 #endif
-        
-        // add limp mode cancel potentially
-        
+
         // if allowed, process torque request, else request 0.
 
 		CarState.Torque_Req_L = PedalTorqueRequest();  // APPS
@@ -356,6 +354,45 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		if ( CarState.APPSstatus ) setOutput(TSLED_Output,LEDON); else setOutput(TSLED_Output,LEDOFF);
 
 		// Call any additional processing here to alter final request.
+
+#ifdef CONTROLTEST
+		static uint16_t LeftAdjust = 0;
+		static uint16_t RightAdjust = 0;
+
+		if ( CarState.DrivingMode == 8
+			&& DeviceState.FrontSpeedSensors == ENABLED
+			&& DeviceState.FLSpeed == OPERATIONAL
+			&& DeviceState.FRSpeed == OPERATIONAL )
+		{
+				int16_t AverageFrontWheelSpeed = ( CarState.SpeedFL + CarState.SpeedFR ) / 2;
+				if ( AverageFrontWheelSpeed > MINSPEEDFORCONTROL )
+				{
+					if ( CarState.SpeedRL > AverageFrontWheelSpeed * 1.1 ) // more than 10% slip
+					{
+						if ( LeftAdjust < 50 ) LeftAdjust++;
+					} else
+					{
+						if ( LeftAdjust > 0 ) LeftAdjust--;
+					}
+
+					if ( CarState.SpeedRL > AverageFrontWheelSpeed * 1.1 ) // more than 10% slip
+					{
+						if ( RightAdjust < 50 ) RightAdjust++;
+					} else
+					{
+						if ( RightAdjust > 0 ) RightAdjust--;
+					}
+				} else // control not active reset
+				{
+					if ( LeftAdjust > 0 ) LeftAdjust--;
+					if ( RightAdjust > 0 ) RightAdjust--;
+				}
+		}
+
+		CarState.Torque_Req_L = CarState.Torque_Req_L * ( 100 - LeftAdjust ) / 100;
+		CarState.Torque_Req_R = CarState.Torque_Req_R * ( 100 - RightAdjust ) / 100;
+
+#endif
 
 //		uint32_t loopstart = gettimer();
 //		uint32_t looptimer = 0;

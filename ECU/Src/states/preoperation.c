@@ -32,6 +32,7 @@ void setDriveMode(void)
 		SetupNormalTorque();
 
 		CarState.LimpDisable = 0;
+		CarState.DrivingMode = ADCState.DrivingMode;
 
 		case 1: // 5nm  5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    64,    65,   0
 			CarState.Torque_Req_Max = 5;
@@ -195,18 +196,16 @@ int PreOperation( uint32_t OperationLoops  )
 
 //	ResetCanReceived();
 
-	sendPDM( 0 );
-
 	uint32_t loopstart = gettimer();
 	uint32_t looptimer = 0;
 
 	// check if received configuration requests, or mode change -> testing state.
 	switch ( CheckConfigurationRequest() ) // allows RequestState to be set to zero to prevent mode changing mid config, or request a different mode.
 	{
-/*		case TestingState :
+		case TestingState :
 			RequestState = TestingState; // Testing state requested from Configuration.
 			break;
-
+/*
 		case LimpState :
 			RequestState = LimpState; // Limpmode state requested from Configuration, set as requested next state.
 			break; */
@@ -214,11 +213,14 @@ int PreOperation( uint32_t OperationLoops  )
 		case ReceivingConfig :
 			RequestState = PreOperationalState; // don't allow leaving pre operation whilst
 												// in middle of processing a configuration / testing request.
+			break;
 		case 0:
 		default:
 			RequestState = OperationalReadyState; // nothing happening in config, assume normal operation.
 			// do nothing
 	}
+
+	sendPDM( 0 );
 
 	// checks if we have heard from other necessary connected devices for operation.
 
@@ -261,11 +263,12 @@ int PreOperation( uint32_t OperationLoops  )
 
 			if ( ( RequestState == TestingState ) )
 			{
-				OperationLoops = 0;
-				return TestingState; // an alternate mode ( testing requested in config for next state.
+//				OperationLoops = 0;
+//				return TestingState; // an alternate mode ( testing requested in config for next state.
+				return PreOperationalState;
 			}
 
-			if ( CheckActivationRequest() ) // check if driver has requested activation and if so proceed
+			if ( CheckActivationRequest() && RequestState != TestingState ) // check if driver has requested activation and if so proceed
 			{
 				OperationLoops = 0;
 				CarState.Torque_Req_L = 0;

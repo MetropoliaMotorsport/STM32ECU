@@ -35,6 +35,8 @@ void ResetStateData( void ) // set default startup values for global state value
 	DeviceState.CAN1 = OPERATIONAL;
 	DeviceState.CAN2 = OPERATIONAL;
 
+	CarState.TestHV = 0;
+
 	Errors.LeftInvAllowReset = 1;
     Errors.RightInvAllowReset = 1;
 #ifdef FRONTSPEED
@@ -502,9 +504,10 @@ int OperationalProcess( void )
 
 			static uint8_t offcan1 = 0;
 			static uint8_t offcan2 = 0;
-
+#ifdef RECOVERCAN
 			static uint32_t offcan1time = 0;
 			static uint32_t offcan2time = 0;
+#endif
 
 			if ( CAN1Status.BusOff) // detect passive error instead and try to stay off bus till clears?
 			{
@@ -515,7 +518,9 @@ int OperationalProcess( void )
 
 				  if ( offcan1 == 0 )
 				  {
+#ifdef RECOVERCAN
 					  offcan1time = gettimer();
+#endif
 					  offcan1 = 1;
 					  DeviceState.CAN1 = OFFLINE;
 //					  offcan1count++; // increment occurances of coming off bus. if reach threshhold, go to error state.
@@ -558,7 +563,9 @@ int OperationalProcess( void )
 
 				  if ( offcan2 == 0 )
 				  {
+#ifdef RECOVERCAN
 					  offcan2time = gettimer();
+#endif
 					  offcan2 = 1;
 				  }
 				  Errors.ErrorPlace = 0xF2;

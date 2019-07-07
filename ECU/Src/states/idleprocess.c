@@ -232,6 +232,10 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 			 blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP); // start blinking to indicate ready.
 	}
 
+#ifdef SETDRIVEMODEINIDLE
+	setDriveMode();
+#endif
+
 	CarState.Torque_Req_L = PedalTorqueRequest();  // allow APPS checking before startup
 	CarState.Torque_Req_R = CarState.Torque_Req_L;
 

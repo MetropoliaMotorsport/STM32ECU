@@ -132,6 +132,7 @@ int ResetOperationCanReceived( void );
 char CAN1Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData );
 char CAN2Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData );
 char CAN_NMT( uint8_t, uint8_t );
+char CAN_ConfigRequest( uint8_t command, uint8_t success );
 char CANKeepAlive( void );
 uint8_t CANSendPDM( uint8_t highvoltage, uint8_t buzz );
 

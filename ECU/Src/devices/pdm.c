@@ -183,7 +183,7 @@ int requestPDM( int nodeid )
 
 int sendPDM( int buzzer )
 {
-	if ( CarState.HighVoltageAllowedL && CarState.HighVoltageAllowedR && CarState.HighVoltageReady )
+	if ( ( CarState.HighVoltageAllowedL && CarState.HighVoltageAllowedR && CarState.HighVoltageReady ) || CarState.TestHV )
 		return CANSendPDM(10,buzzer);
 	else
 		return CANSendPDM(0,buzzer);

@@ -843,6 +843,25 @@ char CAN_NMT( uint8_t command, uint8_t node )
 	return 1;
 }
 
+char CAN_ConfigRequest( uint8_t command, uint8_t success )
+{
+	FDCAN_TxHeaderTypeDef TxHeaderCfg;
+
+	TxHeaderCfg.Identifier = 0x20;
+	TxHeaderCfg.IdType = FDCAN_STANDARD_ID;
+	TxHeaderCfg.TxFrameType = FDCAN_DATA_FRAME;
+	TxHeaderCfg.DataLength = FDCAN_DLC_BYTES_3; // only two bytes defined in send protocol, check this
+	TxHeaderCfg.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	TxHeaderCfg.BitRateSwitch = FDCAN_BRS_OFF;
+	TxHeaderCfg.FDFormat = FDCAN_CLASSIC_CAN;
+	TxHeaderCfg.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	TxHeaderCfg.MessageMarker = 0;
+
+	uint8_t CANTxData[3] = { 0x21, command, success }; // 0 sends command to all nodes.
+	CAN1Send( &TxHeaderCfg, CANTxData ); // send command to both buses.
+	return 1;
+}
+
 char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter )
 {
 	FDCAN_TxHeaderTypeDef TxHeaderInverter;
