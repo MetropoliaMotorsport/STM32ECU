@@ -72,6 +72,9 @@
 
 #define IVTEnable				// if not defined, IVT ignored and assumed present, giving a nominal voltage.
 
+// HV will still be allowed without TSAL connected
+#define NOTSAL
+
 // Use BMS Messages.
 #define BMSEnable				// if not defined, BMS ignored and assumed present.
 
@@ -98,7 +101,6 @@
 
 // Transmit error messages and status on 2nd CANBUS also.
 #define CAN2ERRORSTATUS
-
 
 // Allow a 450ms window of brake + apps before throttle is cut.
 #define APPSALLOW450MSBRAKE

@@ -220,7 +220,9 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	  && !ReceiveNonCriticalError
 	  && CarState.VoltageBMS > MINHV
 #ifdef IVTEnable
-	  && CarState.VoltageINV > 18
+	#ifndef NOTSAL
+	  && CarState.VoltageINV > -5 // 18
+	#endif
 #endif
 #ifdef SHUTDOWNSWITCHCHECK
 	  && CarState.ShutdownSwitchesClosed // only allow TS enabling if shutdown switches are all closed.
@@ -260,7 +262,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	{
         // error enabling high voltage, stop trying and alert.
 		CarState.HighVoltageReady = 0;
-//		blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+//		blinkOutput(TSLED_Output,LEDBLINK_FOUR,1);
 		TSRequested = 0;
 	}
 
