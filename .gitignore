@@ -31,7 +31,7 @@
 *.bin
 *.list
 *.map
-ECU Tester/Win32/
+/ECU Tester/Win32/
 
 # Debug files
 *.dSYM/

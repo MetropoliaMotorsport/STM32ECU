@@ -239,8 +239,9 @@ uint16_t CheckErrors( void )
 		return 98; // PDM error, stop operation.
 	}
 
-	if ( GetInverterState( CarState.LeftInvState ) == INVERTERERROR
-		  || GetInverterState( CarState.RightInvState ) == INVERTERERROR )
+	if ( !CarState.TestHV && (
+			GetInverterState( CarState.LeftInvState ) == INVERTERERROR
+		  || GetInverterState( CarState.RightInvState ) == INVERTERERROR ) )
 	{
 		return 99; // serious error, no operation allowed. -- inverter
 	}

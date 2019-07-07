@@ -243,15 +243,17 @@ int PreOperation( uint32_t OperationLoops  )
 	CarState.Torque_Req_R = CarState.Torque_Req_L;
 	if ( CarState.APPSstatus ) setOutput(RTDMLED_Output,LEDON); else setOutput(RTDMLED_Output,LEDOFF);
 
-	receiveINVStatus(LeftInverter);
-	receiveINVStatus(RightInverter);
+	if ( !CarState.TestHV )
+	{
+		receiveINVStatus(LeftInverter);
+		receiveINVStatus(RightInverter);
 
-	receiveINVSpeed(LeftInverter);
-	receiveINVSpeed(RightInverter);
+		receiveINVSpeed(LeftInverter);
+		receiveINVSpeed(RightInverter);
 
-	receiveINVTorque(LeftInverter);
-	receiveINVTorque(RightInverter);
-
+		receiveINVTorque(LeftInverter);
+		receiveINVTorque(RightInverter);
+	}
 	if ( !errorPDM()
 			&& preoperationstate == 0
 			&& CarState.LeftInvState != 0xFF
@@ -282,7 +284,7 @@ int PreOperation( uint32_t OperationLoops  )
 	{ // hardware not ready for active state
 		if ( OperationLoops == 50 ) // 0.5 seconds, send reset nmt, try to get inverters online if not online at startup.
 		{
-		NMTReset(); // chec±k
+			if ( !CarState.TestHV )	NMTReset();
 		}
 
 		if ( CheckActivationRequest() == 1 )
