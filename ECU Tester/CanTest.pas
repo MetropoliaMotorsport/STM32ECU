@@ -138,6 +138,7 @@ type
     Label30: TLabel;
     SpeedFLR: TLabel;
     SpeedFRR: TLabel;
+    Button1: TButton;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -175,6 +176,7 @@ type
     procedure BrakePedalChange(Sender: TObject);
     procedure SendADCClick(Sender: TObject);
     procedure timer100msTimer(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
   private
     { Private declarations }
     StartTime: TDateTime;
@@ -1019,6 +1021,23 @@ begin
  // PDMClick(nil);
 end;
 
+procedure TMainForm.Button1Click(Sender: TObject);
+var
+  msg: array[0..7] of byte;
+begin
+  msg[0] := 3;
+  with CanChannel1 do
+  begin
+    if Active then
+    begin
+      if MainStatus = 1 then  // only send request if in startup state.
+      begin
+        Check(Write($21,msg,8,0), 'Write failed');
+      end;
+    end;
+  end;
+end;
+
 procedure TMainForm.CANBMSClick(Sender: TObject);
 var
   msg: array[0..7] of byte;
@@ -1206,6 +1225,12 @@ begin
                        str := str + '(' + IntToStr(msg[3]*256+msg[2])+')';
                        Output.Items.Add(str);
                        WriteLn(adcdata, str);
+                    end
+                    else if msg[0] = $21 then
+                    begin
+                      case msg[1] of
+                        3 :  Output.Items.Add('HVOn('+IntToStr(msg[2])+') : '+formattedDateTime);
+                      end;
                     end
                {     else if ( msg[0] = 100 ) and ( msg[1] = 0 ) then
                     begin

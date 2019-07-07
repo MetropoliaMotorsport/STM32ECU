@@ -21,7 +21,7 @@ object MainForm: TMainForm
     973
     648)
   PixelsPerInch = 96
-  TextHeight = 13
+  TextHeight = 14
   object Label27: TLabel
     Left = 94
     Top = 393
@@ -152,7 +152,7 @@ object MainForm: TMainForm
       Left = 3
       Top = 20
       Width = 145
-      Height = 21
+      Height = 22
       Style = csDropDownList
       TabOrder = 0
       OnChange = CanDevicesChange
@@ -162,7 +162,7 @@ object MainForm: TMainForm
       Top = 20
       Width = 378
       Height = 452
-      ItemHeight = 13
+      ItemHeight = 14
       TabOrder = 1
     end
     object SendCANADC: TButton
@@ -279,7 +279,7 @@ object MainForm: TMainForm
       Left = 64
       Top = 366
       Width = 121
-      Height = 21
+      Height = 22
       Style = csDropDownList
       ItemIndex = 0
       TabOrder = 14
@@ -425,7 +425,7 @@ object MainForm: TMainForm
       Left = 432
       Top = 509
       Width = 121
-      Height = 21
+      Height = 22
       Style = csDropDownList
       TabOrder = 26
       Items.Strings = (
@@ -1018,6 +1018,15 @@ object MainForm: TMainForm
       Height = 17
       Caption = 'HV On'
       TabOrder = 34
+    end
+    object Button1: TButton
+      Left = 640
+      Top = 478
+      Width = 75
+      Height = 25
+      Caption = 'Button1'
+      TabOrder = 35
+      OnClick = Button1Click
     end
   end
   object timer200ms: TTimer
