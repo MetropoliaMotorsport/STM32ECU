@@ -116,6 +116,8 @@
 
 // Very simple attempt at some control code.
 #define CONTROLTEST
+#define MINSPEEDFORCONTROL   100
+
 
 // continue to set DriveMode when not in TS active.
 #define SETDRIVEMODEINIDLE
