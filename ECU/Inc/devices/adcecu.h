@@ -52,7 +52,7 @@ volatile uint32_t ADC_DataMax[NumADCChan+NumADCChanADC3];
 
 struct  {
 	volatile char newdata;
-	int8_t SteeringAngle;
+	int16_t SteeringAngle;
 	uint8_t BrakeF;
 	uint8_t BrakeR;
 	uint8_t CoolantTempL;
@@ -65,7 +65,7 @@ struct  {
 
 struct  {
 	volatile char newdata;
-	int8_t SteeringAngle;
+	int16_t SteeringAngle;
 	uint8_t BrakeF;
 	uint8_t BrakeR;
 	uint8_t CoolantTempL;
@@ -98,6 +98,9 @@ struct ADCInterpolationTables { // pointers to array data for linear interpolati
 		struct ADCTable CoolantR;
 
 		struct ADCTable ModeSelector;
+#ifdef TORQUEVECTOR
+		struct ADCTable TorqueVector;
+#endif
 } ADCInterpolationTables;
 
 int16_t linearInterpolate(uint16_t Input[], int16_t Output[], uint16_t count, uint16_t RawADCInput);
@@ -113,6 +116,10 @@ int getCoolantTemp2(uint16_t RawADCInput);
 int getTorqueReqPercL(uint16_t RawADCInputL);
 int getTorqueReqPercR(uint16_t RawADCInputR);
 int getTorqueReqCurve( uint16_t ADCInput );
+
+#ifdef TORQUEVECTOR
+int getTorqueVector(uint16_t RawADCInput);
+#endif
 
 // car state
 

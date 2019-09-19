@@ -36,24 +36,46 @@ void setDriveMode(void)
 
 		case 1: // 5nm  5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    64,    65,   0
 			CarState.Torque_Req_Max = 5;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 0;
+#endif
 			break;
 		case 2: // 10nm
-			CarState.Torque_Req_Max = 10;
+			CarState.Torque_Req_Max = 25;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 0;
+#endif
 			break;
 		case 3: // 15nm
-			CarState.Torque_Req_Max = 15;
+			CarState.Torque_Req_Max = 25;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 1;
+#endif
 			break;
 		case 4: // 20nm
-			CarState.Torque_Req_Max = 20;
+			CarState.Torque_Req_Max = 35;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 0;
+#endif
 			break;
 		case 5: // 25nm
-			CarState.Torque_Req_Max = 25;
+			CarState.Torque_Req_Max = 35;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 1;
+#endif
 			break;
 		case 6: // 30nm
-			CarState.Torque_Req_Max = 30;
+			CarState.Torque_Req_Max = 65;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 0;
+#endif
+			SetupLargeLowRangeTorque();
 			break;
 		case 7: // 65nm Track
 			CarState.Torque_Req_Max = 65;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 1;
+#endif
 			SetupLargeLowRangeTorque();
 			break;
 		case 8: // 65nm Accel
@@ -239,9 +261,21 @@ int PreOperation( uint32_t OperationLoops  )
 
 	setDriveMode();
 
-	CarState.Torque_Req_L = PedalTorqueRequest();  // allow APPS checking before startup
-	CarState.Torque_Req_R = CarState.Torque_Req_L;
+	// allow APPS checking before RTDM
+	int Torque_Req = PedalTorqueRequest();
+
+	CarState.Torque_Req_L = Torque_Req;
+	CarState.Torque_Req_R = Torque_Req;
+
+#ifdef TORQUEVECTOR
+		TorqueVectorProcess( Torque_Req );
+#endif
+
 	if ( CarState.APPSstatus ) setOutput(RTDMLED_Output,LEDON); else setOutput(RTDMLED_Output,LEDOFF);
+
+#ifdef FANCONTROL
+		FanControl();
+#endif
 
 	if ( !CarState.TestHV )
 	{
@@ -254,10 +288,24 @@ int PreOperation( uint32_t OperationLoops  )
 		receiveINVTorque(LeftInverter);
 		receiveINVTorque(RightInverter);
 	}
+
+	if ( !CarState.ShutdownSwitchesClosed )
+	{
+		blinkOutput(TSOFFLED_Output, LEDBLINK_FOUR, 1);
+	}  else
+	{
+		blinkOutput(TSOFFLED_Output, LEDON, 0);
+		setOutput(TSOFFLED_Output,LEDON);
+	}
+
 	if ( !errorPDM()
 			&& preoperationstate == 0
 			&& CarState.LeftInvState != 0xFF
-			&& CarState.RightInvState != 0xFF) // everything is ready to move to next state.
+			&& CarState.RightInvState != 0xFF // everything is ready to move to next state.
+#ifdef SHUTDOWNSWITCHCHECK
+            && CarState.ShutdownSwitchesClosed // only allow exiting error state if shutdown switches closed. - maybe move to only for auto
+#endif
+	   )
 	{
 		blinkOutput(TSLED_Output, LEDBLINK_ONE, 1);
 			// devices are ready and in pre operation state.

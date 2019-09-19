@@ -162,6 +162,17 @@ int errorPDM( void )
 	 * VoltageINV & VoltageIVTAccu indicate voltage outside accumulator, with fallback for IVT not working.
 	 */
 
+#ifdef SHUTDOWNSWITCHSTATUS // use mid dash led for shutdown switch
+#ifndef TORQUEVECTOR
+	if ( CarState.ShutdownSwitchesClosed )
+	{
+		setOutput(TSOFFLED_Output,LEDON);
+	} else
+	{
+		setOutput(TSOFFLED_Output,LEDOFF);
+	}
+#endif
+#else // use mid dash led for TSOFF status.
 
 	if (
 #ifdef IVTEnable
@@ -172,7 +183,7 @@ int errorPDM( void )
 	{
 		 setOutput(TSOFFLED_Output,LEDOFF);
 	} else setOutput(TSOFFLED_Output,LEDON);
-
+#endif
 	return returnval;
 }
 
@@ -183,9 +194,13 @@ int requestPDM( int nodeid )
 
 int sendPDM( int buzzer )
 {
+#ifdef PDMSECONDMESSAGE
+	CANSendPDMFAN();
+#endif
 	if ( ( CarState.HighVoltageAllowedL && CarState.HighVoltageAllowedR && CarState.HighVoltageReady ) || CarState.TestHV )
 		return CANSendPDM(10,buzzer);
 	else
 		return CANSendPDM(0,buzzer);
+
 }
 

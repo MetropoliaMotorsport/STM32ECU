@@ -131,8 +131,15 @@ int TSActiveProcess( uint32_t OperationLoops )
 		return OperationalErrorState; // something has triggered an error, drop to error state to deal with it.
 	}
 
-	CarState.Torque_Req_L = PedalTorqueRequest();  // allow APPS checking before startup
-	CarState.Torque_Req_R = CarState.Torque_Req_L;
+	// allow APPS checking before RTDM
+	int Torque_Req = PedalTorqueRequest();
+
+	CarState.Torque_Req_L = Torque_Req;
+	CarState.Torque_Req_R = Torque_Req;
+
+#ifdef TORQUEVECTOR
+	TorqueVectorProcess( Torque_Req );
+#endif
 
 /*	uint16_t sanity = CheckADCSanity();
 	if ( sanity )

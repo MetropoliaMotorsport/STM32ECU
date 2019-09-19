@@ -33,8 +33,8 @@
 #define BMS_BUS					hfdcan1
 #define PDM_BUS
 
-#define InverterL_COBID			0x7E // 126
-#define InverterR_COBID			0x7F // 127
+#define InverterL_COBID			0x7E // 126 // swap
+#define InverterR_COBID			0x7F // 127 // swap
 #define Inverter_BUS			hfdcan2
 
 #define ECU_CAN_ID				0x20 // send +1
@@ -135,6 +135,9 @@ char CAN_NMT( uint8_t, uint8_t );
 char CAN_ConfigRequest( uint8_t command, uint8_t success );
 char CANKeepAlive( void );
 uint8_t CANSendPDM( uint8_t highvoltage, uint8_t buzz );
+#ifdef PDMSECONDMESSAGE
+uint8_t CANSendPDMFAN( void );
+#endif
 
 char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode );
 char CAN_SendStatus( char state, char substate, uint32_t errorcode );

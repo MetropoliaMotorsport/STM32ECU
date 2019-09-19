@@ -9,6 +9,12 @@
 
 //static int OperationLoops = 0;
 
+int ConvertNMToRequest( int NM )
+{
+	return NM*1000/65;
+}
+
+
 /*
  * APPS Check
  *
@@ -63,7 +69,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	//   -Accelerator Pedal Travel : More than 25 percent or power > 5kW for more than 500ms
 	//   -Brake Pressure allowed : more than 30
 	//   -Torque-Brake Violation : Occurred and marked
-#ifdef APPSALLOW450MSBRAKE
+#ifdef APPSALLOWBRAKE
 	else if( difference<=10
 			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )
 			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime == 0 )
@@ -75,7 +81,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 
 	else if( difference<=10
 			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )
-			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime < 4500 )
+			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime < APPSBRAKETIME ) // 300ms brake allowance
 	{
 		Torque_drivers_request = 1;
 		CarState.APPSstatus = 3;
@@ -86,7 +92,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )
 			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 )
 #ifdef APPSALLOW450MSBRAKE
-			 && APPSTriggerTime >= 4500
+			 && APPSTriggerTime >= APPSBRAKETIME
 #endif
 			)
 	{
@@ -137,14 +143,75 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	    CarState.APPSstatus = 99; // 6
 	}
 
-	// can send status
 
-	if ( Torque_drivers_request )
-	  return ((getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax*0.01)*1000/65)/10; // Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
+
+	// calculate actual torque request
+	if ( Torque_drivers_request != 0)
+	{
+		int torquerequest =  ( ConvertNMToRequest(getTorqueReqCurve(ADCState.Torque_Req_R_Percent)/10*CarState.Torque_Req_CurrentMax*0.01));
+		return torquerequest;// Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
+
+	}
+	  //	  return getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax*0.01)*1000/65)/10; // Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
 	else
+	{
+//	  CarState.Torque_Req_L = 0;  // wheels wrong way round? , swapped for now, was + left before.
+//	  CarState.Torque_Req_R = 0;
 	  return 0;
+	}
 }
 
+#ifdef TORQUEVECTOR
+uint16_t TorqueVectorProcess( int torquerequest )
+{
+/*
+ * torque vectoring should activate at >40/<-40 degrees of steering wheel angle.
+ * Full(=10Nm) torque change should be reached linearily at >90/<-90 of steering angle.
+ */
+
+	int TorqueVectorAddition;
+
+	// ensure torque request altering only happens when a torque request actually exists.
+
+	if ( CarState.TorqueVectoring && torquerequest > 0 && ADCState.Torque_Req_R_Percent > 0 && ADCState.Torque_Req_L_Percent > 0 && abs(ADCState.SteeringAngle) > 40 )
+	{
+		TorqueVectorAddition = ConvertNMToRequest(getTorqueVector(ADCState.SteeringAngle))/10; // returns 10x NM request.
+
+		if  ( abs(TorqueVectorAddition) > torquerequest ){
+			if ( TorqueVectorAddition < 0 ) TorqueVectorAddition = 0-torquerequest;
+			else TorqueVectorAddition = torquerequest;
+		}
+
+		int Left = torquerequest + TorqueVectorAddition;
+		int Right = torquerequest - TorqueVectorAddition;
+		// also check wheel speed.
+
+		if ( Left > 1000 ) Left = 1000;
+		if ( Right > 1000 ) Right = 1000;
+		if ( Left < 0 ) Left = 0;
+		if ( Right < 0 ) Right = 0;
+
+		CarState.Torque_Req_L = Right;  // wheels wrong way round? , swapped for now, was + left before.
+		CarState.Torque_Req_R = Left; // check and fix properly if inverters configured wrong way round.
+		return 1; // we modified.
+	}
+	else
+	{
+		CarState.Torque_Req_L = torquerequest;  // wheels wrong way round? , swapped for now, was + left before.
+		CarState.Torque_Req_R = torquerequest;
+		return 0; // we set to zero.
+	}
+}
+#endif
+
+
+void FanControl( void )
+{
+	if(ADCState.Torque_Req_R_Percent > TORQUEFANLATCHPERCENTAGE*10) // if APPS position pver 50% trigger fan latched on.
+	{
+		CarState.FanPowered = 1;
+	}
+}
 
 int RunningRequest( void )
 {
@@ -348,14 +415,35 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         // if allowed, process torque request, else request 0.
 
-		CarState.Torque_Req_L = PedalTorqueRequest();  // APPS
-		CarState.Torque_Req_R = CarState.Torque_Req_L;
+        int Torque_Req = PedalTorqueRequest();  // APPS
 
+		CarState.Torque_Req_L = Torque_Req;
+		CarState.Torque_Req_R = Torque_Req;
+
+#ifdef TORQUEVECTOR
+
+// first check if we've requested toggling state and toggle it accelerator pedal not pressed.
+		if ( CheckTSActivationRequest() && ADCState.Torque_Req_R_Percent < 5 && ADCState.Torque_Req_L_Percent < 5 ) // toggle torque vectoring with TS start button.
+		{
+			if ( CarState.TorqueVectoring ) CarState.TorqueVectoring = 0; else CarState.TorqueVectoring = 1;
+		}
+
+		if ( CarState.TorqueVectoring ) // handle indicator of active state.
+		{
+			blinkOutput(TSOFFLED_Output,LEDBLINK_ONE,LEDBLINKNONSTOP); // blinking green led = vectoring on.
+		} else
+		{
+	//		setOutput(TSOFFLED_Output,LEDON); // steady LED = not enabled
+			blinkOutput(TSOFFLED_Output,LEDON,LEDBLINKNONSTOP);
+		}
+
+        TorqueVectorProcess( Torque_Req );
+#endif
 		if ( CarState.APPSstatus ) setOutput(TSLED_Output,LEDON); else setOutput(TSLED_Output,LEDOFF);
 
 		// Call any additional processing here to alter final request.
 
-#ifdef CONTROLTEST
+#ifdef CONTROLTEST // this is very unlikely working in any way.
 		static uint16_t LeftAdjust = 0;
 		static uint16_t RightAdjust = 0;
 
@@ -404,6 +492,11 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 			looptimer = gettimer() - loopstart;
 		}
  */
+
+#ifdef FANCONTROL
+		FanControl();
+#endif
+
 
 #ifdef NOTORQUEREQUEST
 		CANSendInverter( 0b00001111, 0, LeftInverter );

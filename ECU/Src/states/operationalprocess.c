@@ -37,6 +37,12 @@ void ResetStateData( void ) // set default startup values for global state value
 
 	CarState.TestHV = 0;
 
+#ifdef FANCONTROL
+	CarState.FanPowered = 0;
+#else
+	CarState.FanPowered = 1;
+#endif
+
 	Errors.LeftInvAllowReset = 1;
     Errors.RightInvAllowReset = 1;
 #ifdef FRONTSPEED
@@ -351,7 +357,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		&& ( CheckErrors() == 0 || CheckErrors() == 99 ) // inverter error checked in next step.
         && CheckADCSanity() == 0
 #ifdef SHUTDOWNSWITCHCHECK
-        && CarState.ShutdownSwitchesClosed // only allow exiting error state if shutdown switches closed.
+        && CarState.ShutdownSwitchesClosed // only allow exiting error state if shutdown switches closed. - maybe move to only for auto
 #endif
         && ( checkReset() == 1 // manual reset
 #ifdef AUTORESET
@@ -513,7 +519,7 @@ int OperationalProcess( void )
 			if ( CAN1Status.BusOff) // detect passive error instead and try to stay off bus till clears?
 			{
 			//	Errors.ErrorPlace = 0xAA;
-				  blinkOutput(BMSLED_Output, LEDBLINK_FOUR, 1);
+				  blinkOutput(TSOFFLED_Output, LEDBLINK_FOUR, 1);
 				  HAL_FDCAN_Stop(&hfdcan1);
 				  CAN_SendStatus(255,0,0);
 
@@ -569,7 +575,7 @@ int OperationalProcess( void )
 #endif
 					  offcan2 = 1;
 				  }
-				  Errors.ErrorPlace = 0xF2;
+				  Errors.ErrorPlace = 0xF3;
 				  NewOperationalState = OperationalErrorState;
 			}
 

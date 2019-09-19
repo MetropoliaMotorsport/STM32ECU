@@ -12,4 +12,10 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime );
 
 uint16_t PedalTorqueRequest( void );
 
+#ifdef TORQUEVECTOR
+uint16_t TorqueVectorProcess( int torquerequest );
+#endif
+
+void FanControl( void );
+
 #endif /* RUNNINGPROCESS_H_ */

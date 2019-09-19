@@ -238,9 +238,16 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	setDriveMode();
 #endif
 
-	CarState.Torque_Req_L = PedalTorqueRequest();  // allow APPS checking before startup
-	CarState.Torque_Req_R = CarState.Torque_Req_L;
 
+// allow APPS checking before RTDM
+	int Torque_Req = PedalTorqueRequest();
+
+	CarState.Torque_Req_L = Torque_Req;
+	CarState.Torque_Req_R = Torque_Req;
+
+#ifdef TORQUEVECTOR
+	TorqueVectorProcess( Torque_Req );
+#endif
 	// fail process, inverters go from 33->60->68  when no HV supplied and request startup.
 
 	uint8_t InvHVPresent = 0;

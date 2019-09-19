@@ -261,12 +261,12 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
         
         switch ( ErrorCode ) // 29954
         {
-        	case 30003 : // DC Underlink Voltage. HV dropped or dipped, allow reset attempt.
+        	case 30003 : // DC Underlink Voltage. HV dropped or dipped, allow reset attempt. //  33 117 hex
         	case 30040 : // Power unit: Undervolt 24 V
         	case 30045 : // Power unit: Supply undervoltage
                 AllowReset = 1;
                 break;
-            default : // other unknown errors, don't allow reset attempt.
+            default : // other unknown errors, don't allow auto reset attempt.
                 AllowReset = 0;
         }
         

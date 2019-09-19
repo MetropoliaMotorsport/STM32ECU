@@ -23,7 +23,9 @@
 
 #define APPSBrakeHard			30 // 70
 #define APPSBrakeRelease		10 // 30
-#define RTDMBRAKEPRESSURE		30
+//#define RTDMBRAKEPRESSURE		30
+#define RTDMBRAKEPRESSURE		10 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
+
 #define LIMPNM					10 // limp mode torque
 
 // Minimum acceptable voltage on TS for startup.
@@ -44,8 +46,26 @@
 // Use onboard ADC, else expect ADC values by CAN.
 #define STMADC
 
+// Use basic torquevectoring
+#define TORQUEVECTOR
+#define TORQUEVECTORSTARTANGLE 20  //40
+#define TORQUEVECTORSTOPANGLE  70  //90
+#define TORQUEVECTORMAXNM	   8
+
+// Use green dash LED to indicate shutdownswitch status.
+#define SHUTDOWNSWITCHSTATUS
+
 // Error state due to Coolant overtemp - no seperate indicator currently
-#define COOLANTSHUTDOWN
+//#define COOLANTSHUTDOWN
+
+// Control cooling fan via APPS trigger.
+#define FANCONTROL
+
+// Trigger percentage for FAN on APPS
+#define TORQUEFANLATCHPERCENTAGE 30
+
+// Use second PDM message for compatibility for fan control
+#define PDMSECONDMESSAGE
 
 // Check shutdown switches as part of error state.
 #define SHUTDOWNSWITCHCHECK
@@ -103,7 +123,9 @@
 #define CAN2ERRORSTATUS
 
 // Allow a 450ms window of brake + apps before throttle is cut.
-#define APPSALLOW450MSBRAKE
+#define APPSALLOWBRAKE
+
+#define APPSBRAKETIME	3000 //300ms brake allowance for apps before trigger cut power.
 
 // Allow limp mode to be exited on request.
 #define ALLOWLIMPCANCEL
@@ -115,7 +137,7 @@
 //#define NOTORQUEREQUEST
 
 // Very simple attempt at some control code.
-#define CONTROLTEST
+//#define CONTROLTEST
 #define MINSPEEDFORCONTROL   100
 
 
@@ -263,12 +285,17 @@ volatile struct CarState {
 	uint16_t Torque_Req_R;
 	uint16_t LeftInvTorque;
 	uint16_t RightInvTorque;
+#ifdef TORQUEVECTOR
+	uint8_t  TorqueVectoring;
+#endif
 
 	uint8_t Torque_Req_Max;
     uint8_t Torque_Req_CurrentMax;
     uint32_t PowerLimit;
     uint8_t DrivingMode;
     
+    uint8_t FanPowered;
+
 	uint8_t APPSstatus;
     
     uint8_t LimpRequest;

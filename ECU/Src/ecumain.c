@@ -187,6 +187,11 @@ static int HardwareInit( void )
 
 	//send can state to show hardware initialized.
 
+//	  uint16_t volatile * const power = (uint16_t *) PWR_D3CR;
+
+
+
+
 	return returnval;
 }
 

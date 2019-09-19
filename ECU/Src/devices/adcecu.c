@@ -7,6 +7,8 @@
 
 #include "ecumain.h"
 
+#define UINTOFFSET	360
+
 volatile uint32_t ADCloops;
 
 //variables that need to be accessible in ISR's
@@ -14,11 +16,22 @@ volatile uint32_t ADCloops;
 // ADC conversion buffer, should be aligned in memory for faster DMA?
 ALIGN_32BYTES (static uint32_t aADCxConvertedData[ADC_CONVERTED_DATA_BUFFER_SIZE]);
 ALIGN_32BYTES (static uint32_t aADCxConvertedDataADC3[ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3]);
-
 // new calibration
 
-uint16_t SteeringInput[] = { 6539, 33500, 63019 };
-int16_t SteeringOutput[] = { -195,   0,    210 };
+#ifdef TORQUEVECTOR
+uint16_t TorqueVectInput[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTORSTARTANGLE+UINTOFFSET, 0, TORQUEVECTORSTARTANGLE+UINTOFFSET,  TORQUEVECTORSTOPANGLE+UINTOFFSET };
+int16_t TorqueVectOutput[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
+
+uint16_t TorqueVectInput2[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTORSTARTANGLE+UINTOFFSET, 0, TORQUEVECTORSTARTANGLE+UINTOFFSET,  TORQUEVECTORSTOPANGLE+UINTOFFSET };
+int16_t TorqueVectOutput2[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
+
+uint16_t TorqueVectInput3[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTORSTARTANGLE+UINTOFFSET, 0, TORQUEVECTORSTARTANGLE+UINTOFFSET,  TORQUEVECTORSTOPANGLE+UINTOFFSET };
+int16_t TorqueVectOutput3[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
+#endif
+
+// 19500 ~ -90  // 13300 full lock, 45000 ~ 90 deg right. 50000 full lock right. ~120
+uint16_t SteeringInput[] = { 6539, 13300, 20000, 33500, 63019 };
+int16_t SteeringOutput[] = { -210,  -120,  -90,   0,    210 };
 
 // -1 needs to be at minimum
 // should be 0 to 25bar at 1-5v   0.6666v to 3.3v at adc -> 13107 -> 65536
@@ -39,7 +52,6 @@ int16_t TorqueReqLOutput[] = {  -1,  0,     0,     1000,      1000,  1001 }; // 
 uint16_t TorqueReqRInput[] = { 1999, 2000, (ACCELERATORRMAX-ACCELERATORRZERO)/100*5+ACCELERATORRZERO,  (ACCELERATORRMAX-ACCELERATORRZERO)/100*98+ACCELERATORRZERO,   64000,   64001 }; // calibration values for right input // 6200
 int16_t TorqueReqROutput[] = { -1,      0,      0,      1000,   1000,   1001 };
 
-
 uint16_t TorqueLinearInput[] = {50,950}; // start registered travel at 8%
 int16_t TorqueLinearOutput[] = {0,1000};
 
@@ -57,7 +69,6 @@ int16_t DrivingModeOutput[] = { 1 , 1,    0,     1,   1,    2,    3,    4,   5, 
 
 void SetupADCInterpolationTables( void )
 {
-
     // calibrated input range for steering, from left lock to center to right lock.
     // check if this can be simplified?
 
@@ -108,6 +119,13 @@ void SetupADCInterpolationTables( void )
     ADCInterpolationTables.ModeSelector.Output = DrivingModeOutput;
 
     ADCInterpolationTables.ModeSelector.Elements = sizeof(DrivingModeInput)/sizeof(DrivingModeInput[0]);
+
+#ifdef TORQUEVECTOR
+    ADCInterpolationTables.TorqueVector.Input = TorqueVectInput;
+    ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput;
+
+    ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput)/sizeof(TorqueVectInput[0]);
+#endif
 }
 
 void SetupNormalTorque( void )
@@ -130,6 +148,32 @@ void SetupLowTravelTorque( void )
     ADCInterpolationTables.TorqueCurve.Output = TorqueLowTravelOutput;
     ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLowTravelInput)/sizeof(TorqueLowTravelInput[0]);
 }
+
+#ifdef TORQUEVECTOR
+
+void setuptorquesteering1( void )
+{
+    ADCInterpolationTables.TorqueVector.Input = TorqueVectInput;
+    ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput;
+
+    ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput)/sizeof(TorqueVectInput[0]);
+}
+
+void setuptorquesteering2( void )
+{
+    ADCInterpolationTables.TorqueVector.Input = TorqueVectInput2;
+    ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput2;
+
+    ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput2)/sizeof(TorqueVectInput2[0]);
+}
+
+void setuptorquesteering3( void )
+{
+    ADCInterpolationTables.TorqueVector.Input = TorqueVectInput3;
+    ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput3;
+    ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput3)/sizeof(TorqueVectInput3[0]);
+}
+#endif
 
 /**
  * function to perform a linear interpolation using given input/output value arrays and raw data.
@@ -382,6 +426,14 @@ int getCoolantTemp2(uint16_t RawADCInput)
 #endif
 }
 
+#ifdef TORQUEVECTOR
+int getTorqueVector(uint16_t RawADCInput)
+{
+    struct ADCTable ADC = ADCInterpolationTables.TorqueVector;
+    return linearInterpolate(ADC.Input, ADC.Output, ADC.Elements, RawADCInput+UINTOFFSET);
+}
+#endif
+
 void minmaxADCReset(void)
 {
 	for ( int i = 0; i<NumADCChan+NumADCChanADC3; i++)
@@ -622,7 +674,7 @@ uint16_t CheckADCSanity( void )
 
         ADCState.SteeringAngle = sum/10;// simple filter steering angle;
 
-        if ( abs(ADCState.SteeringAngle) >= 130 ) // if impossible angle.
+        if ( abs(ADCState.SteeringAngle) >= 150 ) // if impossible angle.
         {
             ADCState.SteeringAngle = 180;
             returnvalue &= ~(0x1 << SteeringAngleErrorBit);
@@ -652,9 +704,9 @@ uint16_t CheckADCSanity( void )
 		CarState.brake_balance = getBrakeBalance(ADCState.BrakeF, ADCState.BrakeR);
 //	} else CarState.brake_balance = -1;
 
-	if ( returnvalue ){
-		Errors.ADCError++;
-		Errors.ADCErrorState=returnvalue;
+	if ( returnvalue ){ // if error in adc data check if it's yet to be treated as fatal.
+		Errors.ADCError++; // increase adc error counter
+		Errors.ADCErrorState=returnvalue; // store current error value for checking.
 		for (int i=0;i<NumADCChan+2;i++)
 		ADC_DataError[i] = ADC_Data[i];
 
@@ -663,10 +715,10 @@ uint16_t CheckADCSanity( void )
 			returnvalue=0;
 		} else
 		{
-			returnvalue=0xFF;
-			CAN_SendADC(ADC_DataError, 1);
+			returnvalue=0xFF; // 5 adc error reads happened in row, flag as error.
+			CAN_SendADC(ADC_DataError, 1); // send error information to canbus - this should perhaps be latched to only happen once per error state.
 		}
-	} else
+	} else // no errors, clear flags.
 	{
 		if ( Errors.ADCError > 0 )	Errors.ADCError--;
 		Errors.ADCErrorState=0;

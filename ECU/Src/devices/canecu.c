@@ -507,16 +507,49 @@ uint8_t CANSendPDM( uint8_t highvoltage, uint8_t buzz )
 	TxHeaderHV.Identifier = 0x118;
 	TxHeaderHV.IdType = FDCAN_STANDARD_ID;
 	TxHeaderHV.TxFrameType = FDCAN_DATA_FRAME;
+
+#ifndef PDMSECONDMESSAGE
+	#ifdef FANCONTROL
+	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_3; // only two bytes defined in send protocol, check this
+	uint8_t CANTxData[3] = { highvoltage, buzz, CarState.FanPowered };
+	#else
 	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_2; // only two bytes defined in send protocol, check this
+	uint8_t CANTxData[2] = { highvoltage, buzz };
+	#endif
+#else
+	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_2; // only two bytes defined in send protocol, check this
+	uint8_t CANTxData[2] = { highvoltage, buzz };
+#endif
+
 	TxHeaderHV.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
 	TxHeaderHV.BitRateSwitch = FDCAN_BRS_OFF;
 	TxHeaderHV.FDFormat = FDCAN_CLASSIC_CAN;
 	TxHeaderHV.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
 	TxHeaderHV.MessageMarker = 0;
 
-	uint8_t CANTxData[2] = { highvoltage, buzz };
+
 	return CAN1Send( &TxHeaderHV, CANTxData );
 }
+
+#ifdef PDMSECONDMESSAGE
+uint8_t CANSendPDMFAN( void )
+{
+	FDCAN_TxHeaderTypeDef TxHeaderHV;
+
+	TxHeaderHV.Identifier = 0x119;
+	TxHeaderHV.IdType = FDCAN_STANDARD_ID;
+	TxHeaderHV.TxFrameType = FDCAN_DATA_FRAME;
+	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_1; // only two bytes defined in send protocol, check this
+	TxHeaderHV.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	TxHeaderHV.BitRateSwitch = FDCAN_BRS_OFF;
+	TxHeaderHV.FDFormat = FDCAN_CLASSIC_CAN;
+	TxHeaderHV.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	TxHeaderHV.MessageMarker = 0;
+
+	uint8_t CANTxData[1] = { CarState.FanPowered };
+	return CAN1Send( &TxHeaderHV, CANTxData );
+}
+#endif
 
 char CAN_SendTimeBase( void )
 {
@@ -708,7 +741,10 @@ char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error )
 
 	if ( error == 0 ){
 		TxHeaderHV.Identifier = ECU_CAN_ID+0x10; // decide on an ECU ID/
-	} else TxHeaderHV.Identifier = ECU_CAN_ID+0x12; // decide on an ECU ID/
+	} else
+	{
+		TxHeaderHV.Identifier = ECU_CAN_ID+0x12; // decide on an ECU ID/
+	}
 	TxHeaderHV.IdType = FDCAN_STANDARD_ID;
 	TxHeaderHV.TxFrameType = FDCAN_DATA_FRAME;
 	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
