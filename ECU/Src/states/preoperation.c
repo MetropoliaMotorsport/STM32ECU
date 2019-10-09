@@ -23,6 +23,74 @@
   #include "vhd44780.h"
 #endif
 
+
+void setDriveMode(void)
+{
+	switch ( ADCState.DrivingMode )
+	{
+
+		SetupNormalTorque();
+
+		CarState.LimpDisable = 0;
+		CarState.DrivingMode = ADCState.DrivingMode;
+
+		case 1: // 5nm  5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    64,    65,   0
+			CarState.Torque_Req_Max = 5;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 0;
+#endif
+			break;
+		case 2: // 10nm
+			CarState.Torque_Req_Max = 25;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 0;
+#endif
+			break;
+		case 3: // 15nm
+			CarState.Torque_Req_Max = 25;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 1;
+#endif
+			break;
+		case 4: // 20nm
+			CarState.Torque_Req_Max = 35;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 0;
+#endif
+			break;
+		case 5: // 25nm
+			CarState.Torque_Req_Max = 35;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 1;
+#endif
+			break;
+		case 6: // 30nm
+			CarState.Torque_Req_Max = 65;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 0;
+#endif
+			SetupLargeLowRangeTorque();
+			break;
+		case 7: // 65nm Track
+			CarState.Torque_Req_Max = 65;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 1;
+#endif
+			SetupLargeLowRangeTorque();
+			break;
+		case 8: // 65nm Accel
+			CarState.Torque_Req_Max = 65;
+			CarState.LimpDisable = 1;
+			SetupLowTravelTorque();
+			break;
+
+	}
+
+	CarState.Torque_Req_CurrentMax = CarState.Torque_Req_Max;
+
+}
+
+
 static uint16_t DevicesOnline( uint16_t returnvalue )
 {
 // external devices ECU expects to be present on CAN
@@ -150,18 +218,16 @@ int PreOperation( uint32_t OperationLoops  )
 
 //	ResetCanReceived();
 
-	sendPDM( 0 );
-
 	uint32_t loopstart = gettimer();
 	uint32_t looptimer = 0;
 
 	// check if received configuration requests, or mode change -> testing state.
 	switch ( CheckConfigurationRequest() ) // allows RequestState to be set to zero to prevent mode changing mid config, or request a different mode.
 	{
-/*		case TestingState :
+		case TestingState :
 			RequestState = TestingState; // Testing state requested from Configuration.
 			break;
-
+/*
 		case LimpState :
 			RequestState = LimpState; // Limpmode state requested from Configuration, set as requested next state.
 			break; */
@@ -169,11 +235,14 @@ int PreOperation( uint32_t OperationLoops  )
 		case ReceivingConfig :
 			RequestState = PreOperationalState; // don't allow leaving pre operation whilst
 												// in middle of processing a configuration / testing request.
+			break;
 		case 0:
 		default:
 			RequestState = OperationalReadyState; // nothing happening in config, assume normal operation.
 			// do nothing
 	}
+
+	sendPDM( 0 );
 
 	// checks if we have heard from other necessary connected devices for operation.
 
@@ -188,22 +257,55 @@ int PreOperation( uint32_t OperationLoops  )
 //		return OperationalErrorState; // if a device is in error state, quit to error handler to decide how to proceed.
 	}
 
-	CarState.Torque_Req_Max = ADCState.DrivingMode;
-	CarState.Torque_Req_CurrentMax = ADCState.DrivingMode;
-	CarState.Torque_Req_L = PedalTorqueRequest();  // allow APPS checking before startup
-	CarState.Torque_Req_R = CarState.Torque_Req_L;
+	// set drive mode
+
+	setDriveMode();
+
+	// allow APPS checking before RTDM
+	int Torque_Req = PedalTorqueRequest();
+
+	CarState.Torque_Req_L = Torque_Req;
+	CarState.Torque_Req_R = Torque_Req;
+
+#ifdef TORQUEVECTOR
+		TorqueVectorProcess( Torque_Req );
+#endif
+
 	if ( CarState.APPSstatus ) setOutput(RTDMLED_Output,LEDON); else setOutput(RTDMLED_Output,LEDOFF);
 
-	receiveINVStatus(LeftInverter);
-	receiveINVStatus(RightInverter);
+#ifdef FANCONTROL
+		FanControl();
+#endif
 
-	receiveINVSpeed(LeftInverter);
-	receiveINVSpeed(RightInverter);
+	if ( !CarState.TestHV )
+	{
+		receiveINVStatus(LeftInverter);
+		receiveINVStatus(RightInverter);
 
-	receiveINVTorque(LeftInverter);
-	receiveINVTorque(RightInverter);
+		receiveINVSpeed(LeftInverter);
+		receiveINVSpeed(RightInverter);
 
-	if ( !errorPDM() && preoperationstate == 0 && CarState.LeftInvState != 0xFF && CarState.RightInvState != 0xFF) // everything is ready to move to next state.
+		receiveINVTorque(LeftInverter);
+		receiveINVTorque(RightInverter);
+	}
+
+	if ( !CarState.ShutdownSwitchesClosed )
+	{
+		blinkOutput(TSOFFLED_Output, LEDBLINK_FOUR, 1);
+	}  else
+	{
+		blinkOutput(TSOFFLED_Output, LEDON, 0);
+		setOutput(TSOFFLED_Output,LEDON);
+	}
+
+	if ( !errorPDM()
+			&& preoperationstate == 0
+			&& CarState.LeftInvState != 0xFF
+			&& CarState.RightInvState != 0xFF // everything is ready to move to next state.
+#ifdef SHUTDOWNSWITCHCHECK
+            && CarState.ShutdownSwitchesClosed // only allow exiting error state if shutdown switches closed. - maybe move to only for auto
+#endif
+	   )
 	{
 		blinkOutput(TSLED_Output, LEDBLINK_ONE, 1);
 			// devices are ready and in pre operation state.
@@ -211,24 +313,26 @@ int PreOperation( uint32_t OperationLoops  )
 
 			if ( ( RequestState == TestingState ) )
 			{
-				OperationLoops = 0;
-				return TestingState; // an alternate mode ( testing requested in config for next state.
+//				OperationLoops = 0;
+//				return TestingState; // an alternate mode ( testing requested in config for next state.
+				return PreOperationalState;
 			}
 
-			if ( CheckActivationRequest() ) // check if driver has requested activation and if so proceed
+			if ( CheckActivationRequest() && RequestState != TestingState ) // check if driver has requested activation and if so proceed
 			{
 				OperationLoops = 0;
 				CarState.Torque_Req_L = 0;
 				CarState.Torque_Req_R = 0;
 				setOutput(RTDMLED_Output,LEDOFF);
 				return OperationalReadyState; // normal operational state on request
+
 			}
 
 	} else
 	{ // hardware not ready for active state
 		if ( OperationLoops == 50 ) // 0.5 seconds, send reset nmt, try to get inverters online if not online at startup.
 		{
-		NMTReset(); // chec±k
+			if ( !CarState.TestHV )	NMTReset();
 		}
 
 		if ( CheckActivationRequest() == 1 )

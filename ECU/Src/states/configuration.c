@@ -14,7 +14,9 @@ int CheckConfigurationRequest( void )
 //	static int configstart = 0;
 	int returnvalue = 0;
 
-	static int initialconfig = 0;
+	static uint8_t initialconfig = 0;
+
+	static uint8_t testingactive = 0;
 
 	if ( !initialconfig )
 	{
@@ -24,7 +26,7 @@ int CheckConfigurationRequest( void )
 		CarState.Torque_Req_CurrentMax = 5;
 	}
 
-	// check for config change messages.
+	// check for config change messages. - broken?
 	if ( CanState.ECUConfig.newdata )
 	{
 		CanState.ECUConfig.newdata = 0;
@@ -39,8 +41,23 @@ int CheckConfigurationRequest( void )
 				case 2 :
 					CAN_SendADCminmax();
 					break;
-				break;
-				default :
+				case 3 :
+					// toggle HV force loop.
+					if ( CarState.TestHV )
+					{
+						CarState.TestHV = 0;
+						testingactive = 0;
+						CAN_ConfigRequest(3, 0 );
+					}
+					else
+					{
+						CarState.TestHV = 1;
+						testingactive = 1;
+						CAN_ConfigRequest( 3, 1 );
+					}
+
+					break;
+				default : // unknown request.
 					break;
 			}
 		}
@@ -49,6 +66,8 @@ int CheckConfigurationRequest( void )
 	}
 
 	// if can config request testing mode, send acknowledgement, then return 10;
+
+	if ( testingactive ) returnvalue = TestingState;
 
 	return returnvalue; // return a requested driving state, or that in middle of config?
 }

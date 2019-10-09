@@ -217,17 +217,23 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
 	uint8_t errorid=0;
 
 /*handle inverter errors here.
- * 0         $fe         8   0  16 129  51 117   2   0   0    1863.183700 R
- * 0         $fe         8   0  16 129  93 117   2   0   0    1880.023720 R
+ * 0         $fe         8   0  16 129  51 117   2   0   0    1863.183700 R 30003 DC Underlink voltage, auto reset ok.
+ * 0         $fe         8   0  16 129  93 117   2   0   0    1880.023720 R 30045 Power unit: Supply undervoltage
  * 0         $fe         8   0  16 129  93 117   3   0   0    1880.027050 R
- * 0         $fe         8   0  16 129  88 117   2   0   0    1880.047530 R
- * 0         $fe         8   0  16 129 165 120   2   0   0    1880.076030 R
- * 0         $fe         8   0  16 129 141 124   2   0   0    1880.080460 R
+ * 0         $fe         8   0  16 129  88 117   2   0   0    1880.047530 R 30040 Power unit: Undervolt 24 V
+ * 0         $fe         8   0  16 129 165 120   2   0   0    1880.076030 R 30885 Encoder Cyclic data transfer error
+ * 0         $fe         8   0  16 129 141 124   2   0   0    1880.080460 R 31885 Encoder Cyclic data transfer error
  *
  *				 1    000000FE   8  00  10  81      DD  1E     03   -   00  00
  *
  *							8  0    16 129      221  30     03
  */
+// 4b 75
+
+//	5d 75
+//	a5 78
+//	33 75
+
 
 	switch ( Inverter )
 	{
@@ -238,7 +244,7 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
 	if ( Errors.InverterErrorHistoryPosition < 8) // add error data to log.
 	{
 		for( int i=0;i<8;i++){
-			Errors.InverterErrorHistory[i][Errors.InverterErrorHistoryPosition] = CANRxData[i];
+			Errors.InverterErrorHistory[Errors.InverterErrorHistoryPosition][i] = CANRxData[i];
 			Errors.InverterErrorHistoryID[i] = errorid;
 		}
 		Errors.InverterErrorHistoryPosition++;
@@ -249,15 +255,34 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
 	// 00  10  81      DD  1E     03   -   00  00
 	if ( CANRxData[0] == 0 && CANRxData[1] == 0x10 && CANRxData[2] == 0x81 && CANRxData[6] == 0x00 && CANRxData[7] == 0 )
 	{
+        uint16_t ErrorCode = CANRxData[4]*256+CANRxData[3];
+        
+        uint8_t AllowReset = 0;
+        
+        switch ( ErrorCode ) // 29954
+        {
+        	case 30003 : // DC Underlink Voltage. HV dropped or dipped, allow reset attempt. //  33 117 hex
+        	case 30040 : // Power unit: Undervolt 24 V
+        	case 30045 : // Power unit: Supply undervoltage
+                AllowReset = 1;
+                break;
+            default : // other unknown errors, don't allow auto reset attempt.
+                AllowReset = 0;
+        }
+        
 		switch ( Inverter )
 		{
 			case LeftInverter :
-				if ( GetInverterState(CarState.LeftInvState) >= 0)
+				if ( GetInverterState(CarState.LeftInvState) >= 0) //if inverter status not in error yet, put it there.
 				{
 					CarState.LeftInvState = 0xFE;
 				}
 				CarState.LeftInvBadStatus = 1;
 				DeviceState.InverterL = ERROR;
+                if ( Errors.LeftInvAllowReset == 1 )
+                {
+                    Errors.LeftInvAllowReset = AllowReset;
+                }
 				Errors.INVLReceiveStatus++;
 #ifdef SENDBADDATAERROR
 				CAN_SendErrorStatus(99,InverterLReceived+20,99);
@@ -268,10 +293,14 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
 				CarState.RightInvState = 0xFE;
 				CarState.RightInvBadStatus = 1;
 				DeviceState.InverterR = ERROR;
-#ifdef SENDBADDATAERROR
-				CAN_SendErrorStatus(99,InverterRReceived+20,99);
-#endif
+                if ( Errors.RightInvAllowReset == 1 )
+                {
+                    Errors.RightInvAllowReset = AllowReset;
+                }
 				Errors.INVRReceiveStatus++;
+#ifdef SENDBADDATAERROR
+                CAN_SendErrorStatus(99,InverterRReceived+20,99);
+#endif
 				break;
 		}
 

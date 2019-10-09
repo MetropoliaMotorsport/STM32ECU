@@ -8,60 +8,150 @@
 #ifndef ECU_H_
 #define ECU_H_
 
+// Calibration settings for pedals.
 
-// Calibration settings
+#define ACCELERATORLZERO 4200
+#define ACCELERATORLMAX  53000
 
-#define ACCELERATORLZERO 11000
-//#define ACCELERATORLMAX  51000
-#define ACCELERATORLMAX  50000
-
-#define ACCELERATORRZERO 11500
-//#define ACCELERATORRMAX  53000
-#define ACCELERATORRMAX  50000
+#define ACCELERATORRZERO 4800
+#define ACCELERATORRMAX  53000
 
 #define BRAKEZERO 14100 // 0 bar?
 #define BRAKEMAX  62914 // 240 bar settings.
 
+// Brake pressure values
 
+#define APPSBrakeHard			30 // 70
+#define APPSBrakeRelease		10 // 30
+//#define RTDMBRAKEPRESSURE		30
+#define RTDMBRAKEPRESSURE		10 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
 
+#define LIMPNM					10 // limp mode torque
+
+// Minimum acceptable voltage on TS for startup.
+#define MINHV					500 // minimum voltage to allow TS enable.
+
+// Enable workaround to use second ADC for one of the APPS pedals due to shield issue.
 #define USEADC3
-//#include "ecumain.h"
 
-//#define sharedCAN // bench testing.
+// Use only one canbus for all functions, for bench testing. Not fully working.
+//#define ONECAN
+
+// Both CAN's are connected to one bus for bench testing, not entirely working.
+//#define sharedCAN
+
+// Use watchdog to reset if 10ms loop fails. -- timings currently not properly set.
 //#define WATCHDOG
+
+// Use onboard ADC, else expect ADC values by CAN.
 #define STMADC
+
+// Use basic torquevectoring
+#define TORQUEVECTOR
+#define TORQUEVECTORSTARTANGLE 20  //40
+#define TORQUEVECTORSTOPANGLE  70  //90
+#define TORQUEVECTORMAXNM	   8
+
+// Use green dash LED to indicate shutdownswitch status.
+#define SHUTDOWNSWITCHSTATUS
+
+// Error state due to Coolant overtemp - no seperate indicator currently
+//#define COOLANTSHUTDOWN
+
+// Control cooling fan via APPS trigger.
+#define FANCONTROL
+
+// Trigger percentage for FAN on APPS
+#define TORQUEFANLATCHPERCENTAGE 30
+
+// Use second PDM message for compatibility for fan control
+#define PDMSECONDMESSAGE
+
+// Check shutdown switches as part of error state.
+#define SHUTDOWNSWITCHCHECK
+
+// Coolant overtemp limits.
+#define COOLANTLIMPTEMP 75
+#define COOLANTLIMPEXITTEMP 70
+#define COOLANTMAXTEMP	80
+
+// Debug aids.
+
 #define debugrun
 //#define debug
+// Show extra error LED statuses, non rules compliant.
 //#define errorLED
 
+// Send status message every cycle
 #define everyloop
 
-// device enable/disable etc
-
+// send log messages for AIM / remote reading of status
 #define LOGGINGON
+
+// Use IVT
+
 #define IVTEnable				// if not defined, IVT ignored and assumed present, giving a nominal voltage.
+
+// HV will still be allowed without TSAL connected
+#define NOTSAL
+
+// Use BMS Messages.
 #define BMSEnable				// if not defined, BMS ignored and assumed present.
+
+// Retransmit IVT messages for BMS
 #define retransmitIVT
+
+// Define whether front speed encoders are expected.
 //#define FRONTSPEED				// enable front speed encoder reading.
+
+// do not go to error state for non crucial can devices going offbus/timing out.
 //#define NOTIMEOUT
-#define NOIVTTIMEOUT
-//#define SENDBADDATAERROR
+
+// do not go to error state if IVT goes off bus.
+// #define NOIVTTIMEOUT
+
+// Allow auto reset with shutdown buttons / DC Undervoltage on inverters.
+#define AUTORESET
+
+// Send an error on incorrect data received
+#define SENDBADDATAERROR
+
+// Retransmit any received data deemed incorrect or implausible
 //#define RETRANSMITBADDATA
+
+// Transmit error messages and status on 2nd CANBUS also.
 #define CAN2ERRORSTATUS
+
+// Allow a 450ms window of brake + apps before throttle is cut.
+#define APPSALLOWBRAKE
+
+#define APPSBRAKETIME	3000 //300ms brake allowance for apps before trigger cut power.
+
+// Allow limp mode to be exited on request.
+#define ALLOWLIMPCANCEL
+
+// Try to restart CANBUS if ECU goes offbus.
 //#define RECOVERCAN
 
+// Do not send any torque request to inverters, for bench testing safely.
 //#define NOTORQUEREQUEST
 
+// Very simple attempt at some control code.
+//#define CONTROLTEST
+#define MINSPEEDFORCONTROL   100
+
+
+// continue to set DriveMode when not in TS active.
+#define SETDRIVEMODEINIDLE
+
+// How frequently to send status messages in loops
 #define STATUSLOOPCOUNT 		10 // how many loops between regular status updates.
-#define LOGLOOPCOUNTFAST	 	1  // x many loops to send fast log data
+
+// Log message frequency
+#define LOGLOOPCOUNTFAST	 	1
 #define LOGLOOPCOUNTSLOW	 	10
 
-
-#define MINHV					500 // minimum voltage to allow TS enable.
-//#define ONECAN // only use CAN1 to ease testing.
-
-//50ms
-
+// Timeout Values, for bench testing with App if SIM defined and real car if not.
 
 //#define SIM
 #ifdef SIM
@@ -73,27 +163,38 @@
 #define PROCESSLOOPTIME 		2000
 #define INVERTERTIMEOUT			1000
 #else
-#define PDMTIMEOUT				4500 //
-#define PROCESSLOOPTIME 		100 // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
+#define PDMTIMEOUT				4500 // 450ms to be rules compliant
+#define PROCESSLOOPTIME 		100   // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
 #define BMSTIMEOUT				50000 // 5 seconds
-#define IVTTIMEOUT				20000
-//#define IVTTIMEOUTLONG			800
-#define IVTTIMEOUTWATTS			50000
+#define IVTTIMEOUT				4500  // < 500ms for rules compliance on Power reading.
+#define IVTTIMEOUTWATTS			4500
 #define INVERTERTIMEOUT			1000 // 10 cycles, 100ms.
 #define SICKTIMEOUT             200 // 2 cycles, then set speeds to zero.
 #define STMADC
 #endif
 
+#define DEBUGMCU 0x5C001000
+
+#define REVV 					0x2003
+#define REVY 					0x1003
 
 #define MaxRunningErrorCount    10
 #define ReduceErrorCountRate	10
 
+// Do not process APPS position ADC
 //#define NOAPPS
-//#define NOSTEERING
-//#define NOBRAKES
-//#define NOTEMPERATURE
-//#define NODRIVINGMODE
 
+// Do not read steering angle ADC
+//#define NOSTEERING
+
+// Do not process Brake pressure ADC
+//#define NOBRAKES
+
+// Do not process Coolant temperature ADC
+//#define NOTEMPERATURE
+
+// Do not process Drive mode selector ADC
+//#define NODRIVINGMODE
 
 #define StartupState			0
 #define PreOperationalState		1
@@ -106,12 +207,6 @@
 #define LimpState				20
 #define OperationalErrorState   50
 #define FatalErrorState			99
-
-// APPS
-
-#define APPSBrakeHard			30 // 70
-#define APPSBrakeRelease		10 // 30
-#define RTDMBRAKEPRESSURE		30
 
 uint16_t ErrorCode; // global error code.
 
@@ -166,11 +261,13 @@ volatile struct CarState {
 	char HighVoltageAllowedR;
 	char HighVoltageAllowedL;
 	char HighVoltageReady;
+	uint8_t TestHV;
 
 	char BMS_relay_status;
 	char IMD_relay_status;
 	char BSPD_relay_status;
 	char AIROpen;
+	char ShutdownSwitchesClosed;
 
 	uint16_t LeftInvState;
 	uint16_t LeftInvBadStatus;
@@ -188,19 +285,30 @@ volatile struct CarState {
 	uint16_t Torque_Req_R;
 	uint16_t LeftInvTorque;
 	uint16_t RightInvTorque;
+#ifdef TORQUEVECTOR
+	uint8_t  TorqueVectoring;
+#endif
 
 	uint8_t Torque_Req_Max;
     uint8_t Torque_Req_CurrentMax;
+    uint32_t PowerLimit;
+    uint8_t DrivingMode;
     
+    uint8_t FanPowered;
+
 	uint8_t APPSstatus;
     
     uint8_t LimpRequest;
     uint8_t LimpActive;
+    uint8_t LimpDisable;
 
 	int32_t Current;
 	int32_t VoltageINV;
 	int32_t VoltageBMS;
 	int32_t VoltageIVTAccu;
+	int32_t VoltageLV;
+	int32_t CurrentLV;
+	int32_t VoltageAIRPDM;
 	int32_t Power;
 
 	int32_t SpeedRL;
@@ -235,7 +343,8 @@ struct DeviceState {
 struct ErrorCount {
 	uint16_t OperationalReceiveError;
 	uint16_t State;
-	uint8_t  AllowReset;
+	uint8_t  LeftInvAllowReset;
+    uint8_t  RightInvAllowReset;
 	uint16_t ErrorReason;
 	uint16_t ErrorPlace;
 
@@ -263,13 +372,10 @@ struct ErrorCount {
 	uint16_t IVTTimeout;
 
 	uint16_t IVTU1Receive;
-//	uint16_t IVTU1Timeout;
 
 	uint16_t IVTU2Receive;
-//	uint16_t IVTU2Timeout;
 
 	uint16_t IVTWReceive;
-//	uint16_t IVTWTimeout;
 
 	uint16_t INVLReceiveStatus;
 	uint16_t INVLReceiveSpd;

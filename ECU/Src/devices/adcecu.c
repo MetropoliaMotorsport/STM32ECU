@@ -7,6 +7,8 @@
 
 #include "ecumain.h"
 
+#define UINTOFFSET	360
+
 volatile uint32_t ADCloops;
 
 //variables that need to be accessible in ISR's
@@ -14,11 +16,22 @@ volatile uint32_t ADCloops;
 // ADC conversion buffer, should be aligned in memory for faster DMA?
 ALIGN_32BYTES (static uint32_t aADCxConvertedData[ADC_CONVERTED_DATA_BUFFER_SIZE]);
 ALIGN_32BYTES (static uint32_t aADCxConvertedDataADC3[ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3]);
-
 // new calibration
 
-uint16_t SteeringInput[] = { 6539, 33500, 63019 };
-int16_t SteeringOutput[] = { -195,   0,    210 };
+#ifdef TORQUEVECTOR
+uint16_t TorqueVectInput[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTORSTARTANGLE+UINTOFFSET, 0, TORQUEVECTORSTARTANGLE+UINTOFFSET,  TORQUEVECTORSTOPANGLE+UINTOFFSET };
+int16_t TorqueVectOutput[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
+
+uint16_t TorqueVectInput2[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTORSTARTANGLE+UINTOFFSET, 0, TORQUEVECTORSTARTANGLE+UINTOFFSET,  TORQUEVECTORSTOPANGLE+UINTOFFSET };
+int16_t TorqueVectOutput2[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
+
+uint16_t TorqueVectInput3[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTORSTARTANGLE+UINTOFFSET, 0, TORQUEVECTORSTARTANGLE+UINTOFFSET,  TORQUEVECTORSTOPANGLE+UINTOFFSET };
+int16_t TorqueVectOutput3[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
+#endif
+
+// 19500 ~ -90  // 13300 full lock, 45000 ~ 90 deg right. 50000 full lock right. ~120
+uint16_t SteeringInput[] = { 6539, 13300, 20000, 33500, 63019 };
+int16_t SteeringOutput[] = { -210,  -120,  -90,   0,    210 };
 
 // -1 needs to be at minimum
 // should be 0 to 25bar at 1-5v   0.6666v to 3.3v at adc -> 13107 -> 65536
@@ -28,44 +41,34 @@ int16_t BrakeROutput[] = {-1,     0,    0,     240,  255 }; // output range // 2
 uint16_t BrakeFInput[] = { 1024, 1025, BRAKEZERO,   BRAKEMAX, 65535 }; // calibrated input range //62914
 int16_t BrakeFOutput[] = { -1,     0,    0,     240,    255 }; // output range // 240
 
+// zero should be approx real pedal zero, zero is read below this to allow for some variance without triggering errors.
+// ditto max value.
 
-uint16_t TorqueReqLInput[] = { 1999,  2000, ACCELERATORLZERO,   ACCELERATORLMAX,  64000,  64001 }; // calibration values for left input // 5800
-int16_t TorqueReqLOutput[] = {  -1,  0,     0,     100,      100,  101 };
+// define zero as 5% actual travel and 100% as 95% of actual travel
+uint16_t TorqueReqLInput[] = { 1999,  2000, (ACCELERATORLMAX-ACCELERATORLZERO)/100*5+ACCELERATORLZERO,   (ACCELERATORLMAX-ACCELERATORLZERO)/100*98+ACCELERATORLZERO,  64000,  64001 }; // calibration values for left input // 5800
+int16_t TorqueReqLOutput[] = {  -1,  0,     0,     1000,      1000,  1001 }; // range defined 0-1000 to allow percentage accuracy even if not using full travel range.
 
 // TorqueRMin(6798) / TorqueRMax(54369)
-uint16_t TorqueReqRInput[] = { 1999, 2000,    ACCELERATORRZERO,  ACCELERATORRMAX,   64000,   64001 }; // calibration values for right input // 6200
-int16_t TorqueReqROutput[] = { -1,      0,      0,      100,   100,   101 };
+uint16_t TorqueReqRInput[] = { 1999, 2000, (ACCELERATORRMAX-ACCELERATORRZERO)/100*5+ACCELERATORRZERO,  (ACCELERATORRMAX-ACCELERATORRZERO)/100*98+ACCELERATORRZERO,   64000,   64001 }; // calibration values for right input // 6200
+int16_t TorqueReqROutput[] = { -1,      0,      0,      1000,   1000,   1001 };
 
+uint16_t TorqueLinearInput[] = {50,950}; // start registered travel at 8%
+int16_t TorqueLinearOutput[] = {0,1000};
 
-uint16_t TorqueCurveInput[] = {0,50,100};
-int16_t TorqueCurveOutput[] = {0,25,100};
+uint16_t TorqueLowTravelInput[] = {50,500}; // start registered travel at 10%
+int16_t TorqueLowTravelOutput[] = {0, 1000};
 
-// needs calibrating 20500 = 20c? approx 0.73v at room temp. ~2.1k
-//uint16_t CoolantInput[] = {0,1000,  14500, 25000, 25001 }; // { 51, 52, 53, 67, 85, 109,140,182,239,313,413,537, 698, 1130, 1314}; //, 9000, 9001 };
-//int16_t CoolantOutput[] = {-1, 120, 20, 0, -1 }; //{ 0, 255, 130,120,110,100,90 ,80, 70, 60, 50, 40,  30,  22,    0 };// ,   1, 0 };
+uint16_t TorqueLargelowRangeInput[] = {50,600, 950}; // start registered travel at 10%
+int16_t TorqueLargelowRangeOutput[] = {0, 400,1000};
 
 uint16_t CoolantInput[] = { 1000,4235, 4851, 5661, 6889, 8952, 11246, 14262, 18894, 22968, 27081, 33576, 39050, 44819, 49192, 54011, 58954,  64113, 64112};
 int16_t CoolantOutput[] = { -1,   120,   115,  109,  101,   90,    82,    72,    60,    52,    46,    38,    32,    26,    22,    16,    11,    6, -1};
 
-
-/*
-DrivingMode:
-pos1~950
-pos2~9400
-pos3~18000
-pos4~27000
-pos5~36000
-pos6~44000
-pos7~54000
-pod8~~61000
-*/
-
 uint16_t DrivingModeInput[] = { 0 , 1022, 1023, 1024,4500, 13500, 23500, 33000, 40000, 49000, 57500, 65534, 65535 };
-int16_t DrivingModeOutput[] = { 5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    45,    65,   0 };
+int16_t DrivingModeOutput[] = { 1 , 1,    0,     1,   1,    2,    3,    4,   5,     6,    7,    8,   0 };
 
 void SetupADCInterpolationTables( void )
 {
-
     // calibrated input range for steering, from left lock to center to right lock.
     // check if this can be simplified?
 
@@ -95,11 +98,10 @@ void SetupADCInterpolationTables( void )
     ADCInterpolationTables.AccelR.Elements = sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
 
 
-    ADCInterpolationTables.TorqueCurve.Input = TorqueCurveInput;
-    ADCInterpolationTables.TorqueCurve.Output = TorqueCurveOutput;
+    ADCInterpolationTables.TorqueCurve.Input = TorqueLinearInput;
+    ADCInterpolationTables.TorqueCurve.Output = TorqueLinearOutput;
 
-    ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueCurveInput)/sizeof(TorqueCurveInput[0]);
-
+    ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLinearInput)/sizeof(TorqueLinearInput[0]);
 
     ADCInterpolationTables.CoolantL.Input = CoolantInput;
     ADCInterpolationTables.CoolantL.Output = CoolantOutput;
@@ -117,8 +119,61 @@ void SetupADCInterpolationTables( void )
     ADCInterpolationTables.ModeSelector.Output = DrivingModeOutput;
 
     ADCInterpolationTables.ModeSelector.Elements = sizeof(DrivingModeInput)/sizeof(DrivingModeInput[0]);
+
+#ifdef TORQUEVECTOR
+    ADCInterpolationTables.TorqueVector.Input = TorqueVectInput;
+    ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput;
+
+    ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput)/sizeof(TorqueVectInput[0]);
+#endif
 }
 
+void SetupNormalTorque( void )
+{
+	ADCInterpolationTables.TorqueCurve.Input = TorqueLinearInput;
+	ADCInterpolationTables.TorqueCurve.Output = TorqueLinearOutput;
+	ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLinearInput)/sizeof(TorqueLinearInput[0]);
+}
+
+void SetupLargeLowRangeTorque( void )
+{
+	ADCInterpolationTables.TorqueCurve.Input = TorqueLargelowRangeInput;
+	ADCInterpolationTables.TorqueCurve.Output = TorqueLargelowRangeOutput;
+	ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLargelowRangeInput)/sizeof(TorqueLargelowRangeInput[0]);
+}
+
+void SetupLowTravelTorque( void )
+{
+    ADCInterpolationTables.TorqueCurve.Input = TorqueLowTravelInput;
+    ADCInterpolationTables.TorqueCurve.Output = TorqueLowTravelOutput;
+    ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLowTravelInput)/sizeof(TorqueLowTravelInput[0]);
+}
+
+#ifdef TORQUEVECTOR
+
+void setuptorquesteering1( void )
+{
+    ADCInterpolationTables.TorqueVector.Input = TorqueVectInput;
+    ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput;
+
+    ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput)/sizeof(TorqueVectInput[0]);
+}
+
+void setuptorquesteering2( void )
+{
+    ADCInterpolationTables.TorqueVector.Input = TorqueVectInput2;
+    ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput2;
+
+    ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput2)/sizeof(TorqueVectInput2[0]);
+}
+
+void setuptorquesteering3( void )
+{
+    ADCInterpolationTables.TorqueVector.Input = TorqueVectInput3;
+    ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput3;
+    ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput3)/sizeof(TorqueVectInput3[0]);
+}
+#endif
 
 /**
  * function to perform a linear interpolation using given input/output value arrays and raw data.
@@ -273,7 +328,9 @@ int getTorqueReqPercL( uint16_t RawADCInputF )
 #endif
 }
 
-int getTorqueCurve( uint16_t ADCInput )
+
+
+int getTorqueReqCurve( uint16_t ADCInput )
 {
 	if( usecanADC )  // check if we're operating on fake canbus ADC
 	{
@@ -369,6 +426,14 @@ int getCoolantTemp2(uint16_t RawADCInput)
 #endif
 }
 
+#ifdef TORQUEVECTOR
+int getTorqueVector(uint16_t RawADCInput)
+{
+    struct ADCTable ADC = ADCInterpolationTables.TorqueVector;
+    return linearInterpolate(ADC.Input, ADC.Output, ADC.Elements, RawADCInput+UINTOFFSET);
+}
+#endif
+
 void minmaxADCReset(void)
 {
 	for ( int i = 0; i<NumADCChan+NumADCChanADC3; i++)
@@ -388,24 +453,33 @@ HAL_StatusTypeDef startADC(void)
 	multimode.Mode=ADC_MODE_INDEPENDENT;
 	if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
 	{
-	/* Calibration Error */
-	Error_Handler();
+		/* Calibration Error */
+		Error_Handler();
 	}
 
 	if (HAL_ADCEx_Calibration_Start(&hadc3, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
 	{
-	/* Calibration Error */
-	Error_Handler();
+		/* Calibration Error */
+		Error_Handler();
 	}
-	HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode);
 
-	HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t *)aADCxConvertedData, ADC_CONVERTED_DATA_BUFFER_SIZE);
+	if ( HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
+	{
+		Error_Handler();
+	}
 
-	// start ADC conversion
-//	  return HAL_ADC_Start_DMA(&hadc1,(uint32_t *)aADCxConvertedData,ADC_CONVERTED_DATA_BUFFER_SIZE);
-	HAL_ADC_Start_DMA(&hadc3,(uint32_t *)aADCxConvertedDataADC3,ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3);
-
+	if ( HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t *)aADCxConvertedData, ADC_CONVERTED_DATA_BUFFER_SIZE)  != HAL_OK)
+	{
+		Error_Handler();
+	}
 	DeviceState.ADC = OPERATIONAL;
+	// start ADC conversion
+	//  return HAL_ADC_Start_DMA(&hadc1,(uint32_t *)aADCxConvertedData,ADC_CONVERTED_DATA_BUFFER_SIZE);
+	if ( HAL_ADC_Start_DMA(&hadc3,(uint32_t *)aADCxConvertedDataADC3,ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3) != HAL_OK)
+	{
+		Error_Handler();
+	}
+
 #endif
 
 	return 0;
@@ -540,12 +614,12 @@ uint16_t CheckADCSanity( void )
         else returnvalue &= ~(0x1 << BrakeRErrorBit);
 
         ADCState.Torque_Req_R_Percent = getTorqueReqPercR(ADC_Data[ThrottleRADC]);
-        if ( ADCState.Torque_Req_R_Percent < 0 || ADCState.Torque_Req_R_Percent > 100 ) // if value is not between 0 and 100 then out of range error
+        if ( ADCState.Torque_Req_R_Percent < 0 || ADCState.Torque_Req_R_Percent > 1000 ) // if value is not between 0 and 100 then out of range error
             returnvalue |= 0x1 << AccelRErrorBit;
         else returnvalue &= ~(0x1 << AccelRErrorBit);
 
         ADCState.Torque_Req_L_Percent = getTorqueReqPercL(ADC_Data[ThrottleLADC]);
-        if ( ADCState.Torque_Req_L_Percent < 0 || ADCState.Torque_Req_L_Percent > 100 ) // if value is not between 0 and 100 then out of range error
+        if ( ADCState.Torque_Req_L_Percent < 0 || ADCState.Torque_Req_L_Percent > 1000 ) // if value is not between 0 and 100 then out of range error
             returnvalue |= 0x1 << AccelLErrorBit;
         else returnvalue &= ~(0x1 << AccelLErrorBit);
 
@@ -600,7 +674,7 @@ uint16_t CheckADCSanity( void )
 
         ADCState.SteeringAngle = sum/10;// simple filter steering angle;
 
-        if ( abs(ADCState.SteeringAngle) >= 130 ) // if impossible angle.
+        if ( abs(ADCState.SteeringAngle) >= 150 ) // if impossible angle.
         {
             ADCState.SteeringAngle = 180;
             returnvalue &= ~(0x1 << SteeringAngleErrorBit);
@@ -630,9 +704,9 @@ uint16_t CheckADCSanity( void )
 		CarState.brake_balance = getBrakeBalance(ADCState.BrakeF, ADCState.BrakeR);
 //	} else CarState.brake_balance = -1;
 
-	if ( returnvalue ){
-		Errors.ADCError++;
-		Errors.ADCErrorState=returnvalue;
+	if ( returnvalue ){ // if error in adc data check if it's yet to be treated as fatal.
+		Errors.ADCError++; // increase adc error counter
+		Errors.ADCErrorState=returnvalue; // store current error value for checking.
 		for (int i=0;i<NumADCChan+2;i++)
 		ADC_DataError[i] = ADC_Data[i];
 
@@ -641,10 +715,10 @@ uint16_t CheckADCSanity( void )
 			returnvalue=0;
 		} else
 		{
-			returnvalue=0xFF;
-			CAN_SendADC(ADC_DataError, 1);
+			returnvalue=0xFF; // 5 adc error reads happened in row, flag as error.
+			CAN_SendADC(ADC_DataError, 1); // send error information to canbus - this should perhaps be latched to only happen once per error state.
 		}
-	} else
+	} else // no errors, clear flags.
 	{
 		if ( Errors.ADCError > 0 )	Errors.ADCError--;
 		Errors.ADCErrorState=0;

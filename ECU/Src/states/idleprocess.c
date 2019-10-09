@@ -215,28 +215,40 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	// at this state, everything is ready to be powered up.
 
 	if ( // !CheckErrors() && // this is done in receive loop already.
-			GetInverterState( CarState.LeftInvState ) == INVERTERREADY
+	     GetInverterState( CarState.LeftInvState ) == INVERTERREADY
 	  && GetInverterState( CarState.RightInvState ) == INVERTERREADY
-		&& !ReceiveNonCriticalError
+	  && !ReceiveNonCriticalError
 	  && CarState.VoltageBMS > MINHV
-	  && CarState.VoltageINV > 18
+#ifdef IVTEnable
+	#ifndef NOTSAL
+	  && CarState.VoltageINV > -5 // 18
+	#endif
+#endif
+#ifdef SHUTDOWNSWITCHCHECK
+	  && CarState.ShutdownSwitchesClosed // only allow TS enabling if shutdown switches are all closed.
+#endif
 	  ) // minimum accumulator voltage to allow TS, set a little above BMS limit, so we can
 	{
 		readystate = 0;
 		 if ( !TSRequested )
 			 blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP); // start blinking to indicate ready.
-	} /* else
-	{
-	  setOutput(TSLED_Output,LEDOFF);
-	} */
+	}
 
+#ifdef SETDRIVEMODEINIDLE
+	setDriveMode();
+#endif
+
+
+// allow APPS checking before RTDM
+	int Torque_Req = PedalTorqueRequest();
+
+	CarState.Torque_Req_L = Torque_Req;
+	CarState.Torque_Req_R = Torque_Req;
+
+#ifdef TORQUEVECTOR
+	TorqueVectorProcess( Torque_Req );
+#endif
 	// fail process, inverters go from 33->60->68  when no HV supplied and request startup.
-
-/*	if ( GetInverterState( CarState.LeftInvState ) == INVERTERERROR
-		  || GetInverterState( CarState.RightInvState ) == INVERTERERROR )
-	{
-		return OperationalErrorState;
-	} */ // checked earlier in checkerrors.
 
 	uint8_t InvHVPresent = 0;
 
@@ -247,7 +259,6 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	if ( readystate == 0 && TSRequested && CarState.VoltageBMS > MINHV && InvHVPresent )
 	{
-	//    setOutput(TSOFFLED_Output,LEDOFF);
 		return TSActiveState;
 	}
 
@@ -258,8 +269,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	{
         // error enabling high voltage, stop trying and alert.
 		CarState.HighVoltageReady = 0;
-//		setOutput(TSOFFLED_Output,LEDON);
-//		blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+//		blinkOutput(TSLED_Output,LEDBLINK_FOUR,1);
 		TSRequested = 0;
 	}
 
@@ -268,10 +278,6 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		TSRequested = 1;
 		HVEnableTimer = gettimer();
 		CarState.HighVoltageReady = 1; // start timer, go to error state after 1am
-//		setOutput(TSOFFLED_Output,LEDOFF);
-//		setOutput(TSLED_Output,LEDOFF);
-//		blinkOutput(TSLED_Output,LEDOFF,0);
-//		blinkOutput(RTDMLED_Output,LEDBLINK_THREE,LEDBLINKNONSTOP);
 
 /*		CarState.HighVoltageReady = 1;
 
@@ -284,7 +290,6 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 			sendPDM( 0 );
 		}  */
 		// enable HV, then if successfull, enter TS, otherwise flash error.
-	//	return TSActiveState;
 	}
 
 	return IdleState;

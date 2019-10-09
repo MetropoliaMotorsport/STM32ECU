@@ -35,7 +35,16 @@ void ResetStateData( void ) // set default startup values for global state value
 	DeviceState.CAN1 = OPERATIONAL;
 	DeviceState.CAN2 = OPERATIONAL;
 
-	Errors.AllowReset = 0;
+	CarState.TestHV = 0;
+
+#ifdef FANCONTROL
+	CarState.FanPowered = 0;
+#else
+	CarState.FanPowered = 1;
+#endif
+
+	Errors.LeftInvAllowReset = 1;
+    Errors.RightInvAllowReset = 1;
 #ifdef FRONTSPEED
 	DeviceState.FrontSpeedSensors = ENABLED;
 	DeviceState.FLSpeed = OFFLINE;
@@ -75,6 +84,7 @@ void ResetStateData( void ) // set default startup values for global state value
 	CarState.BSPD_relay_status = 0;
 
 	CarState.AIROpen = 0;
+	CarState.ShutdownSwitchesClosed = 1;
 
 	CarState.brake_balance = 0;
 
@@ -109,6 +119,8 @@ void ResetStateData( void ) // set default startup values for global state value
 	CarState.Torque_Req_CurrentMax = 0;
 	CarState.LimpRequest = 0;
 	CarState.LimpActive = 0;
+    CarState.LimpDisable = 0;
+    
 
 
 	CarState.SpeedRL = 0;
@@ -216,18 +228,26 @@ int Startup( uint32_t OperationLoops  )
 	}
 
 	 return PreOperationalState;
-
 }
 
 uint16_t CheckErrors( void )
 {
+
+#ifdef COOLANTSHUTDOWN
+	if ( ADCState.CoolantTempR > COOLANTMAXTEMP )
+	{
+		return 97;
+	}
+#endif
+
 	if ( errorPDM() )
 	{
 		return 98; // PDM error, stop operation.
 	}
 
-	if ( GetInverterState( CarState.LeftInvState ) == INVERTERERROR
-		  || GetInverterState( CarState.RightInvState ) == INVERTERERROR )
+	if ( !CarState.TestHV && (
+			GetInverterState( CarState.LeftInvState ) == INVERTERERROR
+		  || GetInverterState( CarState.RightInvState ) == INVERTERERROR ) )
 	{
 		return 99; // serious error, no operation allowed. -- inverter
 	}
@@ -277,6 +297,8 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	static uint16_t errorstate;
 
+	static uint32_t errorstatetime = 0;
+
 #ifndef everyloop
 	if ( ( OperationLoops % LOGLOOPCOUNTSLOW ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
 #endif
@@ -306,6 +328,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 //		CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
 		blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
 		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+		errorstatetime = gettimer();
 	}
 
 	if ( Errors.InverterError )	CAN_SENDINVERTERERRORS();
@@ -314,20 +337,42 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		CAN_SendErrors();
 	}
 
-
 	receivePDM();
 
-	CheckErrors();
-
-	// wait for restart message
-	// Errors.AllowReset == 1 &&
-	if ( checkReset() == 1 ) // try to resume after an error.
+	if ( !CarState.ShutdownSwitchesClosed ) // indicate shutdown switch status with blinking rate.
 	{
-		setupButtons(); // moved later, during startup sequence inputs were being triggered early
+		blinkOutput(TSLED_Output,LEDBLINK_ONE,LEDBLINKNONSTOP);
+		blinkOutput(RTDMLED_Output,LEDBLINK_ONE,LEDBLINKNONSTOP);
+	} else
+	{
+		blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+	}
+
+
+
+	// wait for restart request if allowed by error state.
+	if ( errorstatetime + 20000 < gettimer() // ensure error state is seen for at least 2 seconds.
+		//&& errorPDM() == 0
+		&& ( CheckErrors() == 0 || CheckErrors() == 99 ) // inverter error checked in next step.
+        && CheckADCSanity() == 0
+#ifdef SHUTDOWNSWITCHCHECK
+        && CarState.ShutdownSwitchesClosed // only allow exiting error state if shutdown switches closed. - maybe move to only for auto
+#endif
+        && ( checkReset() == 1 // manual reset
+#ifdef AUTORESET
+        		|| ( ( DeviceState.InverterL == ERROR || DeviceState.InverterR == ERROR ) // or automatic reset if allowed inverter error.
+        			 && ( Errors.LeftInvAllowReset && Errors.RightInvAllowReset )
+				   )
+#endif
+           )
+		)
+	{
+		setupButtons();
 		setupLEDs();
 		//loopcount = 0;
 		return StartupState;
-		// try to perform a full reset here on user request, probably easier  to just cycle power though.
+		// try to perform a full reset back to startup state here on user request.
 	}
 
 		// check for restart request. -> pre operation.
@@ -466,20 +511,23 @@ int OperationalProcess( void )
 
 			static uint8_t offcan1 = 0;
 			static uint8_t offcan2 = 0;
-
+#ifdef RECOVERCAN
 			static uint32_t offcan1time = 0;
 			static uint32_t offcan2time = 0;
+#endif
 
 			if ( CAN1Status.BusOff) // detect passive error instead and try to stay off bus till clears?
 			{
 			//	Errors.ErrorPlace = 0xAA;
-				  blinkOutput(BMSLED_Output, LEDBLINK_FOUR, 1);
+				  blinkOutput(TSOFFLED_Output, LEDBLINK_FOUR, 1);
 				  HAL_FDCAN_Stop(&hfdcan1);
 				  CAN_SendStatus(255,0,0);
 
 				  if ( offcan1 == 0 )
 				  {
+#ifdef RECOVERCAN
 					  offcan1time = gettimer();
+#endif
 					  offcan1 = 1;
 					  DeviceState.CAN1 = OFFLINE;
 //					  offcan1count++; // increment occurances of coming off bus. if reach threshhold, go to error state.
@@ -522,10 +570,12 @@ int OperationalProcess( void )
 
 				  if ( offcan2 == 0 )
 				  {
+#ifdef RECOVERCAN
 					  offcan2time = gettimer();
+#endif
 					  offcan2 = 1;
 				  }
-				  Errors.ErrorPlace = 0xF2;
+				  Errors.ErrorPlace = 0xF3;
 				  NewOperationalState = OperationalErrorState;
 			}
 

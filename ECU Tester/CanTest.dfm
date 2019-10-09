@@ -1019,6 +1019,15 @@ object MainForm: TMainForm
       Caption = 'HV On'
       TabOrder = 34
     end
+    object HVForce: TButton
+      Left = 640
+      Top = 478
+      Width = 75
+      Height = 25
+      Caption = 'HV Toggle'
+      TabOrder = 35
+      OnClick = HVForceClick
+    end
   end
   object timer200ms: TTimer
     Interval = 200

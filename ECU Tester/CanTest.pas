@@ -138,6 +138,7 @@ type
     Label30: TLabel;
     SpeedFLR: TLabel;
     SpeedFRR: TLabel;
+    HVForce: TButton;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -175,6 +176,7 @@ type
     procedure BrakePedalChange(Sender: TObject);
     procedure SendADCClick(Sender: TObject);
     procedure timer100msTimer(Sender: TObject);
+    procedure HVForceClick(Sender: TObject);
   private
     { Private declarations }
     StartTime: TDateTime;
@@ -186,6 +188,7 @@ type
     InverterLStatusRequest : Word;
     InverterRStatus : Word;
     InverterRStatusRequest : Word;
+    ErrorPos : Word;
     procedure CanChannel1CanRx(Sender: TObject);
     function InterPolateSteering(SteeringAngle : Integer) : Word;
     procedure sendIVT(msg0, msg1, msg2, msg3 : byte);
@@ -891,6 +894,14 @@ end;
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
+  with CanChannel1 do
+  begin
+        BusActive := false;
+        onBus.Caption := 'Off bus';
+        goOnBus.Caption := 'Go on bus';
+        CanDevices.Enabled := true;
+        Close;
+  end;
   try
       if logOpen then
         CloseFile(logfile);
@@ -1008,6 +1019,23 @@ end;
 procedure TMainForm.BSPDClick(Sender: TObject);
 begin
  // PDMClick(nil);
+end;
+
+procedure TMainForm.HVForceClick(Sender: TObject);
+var
+  msg: array[0..7] of byte;
+begin
+  msg[0] := 3;
+  with CanChannel1 do
+  begin
+    if Active then
+    begin
+      if MainStatus = 1 then  // only send request if in startup state.
+      begin
+        Check(Write($21,msg,8,0), 'Write failed');
+      end;
+    end;
+  end;
 end;
 
 procedure TMainForm.CANBMSClick(Sender: TObject);
@@ -1153,28 +1181,29 @@ begin
                  end;
 
           $20+$12  :  begin
-                   WriteLn(adcdata, 'AccelLRRawError '+IntToStr(msg[1]*256+msg[0]));
+     {              WriteLn(adcdata, 'AccelLRRawError '+IntToStr(msg[1]*256+msg[0]));
                    WriteLn(adcdata, 'AccelRRRawError '+IntToStr(msg[3]*256+msg[2]));
                    WriteLn(adcdata, 'BrakeFRRawError '+IntToStr(msg[5]*256+msg[4]));
-                   WriteLn(adcdata, 'BrakeRRRawError '+IntToStr(msg[7]*256+msg[6]));
+                   WriteLn(adcdata, 'BrakeRRRawError '+IntToStr(msg[7]*256+msg[6]));   }
+                   Output.Items.Add('ADCSanityError()');
 
-                   Output.Items.Add('AccelLRRawError '+IntToStr(msg[1]*256+msg[0]));
+             {      Output.Items.Add('AccelLRRawError '+IntToStr(msg[1]*256+msg[0]));
                    Output.Items.Add('AccelRRRawError '+IntToStr(msg[3]*256+msg[2]));
                    Output.Items.Add('BrakeFRRawError '+IntToStr(msg[5]*256+msg[4]));
-                   Output.Items.Add('BrakeRRRawError '+IntToStr(msg[7]*256+msg[6]));
+                   Output.Items.Add('BrakeRRRawError '+IntToStr(msg[7]*256+msg[6]));   }
 
                  end;
 
           $20+$13  : begin
-                    WriteLn(adcdata, 'SteeringRRaw '+IntToStr(msg[1]*256+msg[0]));
+              {      WriteLn(adcdata, 'SteeringRRaw '+IntToStr(msg[1]*256+msg[0]));
                     WriteLn(adcdata, 'DrivemodeRRaw '+IntToStr(msg[3]*256+msg[2]));
                     WriteLn(adcdata, 'TempLRRaw '+IntToStr(msg[5]*256+msg[4]));
-                    WriteLn(adcdata, 'TempRRRaw '+IntToStr(msg[7]*256+msg[6]));
+                    WriteLn(adcdata, 'TempRRRaw '+IntToStr(msg[7]*256+msg[6]));    }
 
-                    Output.Items.Add('SteeringRRaw '+IntToStr(msg[1]*256+msg[0]));
+               {     Output.Items.Add('SteeringRRaw '+IntToStr(msg[1]*256+msg[0]));
                     Output.Items.Add('DrivemodeRRaw '+IntToStr(msg[3]*256+msg[2]));
                     Output.Items.Add('TempLRRaw '+IntToStr(msg[5]*256+msg[4]));
-                    Output.Items.Add('TempRRRaw '+IntToStr(msg[7]*256+msg[6]));
+                    Output.Items.Add('TempRRRaw '+IntToStr(msg[7]*256+msg[6]));     }
                  end;
 
           $20 :  begin
@@ -1196,6 +1225,12 @@ begin
                        str := str + '(' + IntToStr(msg[3]*256+msg[2])+')';
                        Output.Items.Add(str);
                        WriteLn(adcdata, str);
+                    end
+                    else if msg[0] = $21 then
+                    begin
+                      case msg[1] of
+                        3 :  Output.Items.Add('HVOn('+IntToStr(msg[2])+') : '+formattedDateTime);
+                      end;
                     end
                {     else if ( msg[0] = 100 ) and ( msg[1] = 0 ) then
                     begin
@@ -1301,6 +1336,17 @@ begin
                    // status messages
                  end;
 
+
+           $66 : begin
+                    if msg[0]+256*msg[1] <> ErrorPos then
+                    begin
+                      ErrorPos := msg[0]+256*msg[1];
+                      Output.Items.Add('ErrorCode('+ IntToStr(msg[0]+256*msg[1])+','
+                                + IntToStr(msg[2]+256*msg[3])+')'+formattedDateTime);
+                      Output.TopIndex := Output.Items.Count - 1;
+                    end;
+                 end;
+
           $100 : begin
             //          Output.Items.Add(Format('Id=%d Len=%d %d', [id, dlc, msg[0]]));
        //               if Output.TopIndex > Output.Items.Count - 2 then
@@ -1317,11 +1363,13 @@ begin
 //               if Output.TopIndex > Output.Items.Count - 2 then
 //            Output.TopIndex := Output.Items.Count - 1;
 
-                    Output.Items.Add('CanMessageCount('+ IntToStr(msg[0]+256*msg[1])+','
+         {           Output.Items.Add('CanMessageCount('+ IntToStr(msg[0]+256*msg[1])+','
                               + IntToStr(msg[2]+256*msg[3])+','
                               + IntToStr(msg[4]+256*msg[5]+65536*msg[6]+16777216*msg[7])+')'+formattedDateTime);
-                   Output.TopIndex := Output.Items.Count - 1;
+                   Output.TopIndex := Output.Items.Count - 1;   }
                  end;
+
+
 
 
           $511 : begin

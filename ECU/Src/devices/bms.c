@@ -33,6 +33,8 @@ uint8_t processBMSVoltage(uint8_t CANRxData[8], uint32_t DataLength )
 			receiveerror=0;
 			CarState.VoltageBMS = voltage;
 			CarState.LimpRequest = CANRxData[4];
+			if ( CarState.LimpRequest )
+				blinkOutput(BMSLED_Output,LEDBLINK_TWO,LEDBLINKNONSTOP); // start BMS led blinking to indicate limp mode.
 			DeviceState.BMS = OPERATIONAL;
 			return 1;
 		} else // bad data.

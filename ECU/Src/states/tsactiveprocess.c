@@ -21,7 +21,11 @@
 int TSActiveINVLRequest( void )
 {
 	uint16_t command;
-	if ( GetInverterState( CarState.LeftInvState ) < INVERTERON && CarState.VoltageINV > 480 ) // should be in ready state, so request ON state.
+	if ( GetInverterState( CarState.LeftInvState ) < INVERTERON
+#ifdef IVTEnable
+			&& CarState.VoltageINV > 480
+#endif
+			) // should be in ready state, so request ON state.
 	{
 		command = InverterStateMachine( LeftInverter ); // request left inv state machine to On from ready.
 		CANSendInverter( command, 0, LeftInverter );
@@ -32,7 +36,11 @@ int TSActiveINVLRequest( void )
 int TSActiveINVRRequest( void )
 {
 	uint16_t command;
-	if ( GetInverterState( CarState.RightInvState ) < INVERTERON && CarState.VoltageINV > 480 ) // only allow request if HV actually present.
+	if ( GetInverterState( CarState.RightInvState ) < INVERTERON
+#ifdef IVTEnable
+			&& CarState.VoltageINV > 480
+#endif
+	) // only allow request if HV actually present.
 	{
 		command = InverterStateMachine( RightInverter );
 		CANSendInverter( command, 0, RightInverter );
@@ -99,7 +107,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	uint32_t curtime = gettimer();
 
 	uint8_t prechargedone = 0;
-	if ( prechargetimer+70000 < curtime )
+	if ( prechargetimer+60000 < curtime )
 	{
 		prechargedone = 1;
 	}
@@ -119,9 +127,19 @@ int TSActiveProcess( uint32_t OperationLoops )
 
 	if ( errors )
 	{
-		Errors.ErrorPlace = 0xEB;
+		Errors.ErrorPlace = 0xDB;
 		return OperationalErrorState; // something has triggered an error, drop to error state to deal with it.
 	}
+
+	// allow APPS checking before RTDM
+	int Torque_Req = PedalTorqueRequest();
+
+	CarState.Torque_Req_L = Torque_Req;
+	CarState.Torque_Req_R = Torque_Req;
+
+#ifdef TORQUEVECTOR
+	TorqueVectorProcess( Torque_Req );
+#endif
 
 /*	uint16_t sanity = CheckADCSanity();
 	if ( sanity )
