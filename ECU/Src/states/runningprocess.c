@@ -75,7 +75,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime == 0 )
 	{
 		APPSTriggerTime = gettimer();
-		Torque_drivers_request = 1; // still sllow torque till timer elapsed.
+		Torque_drivers_request = 1; // still allow torque till timer elapsed.
 		CarState.APPSstatus=3;
 	}
 

@@ -50,7 +50,7 @@
 #define TORQUEVECTOR
 #define TORQUEVECTORSTARTANGLE 20  //40
 #define TORQUEVECTORSTOPANGLE  70  //90
-#define TORQUEVECTORMAXNM	   8
+#define TORQUEVECTORMAXNM	   8   // Can have x2 difference between L&R
 
 // Use green dash LED to indicate shutdownswitch status.
 #define SHUTDOWNSWITCHSTATUS
@@ -90,25 +90,25 @@
 
 // Use IVT
 
-#define IVTEnable				// if not defined, IVT ignored and assumed present, giving a nominal voltage.
+// #define IVTEnable				// hpf017 no ivt. if not defined, IVT ignored and assumed present, giving a nominal voltage.
 
 // HV will still be allowed without TSAL connected
 #define NOTSAL
 
 // Use BMS Messages.
-#define BMSEnable				// if not defined, BMS ignored and assumed present.
+//#define BMSEnable				// hpf017 if not defined, BMS ignored and assumed present.
 
 // Retransmit IVT messages for BMS
-#define retransmitIVT
+//#define retransmitIVT          // hpf017
 
 // Define whether front speed encoders are expected.
 //#define FRONTSPEED				// enable front speed encoder reading.
 
 // do not go to error state for non crucial can devices going offbus/timing out.
-//#define NOTIMEOUT
+// #define NOTIMEOUT
 
 // do not go to error state if IVT goes off bus.
-// #define NOIVTTIMEOUT
+#define NOIVTTIMEOUT
 
 // Allow auto reset with shutdown buttons / DC Undervoltage on inverters.
 #define AUTORESET
@@ -125,7 +125,7 @@
 // Allow a 450ms window of brake + apps before throttle is cut.
 #define APPSALLOWBRAKE
 
-#define APPSBRAKETIME	3000 //300ms brake allowance for apps before trigger cut power.
+#define APPSBRAKETIME	1000 //300ms brake allowance for apps before trigger cut power.
 
 // Allow limp mode to be exited on request.
 #define ALLOWLIMPCANCEL
@@ -178,20 +178,20 @@
 #define REVV 					0x2003
 #define REVY 					0x1003
 
-#define MaxRunningErrorCount    10
-#define ReduceErrorCountRate	10
+#define MaxRunningErrorCount    50
+#define ReduceErrorCountRate	5
 
 // Do not process APPS position ADC
 //#define NOAPPS
 
 // Do not read steering angle ADC
-//#define NOSTEERING
+#define NOSTEERING
 
 // Do not process Brake pressure ADC
 //#define NOBRAKES
 
 // Do not process Coolant temperature ADC
-//#define NOTEMPERATURE
+#define NOTEMPERATURE
 
 // Do not process Drive mode selector ADC
 //#define NODRIVINGMODE
