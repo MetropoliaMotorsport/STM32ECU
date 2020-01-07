@@ -35,21 +35,21 @@ int16_t SteeringOutput[] = { -210,  -120,  -90,   0,    210 };
 
 // -1 needs to be at minimum
 // should be 0 to 25bar at 1-5v   0.6666v to 3.3v at adc -> 13107 -> 65536
-uint16_t BrakeRInput[] = {1024, 1025, BRAKEZERO, BRAKEMAX, 65535 }; // at 240bar, should be 240 output, at 0 bar should be 0 // 62914
-int16_t BrakeROutput[] = {-1,     0,    0,     240,  255 }; // output range // 240
+uint16_t BrakeRInput[] = {599, 600, BRAKEZERO, BRAKEMAX, 65535 }; // at 250bar, should be 250 output, at 0 bar should be 0 // 65000
+int16_t BrakeROutput[] = {0,     0,    0,     250,  255 }; // output range // 250
 
-uint16_t BrakeFInput[] = { 1024, 1025, BRAKEZERO,   BRAKEMAX, 65535 }; // calibrated input range //62914
-int16_t BrakeFOutput[] = { -1,     0,    0,     240,    255 }; // output range // 240
+uint16_t BrakeFInput[] = { 599, 600, BRAKEZERO,   BRAKEMAX, 65535 }; // calibrated input range //65000
+int16_t BrakeFOutput[] = { 0,     0,    0,     250,    255 }; // output range // 250
 
 // zero should be approx real pedal zero, zero is read below this to allow for some variance without triggering errors.
 // ditto max value.
 
 // define zero as 5% actual travel and 100% as 95% of actual travel
-uint16_t TorqueReqLInput[] = { 1999,  2000, (ACCELERATORLMAX-ACCELERATORLZERO)/100*5+ACCELERATORLZERO,   (ACCELERATORLMAX-ACCELERATORLZERO)/100*98+ACCELERATORLZERO,  64000,  64001 }; // calibration values for left input // 5800
+uint16_t TorqueReqLInput[] = { 999,  1000, (ACCELERATORLMAX-ACCELERATORLZERO)/100*5+ACCELERATORLZERO,   (ACCELERATORLMAX-ACCELERATORLZERO)/100*98+ACCELERATORLZERO,  64000,  64001 }; // calibration values for left input // 5800
 int16_t TorqueReqLOutput[] = {  -1,  0,     0,     1000,      1000,  1001 }; // range defined 0-1000 to allow percentage accuracy even if not using full travel range.
 
 // TorqueRMin(6798) / TorqueRMax(54369)
-uint16_t TorqueReqRInput[] = { 1999, 2000, (ACCELERATORRMAX-ACCELERATORRZERO)/100*5+ACCELERATORRZERO,  (ACCELERATORRMAX-ACCELERATORRZERO)/100*98+ACCELERATORRZERO,   64000,   64001 }; // calibration values for right input // 6200
+uint16_t TorqueReqRInput[] = { 999, 1000, (ACCELERATORRMAX-ACCELERATORRZERO)/100*5+ACCELERATORRZERO,  (ACCELERATORRMAX-ACCELERATORRZERO)/100*98+ACCELERATORRZERO,   64000,   64001 }; // calibration values for right input // 6200
 int16_t TorqueReqROutput[] = { -1,      0,      0,      1000,   1000,   1001 };
 
 uint16_t TorqueLinearInput[] = {50,950}; // start registered travel at 8%

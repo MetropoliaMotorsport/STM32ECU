@@ -11,14 +11,14 @@
 
 // Calibration settings for pedals.
 
-#define ACCELERATORLZERO 4200
-#define ACCELERATORLMAX  53000
+#define ACCELERATORLZERO 2700
+#define ACCELERATORLMAX  49000
 
-#define ACCELERATORRZERO 4800
-#define ACCELERATORRMAX  53000
+#define ACCELERATORRZERO 2000
+#define ACCELERATORRMAX  25000
 
-#define BRAKEZERO 14100 // 0 bar?
-#define BRAKEMAX  62914 // 240 bar settings.
+#define BRAKEZERO 500 // 0 bar?
+#define BRAKEMAX  65000 // 240 bar settings.
 
 // Brake pressure values
 
