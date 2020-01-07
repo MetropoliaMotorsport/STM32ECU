@@ -3,7 +3,6 @@
  *
  *  Created on: 29 Dec 2018
  *      Author: Visa
- *      Edited by Markus Jahn for HPF017
  */
 
 #ifndef ECU_H_
