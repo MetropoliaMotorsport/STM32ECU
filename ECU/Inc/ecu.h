@@ -30,7 +30,7 @@
 #define LIMPNM					10 // limp mode torque
 
 // Minimum acceptable voltage on TS for startup.
-#define MINHV					500 // minimum voltage to allow TS enable.
+#define MINHV					0 // minimum voltage to allow TS enable.
 
 // Enable workaround to use second ADC for one of the APPS pedals due to shield issue.
 #define USEADC3
@@ -54,7 +54,7 @@
 #define TORQUEVECTORMAXNM	   8   // Can have x2 difference between L&R
 
 // Use green dash LED to indicate shutdownswitch status.
-#define SHUTDOWNSWITCHSTATUS
+//#define SHUTDOWNSWITCHSTATUS
 
 // Error state due to Coolant overtemp - no seperate indicator currently
 //#define COOLANTSHUTDOWN
@@ -69,7 +69,7 @@
 #define PDMSECONDMESSAGE
 
 // Check shutdown switches as part of error state.
-#define SHUTDOWNSWITCHCHECK
+//#define SHUTDOWNSWITCHCHECK
 
 // Coolant overtemp limits.
 #define COOLANTLIMPTEMP 75
@@ -106,7 +106,7 @@
 //#define FRONTSPEED				// enable front speed encoder reading.
 
 // do not go to error state for non crucial can devices going offbus/timing out.
-// #define NOTIMEOUT
+#define NOTIMEOUT
 
 // do not go to error state if IVT goes off bus.
 #define NOIVTTIMEOUT
