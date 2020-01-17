@@ -171,6 +171,7 @@
 #define IVTTIMEOUTWATTS			4500
 #define INVERTERTIMEOUT			1000 // 10 cycles, 100ms.
 #define SICKTIMEOUT             200 // 2 cycles, then set speeds to zero.
+#define STRTIMEOUT				30000 //
 #define STMADC
 #endif
 
@@ -317,6 +318,8 @@ volatile struct CarState {
 	int32_t SpeedFL;
 	int32_t SpeedFR;
 
+	int16_t STRAngle;
+
 //	int32_t Wheel_Speed_Rear_Average;
 //	int32_t Wheel_Speed_Average;
 
@@ -336,6 +339,7 @@ struct DeviceState {
 	char InverterR;
 	char BMS;
 	char PDM;
+	char STRAngle;
 	char FLSpeed;
 	char FRSpeed;
 	char IVT;
@@ -389,6 +393,8 @@ struct ErrorCount {
 	uint16_t PDMError;
 	uint16_t PDMTimeout;
 	uint16_t PDMReceive;
+
+	uint16_t STRTimeout;
 
 	uint16_t FLSpeedError;
 	uint16_t FLSpeedTimeout;

@@ -173,9 +173,9 @@ uint16_t TorqueVectorProcess( int torquerequest )
 
 	// ensure torque request altering only happens when a torque request actually exists.
 
-	if ( CarState.TorqueVectoring && torquerequest > 0 && ADCState.Torque_Req_R_Percent > 0 && ADCState.Torque_Req_L_Percent > 0 && abs(ADCState.SteeringAngle) > 40 )
+	if ( CarState.TorqueVectoring && torquerequest > 0 && ADCState.Torque_Req_R_Percent > 0 && ADCState.Torque_Req_L_Percent > 0 && abs(CarState.STRAngle) > 40 )
 	{
-		TorqueVectorAddition = ConvertNMToRequest(getTorqueVector(ADCState.SteeringAngle))/10; // returns 10x NM request.
+		TorqueVectorAddition = ConvertNMToRequest(getTorqueVector(CarState.STRAngle))/10; // returns 10x NM request.
 
 		if  ( abs(TorqueVectorAddition) > torquerequest ){
 			if ( TorqueVectorAddition < 0 ) TorqueVectorAddition = 0-torquerequest;

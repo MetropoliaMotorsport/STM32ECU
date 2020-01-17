@@ -39,6 +39,7 @@
 #include "inverter.h"
 #include "bms.h"
 #include "adcecu.h"
+#include "STRAngle.h"
 
 
 int realmain(void);

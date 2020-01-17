@@ -35,6 +35,9 @@ default.size.stdout \
 OBJDUMP_LIST += \
 ECU.list \
 
+OBJCOPY_BIN += \
+ECU.bin \
+
 
 # All Target
 all:
@@ -59,6 +62,11 @@ ECU.list: $(EXECUTABLES)
 	@echo 'Finished building: $@'
 	@echo ' '
 
+ECU.bin: $(EXECUTABLES)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "ECU.bin"
+	@echo 'Finished building: $@'
+	@echo ' '
+
 # Other Targets
 clean:
 	-$(RM) *
@@ -68,7 +76,7 @@ post-build:
 	arm-none-eabi-objcopy.exe -O ihex "ECU.elf" "ECU.hex"
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
 
 .PHONY: all clean dependents
 .SECONDARY: post-build

@@ -27,11 +27,13 @@
 #define IVTAs_ID		    	0x527
 #define IVTWh_ID				0x528
 #define IVTBase_ID 				IVTI_ID
-
+#define STRAngleID 				0x45
 
 #define IVT_BUS					hfdcan2
 #define BMS_BUS					hfdcan1
+#define STR_BUS					hfdcan2
 #define PDM_BUS
+
 
 #define InverterL_COBID			0x7E // 126 // swap
 #define InverterR_COBID			0x7F // 127 // swap
@@ -105,6 +107,8 @@ volatile struct CanState {
 	volatile struct CanData BMSVolt;
 	volatile struct CanData BMSError;
 	volatile struct CanData BMSOpMode;
+
+	volatile struct CanData STRAngle;
 
 	volatile struct CanData ECU;
 	volatile struct CanData ECUConfig;

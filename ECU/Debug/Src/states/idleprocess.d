@@ -51,7 +51,8 @@ Src/states/idleprocess.o: ../Src/states/idleprocess.c ../Core/Inc/main.h \
  ../Inc/states/runningprocess.h ../Inc/devices/timerecu.h \
  ../Inc/devices/dwt_delay.h ../Inc/devices/interrupts.h \
  ../Inc/devices/sickencoder.h ../Inc/devices/pdm.h ../Inc/devices/ivt.h \
- ../Inc/devices/inverter.h ../Inc/devices/bms.h ../Inc/devices/adcecu.h
+ ../Inc/devices/inverter.h ../Inc/devices/bms.h ../Inc/devices/adcecu.h \
+ ../Inc/devices/STRAngle.h
 
 ../Core/Inc/main.h:
 
@@ -192,3 +193,5 @@ Src/states/idleprocess.o: ../Src/states/idleprocess.c ../Core/Inc/main.h \
 ../Inc/devices/bms.h:
 
 ../Inc/devices/adcecu.h:
+
+../Inc/devices/STRAngle.h:

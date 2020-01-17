@@ -52,9 +52,9 @@ Src/ecumain.o: ../Src/ecumain.c ../Inc/states/operationalprocess.h \
  ../Inc/devices/dwt_delay.h ../Inc/devices/interrupts.h \
  ../Inc/devices/sickencoder.h ../Inc/devices/pdm.h ../Inc/devices/ivt.h \
  ../Inc/devices/inverter.h ../Inc/devices/bms.h ../Inc/devices/adcecu.h \
- ../Core/Inc/dma.h ../Core/Inc/i2c.h ../Core/Inc/sdmmc.h \
- ../Core/Inc/spi.h ../Core/Inc/usart.h ../Core/Inc/usb_otg.h \
- ../Core/Inc/gpio.h
+ ../Inc/devices/STRAngle.h ../Core/Inc/dma.h ../Core/Inc/i2c.h \
+ ../Core/Inc/sdmmc.h ../Core/Inc/spi.h ../Core/Inc/usart.h \
+ ../Core/Inc/usb_otg.h ../Core/Inc/gpio.h
 
 ../Inc/states/operationalprocess.h:
 
@@ -195,6 +195,8 @@ Src/ecumain.o: ../Src/ecumain.c ../Inc/states/operationalprocess.h \
 ../Inc/devices/bms.h:
 
 ../Inc/devices/adcecu.h:
+
+../Inc/devices/STRAngle.h:
 
 ../Core/Inc/dma.h:
 

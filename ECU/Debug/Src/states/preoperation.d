@@ -52,7 +52,7 @@ Src/states/preoperation.o: ../Src/states/preoperation.c \
  ../Inc/devices/dwt_delay.h ../Inc/devices/interrupts.h \
  ../Inc/devices/sickencoder.h ../Inc/devices/pdm.h ../Inc/devices/ivt.h \
  ../Inc/devices/inverter.h ../Inc/devices/bms.h ../Inc/devices/adcecu.h \
- ../Inc/states/configuration.h
+ ../Inc/devices/STRAngle.h ../Inc/states/configuration.h
 
 ../Core/Inc/main.h:
 
@@ -193,5 +193,7 @@ Src/states/preoperation.o: ../Src/states/preoperation.c \
 ../Inc/devices/bms.h:
 
 ../Inc/devices/adcecu.h:
+
+../Inc/devices/STRAngle.h:
 
 ../Inc/states/configuration.h:

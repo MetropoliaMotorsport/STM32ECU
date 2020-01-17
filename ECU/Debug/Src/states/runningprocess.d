@@ -52,7 +52,7 @@ Src/states/runningprocess.o: ../Src/states/runningprocess.c \
  ../Inc/devices/timerecu.h ../Inc/devices/dwt_delay.h \
  ../Inc/devices/interrupts.h ../Inc/devices/sickencoder.h \
  ../Inc/devices/pdm.h ../Inc/devices/ivt.h ../Inc/devices/inverter.h \
- ../Inc/devices/bms.h ../Inc/devices/adcecu.h
+ ../Inc/devices/bms.h ../Inc/devices/adcecu.h ../Inc/devices/STRAngle.h
 
 ../Inc/ecumain.h:
 
@@ -193,3 +193,5 @@ Src/states/runningprocess.o: ../Src/states/runningprocess.c \
 ../Inc/devices/bms.h:
 
 ../Inc/devices/adcecu.h:
+
+../Inc/devices/STRAngle.h:

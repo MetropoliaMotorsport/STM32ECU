@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../Src/devices/STRAngle.c \
 ../Src/devices/adcecu.c \
 ../Src/devices/bms.c \
 ../Src/devices/canecu.c \
@@ -19,6 +20,7 @@ C_SRCS += \
 ../Src/devices/vhd44780.c 
 
 OBJS += \
+./Src/devices/STRAngle.o \
 ./Src/devices/adcecu.o \
 ./Src/devices/bms.o \
 ./Src/devices/canecu.o \
@@ -34,6 +36,7 @@ OBJS += \
 ./Src/devices/vhd44780.o 
 
 C_DEPS += \
+./Src/devices/STRAngle.d \
 ./Src/devices/adcecu.d \
 ./Src/devices/bms.d \
 ./Src/devices/canecu.d \
@@ -50,6 +53,8 @@ C_DEPS += \
 
 
 # Each subdirectory must supply rules for building sources it contributes
+Src/devices/STRAngle.o: ../Src/devices/STRAngle.c
+	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 '-D__weak=__attribute__((weak))' '-D__packed=__attribute__((__packed__))' -DUSE_HAL_DRIVER -DSTM32H743xx -c -I../Core/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I../Drivers/CMSIS/Include -I../Inc/states -I../Inc/devices -I../Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Src/devices/STRAngle.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
 Src/devices/adcecu.o: ../Src/devices/adcecu.c
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 '-D__weak=__attribute__((weak))' '-D__packed=__attribute__((__packed__))' -DUSE_HAL_DRIVER -DSTM32H743xx -c -I../Core/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I../Drivers/CMSIS/Include -I../Inc/states -I../Inc/devices -I../Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Src/devices/adcecu.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
 Src/devices/bms.o: ../Src/devices/bms.c

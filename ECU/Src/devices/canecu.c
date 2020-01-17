@@ -235,6 +235,17 @@ void FDCAN2_start(void)
      Error_Handler();
    }
 
+
+   sFilterConfig2.FilterIndex++; // filter STRAngle
+      sFilterConfig2.FilterID1 = 0x45;
+      sFilterConfig2.FilterID2 = 0x45;
+
+      if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
+      {
+        // Filter configuration Error
+        Error_Handler();
+      }
+
   // Inverter CANOpen Filters
 
   sFilterConfig2.FilterType = FDCAN_FILTER_MASK;  // configure CANOpen device filters by mask.
@@ -302,6 +313,10 @@ int ResetCanReceived( void ) // only wait for new data since request.
 	ResetCanData(&CanState.InverterRPDO4);
 	ResetCanData(&CanState.InverterLERR);
 	ResetCanData(&CanState.InverterRERR);
+
+	// steering angle
+
+	ResetCanData(&CanState.STRAngle);
 
 	// bms
 
@@ -1491,6 +1506,13 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 									    processINVNMT(CANRxData, RxHeader.DataLength, LeftInverter );
 										/* Actual_Torque_Right_Inverter_Raw.data.longint = CANRxData[2]*256+CANRxData[1];? looks like wrong ID */
 										break;
+
+
+					// Steering Angle
+
+								case STRAngleID : // Steering Angle
+								processSTR(CANRxData, RxHeader.DataLength );
+								break;
 
 			default : // any other received packets, shouldn't be any due to filters.
 				break;
