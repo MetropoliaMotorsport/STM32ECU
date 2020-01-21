@@ -80,6 +80,15 @@ void FDCAN1_start(void)
     Error_Handler();
   }
 
+   sFilterConfig1.FilterIndex++; // filter STRAngle
+     sFilterConfig1.FilterID1 = 0x45;
+     sFilterConfig1.FilterID2 = 0x45;
+
+   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
+     {
+       // Filter configuration Error
+       Error_Handler();
+     }
 
   sFilterConfig1.FilterIndex++; // filter for canbus ADC id's
   sFilterConfig1.FilterID1 = 0x600;
@@ -235,16 +244,6 @@ void FDCAN2_start(void)
      Error_Handler();
    }
 
-
-   sFilterConfig2.FilterIndex++; // filter STRAngle
-      sFilterConfig2.FilterID1 = 0x45;
-      sFilterConfig2.FilterID2 = 0x45;
-
-      if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
-      {
-        // Filter configuration Error
-        Error_Handler();
-      }
 
   // Inverter CANOpen Filters
 
@@ -1172,6 +1171,13 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				//  0x500-0x505 ? PDM, what. ?
 
 
+// Steering Angle
+
+			case STRAngleID : // Steering Angle
+			processSTR(CANRxData, RxHeader.DataLength );
+			break;
+
+
 // IVT
 
 			case 0x511 : // IVT Control Message
@@ -1508,11 +1514,7 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 										break;
 
 
-					// Steering Angle
 
-								case STRAngleID : // Steering Angle
-								processSTR(CANRxData, RxHeader.DataLength );
-								break;
 
 			default : // any other received packets, shouldn't be any due to filters.
 				break;
