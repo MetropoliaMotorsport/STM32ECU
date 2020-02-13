@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -19,7 +19,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "fdcan.h"
-
 
 /* USER CODE BEGIN 0 */
 
@@ -42,14 +41,8 @@ void MX_FDCAN1_Init(void)
   hfdcan1.Init.ProtocolException = DISABLE;
   hfdcan1.Init.NominalPrescaler = 4;
   hfdcan1.Init.NominalSyncJumpWidth = 20;
-  hfdcan1.Init.NominalTimeSeg1 = 14;
-
-  uint16_t volatile * const chiprevision = (uint16_t *) DEBUGMCU+1;
-
-  if ( *chiprevision==REVV ) // revision V
-	  hfdcan1.Init.NominalTimeSeg2 = 4;
-  else // revision Y
-	  hfdcan1.Init.NominalTimeSeg2 = 5;
+  hfdcan1.Init.NominalTimeSeg1 = 15;
+  hfdcan1.Init.NominalTimeSeg2 = 4;
   hfdcan1.Init.DataPrescaler = 1;
   hfdcan1.Init.DataSyncJumpWidth = 1;
   hfdcan1.Init.DataTimeSeg1 = 1;
@@ -79,22 +72,15 @@ void MX_FDCAN2_Init(void)
 {
 
   hfdcan2.Instance = FDCAN2;
-  hfdcan2.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
+  hfdcan2.Init.FrameFormat = FDCAN_FRAME_FD_NO_BRS;
   hfdcan2.Init.Mode = FDCAN_MODE_NORMAL;
   hfdcan2.Init.AutoRetransmission = ENABLE;
   hfdcan2.Init.TransmitPause = DISABLE;
   hfdcan2.Init.ProtocolException = DISABLE;
-
   hfdcan2.Init.NominalPrescaler = 4;
   hfdcan2.Init.NominalSyncJumpWidth = 20;
-  hfdcan2.Init.NominalTimeSeg1 = 14;
-
-  uint16_t volatile * const chiprevision = (uint16_t *) DEBUGMCU+1;
-
-  if ( *chiprevision==REVV ) // revision V
-	  hfdcan2.Init.NominalTimeSeg2 = 4;
-  else // revision Y
-	  hfdcan2.Init.NominalTimeSeg2 = 5;
+  hfdcan2.Init.NominalTimeSeg1 = 15;
+  hfdcan2.Init.NominalTimeSeg2 = 4;
   hfdcan2.Init.DataPrescaler = 1;
   hfdcan2.Init.DataSyncJumpWidth = 1;
   hfdcan2.Init.DataTimeSeg1 = 1;

@@ -11,7 +11,7 @@
 
 char IdleRequest( void )   // request data / invalidate existing data to ensure we have fresh data from this cycle.
 {
-//	uint16_t command;
+	uint16_t command;
 	// Inverter Pre Operation preparedness.
 
 	// reset can data before operation to ensure we aren't checking old data from previous cycle.
@@ -22,22 +22,16 @@ char IdleRequest( void )   // request data / invalidate existing data to ensure 
 
 	// request ready states from devices.
 
-	CarState.LeftInvCommand = InverterStateMachine( LeftInverter );
-
-	if ( GetInverterState( CarState.LeftInvState ) !=  INVERTERREADY ) // should be in ready state, if not, run state machine.
+	for ( int i=0;i<INVERTERCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
 	{
-	     // request left inv state machine to On from ready.
-		CANSendInverter( CarState.LeftInvCommand, 0, LeftInverter );
-	} // else command = set command to current state request.
-
-	CarState.RightInvCommand = InverterStateMachine( RightInverter );
-
-	if ( GetInverterState( CarState.RightInvState ) != INVERTERREADY )
-	{
-		CANSendInverter( CarState.RightInvCommand, 0, RightInverter );
+		if ( GetInverterState( CarState.Inverters[i].InvState ) != INVERTERREADY ) // should be in ready state, if not, send state request.
+		{
+			command = InverterStateMachine( &CarState.Inverters[i] ); // request left inv state machine to On from ready.
+			CANSendInverter( command, 0, i );
+		}
 	}
 
-
+//	CarState.RearLeftInvCommand = InverterStateMachine( LeftInverter );
 
 	// if ( DeviceState.FLeftSpeed == OPERATIONAL ) should eventually respond by sync.
 
@@ -51,37 +45,41 @@ char IdleRequest( void )   // request data / invalidate existing data to ensure 
 char OperationalReceive( uint16_t returnvalue )
 {
 	if (returnvalue == 0xFF)
-	{ returnvalue = (0x1 << FLeftSpeedReceived) + // initialise return value to all devices in error state ( bit set )
+	{ returnvalue =
+#ifndef HPF2020
+			(0x1 << FLeftSpeedReceived) + // initialise return value to all devices in error state ( bit set )
 				  (0x1 << FRightSpeedReceived) +
-				  (0x1 << InverterLReceived)+
-				  (0x1 << InverterRReceived)+
+#endif
 				  (0x1 << BMSReceived)+
 				  (0x1 << PDMReceived)+
 				  (0x1 << PedalADCReceived);
+#ifdef HPF2020
+		for ( int i=0;i<INVERTERCOUNT;i++){
+			returnvalue+=InverterReceived+i;
+		}
+//				  (0x1 << InverterLReceived)+
+//				  (0x1 << InverterRReceived);
+#endif
+
+
 	}
 
 	// change order, get status from pdo3, and then compare against pdo2?, 2 should be more current being higher priority
 
 //	if ( OperationalState == RunningState )
 	{
-		receiveINVStatus(LeftInverter);
-		receiveINVStatus(RightInverter);
-
-		if ( receiveINVSpeed(LeftInverter) )
+		for ( int i=0;i<INVERTERCOUNT;i++) // speed isreceived
 		{
-			returnvalue &= ~(0x1 << InverterLReceived); // speed should always be seen every cycle in RTDM
+			receiveINVStatus(&CarState.Inverters[i]);
+
+			if ( receiveINVSpeed(&CarState.Inverters[i]) )
+				returnvalue &= ~(0x1 << (InverterReceived+i));  // speed should always be seen every cycle in RTDM
+
+			receiveINVTorque(&CarState.Inverters[i]);
 		}
-
-		if ( receiveINVSpeed(RightInverter) )
-		{
-			returnvalue &= ~(0x1 << InverterRReceived);
-		}
-
-		receiveINVTorque(LeftInverter);
-		receiveINVTorque(RightInverter);
-
 	}
 
+#ifndef HPF2020
 	if (DeviceState.FrontSpeedSensors == ENABLED )
 	{
 		if ( receiveSick(FLSpeed_COBID) ) returnvalue &= ~(0x1 << FLeftSpeedReceived);
@@ -91,6 +89,7 @@ char OperationalReceive( uint16_t returnvalue )
 		returnvalue &= ~(0x1 << FLeftSpeedReceived);
 		returnvalue &= ~(0x1 << FRightSpeedReceived);
 	}
+#endif
 
 	if ( receivePDM() ) returnvalue &= ~(0x1 << PDMReceived);
 
@@ -215,8 +214,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	// at this state, everything is ready to be powered up.
 
 	if ( // !CheckErrors() && // this is done in receive loop already.
-	     GetInverterState( CarState.LeftInvState ) == INVERTERREADY
-	  && GetInverterState( CarState.RightInvState ) == INVERTERREADY
+	  invertersStateCheck(INVERTERREADY) // returns true if all inverters match state
 	  && !ReceiveNonCriticalError
 	  && CarState.VoltageBMS > MINHV
 #ifdef IVTEnable
@@ -242,8 +240,10 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 // allow APPS checking before RTDM
 	int Torque_Req = PedalTorqueRequest();
 
-	CarState.Torque_Req_L = Torque_Req;
-	CarState.Torque_Req_R = Torque_Req;
+	for ( int i=0;i<INVERTERCOUNT;i++)  // set all wheels to same torque request
+	{
+		CarState.Inverters[i].Torque_Req = Torque_Req;
+	} //
 
 #ifdef TORQUEVECTOR
 	TorqueVectorProcess( Torque_Req );

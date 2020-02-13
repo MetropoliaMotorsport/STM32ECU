@@ -21,7 +21,7 @@ object MainForm: TMainForm
     973
     648)
   PixelsPerInch = 96
-  TextHeight = 14
+  TextHeight = 13
   object Label27: TLabel
     Left = 94
     Top = 393
@@ -152,7 +152,7 @@ object MainForm: TMainForm
       Left = 3
       Top = 20
       Width = 145
-      Height = 22
+      Height = 21
       Style = csDropDownList
       TabOrder = 0
       OnChange = CanDevicesChange
@@ -162,7 +162,7 @@ object MainForm: TMainForm
       Top = 20
       Width = 378
       Height = 452
-      ItemHeight = 14
+      ItemHeight = 13
       TabOrder = 1
     end
     object SendCANADC: TButton
@@ -279,7 +279,7 @@ object MainForm: TMainForm
       Left = 64
       Top = 366
       Width = 121
-      Height = 22
+      Height = 21
       Style = csDropDownList
       ItemIndex = 0
       TabOrder = 14
@@ -425,7 +425,7 @@ object MainForm: TMainForm
       Left = 432
       Top = 509
       Width = 121
-      Height = 22
+      Height = 21
       Style = csDropDownList
       TabOrder = 26
       Items.Strings = (
@@ -1027,6 +1027,15 @@ object MainForm: TMainForm
       Caption = 'HV Toggle'
       TabOrder = 35
       OnClick = HVForceClick
+    end
+    object IVTCAN1: TCheckBox
+      Left = 440
+      Top = 567
+      Width = 97
+      Height = 17
+      Caption = 'IVT CAN1'
+      TabOrder = 36
+      OnClick = IVTClick
     end
   end
   object timer200ms: TTimer

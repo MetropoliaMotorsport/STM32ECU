@@ -8,6 +8,10 @@
 #ifndef ECU_H_
 #define ECU_H_
 
+#include <stdbool.h>
+
+
+#define HPF2020
 // Calibration settings for pedals.
 
 #define ACCELERATORLZERO 4200
@@ -47,7 +51,7 @@
 #define STMADC
 
 // Use basic torquevectoring
-#define TORQUEVECTOR
+//#define TORQUEVECTOR
 #define TORQUEVECTORSTARTANGLE 20  //40
 #define TORQUEVECTORSTOPANGLE  70  //90
 #define TORQUEVECTORMAXNM	   8
@@ -129,6 +133,9 @@
 
 // Allow limp mode to be exited on request.
 #define ALLOWLIMPCANCEL
+
+
+#define RTDMStopTime    3 // 3 seconds from entering RTDM before stop button active.
 
 // Try to restart CANBUS if ECU goes offbus.
 //#define RECOVERCAN
@@ -227,25 +234,49 @@ uint16_t ErrorCode; // global error code.
 #define DrivingModeErrorBit	    7
 
 
-#define InverterLErrorBit		9
-#define InverterRErrorBit		10
+#define InverterRLErrorBit		9
+#define InverterRRErrorBit		10
 
 #define BMSVoltageErrorBit		11
+#ifdef HPF2020
+#define InverterFLErrorBit		9
+#define InverterFRErrorBit		10
+#endif
 
-#define PDMReceived				0
-#define BMSReceived				1
-#define InverterReceived		2
-#define InverterLReceived		2
-#define FLeftSpeedReceived		3
-#define FRightSpeedReceived		4
-#define PedalADCReceived		5
-#define IVTReceived				6
-#define InverterRReceived		7
+#define Inverter1Received		0 //
+#define Inverter2Received		2
+
+#define InverterReceived		0
+//#define InverterRLReceived		1
+#ifdef HPF2020
+//#define InverterFReceived		2
+//#define InverterFLReceived		3
+#else
+#define FLeftSpeedReceived		2
+#define FRightSpeedReceived		3
+#endif
+#define PedalADCReceived		4
+#define BMSReceived				5
+#define PDMReceived				4
+#define BMSReceived				5
+
+
+
+#define IVTReceived				8
+
 //#define YAWReceived			8
 
+#define INVERTERRECEIVED		20
 
-#define LeftInverter			0
-#define RightInverter			1
+
+#define RearLeftInverter		0
+#define RearRightInverter		1
+
+#ifdef HPF2020
+#define FrontLeftInverter		2
+#define FrontRightInverter		3
+#endif
+
 
 #define INVERTERDISABLED		1
 #define INVERTERREADY			2 // preoperation, ready for TS.
@@ -253,13 +284,35 @@ uint16_t ErrorCode; // global error code.
 #define INVERTEROPERATING		4 // output enabled ( RTDM only )
 #define INVERTERERROR			-99
 
+
+#ifdef HPF2020
+#define INVERTERCOUNT			(4)
+#define Inverter1				(0)
+#define Inverter2				(2)
+#else
+#define INVERTERCOUNT			(2)
+#endif
 extern volatile uint32_t ADCloops;
+
+typedef struct { // new structure for inverter related data, so that it can be used as general pointer.
+	uint8_t InverterNum;
+	char HighVoltageAllowed;
+	uint16_t InvState;
+	uint16_t InvBadStatus;
+	uint16_t InvStateCheck;
+	uint16_t InvStateCheck3;
+	uint16_t InvCommand;
+
+	uint16_t Torque_Req;
+	uint16_t InvTorque;
+
+	int32_t Speed;
+	uint16_t COBID;
+} InverterState;  // define external into realmain?
 
 volatile struct CarState {
 	uint8_t brake_balance;
 
-	char HighVoltageAllowedR;
-	char HighVoltageAllowedL;
 	char HighVoltageReady;
 	uint8_t TestHV;
 
@@ -269,22 +322,9 @@ volatile struct CarState {
 	char AIROpen;
 	char ShutdownSwitchesClosed;
 
-	uint16_t LeftInvState;
-	uint16_t LeftInvBadStatus;
-	uint16_t LeftInvStateCheck;
-	uint16_t LeftInvStateCheck3;
-	uint16_t LeftInvCommand;
+	InverterState Inverters[INVERTERCOUNT];
+	uint16_t COBID;
 
-	uint16_t RightInvState;
-	uint16_t RightInvBadStatus;
-	uint16_t RightInvStateCheck;
-	uint16_t RightInvStateCheck3;
-	uint16_t RightInvCommand;
-
-	uint16_t Torque_Req_L;
-	uint16_t Torque_Req_R;
-	uint16_t LeftInvTorque;
-	uint16_t RightInvTorque;
 #ifdef TORQUEVECTOR
 	uint8_t  TorqueVectoring;
 #endif
@@ -311,16 +351,13 @@ volatile struct CarState {
 	int32_t VoltageAIRPDM;
 	int32_t Power;
 
-	int32_t SpeedRL;
-	int32_t SpeedRR;
-	int32_t SpeedFL;
-	int32_t SpeedFR;
+	int32_t Speed[4];
 
 //	int32_t Wheel_Speed_Rear_Average;
 //	int32_t Wheel_Speed_Average;
 
 //	uint8_t StopLED;
-} volatile CarState, LastCarState, ErrorCarState;
+} volatile CarState, LastCarState, ErrorCarState;  // define external into realmain?
 
 
 struct DeviceState {
@@ -331,8 +368,7 @@ struct DeviceState {
 	char BMSEnabled;
 	char LoggingEnabled;
 	char ADC;
-	char InverterL;
-	char InverterR;
+	char Inverters[INVERTERCOUNT];
 	char BMS;
 	char PDM;
 	char FLSpeed;
@@ -343,8 +379,9 @@ struct DeviceState {
 struct ErrorCount {
 	uint16_t OperationalReceiveError;
 	uint16_t State;
-	uint8_t  LeftInvAllowReset;
-    uint8_t  RightInvAllowReset;
+	uint8_t  InvAllowReset[INVERTERCOUNT];
+//	uint8_t  LeftInvAllowReset;
+//    uint8_t  RightInvAllowReset;
 	uint16_t ErrorReason;
 	uint16_t ErrorPlace;
 
@@ -377,13 +414,9 @@ struct ErrorCount {
 
 	uint16_t IVTWReceive;
 
-	uint16_t INVLReceiveStatus;
-	uint16_t INVLReceiveSpd;
-	uint16_t INVLReceiveTorque;
-
-	uint16_t INVRReceiveStatus;
-	uint16_t INVRReceiveSpd;
-	uint16_t INVRReceiveTorque;
+	uint16_t INVReceiveStatus[INVERTERCOUNT];
+	uint16_t INVReceiveSpd[INVERTERCOUNT];
+	uint16_t INVReceiveTorque[INVERTERCOUNT];
 
 	uint16_t PDMError;
 	uint16_t PDMTimeout;

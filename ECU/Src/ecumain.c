@@ -195,6 +195,42 @@ static int HardwareInit( void )
 	return returnval;
 }
 
+/* Captured Value */
+__IO uint32_t            uwIC2Value = 0;
+/* Duty Cycle Value */
+__IO uint32_t            uwDutyCycle = 0;
+/* Frequency Value */
+__IO uint32_t            uwFrequency = 0;
+
+
+/**
+  * @brief  Input Capture callback in non blocking mode
+  * @param  htim: TIM IC handle
+  * @retval None
+  */
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
+  {
+    /* Get the Input Capture value */
+    uwIC2Value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+
+    if (uwIC2Value != 0)
+    {
+      /* Duty cycle computation */
+      uwDutyCycle = ((HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1)) * 100) / uwIC2Value;
+
+      /* uwFrequency computation
+      TIM4 counter clock = (RCC_Clocks.HCLK_Frequency) */
+      uwFrequency = (HAL_RCC_GetHCLKFreq()) / uwIC2Value;
+    }
+    else
+    {
+      uwDutyCycle = 0;
+      uwFrequency = 0;
+    }
+  }
+}
 
 
 /*
@@ -207,6 +243,30 @@ static int HardwareInit( void )
   */
 int realmain(void)
 {
+#ifdef PWMSTEERINGTEST
+
+	MX_TIM8_Init(); // pwm
+
+	  if(HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_2) != HAL_OK)
+	  {
+	    /* Starting Error */
+	    Error_Handler();
+	  }
+
+	  /*##-5- Start the Input Capture in interrupt mode ##########################*/
+	  if(HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_1) != HAL_OK)
+	  {
+	    /* Starting Error */
+	    Error_Handler();
+	  }
+
+	  /* Infinite loop */
+	  while (1)
+	  {
+	  }
+#endif
+
+
   /* MCU Configuration--------------------------------------------------------*/
 
  int MainState = 0;

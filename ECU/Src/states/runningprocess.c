@@ -226,25 +226,15 @@ int RunningRequest( void )
 
 	sendPDM( 1 ); // buzzer only sounds when value changes from 0 to 1
 
-	if ( GetInverterState( CarState.LeftInvState ) == INVERTERON ) // should be in ready state, so request ON state.
+	for ( int i=0;i<INVERTERCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
 	{
-		command = InverterStateMachine( LeftInverter ); // request left inv state machine to On from ready.
-		CANSendInverter( command, 0, LeftInverter );
-	//	CAN_SendStatus(149,InverterLReceived,0);
-	} else
-	{
-	//	CAN_SendStatus(150,InverterLReceived,0);
+		if ( GetInverterState( CarState.Inverters[i].InvState ) == INVERTERON ) // should be in ready state, so request ON state.
+		{
+			command = InverterStateMachine( &CarState.Inverters[i] ); // request left inv state machine to On from ready.
+			CANSendInverter( command, 0, i );
+		}
 	}
 
-	if ( GetInverterState( CarState.RightInvState ) == INVERTERON )
-	{
-		command = InverterStateMachine( RightInverter );
-		CANSendInverter( command, 0, RightInverter );
-	//	CAN_SendStatus(149,InverterRReceived,0);
-	} else
-	{
-	//	CAN_SendStatus(150,InverterRReceived,0);
-	}
 	// else inverter not in expected state.
 	return 0;
 }
@@ -297,32 +287,28 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	// check data validity, // any critical errors, drop state.
 
+	for ( int i=0;i<INVERTERCOUNT;i++){
+		if  ( !( GetInverterState( CarState.Inverters[i].InvState ) == INVERTEROPERATING
+			  || GetInverterState( CarState.Inverters[i].InvState ) == INVERTERON ) )
+		{
+			Errors.ErrorPlace = 0xE0+i;
+			return OperationalErrorState;
+		}
 
-	if  ( !( GetInverterState( CarState.LeftInvState ) == INVERTEROPERATING
-		  || GetInverterState( CarState.LeftInvState ) == INVERTERON ) )
-	{
-		Errors.ErrorPlace = 0xEB;
-		return OperationalErrorState;
+		if ( readystate == 0 && GetInverterState( CarState.Inverters[i].InvState ) != INVERTEROPERATING )
+		{  // an inverter has changed state from operating after reaching it unexpectedly, fault status of some sort.
+			Errors.ErrorPlace = 0xE5+i;
+			return OperationalErrorState;
+		}
 	}
 
-	if  ( !( GetInverterState( CarState.RightInvState ) == INVERTEROPERATING
-		  || GetInverterState( CarState.RightInvState ) == INVERTERON ) )
-	{
-		Errors.ErrorPlace = 0xEC;
-		return OperationalErrorState;
+	bool moving = false;
+
+	for ( int i=0;i<INVERTERCOUNT;i++){
+		if ( CarState.Inverters[i].Speed > 100 ) moving = true;
 	}
 
-	if ( readystate == 0 &&
-		( GetInverterState( CarState.LeftInvState ) != INVERTEROPERATING
-		|| GetInverterState( CarState.RightInvState ) != INVERTEROPERATING ) )
-	{ // an inverter has changed state from operating after reaching it unexpectedly, fault status of some sort.
-		Errors.ErrorPlace = 0xED;
-		return OperationalErrorState;
-	}
-    
-    #define RTDMStopTime    3 // 3 seconds.ww
-
-	if ( CarState.SpeedRL < 100  && CarState.SpeedRR < 100 ) // untested
+	if ( !moving ) // untested
 	{
 		standstill++;
 		if ( standstill > RTDMStopTime*100 )
@@ -349,30 +335,21 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 		// drop inverter state before switching main state.
 
-		CarState.HighVoltageReady = 0;
+		for ( int i=0;i<INVERTERCOUNT;i++)
+		{
+			CANSendInverter( InverterStateMachine( &CarState.Inverters[i] ), 0, i );
+		}
 
-		CarState.LeftInvCommand = InverterStateMachine( LeftInverter );
-
-		CANSendInverter( CarState.LeftInvCommand, 0, LeftInverter );
-
-		CarState.RightInvCommand = InverterStateMachine( RightInverter );
-
-		CANSendInverter( CarState.RightInvCommand, 0, RightInverter );
-
-		CANSendInverter( CarState.LeftInvCommand, 0, LeftInverter );
-		HAL_Delay(1); // make sure inverters had time to react.
+		HAL_Delay(1); // make sure inverters had time to react before next cycle.
 		return IdleState; // check if need to drop HV in a special order.
 	}
 
-	if  ( GetInverterState( CarState.LeftInvState ) == INVERTEROPERATING && GetInverterState( CarState.RightInvState ) == INVERTEROPERATING  )
+	for ( int i=0;i<INVERTERCOUNT;i++)
 	{
-		readystate = 0;
+		CarState.Inverters[i].Torque_Req = 0; // APPS
 	}
 
-	CarState.Torque_Req_L = 0;  // APPS
-        CarState.Torque_Req_R = CarState.Torque_Req_L;
-
-	if ( readystate == 0 ) // only start to request torque when inverters ready.
+	if ( invertersStateCheck(INVERTEROPERATING) ) // returns true if all inverters match state == 0 ) // only start to request torque when inverters ready, which is signified by state of 0
 	{
         // check if limp mode allowed ( don't want for acceleration test ), and if so, if BMS has requested.
         
@@ -415,10 +392,12 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         // if allowed, process torque request, else request 0.
 
-        int Torque_Req = PedalTorqueRequest();  // APPS
+        int Torque_Req = PedalTorqueRequest();  // calculate request from APPS
 
-		CarState.Torque_Req_L = Torque_Req;
-		CarState.Torque_Req_R = Torque_Req;
+    	for ( int i=0;i<INVERTERCOUNT;i++)  // set all wheels to same torque request
+    	{
+    		CarState.Inverters[i].Torque_Req = Torque_Req;
+    	} // if any inverter is not ready, readystate will not be 0.
 
 #ifdef TORQUEVECTOR
 
@@ -497,19 +476,17 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		FanControl();
 #endif
 
-
 #ifdef NOTORQUEREQUEST
-		CANSendInverter( 0b00001111, 0, LeftInverter );
-	    CANSendInverter( 0b00001111, 0 , RightInverter );
-
+	    for ( int i=0;i<INVERTERCOUNT;i++)
+	    {
+			CANSendInverter( 0b00001111, 0, i );
+	    }
 #else
-
-		CANSendInverter( 0b00001111, CarState.Torque_Req_L, LeftInverter );
-		CANSendInverter( 0b00001111, CarState.Torque_Req_R , RightInverter );
+	    for ( int i=0;i<INVERTERCOUNT;i++)
+	    {
+			CANSendInverter( 0b00001111, &CarState.Inverters[i], i ); // send defined state request, else non consistent behaviour can happen.
+	    }
 #endif
-
-//		CANSendInverter( InverterStateMachine(LeftInverter), CarState.Torque_Req_L, LeftInverter );
-//		CANSendInverter( InverterStateMachine(RightInverter), CarState.Torque_Req_R , RightInverter );
 	}
 
 	// if drop status due to error, check if recoverable, or if limp mode possible.

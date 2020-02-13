@@ -3,9 +3,13 @@ unit CanTest;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CanChanEx, Vcl.ExtCtrls,
-  Vcl.Mask;
+//  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+//  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, CanChanEx, Vcl.ExtCtrls,
+//  Vcl.Mask;
+  Windows, Messages, SysUtils, Variants, Classes, Graphics,
+  Controls, Forms, Dialogs, StdCtrls, CanChanEx, ExtCtrls,
+  Mask;
+
 
 type
   TMainForm = class(TForm)
@@ -139,6 +143,7 @@ type
     SpeedFLR: TLabel;
     SpeedFRR: TLabel;
     HVForce: TButton;
+    IVTCAN1: TCheckBox;
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -740,11 +745,42 @@ begin
 end;
 
 procedure TMainForm.timer100msTimer(Sender: TObject);
+var
+  msg: array[0..5] of byte;
 begin
   if EmuMaster.checked then
   begin
         InverterRStat.Caption := IntToStr(InverterRStatus);
         InverterLStat.Caption := IntToStr(InverterLStatus);
+  end;
+  if IVTCAN1.checked then
+  begin
+  if Active then
+
+    msg[0] := 0;
+    msg[1] := 1;
+    msg[2] := 0;
+    msg[3] := 0;
+    msg[4] := 0;
+    msg[5] := 1;
+    with CanChannel1 do begin
+      if Active then
+      Check(Write($521, msg, 6 { sizeof(msg) }, 0), 'Write failed');
+    end;
+        msg[0] := 1;
+        msg[4] := $50;
+        msg[5] := $3C;
+
+    with CanChannel1 do begin
+      if Active then
+      Check(Write($522, msg, 6 { sizeof(msg) }, 0), 'Write failed');
+    end;
+        msg[0] := 2;
+    with CanChannel1 do begin
+      if Active then
+      Check(Write($523, msg, 6 { sizeof(msg) }, 0), 'Write failed');
+    end;
+
   end;
 end;
 
@@ -830,7 +866,7 @@ begin
            Append(adcdata)
         else
            ReWrite(adcdata);
-      DateTimeToString(formattedDateTime, 'hh:mm:ss.zzzzzz', System.SysUtils.Now);
+      DateTimeToString(formattedDateTime, 'hh:mm:ss.zzzzzz', SysUtils.Now);
 
       WriteLn(logfile,'Log: ' + formattedDateTime);
       WriteLn(adcdata,'ADC saved on: ' + formattedDateTime);
@@ -1078,7 +1114,7 @@ begin
 //  Output.Items.BeginUpdate;
   with CanChannel1 do begin
     while Read(id, msg, dlc, flag, time) >= 0 do begin
-      DateTimeToString(formattedDateTime, 'hh:mm:ss.zzzzzz', System.SysUtils.Now);
+      DateTimeToString(formattedDateTime, 'hh:mm:ss.zzzzzz', SysUtils.Now);
       if flag = $20 then
       begin
         Output.Items.Add('Error Frame');
@@ -1086,7 +1122,7 @@ begin
         Output.TopIndex := Output.Items.Count - 1;
         if logOpen then
         begin
-           WriteLn(logfile, 'Error Frame ' + TimeToStr(System.SysUtils.Now));
+           WriteLn(logfile, 'Error Frame ' + TimeToStr(SysUtils.Now));
         end;
 
       end

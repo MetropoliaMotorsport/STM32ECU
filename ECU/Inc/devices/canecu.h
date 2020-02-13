@@ -12,10 +12,13 @@
 
 // definition of CAN ID's for nodes - Bus definitions not currently used
 
+#define CANBUS0 					hfdcan2
+#define	CANBUS1					hfdcan1
+
 #define FLSpeed_COBID			0x71 // 112 // 0x70 orig
-#define FLSpeed_BUS				hfdcan1
+#define FLSpeed_BUS				CAN1
 #define FRSpeed_COBID			0x70 // 113  // 0x71 orig
-#define FRSpeed_BUS				hfdcan1
+#define FRSpeed_BUS				CAN1
 #define IVTCmd_ID		    	0x411
 #define IVTMsg_ID			    0x511
 #define IVTI_ID			    	0x521
@@ -29,12 +32,20 @@
 #define IVTBase_ID 				IVTI_ID
 
 
-#define IVT_BUS					hfdcan2
-#define BMS_BUS					hfdcan1
+#define IVT_BUS					CAN0
+#define BMS_BUS					CAN1
 #define PDM_BUS
+#define INV1_BUS				CAN0
+#define INV2_BUS				CAN0
 
-#define InverterL_COBID			0x7E // 126 // swap
-#define InverterR_COBID			0x7F // 127 // swap
+#define InverterRL_COBID			0x7E // 126 // swap
+#define InverterRR_COBID			0x7F // 127 // swap
+
+#ifdef HPF2020
+#define InverterFL_COBID			0x7C // 124 // swap
+#define InverterFR_COBID			0x7D // 125 // swap
+#endif
+
 #define Inverter_BUS			hfdcan2
 
 #define ECU_CAN_ID				0x20 // send +1
@@ -75,21 +86,16 @@ FDCAN_TxHeaderTypeDef TxHeaderTime, TxHeader1, TxHeader2;
 volatile struct CanState {
 	volatile uint8_t receiving;
 
-	volatile struct CanData InverterLERR;
-	volatile struct CanData InverterRERR;
+	volatile struct CanData InverterERR[INVERTERCOUNT];
 
-	volatile struct CanData InverterLPDO1;
-	volatile struct CanData InverterLPDO2;
-	volatile struct CanData InverterLPDO3;
-	volatile struct CanData InverterLPDO4;
-
-	volatile struct CanData InverterRPDO1;
-	volatile struct CanData InverterRPDO2;
-	volatile struct CanData InverterRPDO3;
-	volatile struct CanData InverterRPDO4;
+	volatile struct CanData InverterPDO1[INVERTERCOUNT];
+	volatile struct CanData InverterPDO2[INVERTERCOUNT];
+	volatile struct CanData InverterPDO3[INVERTERCOUNT];
+	volatile struct CanData InverterPDO4[INVERTERCOUNT];
 
 	volatile struct CanData InverterNMT;
 
+#ifndef HPF2020
 	volatile struct CanData FLeftSpeedERR;
 	volatile struct CanData FRightSpeedERR;
 
@@ -98,6 +104,7 @@ volatile struct CanState {
 
 	volatile struct CanData FLeftSpeedNMT;
 	volatile struct CanData FRightSpeedNMT;
+#endif
 
 	volatile struct CanData PDM;
 	volatile struct CanData PDMVolts;

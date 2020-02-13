@@ -43,8 +43,11 @@ void ResetStateData( void ) // set default startup values for global state value
 	CarState.FanPowered = 1;
 #endif
 
-	Errors.LeftInvAllowReset = 1;
-    Errors.RightInvAllowReset = 1;
+	for ( int i=0;i<INVERTERCOUNT;i++)
+	{
+		Errors.InvAllowReset[i] = 1;
+	}
+
 #ifdef FRONTSPEED
 	DeviceState.FrontSpeedSensors = ENABLED;
 	DeviceState.FLSpeed = OFFLINE;
@@ -74,8 +77,8 @@ void ResetStateData( void ) // set default startup values for global state value
 #endif
 
 	DeviceState.ADC = OFFLINE;
-	DeviceState.InverterL = OFFLINE;
-	DeviceState.InverterR = OFFLINE;
+	DeviceState.Inverters[INVERTERCOUNT] = OFFLINE;
+
 	DeviceState.BMS = OFFLINE;
 	DeviceState.PDM = OFFLINE;
 
@@ -90,48 +93,30 @@ void ResetStateData( void ) // set default startup values for global state value
 
 	usecanADC = 0;
 
-	CarState.HighVoltageAllowedR = 0;
-	CarState.HighVoltageAllowedL = 0;
-
 	CarState.HighVoltageReady = 0;
 
-	CarState.LeftInvState = 0xFF;
-	CarState.RightInvState = 0xFF;
-	CarState.LeftInvStateCheck = 0xFF;
-	CarState.RightInvStateCheck = 0xFF;
-	CarState.LeftInvStateCheck3 = 0xFF;
-	CarState.RightInvStateCheck3 = 0xFF;
-	CarState.LeftInvBadStatus = 1;
-	CarState.RightInvBadStatus = 1;
+	for ( int i=0;i<INVERTERCOUNT; i++)
+	{
+		CarState.Inverters[i].InvState = 0xFF;
+		CarState.Inverters[i].InvStateCheck = 0xFF;
+		CarState.Inverters[i].InvStateCheck3 = 0xFF;
+		CarState.Inverters[i].InvBadStatus = 1;
+		CarState.Inverters[i].Torque_Req = 0;
+		CarState.Inverters[i].Speed = 0;
+		CarState.Inverters[i].HighVoltageAllowed = 0;
 
-	CanState.InverterLERR.time = 0;
-	CanState.InverterRERR.time = 0;
-	CanState.InverterLPDO1.time = 0;
-	CanState.InverterRPDO1.time = 0;
-
-	CanState.InverterLPDO2.time = 0;
-	CanState.InverterRPDO2.time = 0;
-
-	CanState.InverterLPDO3.time = 0;
-	CanState.InverterRPDO3.time = 0;
+		CanState.InverterERR[i].time = 0;
+		CanState.InverterPDO1[i].time = 0;
+		CanState.InverterPDO2[i].time = 0;
+		CanState.InverterPDO3[i].time = 0;
+	}
 
 	CarState.Torque_Req_Max = 0;
 	CarState.Torque_Req_CurrentMax = 0;
 	CarState.LimpRequest = 0;
 	CarState.LimpActive = 0;
     CarState.LimpDisable = 0;
-    
 
-
-	CarState.SpeedRL = 0;
-	CarState.SpeedRR = 0;
-	CarState.SpeedFL = 0;
-	CarState.SpeedFR = 0;
-	CarState.SpeedRR = 0;
-	CarState.SpeedFL = 0;
-	CarState.SpeedFR = 0;
-	CarState.Torque_Req_L = 0;
-	CarState.Torque_Req_R = 0;
 
 	Errors.InverterError = 0; // reset logged errors.
 	Errors.ErrorPlace = 0;
@@ -206,14 +191,18 @@ int Startup( uint32_t OperationLoops  )
 
 //	if ( readystate == 1 ) return StartupState;
 
-	receiveINVStatus(LeftInverter);
-	receiveINVStatus(RightInverter);
+	uint8_t invertercount = 0;
 
-	receiveINVSpeed(LeftInverter);
-	receiveINVSpeed(RightInverter);
+	for ( int i=0;i<INVERTERCOUNT;i++) // speed isreceived
+	{
+		receiveINVStatus(&CarState.Inverters[i]);
+		receiveINVSpeed(&CarState.Inverters[i]);
+		receiveINVTorque(&CarState.Inverters[i]);
 
-	if (  (CarState.LeftInvState != 0xFF && CarState.RightInvState != 0xFF )
-		|| ( CarState.LeftInvStateCheck != 0xFF && CarState.RightInvStateCheck != 0xFF )	) // we've received status from inverters, don't send reset.
+		if ( CarState.Inverters[i].InvState != 0xFF ) invertercount++;
+	}
+
+	if ( invertercount == INVERTERCOUNT	) // we've received status from inverters, don't send reset.
 	{
 		return PreOperationalState;
 	} else if ( CAN_NMT( 0x81, 0x0 ) ) // sent NMT reset packet to can buses if not received inverter status.
@@ -245,11 +234,14 @@ uint16_t CheckErrors( void )
 		return 98; // PDM error, stop operation.
 	}
 
-	if ( !CarState.TestHV && (
-			GetInverterState( CarState.LeftInvState ) == INVERTERERROR
-		  || GetInverterState( CarState.RightInvState ) == INVERTERERROR ) )
+	for ( int i=0;i<INVERTERCOUNT;i++) // speed isreceived
 	{
-		return 99; // serious error, no operation allowed. -- inverter
+		// send request to enter operational mode
+		if ( !CarState.TestHV && CarState.Inverters[i].InvState == INVERTERERROR )
+		{
+			return 99; // serious error, no operation allowed. -- inverter
+		}
+
 	}
 
 	// inverter emergency message has been sent, halt.
@@ -314,10 +306,11 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 	{
 
 		CarState.HighVoltageReady = 0; // no high voltage allowed in this state.
-        CANSendInverter( 0b00000110, 0, LeftInverter );  // request inverters go to non operational state before cutting power.
 
-        CANSendInverter( 0b00000110, 0 , RightInverter );
-        
+		for ( int i=0;i<INVERTERCOUNT;i++){
+	        CANSendInverter( 0b00000110, 0, i );  // request inverters go to non operational state before cutting power.
+		}
+
         sendPDM( 0 ); //disable high voltage on error state;
         CAN_SendTimeBase();
         
@@ -349,7 +342,19 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
 	}
 
+#ifdef AUTORESET
+	bool allowreset = true;
+	bool invertererror = false;
 
+	for ( int i=0;i<INVERTERCOUNT;i++)
+	{
+		if ( DeviceState.Inverters[i] == ERROR ) invertererror = true;
+		if ( !Errors.InvAllowReset[i] ) allowreset = false;
+	}
+
+	// ( DeviceState.InverterRL == ERROR || DeviceState.InverterRR == ERROR )
+	// ( Errors.LeftInvAllowReset && Errors.RightInvAllowReset )
+#endif
 
 	// wait for restart request if allowed by error state.
 	if ( errorstatetime + 20000 < gettimer() // ensure error state is seen for at least 2 seconds.
@@ -361,9 +366,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 #endif
         && ( checkReset() == 1 // manual reset
 #ifdef AUTORESET
-        		|| ( ( DeviceState.InverterL == ERROR || DeviceState.InverterR == ERROR ) // or automatic reset if allowed inverter error.
-        			 && ( Errors.LeftInvAllowReset && Errors.RightInvAllowReset )
-				   )
+        		|| ( invertererror  && allowreset ) // or automatic reset if allowed inverter error.
 #endif
            )
 		)

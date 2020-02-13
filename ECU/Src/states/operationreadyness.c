@@ -22,25 +22,25 @@ int ReadyRequest( void )   // request data / invalidate existing data to ensure 
 
 	// request ready states from devices.
 
-	if ( ( CarState.LeftInvState != 0xFF && GetInverterState( CarState.LeftInvState ) != INVERTERREADY) || InverterSent == 0  )
+	for ( int i=0;i<INVERTERCOUNT;i++) // speed isreceived
 	{
-		command = InverterStateMachine( LeftInverter ); // request left inv state machine to pre operation readyness if not already
-		CANSendInverter( command, 0, LeftInverter );
+		// send request to enter operational mode
+		if ( ( CarState.Inverters[i].InvState != 0xFF && GetInverterState( CarState.Inverters[i].InvState ) != INVERTERREADY) ) // || InverterSent == 0  ) // uncomment if doesn't work anymore, can't see why set.
+		{
+			command = InverterStateMachine( &CarState.Inverters[i] ); // request left inv state machine to pre operation readyness if not already
+			CANSendInverter( command, 0, i );
+		}
 	}
 
-	if (( CarState.LeftInvState != 0xFF && GetInverterState( CarState.RightInvState ) != INVERTERREADY ) || InverterSent == 0 )
-	{
-		command = InverterStateMachine( RightInverter ); //  request right inv state machine to pre operation readyness if not already
-		CANSendInverter( command, 0, RightInverter );
-	}
+	InverterSent = 0; // invertersent not being set to 1, means always sending command? should only be sent once to request change, unless state is still wrong.
 
-	InverterSent = 0;
-
+#ifndef HPF2020
 	if (DeviceState.FrontSpeedSensors == ENABLED )
 	{
 		DeviceState.FLSpeed = sickState( FLSpeed_COBID );
 		DeviceState.FRSpeed = sickState( FRSpeed_COBID );
 	}
+#endif
 	// send BMS - currently no sync request, just sending data
 
 	// send PDM - currently no sync request, just sending data.
@@ -59,25 +59,40 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 {
 	if ( returnvalue == 0xFFFF)
 	{
-		returnvalue = (0x1 << InverterLReceived)+
-					(0x1 << InverterRReceived)+
+		returnvalue =
 					(0X1 << PDMReceived)+
 					(0X1 << BMSReceived)+
 					(0X1 << IVTReceived)+
+#ifndef HPF2020
 					(0x1 << FLeftSpeedReceived)+
 					(0x1 << FRightSpeedReceived)+
+#endif
 					(0x1 << PedalADCReceived);//
+
+#ifdef HPF2020
+		for ( int i=0;i<INVERTERCOUNT;i++)
+		{
+			returnvalue += (0x1 << (InverterReceived+i));
+		}
+#endif
+
+
 			//(0x1 << YAWOnlineBit);
 	}
 
 	// change order, get status from pdo3, and then compare against pdo2?, 2 should be more current being higher priority
 
-	receiveINVStatus(LeftInverter);
-	receiveINVStatus(RightInverter);
+	for ( int i=0;i<INVERTERCOUNT;i++) // speed isreceived
+	{
+		receiveINVStatus(&CarState.Inverters[i]);
 
-	if ( receiveINVSpeed(LeftInverter) ) returnvalue &= ~(0x1 << InverterLReceived); // speed should always be seen every cycle in RTDM
-	if ( receiveINVSpeed(RightInverter) ) returnvalue &= ~(0x1 << InverterRReceived);
+		if ( receiveINVSpeed(&CarState.Inverters[i]) )
+			returnvalue &= ~(0x1 << (InverterReceived+i));  // speed should always be seen every cycle in RTDM
 
+		receiveINVTorque(&CarState.Inverters[i]);
+	}
+
+#ifndef HPF2020
 	if ( DeviceState.FrontSpeedSensors == ENABLED)
 	{
 
@@ -95,6 +110,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 		returnvalue &= ~(0x1 << FLeftSpeedReceived); // currently setting all to zero to allow quick testing
 		returnvalue &= ~(0x1 << FRightSpeedReceived); // currently setting all to zero to allow quick testing
 	}
+#endif
 
 	receiveBMS();
 
@@ -189,6 +205,15 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 		return OperationalErrorState; // something has triggered an error, drop to error state to deal with it.
 	}
 
+
+	bool invready = true;
+	for ( int i=0;i<INVERTERCOUNT;i++)
+	{
+		if ( GetInverterState(CarState.Inverters[i].InvState) != INVERTERREADY ) invready = false;
+		// if any inverter has yet to be put in ready status, we are not ready.
+		//  || ( GetInverterState(CarState.Inverters[i].InvState) == INVERTERONLINE
+	}
+
 	if (received != 0 )
 	{ // activation requested but not everything is in satisfactory condition to continue
 
@@ -213,11 +238,8 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 			return OperationalReadyState; // maintain current state.
 		}
 	}
-	else if ( ( GetInverterState(CarState.LeftInvState) == INVERTERREADY && GetInverterState(CarState.RightInvState) == INVERTERREADY )  // 2  // Ready to switch on
-	//	 || ( GetInverterState(CarState.LeftInvState) == INVERTERONLINE && GetInverterState(CarState.RightInvState) == INVERTERONLINE )
-		 )
-		// everything is ok to continue.
-	{
+	else if ( invready ) // Ready to switch on
+	{ 		// everything is ok to continue.
 //		CarState.Torque_Req_Max = ADCState.DrivingMode; // set max torque request before enter operational state.
 //		CarState.Torque_Req_CurrentMax = ADCState.DrivingMode;
 		return IdleState; // ready to move onto TS activated but not operational state, idle waiting for RTDM activation.

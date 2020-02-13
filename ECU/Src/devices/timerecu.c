@@ -64,7 +64,6 @@ void TIM6_IRQHandler()
     HAL_TIM_IRQHandler(&htim6);
 }
 
-
 /**
  * @brief timer interrupt to keep a timebase and process button debouncing.
  */

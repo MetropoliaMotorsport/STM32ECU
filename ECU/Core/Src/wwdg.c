@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -31,7 +31,7 @@ void MX_WWDG1_Init(void)
 {
 
   hwwdg1.Instance = WWDG1;
-  hwwdg1.Init.Prescaler = WWDG_PRESCALER_1;
+  hwwdg1.Init.Prescaler = WWDG_PRESCALER_32;
   hwwdg1.Init.Window = 64;
   hwwdg1.Init.Counter = 64;
   hwwdg1.Init.EWIMode = WWDG_EWI_DISABLE;

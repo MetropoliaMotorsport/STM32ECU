@@ -99,16 +99,22 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 //	FLeftSpeedOnline
 //	FRightSpeedOnline
 //	PedalsADC = 1;
-if ( returnvalue == 0xFFFF ) // first loop, set what devices expecting.
-{
-	 returnvalue = (0x1 << FLeftSpeedReceived) + // initialise return value to all devices in error state ( bit set )
-					  (0x1 << FRightSpeedReceived) +
-					  (0x1 << InverterReceived)+
-					  (0x1 << BMSReceived)+
-					  (0x1 << PDMReceived)+
-					  (0x1 << PedalADCReceived)+
-					  (0x1 << IVTReceived);
-}
+	if ( returnvalue == 0xFFFF ) // first loop, set what devices expecting.
+	{
+		 returnvalue =
+	#ifndef HPF2020
+						  (0x1 << FLeftSpeedReceived) + // initialise return value to all devices in error state ( bit set )
+						  (0x1 << FRightSpeedReceived) +
+	#endif
+						  (0x1 << Inverter1Received)+
+#ifdef TWOINVERTERMODULES
+						  (0x1 << Inverter2Received)+
+#endif
+						  (0x1 << BMSReceived)+
+						  (0x1 << PDMReceived)+
+						  (0x1 << PedalADCReceived)+
+						  (0x1 << IVTReceived);
+	}
 
 #ifdef STMADC
 #endif
@@ -124,6 +130,7 @@ if ( returnvalue == 0xFFFF ) // first loop, set what devices expecting.
 		   returnvalue |= 0x1 << PedalADCReceived;
 	}
 
+#ifndef HPF2020
 	if ( DeviceState.FrontSpeedSensors == DISABLED ) // if we've decided to operate without speed sensors, don't process them
 	{
 		returnvalue &= ~(0x1 << FLeftSpeedReceived);
@@ -137,16 +144,30 @@ if ( returnvalue == 0xFFFF ) // first loop, set what devices expecting.
 //		receiveSick(FLSpeed_COBID);
 //		receiveSick(FRSpeed_COBID);
 	}
+#endif
 
-	if ( receiveINVNMT(LeftInverter) )
+
+	if ( receiveINVNMT(&CarState.Inverters[Inverter1]))
 	{
-//		if ( ( CarState.LeftInvState != 0xFF || CarState.RightInvState != 0xFF ) )
-		if ( GetInverterState(CarState.LeftInvState) >= 0 || GetInverterState(CarState.RightInvState) >= 0 )
-		{
-			returnvalue &= ~(0x1 << InverterReceived);
-		} else returnvalue |= 0x1 << InverterReceived;
+	//		if ( ( CarState.LeftInvState != 0xFF || CarState.RightInvState != 0xFF ) )
+			if ( GetInverterState(CarState.Inverters[Inverter1].InvState) >= 0 || GetInverterState(CarState.Inverters[Inverter1+1].InvState) >= 0 )
+			{
+				returnvalue &= ~(0x1 << Inverter1Received);
+			} else returnvalue |= 0x1 << Inverter1Received;
 
 	}
+
+#ifdef TWOINVERTERMODULES
+	if ( receiveINVNMT(CarState.Inverters[Inverter2]))
+	{
+	//		if ( ( CarState.LeftInvState != 0xFF || CarState.RightInvState != 0xFF ) )
+			if ( GetInverterState(CarState.Inverters[Inverter2].InvState) >= 0 || GetInverterState(CarState.Inverters[Inverter2+1].InvState) >= 0 )
+			{
+				returnvalue &= ~(0x1 << Inverter2Received);
+			} else returnvalue |= 0x1 << Inverter2Received;
+
+	}
+#endif
 
 	if ( receivePDM() )// && !errorPDM() )
 	{
@@ -264,8 +285,10 @@ int PreOperation( uint32_t OperationLoops  )
 	// allow APPS checking before RTDM
 	int Torque_Req = PedalTorqueRequest();
 
-	CarState.Torque_Req_L = Torque_Req;
-	CarState.Torque_Req_R = Torque_Req;
+	for ( int i=0;i<INVERTERCOUNT;i++){
+		CarState.Inverters[i].Torque_Req = Torque_Req;
+	}
+
 
 #ifdef TORQUEVECTOR
 		TorqueVectorProcess( Torque_Req );
@@ -279,14 +302,12 @@ int PreOperation( uint32_t OperationLoops  )
 
 	if ( !CarState.TestHV )
 	{
-		receiveINVStatus(LeftInverter);
-		receiveINVStatus(RightInverter);
-
-		receiveINVSpeed(LeftInverter);
-		receiveINVSpeed(RightInverter);
-
-		receiveINVTorque(LeftInverter);
-		receiveINVTorque(RightInverter);
+		for ( int i=0;i<INVERTERCOUNT;i++)
+		{
+			receiveINVStatus(&CarState.Inverters[i]);
+			receiveINVSpeed(&CarState.Inverters[i]);
+			receiveINVTorque(&CarState.Inverters[i]);
+		}
 	}
 
 	if ( !CarState.ShutdownSwitchesClosed )
@@ -298,10 +319,15 @@ int PreOperation( uint32_t OperationLoops  )
 		setOutput(TSOFFLED_Output,LEDON);
 	}
 
+	bool invonline = true;
+	for ( int i=0;i<INVERTERCOUNT;i++)
+	{
+		if ( CarState.Inverters[i].InvState == 0xFF ) invonline = false; // if any inverter has yet to be put in a status, all inverters are not ready.
+	}
+
 	if ( !errorPDM()
 			&& preoperationstate == 0
-			&& CarState.LeftInvState != 0xFF
-			&& CarState.RightInvState != 0xFF // everything is ready to move to next state.
+			&& invonline // everything is ready to move to next state.
 #ifdef SHUTDOWNSWITCHCHECK
             && CarState.ShutdownSwitchesClosed // only allow exiting error state if shutdown switches closed. - maybe move to only for auto
 #endif
@@ -321,8 +347,11 @@ int PreOperation( uint32_t OperationLoops  )
 			if ( CheckActivationRequest() && RequestState != TestingState ) // check if driver has requested activation and if so proceed
 			{
 				OperationLoops = 0;
-				CarState.Torque_Req_L = 0;
-				CarState.Torque_Req_R = 0;
+
+				for ( int i=0;i<INVERTERCOUNT;i++){
+					CarState.Inverters[i].Torque_Req = 0;
+				}
+
 				setOutput(RTDMLED_Output,LEDOFF);
 				return OperationalReadyState; // normal operational state on request
 

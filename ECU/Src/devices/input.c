@@ -171,26 +171,26 @@ void setupButtons(void)
 /*	Input[Input1].port = Input1_GPIO_Port;
 	Input[Input1].pin = Input1_Pin;
 
-	Input[Input2].port = Input2_GPIO_Port;
+	Input[Input2].port = Input2_GPIO_Port; // red button.
 	Input[Input2].pin = Input2_Pin;
 
 	Input[Input3].port = Input3_GPIO_Port;
 	Input[Input3].pin = Input3_Pin;
 
-	Input[Input4].port = Input4_GPIO_Port;
+	Input[Input4].port = Input4_GPIO_Port; ???? Input 4 = Green button.
 	Input[Input4].pin = Input4_Pin; */
 
 	Input[Input5].port = Input5_GPIO_Port;
 	Input[Input5].pin = Input5_Pin;
 
-	Input[Input6].port = Input6_GPIO_Port;
+	Input[Input6].port = Input6_GPIO_Port; // yellow button.
 	Input[Input6].pin = Input6_Pin;
 
 /*	Input[Input7].port = Input7_GPIO_Port;
 	Input[Input7].pin = Input7_Pin;
-
+*/
 	Input[Input8].port = Input8_GPIO_Port;
-	Input[Input8].pin = Input8_Pin; */
+	Input[Input8].pin = Input8_Pin;
 
 	for ( int i=0; i < 9; i++)
 	{

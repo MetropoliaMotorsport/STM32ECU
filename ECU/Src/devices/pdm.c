@@ -197,7 +197,13 @@ int sendPDM( int buzzer )
 #ifdef PDMSECONDMESSAGE
 	CANSendPDMFAN();
 #endif
-	if ( ( CarState.HighVoltageAllowedL && CarState.HighVoltageAllowedR && CarState.HighVoltageReady ) || CarState.TestHV )
+	bool HVR = true;
+	for ( int i = 0;i<INVERTERCOUNT;i++)
+	{
+		if ( ! CarState.Inverters[i].HighVoltageAllowed) HVR = false;
+	} // HVR will be false if any of the inverters are not in true state.
+
+	if ( ( HVR && CarState.HighVoltageReady ) || CarState.TestHV )
 		return CANSendPDM(10,buzzer);
 	else
 		return CANSendPDM(0,buzzer);

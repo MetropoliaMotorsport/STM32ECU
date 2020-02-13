@@ -10,7 +10,6 @@
 
 int TSActiveProcess( uint32_t OperationLoops );
 int TSActiveRequest( void );
-int TSActiveINVLRequest( void );
-int TSActiveINVRRequest( void );
+int TSActiveINVRequest( InverterState *Inverter );
 
 #endif /* TSACTIVEPROCESS_H_ */

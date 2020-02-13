@@ -239,24 +239,17 @@ void FDCAN2_start(void)
 
   sFilterConfig2.FilterType = FDCAN_FILTER_MASK;  // configure CANOpen device filters by mask.
 
-  sFilterConfig2.FilterIndex++;
-  sFilterConfig2.FilterID1 = InverterL_COBID;
-  sFilterConfig2.FilterID2 = 0b00001111111; // 0x1fe - 0x1ff   0x2fe  - 0x2ff    0x77e - 0x77f
-
-  if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
+  for ( int i = 0;i<INVERTERCOUNT;i++)
   {
-    // Filter configuration Error
-    Error_Handler();
-  }
+	  sFilterConfig2.FilterIndex++;
+	  sFilterConfig2.FilterID1 = CarState.Inverters[i].COBID;
+	  sFilterConfig2.FilterID2 = 0b00001111111; // 0x1fe - 0x1ff   0x2fe  - 0x2ff    0x77e - 0x77f
 
-  sFilterConfig2.FilterIndex++;
-  sFilterConfig2.FilterID1 = InverterR_COBID;
-  sFilterConfig2.FilterID2 = 0b00001111111; // 0x1fe - 0x1ff   0x2fe  - 0x2ff    0x77e - 0x77f
-
-  if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
-  {
-    // Filter configuration Error
-    Error_Handler();
+	  if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
+	  {
+	    // Filter configuration Error
+	    Error_Handler();
+	  }
   }
 
   /*
@@ -292,16 +285,15 @@ int ResetCanReceived( void ) // only wait for new data since request.
 {
 	// inverters.
 
-	ResetCanData(&CanState.InverterLPDO1);
-	ResetCanData(&CanState.InverterRPDO1);
-	ResetCanData(&CanState.InverterLPDO2);
-	ResetCanData(&CanState.InverterRPDO2);
-	ResetCanData(&CanState.InverterLPDO3);
-	ResetCanData(&CanState.InverterRPDO3);
-	ResetCanData(&CanState.InverterLPDO4);
-	ResetCanData(&CanState.InverterRPDO4);
-	ResetCanData(&CanState.InverterLERR);
-	ResetCanData(&CanState.InverterRERR);
+	for ( int i=0;i<INVERTERCOUNT;i++)
+	{
+		ResetCanData(&CanState.InverterPDO1[i]);
+		ResetCanData(&CanState.InverterPDO2[i]);
+		ResetCanData(&CanState.InverterPDO3[i]);
+		ResetCanData(&CanState.InverterPDO4[i]);
+		ResetCanData(&CanState.InverterERR[i]);
+	}
+
 
 	// bms
 
@@ -324,13 +316,14 @@ int ResetCanReceived( void ) // only wait for new data since request.
 	ResetCanData(&CanState.IVTAs);
 
 	// front wheel encoders
-
+#ifndef HPF2020
 	ResetCanData(&CanState.FLeftSpeedERR);
 	ResetCanData(&CanState.FRightSpeedERR);
 	ResetCanData(&CanState.FLeftSpeedPDO1);
 	ResetCanData(&CanState.FRightSpeedPDO1);
 	ResetCanData(&CanState.FLeftSpeedNMT);
 	ResetCanData(&CanState.FRightSpeedNMT);
+#endif
 	return 0;
 }
 
@@ -561,16 +554,14 @@ char CAN_SendTimeBase( void )
 
 	uint32_t time = gettimer();
 	uint8_t CANTxData[8] = {
-			CarState.LeftInvState,
+			CarState.Inverters[RearLeftInverter].InvState,
 			Errors.CANSendError1,
-			CarState.RightInvState,
+			CarState.Inverters[RearRightInverter].InvState,
 			Errors.CANSendError2,
-//			getByte(Errors.CANCount1,0),
-//			getByte(Errors.CANCount1,1),
-//			getByte(Errors.CANCount2,0),
-//			getByte(Errors.CANCount2,1),
-			getByte(time,0),
-			getByte(time,1),
+			CarState.Inverters[FrontLeftInverter].InvState,
+			CarState.Inverters[FrontRightInverter].InvState,
+	//		getByte(time,0),
+	//		getByte(time,1),
 			getByte(time,2),
 			getByte(time,3)
 	};
@@ -693,7 +684,13 @@ char CAN_SENDINVERTERERRORS( void )
 	TxHeaderHV.MessageMarker = 0;
 
     uint8_t CANTxData[8] =
-    { CarState.LeftInvState, CarState.RightInvState, CarState.LeftInvStateCheck, CarState.RightInvStateCheck,0,0,0,0 };
+    { CarState.Inverters[RearLeftInverter].InvState,CarState.Inverters[RearRightInverter].InvState, CarState.Inverters[RearLeftInverter].InvStateCheck, CarState.Inverters[RearRightInverter].InvStateCheck,
+#ifndef HPF2020
+			0,0,0,0
+#else
+			CarState.Inverters[FrontRightInverter].InvState, CarState.Inverters[FrontLeftInverter].InvStateCheck, CarState.Inverters[FrontRightInverter].InvStateCheck
+#endif
+    };
 
 #ifdef CAN2ERRORSTATUS
 	CAN2Send( &TxHeaderHV, CANTxData );
@@ -902,14 +899,12 @@ char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter )
 {
 	FDCAN_TxHeaderTypeDef TxHeaderInverter;
 
+	TxHeaderInverter.Identifier = 0x400 + CarState.Inverters[inverter].COBID;
 
-	if(inverter==LeftInverter)
-	{
-		TxHeaderInverter.Identifier = 0x400 + InverterL_COBID; // 0x47e
-	} else
-	{
-		TxHeaderInverter.Identifier = 0x400 + InverterR_COBID; // 0x47f
-	}
+#ifdef HPF2019
+left  // 0x47e
+right // 0x47f
+#endif
 
 	TxHeaderInverter.IdType = FDCAN_STANDARD_ID;
 	TxHeaderInverter.TxFrameType = FDCAN_DATA_FRAME;
@@ -948,7 +943,15 @@ char CAN_SendErrors( void )
 #ifndef sharedCAN
 #endif
 
-	uint8_t CANTxData[8] = {0,0,0,0,CarState.LeftInvState,CarState.RightInvState,CarState.LeftInvStateCheck,CarState.RightInvStateCheck}; // 0 sends command to all nodes.
+	uint8_t CANTxData[8] = { CarState.Inverters[RearLeftInverter].InvState,CarState.Inverters[RearRightInverter].InvState, CarState.Inverters[RearLeftInverter].InvStateCheck, CarState.Inverters[RearRightInverter].InvStateCheck,
+#ifndef HPF2020
+			0,0,0,0
+#else
+			CarState.Inverters[FrontRightInverter].InvState, CarState.Inverters[FrontLeftInverter].InvStateCheck, CarState.Inverters[FrontRightInverter].InvStateCheck
+#endif
+    };
+//  old message
+//	uint8_t CANTxData[8] = {0,0,0,0,CarState.RearLeftInvState,CarState.RearRightInvState,CarState.RearLeftInvStateCheck,CarState.RearRightInvStateCheck}; // 0 sends command to all nodes.
 	storeBEint16(Errors.ErrorPlace, &CANTxData[0]);
 	storeBEint16(Errors.ErrorReason, &CANTxData[2]);
 #ifdef CAN2ERRORSTATUS
@@ -983,8 +986,8 @@ char CANLogDataFast( void )
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7C6;
-	storeBEint16(CarState.Torque_Req_L, &CANTxData[0]); 	//torq_req_l can0 0x7C6 0,16be
-	storeBEint16(CarState.Torque_Req_R, &CANTxData[2]); 	//torq_req_r can0 0x7C6 16,16be
+	storeBEint16(CarState.Inverters[RearLeftInverter].Torque_Req, &CANTxData[0]); 	//torq_req_l can0 0x7C6 0,16be
+	storeBEint16(CarState.Inverters[RearRightInverter].Torque_Req, &CANTxData[2]); 	//torq_req_r can0 0x7C6 16,16be
 
 	storeBEint16(ADCState.BrakeF, &CANTxData[4]); 	//brk_press_f can0 0x7C6 32,16bee
 	storeBEint16(ADCState.BrakeR, &CANTxData[6]); 	//brk_press_r can0 0x7C6 48,16be
@@ -993,9 +996,9 @@ char CANLogDataFast( void )
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7C7;
-	storeBEint32(CarState.SpeedRL, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
+	storeBEint32(CarState.Inverters[RearLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
 
-	storeBEint32(CarState.SpeedRR, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
+	storeBEint32(CarState.Inverters[RearRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
 	CAN1Send( &TxHeaderLog, CANTxData );
 
 	resetCanTx(CANTxData);
@@ -1010,8 +1013,8 @@ char CANLogDataFast( void )
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7C9;
-	storeBEint16(CarState.LeftInvTorque, &CANTxData[0]); //actual_torque_left_inverter_raw can0 0x7c9 0,16be
-	storeBEint16(CarState.RightInvTorque, &CANTxData[2]); //actual_torque_right_inverter_raw can0 0x7c9 16,16be
+	storeBEint16(CarState.Inverters[RearLeftInverter].InvTorque, &CANTxData[0]); //actual_torque_left_inverter_raw can0 0x7c9 0,16be
+	storeBEint16(CarState.Inverters[RearRightInverter].InvTorque, &CANTxData[2]); //actual_torque_right_inverter_raw can0 0x7c9 16,16be
 
 	CAN1Send( &TxHeaderLog, CANTxData );
 
@@ -1042,16 +1045,22 @@ char CANLogDataFast( void )
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7C7;
-	storeBEint32(CarState.SpeedRL, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
+	storeBEint32(CarState.Inverters[RearLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
 
-	storeBEint32(CarState.SpeedRR, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
+	storeBEint32(CarState.Inverters[RearRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
 	CAN1Send( &TxHeaderLog, CANTxData );
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7CC;
+#ifndef HPF2020
 	storeBEint32(CarState.SpeedFL, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
 
 	storeBEint32(CarState.SpeedFR, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
+#else
+	storeBEint32(CarState.Inverters[FrontLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
+
+	storeBEint32(CarState.Inverters[FrontRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
+#endif
 	CAN1Send( &TxHeaderLog, CANTxData );
 
 
@@ -1096,6 +1105,46 @@ void SetCanData(volatile struct CanData *data, uint8_t *CANRxData, uint32_t Data
 
 */
 
+bool processInvMessage( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8])
+{
+	bool processed = false;
+
+	for ( int i=0;i<INVERTERCOUNT;i++)
+	{
+		 if ( RxHeader->Identifier - 0x80 - CarState.Inverters[i].COBID == 0 )
+		 {
+				processINVError( CANRxData, RxHeader->DataLength, &CarState.Inverters[i]);
+				processed = true;
+		 }
+
+		 if (RxHeader->Identifier - 0x280 - CarState.Inverters[i].COBID == 0)  // 0x2FE,16,32LE -> Speed_Right_Inverter
+		 {
+				processINVSpeed(CANRxData, RxHeader->DataLength, &CarState.Inverters[i]);
+				processed = true;
+		 }
+
+		 if ( RxHeader->Identifier - 0x380 - CarState.Inverters[i].COBID == 0)  // 0x3fe/f and 0x4fe/f also sent by inverters, ignored in elektrobit.
+		 {
+				processINVTorque(CANRxData, RxHeader->DataLength, &CarState.Inverters[i]);
+				processed = true;
+		 }
+
+		 if ( RxHeader->Identifier - 0x480 - CarState.Inverters[i].COBID == 0)  // not used
+		 {
+			  processed = true;
+		 }
+
+		 if ( RxHeader->Identifier - 0x700 - CarState.Inverters[i].COBID == 0)  // 0x77E,8,16LE -> // inverter NMT monitoring id // layout of inverters for HPF2020 - one handles each side of car.
+		 {
+				processINVNMT(CANRxData, RxHeader->DataLength, &CarState.Inverters[i]);
+				processed = true;
+		 }
+	}
+
+	return processed;
+
+}
+
 /**
  * interrupt rx callback for canbus messages
  */
@@ -1130,6 +1179,12 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 		}
 
 		// process incoming packet
+
+
+	//
+#if INV1_BUS == CAN1
+		if ( !processInvMessage( &RxHeader, CANRxData ) )
+#endif
 		switch ( RxHeader.Identifier )
         {
 			case 0x9 :  // BMS OpMode
@@ -1282,7 +1337,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 			case  0x0 :  // id 0x0,0,8 -> nmt_status // master should not be receiving, only sending.
 				break;
 // speed sensor CAN ID's
-
+#ifdef FRONTSPEED
 			case 0x80 + FLSpeed_COBID :
 //				CanState.FLeftSpeedERR
 				break;
@@ -1307,52 +1362,8 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				processSickNMT(CANRxData, RxHeader.DataLength, FRSpeed_COBID );
 				break;
 
+#endif
 // Inverter CAN ID's
-			case 0x80 + InverterL_COBID :
-			    processINVError( CANRxData, RxHeader.DataLength, LeftInverter );
-				break;
-
-			case 0x80 + InverterR_COBID :
-                processINVError( CANRxData, RxHeader.DataLength, RightInverter );
-		//		SetCanData((struct CanData *)&CanState.InverterRERR, CANRxData, RxHeader.DataLength );
-				break;
-
-			case 0x180 + InverterL_COBID : // 0x1FE,0,16LE -> Status_Right_Inverter
-			  	processINVStatus(CANRxData, RxHeader.DataLength, LeftInverter );
-				break;
-
-			case 0x180 + InverterR_COBID :  // 0x1FF,0,16LE -> Status_Left_Inverter;
-			    processINVStatus(CANRxData, RxHeader.DataLength, RightInverter );
-				break;
-
-			case 0x280 + InverterL_COBID :  // 0x2FE,16,32LE -> Speed_Right_Inverter
-			    processINVSpeed(CANRxData, RxHeader.DataLength, LeftInverter );
-				break;
-
-			// 0x3fe/f and 0x4fe/f also sent by inverters, ignored in elektrobit.
-
-			case 0x380 + InverterL_COBID :
-                processINVTorque(CANRxData, RxHeader.DataLength, LeftInverter );
-				break;
-                
-			case 0x480 + InverterL_COBID :  // not used
-				break;
-
-			case 0x280 + InverterR_COBID :  // 0x2FF,16,32LE -> Speed_Left_Inverter
-				processINVSpeed(CANRxData, RxHeader.DataLength, RightInverter );
-				break;
-
-			case 0x380 + InverterR_COBID :
-			    processINVTorque(CANRxData, RxHeader.DataLength, RightInverter );
-				break;
-                
-			case 0x480 + InverterR_COBID : // not used
-				break;
-
-			case 0x700 + InverterL_COBID : // 0x77E,8,16LE -> // inverter NMT monitoring id
-			    processINVNMT(CANRxData, RxHeader.DataLength, LeftInverter );
-				/* Actual_Torque_Right_Inverter_Raw.data.longint = CANRxData[2]*256+CANRxData[1];? looks like wrong ID */
-				break;
 
 			default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
 				break;
@@ -1404,8 +1415,10 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 			bufferlevel++;
 		}
 
-
 		// check rest of header data? Can2 is inverter information
+#if INV1_BUS == CAN0
+		if ( !processInvMessage( &RxHeader, CANRxData ) )
+#endif
 		switch ( RxHeader.Identifier ){ // identify which data packet we are processing.
 
 		// IVT
@@ -1443,55 +1456,6 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 					case IVTWh_ID : // IVT WattHours 0x528
 						processIVT(CANRxData, RxHeader.DataLength, IVTWh_ID );
 						break;
-
-
-						// Inverter CAN ID's
-									case 0x80 + InverterL_COBID :
-									    processINVError( CANRxData, RxHeader.DataLength, LeftInverter );
-										break;
-
-									case 0x80 + InverterR_COBID :
-						                processINVError( CANRxData, RxHeader.DataLength, RightInverter );
-								//		SetCanData((struct CanData *)&CanState.InverterRERR, CANRxData, RxHeader.DataLength );
-										break;
-
-									case 0x180 + InverterL_COBID : // 0x1FE,0,16LE -> Status_Right_Inverter
-									  	processINVStatus(CANRxData, RxHeader.DataLength, LeftInverter );
-										break;
-
-									case 0x180 + InverterR_COBID :  // 0x1FF,0,16LE -> Status_Left_Inverter;
-									    processINVStatus(CANRxData, RxHeader.DataLength, RightInverter );
-										break;
-
-									case 0x280 + InverterL_COBID :  // 0x2FE,16,32LE -> Speed_Right_Inverter
-									    processINVSpeed(CANRxData, RxHeader.DataLength, LeftInverter );
-										break;
-
-									// 0x3fe/f and 0x4fe/f also sent by inverters, ignored in elektrobit.
-
-									case 0x380 + InverterL_COBID :
-						                processINVTorque(CANRxData, RxHeader.DataLength, LeftInverter );
-										break;
-
-									case 0x480 + InverterL_COBID :  // not used
-										break;
-
-									case 0x280 + InverterR_COBID :  // 0x2FF,16,32LE -> Speed_Left_Inverter
-										processINVSpeed(CANRxData, RxHeader.DataLength, RightInverter );
-										break;
-
-									case 0x380 + InverterR_COBID :
-									    processINVTorque(CANRxData, RxHeader.DataLength, RightInverter );
-										break;
-
-									case 0x480 + InverterR_COBID : // not used
-										break;
-
-									case 0x700 + InverterL_COBID : // 0x77E,8,16LE -> // inverter NMT monitoring id
-									    processINVNMT(CANRxData, RxHeader.DataLength, LeftInverter );
-										/* Actual_Torque_Right_Inverter_Raw.data.longint = CANRxData[2]*256+CANRxData[1];? looks like wrong ID */
-										break;
-
 			default : // any other received packets, shouldn't be any due to filters.
 				break;
 		}

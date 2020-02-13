@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -40,13 +40,7 @@ void MX_ADC1_Init(void)
   /** Common config 
   */
   hadc1.Instance = ADC1;
-  uint16_t volatile * const chiprevision = (uint16_t *) DEBUGMCU+1;
-
-  if ( *chiprevision==REVV ) // revision V
-	  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV8;
-  else // revision Y
-	  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV16;
-
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV16;
   hadc1.Init.Resolution = ADC_RESOLUTION_16B;
   hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
@@ -153,13 +147,7 @@ void MX_ADC3_Init(void)
   /** Common config 
   */
   hadc3.Instance = ADC3;
-  uint16_t volatile * const chiprevision = (uint16_t *) DEBUGMCU+1;
-
-  if ( *chiprevision==REVV ) // revision V
-	  hadc3.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV8;
-  else // revision Y
-	  hadc3.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV16;
-
+  hadc3.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV16;
   hadc3.Init.Resolution = ADC_RESOLUTION_16B;
   hadc3.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc3.Init.EOCSelection = ADC_EOC_SINGLE_CONV;

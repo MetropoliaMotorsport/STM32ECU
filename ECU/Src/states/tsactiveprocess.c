@@ -18,36 +18,22 @@
 #include "dwt_delay.h"
 #include "canecu.h"
 
-int TSActiveINVLRequest( void )
+
+
+int TSActiveINVRequest( InverterState *Inverter )
 {
 	uint16_t command;
-	if ( GetInverterState( CarState.LeftInvState ) < INVERTERON
+	if ( GetInverterState( Inverter->InvState ) < INVERTERON
 #ifdef IVTEnable
 			&& CarState.VoltageINV > 480
 #endif
 			) // should be in ready state, so request ON state.
 	{
-		command = InverterStateMachine( LeftInverter ); // request left inv state machine to On from ready.
-		CANSendInverter( command, 0, LeftInverter );
+		command = InverterStateMachine( Inverter ); // request left inv state machine to On from ready.
+		CANSendInverter( command, 0, Inverter->InverterNum );
 	} // else inverter not in expected state.
 	return 0;
 }
-
-int TSActiveINVRRequest( void )
-{
-	uint16_t command;
-	if ( GetInverterState( CarState.RightInvState ) < INVERTERON
-#ifdef IVTEnable
-			&& CarState.VoltageINV > 480
-#endif
-	) // only allow request if HV actually present.
-	{
-		command = InverterStateMachine( RightInverter );
-		CANSendInverter( command, 0, RightInverter );
-	} // else inverter not in expected state.
-	return 0;
-}
-
 
 int TSActiveRequest( void )
 {
@@ -55,8 +41,11 @@ int TSActiveRequest( void )
 	CAN_NMTSyncRequest();
 	sendPDM( 0 ); // will enable HV if inverters in ready status and HV enabled flag set.
 
-	TSActiveINVLRequest();
-	TSActiveINVRRequest();
+	for ( int i=0;i<INVERTERCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
+	{
+		 TSActiveINVRequest( &CarState.Inverters[i] );
+	}
+
 	return 0;
 }
 
@@ -112,8 +101,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 		prechargedone = 1;
 	}
 
-	if ( GetInverterState( CarState.LeftInvState ) == INVERTERON
-		&& GetInverterState( CarState.RightInvState ) == INVERTERON
+	if ( invertersStateCheck(INVERTERON)
 		&& !ReceiveNonCriticalError && prechargedone ) // ensure can't enter RTDM till given time for precharge to take place.
 	{
 	  readystate = 0;
@@ -134,8 +122,10 @@ int TSActiveProcess( uint32_t OperationLoops )
 	// allow APPS checking before RTDM
 	int Torque_Req = PedalTorqueRequest();
 
-	CarState.Torque_Req_L = Torque_Req;
-	CarState.Torque_Req_R = Torque_Req;
+	for ( int i=0;i<INVERTERCOUNT;i++)  // set all wheels to same torque request
+	{
+		CarState.Inverters[i].Torque_Req = Torque_Req;
+	} //
 
 #ifdef TORQUEVECTOR
 	TorqueVectorProcess( Torque_Req );
