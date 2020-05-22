@@ -20,7 +20,7 @@
 
 
 
-int TSActiveINVRequest( InverterState *Inverter )
+int TSActiveINVRequest( volatile InverterState *Inverter )
 {
 	uint16_t command;
 	if ( GetInverterState( Inverter->InvState ) < INVERTERON
@@ -58,6 +58,8 @@ int TSActiveProcess( uint32_t OperationLoops )
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		 	 	 	 	 	 //12345678901234567890
+		lcd_setscrolltitle("TS Active");
 		prechargetimer = gettimer();
 		CarState.HighVoltageReady = 1; // only enable if reading high enough voltage.
 		setOutput(TSLED_Output,LEDON);

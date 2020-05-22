@@ -27,8 +27,8 @@ int checkReset( void )
 		}
 	}
 
-	if(Input[6].pressed != 0){ //StartStop_Switch
-			Input[6].pressed = 0;
+	if(Input[StartStop_Switch].pressed != 0){ //StartStop_Switch
+			Input[StartStop_Switch].pressed = 0;
 	//		blinkOutput(TSOFFLED_Output,LEDBLINK_FOUR,1);
 			return 1;
 	}
@@ -36,6 +36,26 @@ int checkReset( void )
 	return 0;
 }
 
+
+
+
+int CheckBrakeBalRequest( void ) // this should be a push-hold, so not a single toggle read.
+{
+#ifdef ONBOARDBUTTON
+	if(Input[UserBtn].pressed){
+			Input[UserBtn].pressed = 0;
+			return 0;
+	}
+#endif
+
+	if(Input[StartStop_Switch].pressed != 0){ //StartStop_Switch
+			Input[StartStop_Switch].pressed = 0;
+	//		blinkOutput(TSOFFLED_Output,LEDBLINK_FOUR,1);
+			return 1;
+	}
+
+	return 0;
+}
 
 
 int CheckActivationRequest( void )
@@ -47,7 +67,7 @@ int CheckActivationRequest( void )
 	}
 #endif
 
-	if(Input[6].pressed != 0){ //StartStop_Switch
+	if(Input[StartStop_Switch].pressed != 0){ //StartStop_Switch
 			Input[StartStop_Switch].pressed = 0;
 	//		blinkOutput(TSOFFLED_Output,LEDBLINK_FOUR,1);
 			return 1;
@@ -83,8 +103,8 @@ int CheckTSActivationRequest( void )
 	}
 #endif
 
-	if(Input[4].pressed){
-				Input[4].pressed = 0;
+	if(Input[TS_Switch].pressed){
+				Input[TS_Switch].pressed = 0;
 		//		blinkOutput(TSLED_Output,LEDBLINK_FOUR,1);
 				return 1;
 	}
@@ -106,15 +126,11 @@ int CheckRTDMActivationRequest( void )
 			return 0;
 	}
 #endif
-//	if(Input[RTDM_Switch].pressed){
-//			Input[RTDM_Switch].pressed = 0;
-	if(Input[2].pressed){ // RTDM_Switch
-				Input[2].pressed = 0;
-
+	if(Input[RTDM_Switch].pressed){
+			Input[RTDM_Switch].pressed = 0;
 	//		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,1);
 			return 1;
 	}
-
 
 	// could be a can message or other source of activation request also.
 
@@ -138,14 +154,15 @@ void debouncebutton( volatile struct ButtonData *button )
 					button -> count++;
 				} else
 				{
+#ifdef HPF19 // no user button on HPF20 board.
 					if (button->pin == Input[0].pin) // user button pressed, exception, this presses on high.
 					{
 						button -> pressed = 1;
 						button -> lastpressed=gettimer();
 						button -> count++;
 					}
+#endif
 				}
-
 		}
 }
 
@@ -165,6 +182,7 @@ void resetButton( uint8_t i )
 
 void setupButtons(void)
 {
+#ifdef HPF19
 	Input[UserBtn].port = USER_Btn_GPIO_Port;
 	Input[UserBtn].pin = USER_Btn_Pin;
 
@@ -192,16 +210,56 @@ void setupButtons(void)
 	Input[Input8].port = Input8_GPIO_Port;
 	Input[Input8].pin = Input8_Pin;
 
-	for ( int i=0; i < 9; i++)
+#endif
+
+#ifdef HPF20
+	Input[0].port = DI2_GPIO_Port;
+	Input[0].pin = DI2_Pin;
+
+	Input[1].port = DI3_GPIO_Port;
+	Input[1].pin = DI3_Pin;
+
+	Input[2].port = DI4_GPIO_Port;
+	Input[2].pin = DI4_Pin;
+
+	Input[3].port = DI5_GPIO_Port;
+	Input[3].pin = DI5_Pin;
+
+	Input[4].port = DI6_GPIO_Port;
+	Input[4].pin = DI6_Pin;
+
+	Input[5].port = DI7_GPIO_Port;
+	Input[5].pin = DI7_Pin;
+
+	Input[6].port = DI8_GPIO_Port;
+	Input[6].pin = DI8_Pin;
+
+	Input[7].port = DI10_GPIO_Port;
+	Input[7].pin = DI10_Pin;
+
+	Input[8].port = DI11_GPIO_Port;
+	Input[8].pin = DI11_Pin;
+
+	Input[9].port = DI13_GPIO_Port;
+	Input[9].pin = DI13_Pin;
+
+	Input[10].port = DI14_GPIO_Port;
+	Input[10].pin = DI14_Pin;
+
+	Input[11].port = DI15_GPIO_Port;
+	Input[11].pin = DI15_Pin;
+
+	for ( int i=0; i < NO_INPUTS; i++)
 	{
 		resetButton(i);
 	}
+#endif
 }
 
 
 void clearButtons(void)
 {
-	for ( int i=0; i < 9; i++)
+	for ( int i=0; i < NO_INPUTS; i++)
 	{
 		Input[i].pressed = 0;
 	}
@@ -220,7 +278,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		if ( HAL_TIM_Base_Start_IT(&htim7) != HAL_OK){
 			Error_Handler();
 		}
-
 	}
 }
 
@@ -228,11 +285,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void InputTimerCallback( void )
 {
 	  // timer7, being used for button input debouncing
-		InButtonpress = 0;  // reset status of button processing after timer elapsed,
-							// to indicate not processing input to allow triggering new timer.
 		switch ( ButtonpressPin )
 		{  // process the button that was pressed to start the debounce timer.
-
+#ifdef HPF19
 			case USER_Btn_Pin :
 				debouncebutton(&Input[UserBtn]);
 				break;
@@ -260,7 +315,51 @@ void InputTimerCallback( void )
 			case Input8_Pin:
 				debouncebutton(&Input[Input8]);
 				break;
+#endif
+
+#ifdef HPF20
+			case DI2_Pin:
+				debouncebutton(&Input[0]);
+				break;
+			case DI3_Pin:
+				debouncebutton(&Input[1]);
+				break;
+			case DI4_Pin:
+				debouncebutton(&Input[2]);
+				break;
+			case DI5_Pin:
+				debouncebutton(&Input[3]);
+				break;
+			case DI6_Pin:
+				debouncebutton(&Input[4]);
+				break;
+			case DI7_Pin:
+				debouncebutton(&Input[5]);
+				break;
+			case DI8_Pin:
+				debouncebutton(&Input[6]);
+				break;
+			case DI10_Pin:
+				debouncebutton(&Input[7]);
+				break;
+			case DI11_Pin:
+				debouncebutton(&Input[8]);
+				break;
+			case DI13_Pin:
+				debouncebutton(&Input[9]);
+				break;
+			case DI14_Pin:
+				debouncebutton(&Input[10]);
+				break;
+			case DI15_Pin:
+				debouncebutton(&Input[11]);
+				break;
+#endif
 			default : // shouldn't get here, but catch and ignore any other input
 				break;
 		}
+
+		InButtonpress = 0;  // reset status of button processing after timer elapsed,
+		// to indicate not processing input to allow triggering new timer.
+
 }

@@ -12,11 +12,12 @@ void setupInterrupts( void )
 {
 	InButtonpress = 1; // stops random button events triggering till interrupts are properly enabled.
 
-	// enable and start timer interrupt
+	// enable and start LED timer interrupt
 	HAL_NVIC_SetPriority(TIM3_IRQn, 0, 5);
 	HAL_NVIC_EnableIRQ(TIM3_IRQn);
 
-	// enable button interrupts
+#ifdef HPF19
+	// enable button interrupts -- handled in GPIO setup, set to low priority, human scale input, not priority.
 	HAL_NVIC_SetPriority(USER_Btn_EXTI_IRQn, 15, 0);
 	HAL_NVIC_EnableIRQ(USER_Btn_EXTI_IRQn);
 
@@ -28,7 +29,17 @@ void setupInterrupts( void )
 
 	HAL_NVIC_SetPriority(Input3_EXTI_IRQn, 15, 0);
 	HAL_NVIC_EnableIRQ(Input3_EXTI_IRQn);
+#endif
 
+#ifdef HPF20
+
+// setup in GPIO init already.
+// EXTI2_IRQn
+// EXTI3_IRQn
+// EXTI4_IRQn
+// EXTI9_5_IRQn
+// EXTI15_10_IRQn
+#endif
 
 	if ( HAL_TIM_Base_Start_IT(&htim3) != HAL_OK){
 		  Error_Handler();
@@ -40,7 +51,8 @@ void setupInterrupts( void )
 	if ( HAL_TIM_Base_Start_IT(&htim6) != HAL_OK){
 		Error_Handler();
 	}
-#ifdef LCD
+
+#ifdef PARALLELLCD
 	  HAL_NVIC_SetPriority(TIM17_IRQn, 0, 0);
 	  HAL_NVIC_EnableIRQ(TIM17_IRQn);
 

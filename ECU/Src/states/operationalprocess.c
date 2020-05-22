@@ -139,6 +139,8 @@ int Startup( uint32_t OperationLoops  )
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		lcd_setscrolltitle("Startup init");
+
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 
 		// send startup state message here.
@@ -158,6 +160,8 @@ int Startup( uint32_t OperationLoops  )
 		setOutput(BMSLED_Output,LEDOFF);
 		setOutput(IMDLED_Output,LEDOFF);
 		setOutput(BSPDLED_Output,LEDOFF);
+
+		// Show status LED's for 2 seconds for rules compliance.
 
 		blinkOutput(BMSLED_Output,LEDON,2);
 		blinkOutput(IMDLED_Output,LEDON,2);
@@ -265,6 +269,7 @@ uint16_t CheckErrors( void )
 
 int LimpProcess( uint32_t OperationLoops  )
 {
+	lcd_setscrolltitle("LimpProcess(NA)");
 	CAN_SendStatus(1, LimpState, 0 );
 	sendPDM( 0 );
 	return LimpState;
@@ -272,6 +277,7 @@ int LimpProcess( uint32_t OperationLoops  )
 
 int TestingProcess( uint32_t OperationLoops  )
 {
+	lcd_setscrolltitle("TestingProcess(NA)");
 	CAN_SendStatus(1, TestingState, 0 );
 	sendPDM( 0 );
 	return TestingState;
@@ -304,7 +310,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
-
+		lcd_setscrolltitle("ERROR State");
 		CarState.HighVoltageReady = 0; // no high voltage allowed in this state.
 
 		for ( int i=0;i<INVERTERCOUNT;i++){
@@ -386,6 +392,8 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 int OperationalProcess( void )
 {
+	lcd_setscrolltitle("Starting Main Loop");
+
 	// initialise loop timer variable.
 	uint32_t looptimer = gettimer(); // was volatile, doesn't need to be
 
@@ -626,5 +634,6 @@ int OperationalProcess( void )
 			loopcount++;
 			totalloopcount++;
 		}
+		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
 	}
 }

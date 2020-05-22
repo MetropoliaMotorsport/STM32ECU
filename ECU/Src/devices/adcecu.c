@@ -6,16 +6,32 @@
  */
 
 #include "ecumain.h"
+#include "i2c-lcd.h"
 
 #define UINTOFFSET	360
 
 volatile uint32_t ADCloops;
+volatile uint32_t ADC3loops;
+
+volatile bool ADC1read = false;
+volatile bool ADC3read = false;
+
 
 //variables that need to be accessible in ISR's
 
+//setup to place ADC buffers in compatible RAM region, ensure linker file is setup correctly for D1
+
+#if defined( __ICCARM__ )
+  #define DMA_BUFFER \
+      _Pragma("location=\".dma_buffer\"")
+#else
+  #define DMA_BUFFER \
+      __attribute__((section(".dma_buffer")))
+#endif
+
 // ADC conversion buffer, should be aligned in memory for faster DMA?
-ALIGN_32BYTES (static uint32_t aADCxConvertedData[ADC_CONVERTED_DATA_BUFFER_SIZE]);
-ALIGN_32BYTES (static uint32_t aADCxConvertedDataADC3[ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3]);
+ DMA_BUFFER ALIGN_32BYTES (static uint32_t aADCxConvertedData[ADC_CONVERTED_DATA_BUFFER_SIZE]);
+ DMA_BUFFER ALIGN_32BYTES (static uint32_t aADCxConvertedDataADC3[ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3]);
 // new calibration
 
 #ifdef TORQUEVECTOR
@@ -30,7 +46,7 @@ int16_t TorqueVectOutput3[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTOR
 #endif
 
 // 19500 ~ -90  // 13300 full lock, 45000 ~ 90 deg right. 50000 full lock right. ~120
-uint16_t SteeringInput[] = { 6539, 13300, 20000, 33500, 63019 };
+uint16_t SteeringInput[] = { 6539, 13300, 20000, 33500, 63019 }; // going to pwm this year, no ADC needed.
 int16_t SteeringOutput[] = { -210,  -120,  -90,   0,    210 };
 
 // -1 needs to be at minimum
@@ -447,6 +463,14 @@ void minmaxADCReset(void)
 HAL_StatusTypeDef startADC(void)
 {
 #ifdef STMADC
+
+	if ( (uint32_t) aADCxConvertedData < 0x24000000 ){
+		while ( 1 ) {
+			lcd_send_stringposDIR(0,0,"ADC DMA in wrong memory. ");
+			lcd_send_stringposDIR(1,0,"Fix .LD and recompile! ");
+		}
+	}
+
 	minmaxADC = 1;
 	minmaxADCReset();
 	ADC_MultiModeTypeDef multimode;
@@ -498,6 +522,82 @@ HAL_StatusTypeDef stopADC( void )
 
 #ifdef STMADC
 
+void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
+{
+	DeviceState.ADC == ERROR;
+	if ( DeviceState.LCD == ENABLED ){
+		lcd_errormsg("ADC Error Check .LD");
+	}
+
+	toggleOutput(42);
+}
+
+void ReadADC1(bool half)
+{
+	ADCloops++;
+
+	ADC1read = true;
+
+	volatile int start = NumADCChan*SampleSize;
+	if ( half ) start = 0;
+
+	for (int i = 0; i<NumADCChan;i++)
+	{
+		uint16_t datasum = 0;
+		for ( int j = 0; j<SampleSize;j++)
+		{
+			datasum += aADCxConvertedData[start+(i+j*NumADCChan)];//sum/SampleSize; // store the value in ADC_Data from buffer averaged over 10 samples for better accuracy.
+		}
+
+		ADC_Data[i] = datasum / (SampleSize);
+
+		if ( minmaxADC )
+		{
+			if ( ADC_Data[i] < ADC_DataMin[i] ) ADC_DataMin[i] = ADC_Data[i];
+			if ( ADC_Data[i] > ADC_DataMax[i] ) ADC_DataMax[i] = ADC_Data[i];
+		}
+	}
+
+	if ( ADC3read ){ // if both ADC's are flagged as having been processed then mark all data available.
+		ADCState.newdata = 1;
+		ADC3read=false;
+		ADC1read=false;
+	}
+
+}
+
+void ReadADC3(bool half)
+{
+	ADC3loops++;
+	ADC3read = true;
+	volatile int start = NumADCChanADC3*SampleSize;
+	if ( half ) start = 0;
+
+	for (int i = 0; i<NumADCChanADC3;i++)
+	{
+		uint16_t datasum = 0;
+
+		int pos = i + NumADCChan;
+
+		for ( int j = 0; j<SampleSize;j++)
+		{
+			datasum += aADCxConvertedDataADC3[start+(i+j*NumADCChanADC3)];
+		}
+		ADC_Data[pos] = datasum / (SampleSize);
+		if ( minmaxADC )
+		{
+			if ( ADC_Data[pos] < ADC_DataMin[pos] ) ADC_DataMin[pos] = ADC_Data[pos];
+			if ( ADC_Data[pos] > ADC_DataMax[pos] ) ADC_DataMax[pos] = ADC_Data[pos];
+		}
+	}
+
+	if ( ADC1read ){
+		ADCState.newdata = 1;
+		ADC3read=false;
+		ADC1read=false;
+	}
+}
+
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 {
 // nothing yet
@@ -505,41 +605,14 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 	{
 		if ( hadc->Instance == ADC1 )
 		{
-			ADCloops++;
-			for (int i = 0; i<NumADCChan;i++)
-			{
-				int value = 0;
-				{
-					value = (aADCxConvertedData[i]);
-				}
-				ADC_Data[i] = value;
-				if ( minmaxADC )
-				{
-					if ( ADC_Data[i] < ADC_DataMin[i] ) ADC_DataMin[i] = ADC_Data[i];
-					if ( ADC_Data[i] > ADC_DataMax[i] ) ADC_DataMax[i] = ADC_Data[i];
-				}
-			}
-			ADCState.newdata = 1;
+			ReadADC1(true);
 		}
 		else
-		if ( hadc->Instance == ADC3 )
+		if ( hadc->Instance == ADC3 ) // TODO update for variable amount of ADC channels
 		{
-			ADC_Data[8] =  aADCxConvertedDataADC3[0];
-			ADC_Data[9] =  aADCxConvertedDataADC3[1];
-
-			if ( minmaxADC )
-			{
-				for( int i = 8; i < 10; i++)
-				{
-					if ( ADC_Data[i] < ADC_DataMin[i] ) ADC_DataMin[i] = ADC_Data[i];
-					if ( ADC_Data[i] > ADC_DataMax[i] ) ADC_DataMax[i] = ADC_Data[i];
-				}
-			}
+			ReadADC3(true);
 		}
-
 	}
-
-
 }
 
 
@@ -549,22 +622,13 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	{
 		if ( hadc->Instance == ADC1 )
 		{
-			ADCloops++;
-			for (int i = 0; i<NumADCChan;i++)
-			{
-
-				ADC_Data[i] = (aADCxConvertedData[i+NumADCChan]);//sum/SampleSize; // store the value in ADC_Data from buffer averaged over 10 samples for better accuracy.
-				if ( minmaxADC )
-				{
-					if ( ADC_Data[i] < ADC_DataMin[i] ) ADC_DataMin[i] = ADC_Data[i];
-					if ( ADC_Data[i] > ADC_DataMax[i] ) ADC_DataMax[i] = ADC_Data[i];
-				}
-			}
-			ADCState.newdata = 1;
+			ReadADC1(false);
 		}
 		else
-		if ( hadc->Instance == ADC3 )
+		if ( hadc->Instance == ADC3 ) // TODO update for variable amount of ADC channels
 		{
+			ReadADC3(false);
+#ifdef HPF19
 			ADC_Data[8] =  aADCxConvertedDataADC3[2];
 			ADC_Data[9] =  aADCxConvertedDataADC3[3];
 
@@ -576,8 +640,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 					if ( ADC_Data[i] > ADC_DataMax[i] ) ADC_DataMax[i] = ADC_Data[i];
 				}
 			}
-		}
+#endif
 
+
+		}
 	}
 }
 #endif
@@ -623,6 +689,7 @@ uint16_t CheckADCSanity( void )
             returnvalue |= 0x1 << AccelLErrorBit;
         else returnvalue &= ~(0x1 << AccelLErrorBit);
 
+#ifdef HPF19
         ADCState.CoolantTempL = getCoolantTemp1(ADC_Data[CoolantTempLADC]);
         if ( ADCState.CoolantTempL <= 0 || ADCState.CoolantTempL >= 255 )
         {
@@ -655,6 +722,7 @@ uint16_t CheckADCSanity( void )
          //   returnvalue |= 0x1 << CoolantRErrorBit;
         }
         else returnvalue &= ~(0x1 << CoolantRErrorBit);
+
 
         // rolling average to clean up steering angle a bit.
 
@@ -690,7 +758,7 @@ uint16_t CheckADCSanity( void )
          //   returnvalue |= 0x1 << DrivingModeErrorBit;
         }
         else returnvalue &= ~(0x1 << DrivingModeErrorBit);
-
+#endif
 	} else // set all ADC to error bit if not online.
 	{
 		for ( int i=0;i<7;i++)

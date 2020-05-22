@@ -28,15 +28,24 @@
 #include "dma.h"
 #include "fdcan.h"
 #include "i2c.h"
-#include "sdmmc.h"
+#ifdef HPF19
+	#include "sdmmc.h"
+	#include "usb_otg.h"
+	#include "wwdg.h"
+#endif
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
-#include "usb_otg.h"
-#include "wwdg.h"
 #include "gpio.h"
 #include "canecu.h"
 #include "interrupts.h"
+#ifdef HPF20
+	#include "eeprom.h"
+	#include "powerloss.h"
+	#include "i2c-lcd.h"
+	#include <stdio.h>
+#endif
+
 
 //#endif
 
@@ -75,18 +84,46 @@ static int HardwareInit( void )
 	/* Configure the system clock */
 	if ( SystemClock_Config() != HAL_OK )
 	{
-
 		returnval = 99; // if error in setting system clock something very bad wrong.
 		  	  	  	  	  //should possibly hang here, nothing yet initialised to communicate status.
 	}
 
 	DWT_Init();
 
+	HAL_Delay(500); // delay to allow debugger to hopefully latch. // have some input pin act as a boot stopper.
+
 	/* Initialize all configured peripherals */
 
 	MX_GPIO_Init(); // no failure return value
+	// startup LCD first
+#ifdef HPF20
+	MX_I2C3_Init();
+	if ( lcd_init(&hi2c3) ){
+		DeviceState.LCD = DISABLED;
+	} else
+	{
+		DeviceState.LCD = ENABLED;
+		lcd_send_stringposDIR(0,0,"Startup...   ");
+		lcd_clearscroll();
+	}
+
 	MX_TIM3_Init(); // at this point LED status should work.
 
+	MX_TIM7_Init();
+
+	MX_TIM6_Init();
+	if ( DeviceState.LCD == ENABLED )
+		lcd_send_stringscroll("Interrupts");
+	setupInterrupts(); // start timers etc // move earlier to make display updating easier?
+
+
+	int i = 0;
+
+#elif
+	DeviceState.LCD = DISABLED;
+#endif
+	if ( DeviceState.LCD == ENABLED )
+		lcd_send_stringscroll("CANBUS");
 	MX_FDCAN1_Init();
 #ifndef ONECAN
 	MX_FDCAN2_Init();
@@ -106,13 +143,6 @@ static int HardwareInit( void )
 	MX_ADC1_Init();
 	MX_ADC3_Init();
 #endif
-
-//	MX_I2C2_Init();
-	MX_TIM7_Init();
-
-	MX_TIM6_Init();
-
-	setupInterrupts(); // start timers etc
 
 #ifdef WATCHDOG
 	  /*##-1- Check if the system has resumed from WWDG reset ####################*/
@@ -156,9 +186,20 @@ static int HardwareInit( void )
 		}
 	 } */
 #endif
+	if ( DeviceState.LCD == ENABLED ) // interrupts should not be running, so use regular update.
+		lcd_send_stringscroll("LEDS");
+	 setupLEDs(); // set default led states and start life indicator LED blinking.
 
-	setupLEDs(); // set default led states and start life indicator LED blinking.
+#ifdef POWERLOSSDETECT
+	  MX_COMP1_Init();
+#endif
 
+#ifdef EEPROM
+	if ( DeviceState.LCD == ENABLED )
+		lcd_send_stringscroll("EEPRom");
+	 MX_I2C2_Init();
+	 initiliseEEPROM();
+#endif
 
 /*	delay = TimeoutCalculation((hwwdg1.Init.Counter) + 1); // actual reset, 40ms.
 
@@ -169,14 +210,12 @@ static int HardwareInit( void )
 	HAL_Delay(delay); */
 
 	// after cubemx hardware inits, run our own initialisations to start up essential function.
-#ifdef LCD
-	MX_TIM17_Init(); // lcd timer.
-	hd44780_Init(); // initialise LCD for debug helper information, remove for live code?
-#endif
 
 	// should also read in defaults for calibrations, power levels etc.
 
 #ifdef STMADC
+	if ( DeviceState.LCD == ENABLED )
+		lcd_send_stringscroll("ADC");
 	if ( startADC() == 0 )  //  starts the ADC dma processing.
 	{
 		DeviceState.ADC = 1;
@@ -189,9 +228,22 @@ static int HardwareInit( void )
 
 //	  uint16_t volatile * const power = (uint16_t *) PWR_D3CR;
 
+	char str[20];
 
+#ifdef TEST
+	i = 0;
+	while ( 1 ) {
+		sprintf(str,"%.8d", i);
+		lcd_send_stringpos(0,0,str);
+		i++;
+	}
+#endif
 
-
+	if ( DeviceState.LCD == ENABLED )
+	{
+		lcd_send_stringscroll("Hardware init done.");
+		lcd_clearscroll();
+	}
 	return returnval;
 }
 
@@ -272,7 +324,6 @@ int realmain(void)
  int MainState = 0;
 
  // uint8_t CANTxData[8];
-
   while (1) // primary state loop.
   {
 	  switch ( MainState )
@@ -328,6 +379,9 @@ int testmain(void)
 {
   HAL_Init();
   SystemClock_Config();
+
+  InButtonpress = 1; // prevent any button presses registering until setup.
+
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
@@ -342,7 +396,7 @@ int testmain(void)
  // MX_SPI2_Init();
  // MX_WWDG1_Init();
   MX_TIM6_Init();
-  MX_TIM17_Init();
+
 //  MX_ADC3_Init();
   /* USER CODE BEGIN 2 */
 
@@ -354,7 +408,7 @@ int testmain(void)
 
 //  startADC();
   int i = 0;
-   setupButtons();
+  setupButtons(); // clears any errant processed button presses.
 
   setOutput(LED2_Output,LEDOFF);
   setOutput(LED3_Output,LEDON);

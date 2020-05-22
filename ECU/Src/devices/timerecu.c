@@ -9,6 +9,7 @@
 #include "stm32h7xx_hal_gpio.h"
 #include "output.h"
 #include "input.h"
+#include "i2c-lcd.h"
 
 static volatile uint32_t stTick, timerticks;
 
@@ -29,7 +30,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   if (TickPriority < (1UL << __NVIC_PRIO_BITS))
   {
     HAL_NVIC_SetPriority(SysTick_IRQn, TickPriority, 0U);
- //   uwTickPrio = TickPriority;
+    uwTickPrio = TickPriority;
   }
   else
   {
@@ -72,9 +73,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	if ( htim->Instance == TIM3 ){
 //		timerticks++; // increment global time counter
 
+		lcd_update();
+
 		static uint8_t blinkcounter = 0;
 
-		for ( int i = 0; i<11; i++)
+		for ( int i = 0; i<OUTPUTCount; i++)
 		{
 			if ( LEDs[i].blinktime > 0 )
 			{

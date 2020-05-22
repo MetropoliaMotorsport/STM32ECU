@@ -11,6 +11,8 @@
  * returns gpio port for given output number.
  */
 
+
+#ifdef HPF19
 GPIO_TypeDef* getGpioPort(int output)
 {
 	switch ( output ) { // set gpio values for requested port
@@ -42,7 +44,7 @@ GPIO_TypeDef* getGpioPort(int output)
 }
 
 /**
- * returns gpio pin for given output number.
+ * returns GPIO pin for given output number.
  */
 
 int getGpioPin(int output)
@@ -75,30 +77,137 @@ int getGpioPin(int output)
 			return 0;
 	}
 }
+#endif
+
+#ifdef HPF20
+GPIO_TypeDef* getGpioPort(int output)
+{
+
+	switch ( output ) { // set gpio values for requested port
+		case 0 :
+			return DO1_GPIO_Port;
+		case 1 :
+			return DO2_GPIO_Port;
+		case 2 :
+			return DO3_GPIO_Port;
+		case 3 :
+			return DO4_GPIO_Port;
+		case 4 :
+			return DO5_GPIO_Port;
+		case 5 :
+			return DO6_GPIO_Port;
+		case 6 :
+			return DO7_GPIO_Port;
+		case 7 :
+			return DO11_GPIO_Port;
+		case 8 :
+			return DO12_GPIO_Port;
+		case 9 :
+			return DO13_GPIO_Port;
+		case 10 :
+			return DO14_GPIO_Port;
+		case 11 :
+			return DO15_GPIO_Port;
+
+		case 12 :
+			return LD7_GPIO_Port;
+		case 13 :
+			return LD8_GPIO_Port;
+		case 14 :
+			return LD9_GPIO_Port;
+		case 15 :
+			return LD0_GPIO_Port;
+		case 16 :
+			return LD1_GPIO_Port;
+		case 17 :
+			return LD3_GPIO_Port;
+		case 18 :
+			return LD4_GPIO_Port;
+
+		default :
+			return 0;
+	}
+}
+
+/**
+ * returns GPIO pin for given output number.
+ */
+
+int getGpioPin(int output)
+{
+	switch ( output ) { // set gpio values for requested port
+		case 0 :
+			return DO1_Pin;
+		case 1 :
+			return DO2_Pin;
+		case 2 :
+			return DO3_Pin;
+		case 3 :
+			return DO4_Pin;
+		case 4 :
+			return DO5_Pin;
+		case 5 :
+			return DO6_Pin;
+		case 6 :
+			return DO7_Pin;
+		case 7 :
+			return DO11_Pin;
+		case 8 :
+			return DO12_Pin;
+		case 9 :
+			return DO13_Pin;
+		case 10 :
+			return DO14_Pin;
+		case 11 :
+			return DO15_Pin;
+		case 12 :
+			return LD7_Pin;
+		case 13 :
+			return LD8_Pin;
+		case 14 :
+			return LD9_Pin;
+		case 15 :
+			return LD0_Pin;
+		case 16 :
+			return LD1_Pin;
+		case 17 :
+			return LD3_Pin;
+		case 18 :
+			return LD4_Pin;
+		default :
+			return 0;
+	}
+}
+#endif
+
 
 /**
  * @brief sets specific output state of the state of specified GPIO output using programs defined input numbering
  */
 void setOutput(int output, char state)
 {
-	if ( state == 0 )
-	  LEDs[output].state = 0;
-	else
-	  LEDs[output].state = 9;
+	if ( output < OUTPUTCount ){
+		if ( state == 0 )
+		  LEDs[output].state = 0;
+		else
+		  LEDs[output].state = 9;
+	}
 //	LEDs[output].blinktime = 0;
 //	LEDs[output].blinkingrate = 0;
 }
 
 void setOutputNOW(int output, char state)
 {
-	if ( state == 0 )
-	{
-		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), 0);
-		LEDs[output].state = 0;
-	} else
-	{
-		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), 1);
-		LEDs[output].state = 9;
+	if ( output < OUTPUTCount ){
+		if ( state == 0 )
+		{
+			HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), 0);
+			LEDs[output].state = 0;
+		} else
+		{
+			HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), 1);
+			LEDs[output].state = 9;
+		}
 	}
 }
 
@@ -107,49 +216,57 @@ void setOutputNOW(int output, char state)
  */
 void toggleOutput(int output)
 {
-	if ( LEDs[output].state == 0 ) LEDs[output].state = 9; else LEDs[output].state = 0;
+	if ( output < OUTPUTCount ){
+		if ( LEDs[output].state == 0 ) LEDs[output].state = 9; else LEDs[output].state = 0;
+	}
 }
 
 void toggleOutputMetal(int output)
 {
-	if(getGpioPin(output) != 0)
-	{
-		HAL_GPIO_TogglePin(getGpioPort(output), getGpioPin(output));
+	if ( output < OUTPUTCount ){
+		if(getGpioPin(output) != 0)
+		{
+			HAL_GPIO_TogglePin(getGpioPort(output), getGpioPin(output));
+		}
 	}
 }
 
 void blinkOutput(int output, int blinkingrate, int time) // max 30 seconds if timed.
 {
-	switch ( blinkingrate )
-	{
-		case LEDOFF : LEDs[output].blinkingrate = 0; break;
-		case LEDON : LEDs[output].blinkingrate = 9; break;
-		case LEDBLINK_ONE : LEDs[output].blinkingrate = 8; break;
-		case LEDBLINK_TWO : LEDs[output].blinkingrate = 4; break;
-		case LEDBLINK_THREE : LEDs[output].blinkingrate = 2; break;
-		case LEDBLINK_FOUR : LEDs[output].blinkingrate = 1; break;
-		default :
-			LEDs[output].blinkingrate = 9;
-			break;
-	}
+	if ( output < OUTPUTCount ){
+		switch ( blinkingrate )
+		{
+			case LEDOFF : LEDs[output].blinkingrate = 0; break;
+			case LEDON : LEDs[output].blinkingrate = 9; break;
+			case LEDBLINK_ONE : LEDs[output].blinkingrate = 8; break;
+			case LEDBLINK_TWO : LEDs[output].blinkingrate = 4; break;
+			case LEDBLINK_THREE : LEDs[output].blinkingrate = 2; break;
+			case LEDBLINK_FOUR : LEDs[output].blinkingrate = 1; break;
+			default :
+				LEDs[output].blinkingrate = 9;
+				break;
+		}
 
-	if ( time == 255 ){
-		LEDs[output].blinktime = 255;
-	} else
-	{
-		LEDs[output].blinktime = time*8;
+		if ( time == 255 ){
+			LEDs[output].blinktime = LEDBLINKNONSTOP;
+		} else
+		{
+			LEDs[output].blinktime = time*8;
+		}
 	}
 }
 
 void timeOutput(int output, int time) // max 30 seconds if timed.
 {
-	LEDs[output].blinkingrate = 0;
+	if ( output < OUTPUTCount ){
+		LEDs[output].blinkingrate = 0;
 
-	if ( time == 255 ){
-		LEDs[output].blinktime = 255;
-	} else
-	{
-		LEDs[output].blinktime = time*8;
+		if ( time == 255 ){
+			LEDs[output].blinktime = LEDBLINKNONSTOP;
+		} else
+		{
+			LEDs[output].blinktime = time*8;
+		}
 	}
 }
 
@@ -158,7 +275,7 @@ void timeOutput(int output, int time) // max 30 seconds if timed.
  */
 void setupLEDs( void )
 {
-	for ( int i = 0; i < 12; i++)
+	for ( int i = 0; i < OUTPUTCount; i++)
 	{
 		LEDs[i].blinkingrate = 0;
 		LEDs[i].state = 0;
@@ -210,25 +327,33 @@ void __setLEDs( void )
 
 void startupLEDs(void)
 {
-	 //small led display to indicate board startup
-	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, 1);
-	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, 1);
-	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 1);
+	 //small onboard led display to indicate board startup
+	  setOutputNOW(LED1_Output,LEDON);
+	  setOutputNOW(LED2_Output,LEDON);
+	  setOutputNOW(LED3_Output,LEDON);
 	  HAL_Delay(300);
-	  HAL_GPIO_WritePin(LD1_GPIO_Port,LD1_Pin, 0);
+	  setOutputNOW(LED1_Output,LEDOFF);
 	  HAL_Delay(300);
-	  HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 0);
+	  setOutputNOW(LED2_Output,LEDOFF);
 	  HAL_Delay(300);
-	  HAL_GPIO_WritePin(LD3_GPIO_Port,LD3_Pin, 0);
+	  setOutputNOW(LED3_Output,LEDOFF);
 
+#ifdef OLDPOWEROn
 	  // display status LED's for two seconds to indicate power on.
-	  setOutput(1,1);
-	  setOutput(2,1);
-	  setOutput(3,1);
-
-	 // HAL_Delay(2000);
+	  setOutput(1,LEDON);
+	  setOutput(2,LEDON);
+	  setOutput(3,LEDON);
+	  // HAL_Delay(2000);
 	  HAL_Delay(500);
-	  for(int i=1;i<=12;i++){
-		  setOutput(i, 0);
+#endif
+	  setOutput(BMSLED_Output,LEDON);
+	  setOutput(IMDLED_Output,LEDON);
+	  setOutput(BSPDLED_Output,LEDON);
+	  // HAL_Delay(2000);
+	  HAL_Delay(500);
+
+
+	  for(int i=0;i<=OUTPUTCount;i++){ // turn off all LED's
+		  setOutput(i, LEDOFF);
 	  }
 }

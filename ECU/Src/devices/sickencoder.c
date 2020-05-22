@@ -9,7 +9,7 @@
 
 #include "ecumain.h"
 
-#ifndef HPF2020 // not present on HPF2020, four motors with own encoders.
+#ifdef HPF19 // not present on HPF20, four motors with own encoders.
 
 int sickState( uint8_t canid ) // returns current state, requests expected state over can.
 {

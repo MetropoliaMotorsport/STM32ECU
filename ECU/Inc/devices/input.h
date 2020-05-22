@@ -23,19 +23,35 @@ DI6 pin 24 PE11  ok   input 7
 DI7 pin 25 PF12 ok    input 8
  */
 
-#define UserBtn		0 // ok
-#define Input1		1 // ok
-#define Input2		2 // ok
-#define Input3		3 // ok
-#define Input4		4 // ok
-#define Input5		5 // ?
-#define Input6		6 // -> input 5
-#define Input7		7 // -> input 6
-#define Input8		8 // -> input 7
+#ifdef HPF19
+	#define NO_INPUTS 9
+#endif
 
-#define TS_Switch Input4 // input 4.
-#define RTDM_Switch Input2 // input 2
-#define StartStop_Switch Input6
+#ifdef HPF20
+	#define NO_INPUTS 12
+#endif
+
+#define UserBtn		(0) // ok
+#define Input1		(1) // ok
+#define Input2		(2) // ok
+#define Input3		(3) // ok
+#define Input4		(4) // ok
+#define Input5		(5) // ?
+#define Input6		(6) // -> input 5
+#define Input7		(7) // -> input 6
+#define Input8		(8) // -> input 7
+
+#ifdef HPF19
+	#define TS_Switch (4) // input 4.
+	#define RTDM_Switch (2) // input 2
+	#define StartStop_Switch (6)
+#endif
+
+#ifdef HPF20
+	#define TS_Switch (4) // input 4.
+	#define RTDM_Switch (2) // input 2
+	#define StartStop_Switch (6)
+#endif
 
 struct ButtonData {
 	uint32_t lastpressed;
@@ -47,7 +63,9 @@ struct ButtonData {
 	uint8_t logic; // 0 for press on low, 1 for press on high.
 };
 
-volatile struct ButtonData Input[9];
+
+volatile struct ButtonData Input[NO_INPUTS];
+
 
 volatile static char InButtonpress;
 

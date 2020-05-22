@@ -46,14 +46,14 @@ char OperationalReceive( uint16_t returnvalue )
 {
 	if (returnvalue == 0xFF)
 	{ returnvalue =
-#ifndef HPF2020
+#ifdef HPF19
 			(0x1 << FLeftSpeedReceived) + // initialise return value to all devices in error state ( bit set )
 				  (0x1 << FRightSpeedReceived) +
 #endif
 				  (0x1 << BMSReceived)+
 				  (0x1 << PDMReceived)+
 				  (0x1 << PedalADCReceived);
-#ifdef HPF2020
+#ifdef HPF20
 		for ( int i=0;i<INVERTERCOUNT;i++){
 			returnvalue+=InverterReceived+i;
 		}
@@ -79,7 +79,7 @@ char OperationalReceive( uint16_t returnvalue )
 		}
 	}
 
-#ifndef HPF2020
+#ifdef HPF19
 	if (DeviceState.FrontSpeedSensors == ENABLED )
 	{
 		if ( receiveSick(FLSpeed_COBID) ) returnvalue &= ~(0x1 << FLeftSpeedReceived);
@@ -123,6 +123,7 @@ char OperationalReceiveLoop( void )
 		// check for resanityceived data and set states
         // check for incoming data, break when all received.
 		looptimer = gettimer() - loopstart;
+		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
 	} while ( /* received != 0 && */ looptimer < PROCESSLOOPTIME-50 ); // check
 
 	received = OperationalReceive( received );
@@ -177,6 +178,8 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+							 //12345678901234567890
+		lcd_setscrolltitle("Ready to activate TS");
 		CarState.HighVoltageReady = 0;
 		HVEnableTimer = 0;
 		TSRequested = 0;

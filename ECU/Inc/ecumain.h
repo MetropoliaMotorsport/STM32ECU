@@ -12,7 +12,9 @@
 #include <string.h>
 #include "main.h"
 
-#include "wwdg.h"
+#ifdef HPF19
+	#include "wwdg.h"
+#endif
 #include "fdcan.h"
 #include "tim.h"
 #include "adc.h"
@@ -39,6 +41,7 @@
 #include "inverter.h"
 #include "bms.h"
 #include "adcecu.h"
+#include "i2c-lcd.h"
 
 
 int realmain(void);

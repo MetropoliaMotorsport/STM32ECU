@@ -34,7 +34,7 @@ int ReadyRequest( void )   // request data / invalidate existing data to ensure 
 
 	InverterSent = 0; // invertersent not being set to 1, means always sending command? should only be sent once to request change, unless state is still wrong.
 
-#ifndef HPF2020
+#ifdef HPF19
 	if (DeviceState.FrontSpeedSensors == ENABLED )
 	{
 		DeviceState.FLSpeed = sickState( FLSpeed_COBID );
@@ -63,13 +63,13 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 					(0X1 << PDMReceived)+
 					(0X1 << BMSReceived)+
 					(0X1 << IVTReceived)+
-#ifndef HPF2020
+#ifdef HPF19
 					(0x1 << FLeftSpeedReceived)+
 					(0x1 << FRightSpeedReceived)+
 #endif
 					(0x1 << PedalADCReceived);//
 
-#ifdef HPF2020
+#ifdef HPF20
 		for ( int i=0;i<INVERTERCOUNT;i++)
 		{
 			returnvalue += (0x1 << (InverterReceived+i));
@@ -92,7 +92,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 		receiveINVTorque(&CarState.Inverters[i]);
 	}
 
-#ifndef HPF2020
+#ifdef HPF19
 	if ( DeviceState.FrontSpeedSensors == ENABLED)
 	{
 
@@ -159,6 +159,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		lcd_setscrolltitle("Readying Devices");
 //		sanitystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		received = 0xFFFF;
 		InverterSent = 0;
@@ -189,6 +190,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 		received = ReadyReceive( received );
         // check for incoming data, break when all received.
 		looptimer = gettimer() - loopstart;
+		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
 	} while ( received != 0 && looptimer < PROCESSLOOPTIME-50 ); // check
 
 	// process data.

@@ -195,7 +195,7 @@ uint8_t receiveINVNMT( volatile InverterState *Inverter)
 {
 	if ( // CanState.InverterNMT.time > 0 || // switch to using device state, as set in interrupt.
 			CarState.Inverters[RearLeftInverter].InvState != 0xFF && CarState.Inverters[RearRightInverter].InvState != 0xFF
-#ifdef HPF2020
+#ifdef HPF20
 			&& CarState.Inverters[FrontLeftInverter].InvState != 0xFF && CarState.Inverters[FrontLeftInverter].InvState != 0xFF
 #endif
 	)

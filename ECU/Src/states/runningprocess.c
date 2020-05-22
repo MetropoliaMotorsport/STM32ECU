@@ -252,6 +252,8 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		 	 	 	 	 	 //12345678901234567890
+		lcd_setscrolltitle("RTDM:Throttle Active");
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		setOutput(RTDMLED_Output,LEDON); // move to ActivateRTDM
 		blinkOutput(RTDMLED_Output,LEDON,0);
@@ -484,7 +486,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 #else
 	    for ( int i=0;i<INVERTERCOUNT;i++)
 	    {
-			CANSendInverter( 0b00001111, &CarState.Inverters[i], i ); // send defined state request, else non consistent behaviour can happen.
+			CANSendInverter( 0b00001111, CarState.Inverters[i].Torque_Req, i ); // send defined state request, else non consistent behaviour can happen.
 	    }
 #endif
 	}

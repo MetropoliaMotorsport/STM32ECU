@@ -60,12 +60,16 @@
 extern DMA_HandleTypeDef hdma_adc1;
 extern DMA_HandleTypeDef hdma_adc3;
 extern ADC_HandleTypeDef hadc3;
+extern COMP_HandleTypeDef hcomp1;
 extern FDCAN_HandleTypeDef hfdcan1;
 extern FDCAN_HandleTypeDef hfdcan2;
+extern DMA_HandleTypeDef hdma_i2c3_tx;
+extern I2C_HandleTypeDef hi2c2;
+extern I2C_HandleTypeDef hi2c3;
+extern I2C_HandleTypeDef hi2c4;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim7;
-extern TIM_HandleTypeDef htim17;
-extern WWDG_HandleTypeDef hwwdg1;
+extern TIM_HandleTypeDef htim16;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -217,29 +221,6 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles Window watchdog interrupt.
-  */
-void WWDG_IRQHandler(void)
-{
-  /* USER CODE BEGIN WWDG_IRQn 0 */
-	CarState.HighVoltageReady = 0; // no high voltage allowed in this state.
-	sendPDM( 0 ); //disable high voltage on error state;
-	// send cause of error state.
-	CanState.ECU.newdata = 0;
-	CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
-	CheckErrors();
-	blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
-	blinkOutput(TSOFFLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
-	blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
-
-  /* USER CODE END WWDG_IRQn 0 */
-  HAL_WWDG_IRQHandler(&hwwdg1);
-  /* USER CODE BEGIN WWDG_IRQn 1 */
-
-  /* USER CODE END WWDG_IRQn 1 */
-}
-
-/**
   * @brief This function handles EXTI line2 interrupt.
   */
 void EXTI2_IRQHandler(void)
@@ -268,6 +249,20 @@ void EXTI3_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles EXTI line4 interrupt.
+  */
+void EXTI4_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI4_IRQn 0 */
+
+  /* USER CODE END EXTI4_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
+  /* USER CODE BEGIN EXTI4_IRQn 1 */
+
+  /* USER CODE END EXTI4_IRQn 1 */
+}
+
+/**
   * @brief This function handles DMA1 stream0 global interrupt.
   */
 void DMA1_Stream0_IRQHandler(void)
@@ -282,17 +277,17 @@ void DMA1_Stream0_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles DMA1 stream2 global interrupt.
+  * @brief This function handles DMA1 stream1 global interrupt.
   */
-void DMA1_Stream2_IRQHandler(void)
+void DMA1_Stream1_IRQHandler(void)
 {
-  /* USER CODE BEGIN DMA1_Stream2_IRQn 0 */
+  /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
 
-  /* USER CODE END DMA1_Stream2_IRQn 0 */
+  /* USER CODE END DMA1_Stream1_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_adc3);
-  /* USER CODE BEGIN DMA1_Stream2_IRQn 1 */
+  /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
 
-  /* USER CODE END DMA1_Stream2_IRQn 1 */
+  /* USER CODE END DMA1_Stream1_IRQn 1 */
 }
 
 /**
@@ -331,11 +326,41 @@ void EXTI9_5_IRQHandler(void)
   /* USER CODE BEGIN EXTI9_5_IRQn 0 */
 
   /* USER CODE END EXTI9_5_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_9);
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
 
   /* USER CODE END EXTI9_5_IRQn 1 */
+}
+
+/**
+  * @brief This function handles I2C2 event interrupt.
+  */
+void I2C2_EV_IRQHandler(void)
+{
+  /* USER CODE BEGIN I2C2_EV_IRQn 0 */
+
+  /* USER CODE END I2C2_EV_IRQn 0 */
+  HAL_I2C_EV_IRQHandler(&hi2c2);
+  /* USER CODE BEGIN I2C2_EV_IRQn 1 */
+
+  /* USER CODE END I2C2_EV_IRQn 1 */
+}
+
+/**
+  * @brief This function handles I2C2 error interrupt.
+  */
+void I2C2_ER_IRQHandler(void)
+{
+  /* USER CODE BEGIN I2C2_ER_IRQn 0 */
+
+  /* USER CODE END I2C2_ER_IRQn 0 */
+  HAL_I2C_ER_IRQHandler(&hi2c2);
+  /* USER CODE BEGIN I2C2_ER_IRQn 1 */
+
+  /* USER CODE END I2C2_ER_IRQn 1 */
 }
 
 /**
@@ -346,8 +371,8 @@ void EXTI15_10_IRQHandler(void)
   /* USER CODE BEGIN EXTI15_10_IRQn 0 */
 
   /* USER CODE END EXTI15_10_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_12);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
@@ -385,17 +410,87 @@ void TIM7_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles TIM17 global interrupt.
+  * @brief This function handles DMA2 stream0 global interrupt.
   */
-void TIM17_IRQHandler(void)
+void DMA2_Stream0_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM17_IRQn 0 */
+  /* USER CODE BEGIN DMA2_Stream0_IRQn 0 */
 
-  /* USER CODE END TIM17_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim17);
-  /* USER CODE BEGIN TIM17_IRQn 1 */
+  /* USER CODE END DMA2_Stream0_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_i2c3_tx);
+  /* USER CODE BEGIN DMA2_Stream0_IRQn 1 */
 
-  /* USER CODE END TIM17_IRQn 1 */
+  /* USER CODE END DMA2_Stream0_IRQn 1 */
+}
+
+/**
+  * @brief This function handles I2C3 event interrupt.
+  */
+void I2C3_EV_IRQHandler(void)
+{
+  /* USER CODE BEGIN I2C3_EV_IRQn 0 */
+
+  /* USER CODE END I2C3_EV_IRQn 0 */
+  HAL_I2C_EV_IRQHandler(&hi2c3);
+  /* USER CODE BEGIN I2C3_EV_IRQn 1 */
+
+  /* USER CODE END I2C3_EV_IRQn 1 */
+}
+
+/**
+  * @brief This function handles I2C3 error interrupt.
+  */
+void I2C3_ER_IRQHandler(void)
+{
+  /* USER CODE BEGIN I2C3_ER_IRQn 0 */
+
+  /* USER CODE END I2C3_ER_IRQn 0 */
+  HAL_I2C_ER_IRQHandler(&hi2c3);
+  /* USER CODE BEGIN I2C3_ER_IRQn 1 */
+
+  /* USER CODE END I2C3_ER_IRQn 1 */
+}
+
+/**
+  * @brief This function handles I2C4 event interrupt.
+  */
+void I2C4_EV_IRQHandler(void)
+{
+  /* USER CODE BEGIN I2C4_EV_IRQn 0 */
+
+  /* USER CODE END I2C4_EV_IRQn 0 */
+  HAL_I2C_EV_IRQHandler(&hi2c4);
+  /* USER CODE BEGIN I2C4_EV_IRQn 1 */
+
+  /* USER CODE END I2C4_EV_IRQn 1 */
+}
+
+/**
+  * @brief This function handles I2C4 error interrupt.
+  */
+void I2C4_ER_IRQHandler(void)
+{
+  /* USER CODE BEGIN I2C4_ER_IRQn 0 */
+
+  /* USER CODE END I2C4_ER_IRQn 0 */
+  HAL_I2C_ER_IRQHandler(&hi2c4);
+  /* USER CODE BEGIN I2C4_ER_IRQn 1 */
+
+  /* USER CODE END I2C4_ER_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM16 global interrupt.
+  */
+void TIM16_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM16_IRQn 0 */
+
+  /* USER CODE END TIM16_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim16);
+  /* USER CODE BEGIN TIM16_IRQn 1 */
+
+  /* USER CODE END TIM16_IRQn 1 */
 }
 
 /**
@@ -410,6 +505,20 @@ void ADC3_IRQHandler(void)
   /* USER CODE BEGIN ADC3_IRQn 1 */
 
   /* USER CODE END ADC3_IRQn 1 */
+}
+
+/**
+  * @brief This function handles COMP1 and COMP2 interrupts through EXTI lines 20 and 21.
+  */
+void COMP_IRQHandler(void)
+{
+  /* USER CODE BEGIN COMP_IRQn 0 */
+
+  /* USER CODE END COMP_IRQn 0 */
+  HAL_COMP_IRQHandler(&hcomp1);
+  /* USER CODE BEGIN COMP_IRQn 1 */
+
+  /* USER CODE END COMP_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

@@ -11,7 +11,13 @@
 #include <stdbool.h>
 
 
-#define HPF2020
+#define HPF20
+
+//#define HPF2019
+
+#ifdef HPF20
+	#define EEPROM
+#endif
 // Calibration settings for pedals.
 
 #define ACCELERATORLZERO 4200
@@ -238,7 +244,7 @@ uint16_t ErrorCode; // global error code.
 #define InverterRRErrorBit		10
 
 #define BMSVoltageErrorBit		11
-#ifdef HPF2020
+#ifdef HPF20
 #define InverterFLErrorBit		9
 #define InverterFRErrorBit		10
 #endif
@@ -248,7 +254,7 @@ uint16_t ErrorCode; // global error code.
 
 #define InverterReceived		0
 //#define InverterRLReceived		1
-#ifdef HPF2020
+#ifdef HPF20
 //#define InverterFReceived		2
 //#define InverterFLReceived		3
 #else
@@ -272,7 +278,7 @@ uint16_t ErrorCode; // global error code.
 #define RearLeftInverter		0
 #define RearRightInverter		1
 
-#ifdef HPF2020
+#ifdef HPF20
 #define FrontLeftInverter		2
 #define FrontRightInverter		3
 #endif
@@ -285,7 +291,7 @@ uint16_t ErrorCode; // global error code.
 #define INVERTERERROR			-99
 
 
-#ifdef HPF2020
+#ifdef HPF20
 #define INVERTERCOUNT			(4)
 #define Inverter1				(0)
 #define Inverter2				(2)
@@ -374,6 +380,7 @@ struct DeviceState {
 	char FLSpeed;
 	char FRSpeed;
 	char IVT;
+	char LCD;
 } volatile DeviceState;
 
 struct ErrorCount {

@@ -21,18 +21,43 @@ D6 - pin 16 PE12  output7 RTMD LED ( CH13 )
 D7 - pin 17 PE14  output8 BMS ( CH8 )
 */
 
-#define BMSLED_Output 		7
-#define IMDLED_Output		5
-#define BSPDLED_Output		3
+#ifdef HPF19
+	#define BMSLED_Output 		(7)
+	#define IMDLED_Output		(5)
+	#define BSPDLED_Output		(3)
 
-#define TSLED_Output		1
-#define TSOFFLED_Output		0
-#define RTDMLED_Output		6
-//#define STOPLED_Output      0
+	#define TSLED_Output		(1)
+	#define TSOFFLED_Output		(0)
+	#define RTDMLED_Output		(6)
+	//#define STOPLED_Output      (0)
 
-#define LED1_Output			8
-#define LED2_Output			9
-#define LED3_Output			10
+	#define LED1_Output			(8)
+	#define LED2_Output			(9)
+	#define LED3_Output			(10)
+
+	#define OUTPUTCount		    (11)
+#endif
+
+#ifdef HPF20
+	#define BMSLED_Output 		(7)
+	#define IMDLED_Output		(5)
+	#define BSPDLED_Output		(3)
+
+	#define TSLED_Output		(1)
+	#define TSOFFLED_Output		(0)
+	#define RTDMLED_Output		(6)
+	//#define STOPLED_Output      (0)
+
+	#define LED1_Output			(12)
+	#define LED2_Output			(13)
+	#define LED3_Output			(14)
+	#define LED4_Output			(15)
+	#define LED5_Output			(16)
+	#define LED6_Output			(17)
+	#define LED7_Output			(18)
+
+	#define OUTPUTCount		    (19)
+#endif
 
 // values to define blinking rate of led output's in fraction of second.
 

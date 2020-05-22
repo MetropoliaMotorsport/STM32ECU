@@ -22,21 +22,40 @@ ADC_Data[7]	volatile uint32_t	working ai0 on connector. ~4k to 65k op amp.      
 ADC_data[8]	new ai6  | --                                 385k/150k   10v->3.125      pf4
 */
 
-#define SteeringADC			5 // ai2
-#define ThrottleLADC		1 // ai7
-#define ThrottleRADC		8 // ai6
-//#define ThrottleRADC		1 // ai6olld
-#define BrakeFADC			0 // ai1  pa3 PIN CN9-1
-#define BrakeRADC			7 // ai0  pa0 PIN CN10-29
-#define DrivingModeADC		2 // ai3
-#define CoolantTempLADC     3 // ai5 tmp_l // L is not connected.
-#define CoolantTempRADC     3 // ai4 tmp_r should be 3, but disconnected.
+#ifdef HPF19
+	#define SteeringADC			5 // ai2
+	#define ThrottleLADC		1 // ai7
+	#define ThrottleRADC		8 // ai6
+	//#define ThrottleRADC		1 // ai6olld
+	#define BrakeFADC			0 // ai1  pa3 PIN CN9-1
+	#define BrakeRADC			7 // ai0  pa0 PIN CN10-29
+	#define DrivingModeADC		2 // ai3
+	#define CoolantTempLADC     3 // ai5 tmp_l // L is not connected.
+	#define CoolantTempRADC     3 // ai4 tmp_r should be 3, but disconnected.
 
-#define NumADCChan		   	8
-#define NumADCChanADC3 		2
-#define SampleSize			4 // how many samples to average
-#define ADC_CONVERTED_DATA_BUFFER_SIZE   ((uint32_t) NumADCChan*SampleSize)   /* Size of array aADCxConvertedData[] */
-#define ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3   ((uint32_t) NumADCChanADC3*SampleSize)
+	#define NumADCChan		   	8
+	#define NumADCChanADC3 		2
+	#define SampleSize			4 // how many samples to average
+	#define ADC_CONVERTED_DATA_BUFFER_SIZE   ((uint32_t) NumADCChan*SampleSize)   /* Size of array aADCxConvertedData[] */
+	#define ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3   ((uint32_t) NumADCChanADC3*SampleSize)
+#endif
+
+
+#ifdef HPF20
+	#define ThrottleLADC		(0) //
+	#define ThrottleRADC		(1) //
+	#define BrakeFADC			(3) //
+	#define BrakeRADC			(4) //
+	#define ShutdownADC			(2)
+	#define TemperatureADC	    (6)
+
+	#define NumADCChan		   	(3)
+	#define NumADCChanADC3 		(3)
+	#define SampleSize			(4)
+	#define ADC_CONVERTED_DATA_BUFFER_SIZE   ((uint32_t) NumADCChan*SampleSize*2)
+	/* Size of array aADCxConvertedData[] */
+	#define ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3   ((uint32_t) NumADCChanADC3*SampleSize*2)
+#endif
 
 // using local or remote ADC.
 volatile char usecanADC;

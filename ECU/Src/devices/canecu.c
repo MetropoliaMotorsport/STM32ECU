@@ -316,7 +316,7 @@ int ResetCanReceived( void ) // only wait for new data since request.
 	ResetCanData(&CanState.IVTAs);
 
 	// front wheel encoders
-#ifndef HPF2020
+#ifndef HPF20
 	ResetCanData(&CanState.FLeftSpeedERR);
 	ResetCanData(&CanState.FRightSpeedERR);
 	ResetCanData(&CanState.FLeftSpeedPDO1);
@@ -685,7 +685,7 @@ char CAN_SENDINVERTERERRORS( void )
 
     uint8_t CANTxData[8] =
     { CarState.Inverters[RearLeftInverter].InvState,CarState.Inverters[RearRightInverter].InvState, CarState.Inverters[RearLeftInverter].InvStateCheck, CarState.Inverters[RearRightInverter].InvStateCheck,
-#ifndef HPF2020
+#ifndef HPF20
 			0,0,0,0
 #else
 			CarState.Inverters[FrontRightInverter].InvState, CarState.Inverters[FrontLeftInverter].InvStateCheck, CarState.Inverters[FrontRightInverter].InvStateCheck
@@ -765,6 +765,7 @@ char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error )
 	} else TxHeaderHV.Identifier = ECU_CAN_ID+0x13; // decide on an ECU ID/
 
 //	int16_t steering12bit = ADC_Data[SteeringADC] >> 4;
+#ifdef HPF19
 	uint8_t CANTxData2[8] = {
 		//	getByte(ADC_Data[SteeringADC], 0), getByte(ADC_Data[SteeringADC], 1),
 			getByte(ADC_Data[SteeringADC], 0), getByte(ADC_Data[SteeringADC], 1),
@@ -775,6 +776,18 @@ char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error )
 	};
 
 	return CAN1Send( &TxHeaderHV, CANTxData2 );
+
+#endif
+
+#ifdef HPF20
+	uint8_t CANTxData2[8] = { // TODO Update for HPF20
+			0, 0,
+			0, 0,
+			0, 0,
+			0, 0,
+	};
+	return CAN1Send( &TxHeaderHV, CANTxData2 );
+#endif
 }
 
 char CAN_SendADCminmax( void )
@@ -785,22 +798,24 @@ char CAN_SendADCminmax( void )
 		CAN_SendADCValue(ADC_DataMin[ThrottleRADC],12);
 		CAN_SendADCValue(ADC_DataMin[BrakeFADC],13);
 		CAN_SendADCValue(ADC_DataMin[BrakeRADC],14);
-
+#ifdef HPF19
 		CAN_SendADCValue(ADC_DataMin[SteeringADC],15);
 		CAN_SendADCValue(ADC_DataMin[DrivingModeADC],16);
 		CAN_SendADCValue(ADC_DataMin[CoolantTempLADC],17);
 		CAN_SendADCValue(ADC_DataMin[CoolantTempRADC],18);
-
+#endif
 		CAN_SendADCValue(ADC_DataMax[ThrottleLADC],21);
 		CAN_SendADCValue(ADC_DataMax[ThrottleRADC],22);
 
 		CAN_SendADCValue(ADC_DataMax[BrakeFADC],23);
 		CAN_SendADCValue(ADC_DataMax[BrakeRADC],24);
 
+#ifdef HPF19
 		CAN_SendADCValue(ADC_DataMax[SteeringADC],25);
 		CAN_SendADCValue(ADC_DataMax[DrivingModeADC],26);
 		CAN_SendADCValue(ADC_DataMax[CoolantTempLADC],27);
 		CAN_SendADCValue(ADC_DataMax[CoolantTempRADC],28);
+#endif
 	}
 	return 0;
 }
@@ -901,7 +916,7 @@ char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter )
 
 	TxHeaderInverter.Identifier = 0x400 + CarState.Inverters[inverter].COBID;
 
-#ifdef HPF2019
+#ifdef HPF19
 left  // 0x47e
 right // 0x47f
 #endif
@@ -944,7 +959,7 @@ char CAN_SendErrors( void )
 #endif
 
 	uint8_t CANTxData[8] = { CarState.Inverters[RearLeftInverter].InvState,CarState.Inverters[RearRightInverter].InvState, CarState.Inverters[RearLeftInverter].InvStateCheck, CarState.Inverters[RearRightInverter].InvStateCheck,
-#ifndef HPF2020
+#ifndef HPF20
 			0,0,0,0
 #else
 			CarState.Inverters[FrontRightInverter].InvState, CarState.Inverters[FrontLeftInverter].InvStateCheck, CarState.Inverters[FrontRightInverter].InvStateCheck
@@ -1052,7 +1067,7 @@ char CANLogDataFast( void )
 
 	resetCanTx(CANTxData);
 	TxHeaderLog.Identifier = 0x7CC;
-#ifndef HPF2020
+#ifndef HPF20
 	storeBEint32(CarState.SpeedFL, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
 
 	storeBEint32(CarState.SpeedFR, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
@@ -1134,7 +1149,7 @@ bool processInvMessage( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8])
 			  processed = true;
 		 }
 
-		 if ( RxHeader->Identifier - 0x700 - CarState.Inverters[i].COBID == 0)  // 0x77E,8,16LE -> // inverter NMT monitoring id // layout of inverters for HPF2020 - one handles each side of car.
+		 if ( RxHeader->Identifier - 0x700 - CarState.Inverters[i].COBID == 0)  // 0x77E,8,16LE -> // inverter NMT monitoring id // layout of inverters for HPF20 - one handles each side of car.
 		 {
 				processINVNMT(CANRxData, RxHeader->DataLength, &CarState.Inverters[i]);
 				processed = true;

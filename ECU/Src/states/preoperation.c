@@ -102,7 +102,7 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	if ( returnvalue == 0xFFFF ) // first loop, set what devices expecting.
 	{
 		 returnvalue =
-	#ifndef HPF2020
+	#ifdef HPF19
 						  (0x1 << FLeftSpeedReceived) + // initialise return value to all devices in error state ( bit set )
 						  (0x1 << FRightSpeedReceived) +
 	#endif
@@ -130,7 +130,7 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 		   returnvalue |= 0x1 << PedalADCReceived;
 	}
 
-#ifndef HPF2020
+#ifdef HPF19
 	if ( DeviceState.FrontSpeedSensors == DISABLED ) // if we've decided to operate without speed sensors, don't process them
 	{
 		returnvalue &= ~(0x1 << FLeftSpeedReceived);
@@ -219,13 +219,17 @@ int PreOperation( uint32_t OperationLoops  )
 {
 //	static int OperationLoops = 0;
 	static uint16_t preoperationstate;
+	static uint16_t ReadyToStart;
 
 	char RequestState = PreOperationalState; // initialise to PreOperationalState as default requested next state.
 
     if ( OperationLoops == 0 )
 	    {
+    		lcd_setscrolltitle("Pre Operation");
+    		lcd_send_stringpos(3,0,"  <Red for config>");
 	    	preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
 	    	CarState.HighVoltageReady = 0;
+	    	ReadyToStart = 0xFFFF;
 	    	minmaxADCReset();
 	 //   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
 	    	// send to individual devices rather than reset everything if needed.
@@ -235,6 +239,53 @@ int PreOperation( uint32_t OperationLoops  )
 #endif
 	{
 		CAN_SendStatus(1, PreOperationalState, preoperationstate );
+
+		// generate device waiting string.
+
+		if ( preoperationstate != 0 || ReadyToStart != 0 ){
+ //   		lcd_send_stringpos(1,0,"Waiting for:");
+
+			char str[80] = "Wait:";
+
+#ifdef HPF19
+			if (preoperationstate & (0x1 << FLeftSpeedReceived) )  { strcat(str, "FSL" ); }
+			if (preoperationstate & (0x1 << FRightSpeedReceived) )  {strcat(str, "FSR" );  }
+#endif
+			if (preoperationstate & (0x1 << Inverter1Received) ) { strcat(str, "IV1 " ); }
+#ifdef TWOINVERTERMODULES
+			if (preoperationstate & (0x1 << Inverter2Received) )  { strcat(str, "IV2" );  }
+#endif
+			if (preoperationstate & (0x1 << BMSReceived) ) { strcat(str, "BMS " );  }
+			if (preoperationstate & (0x1 << PDMReceived) ) { strcat(str, "PDM " ); }
+			if (preoperationstate & (0x1 << PedalADCReceived) ) {strcat(str, "ADC " );  }
+			if (preoperationstate & (0x1 << IVTReceived) ) { strcat(str, "IVT " );  }
+			if ( str[strlen(str)] == 32 ) { str[strlen(str)] = 0 ; }
+			if ( strlen(str) > 20 ) { str[18] = '.'; str[19] = '.'; str[20] = 0; };
+			lcd_send_stringpos(1,0,str);
+
+			if ( ReadyToStart != 0 ){
+				strcpy(str, "Err:");
+
+				if (ReadyToStart & (0x1 << 0 ) ) { strcat(str, "PDM " );  }
+				if (ReadyToStart & (0x1 << 2 ) ) { strcat(str, "INV " );  }
+				if (ReadyToStart & (0x1 << 3 ) ) { strcat(str, "ShutdownSW " );  }
+
+				if ( strlen(str) > 20 ) { str[18] = '.'; str[19] = '.'; str[20] = 0; };
+				lcd_send_stringpos(2,0,str);
+			}
+
+		} else
+		{
+			lcd_clearscroll();
+
+				lcd_send_stringpos(1,0,"Ready To Start      ");
+				lcd_send_stringpos(2,0,"                    ");
+				lcd_send_stringpos(3,0,"   <Press Yellow>   ");
+
+//			char str[20] ="";
+//			lcd_send_stringpos(2,0,str);
+		}
+
 	}
 
 //	ResetCanReceived();
@@ -254,6 +305,7 @@ int PreOperation( uint32_t OperationLoops  )
 			break; */
 
 		case ReceivingConfig :
+			preoperationstate = 2^15;
 			RequestState = PreOperationalState; // don't allow leaving pre operation whilst
 												// in middle of processing a configuration / testing request.
 			break;
@@ -267,14 +319,18 @@ int PreOperation( uint32_t OperationLoops  )
 
 	// checks if we have heard from other necessary connected devices for operation.
 
-	while (  looptimer < PROCESSLOOPTIME-50 ) {	looptimer = gettimer() - loopstart;}; // check
+	while (  looptimer < PROCESSLOOPTIME-50 ) {
+		looptimer = gettimer() - loopstart;
+		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
+	}; // check
 
-	preoperationstate  = DevicesOnline(preoperationstate);
+	preoperationstate |= DevicesOnline(preoperationstate);
 
 	uint16_t error = CheckErrors();
 	// check error state.
 	if ( error )
 	{
+		// print error reasons preventing startup.
 //		return OperationalErrorState; // if a device is in error state, quit to error handler to decide how to proceed.
 	}
 
@@ -325,13 +381,32 @@ int PreOperation( uint32_t OperationLoops  )
 		if ( CarState.Inverters[i].InvState == 0xFF ) invonline = false; // if any inverter has yet to be put in a status, all inverters are not ready.
 	}
 
-	if ( !errorPDM()
+
+	ReadyToStart = 0;
+
+	if ( errorPDM() ) { ReadyToStart += 1; }
+	if ( preoperationstate != 0 ) { ReadyToStart += 2; }
+	if ( !invonline ) { ReadyToStart += 4; }
+#ifdef SHUTDOWNSWITCHCHECK
+	if ( CarState.ShutdownSwitchesClosed )  { ReadyToStart += 8; }
+#endif
+
+/*	if ( !errorPDM()
 			&& preoperationstate == 0
 			&& invonline // everything is ready to move to next state.
 #ifdef SHUTDOWNSWITCHCHECK
-            && CarState.ShutdownSwitchesClosed // only allow exiting error state if shutdown switches closed. - maybe move to only for auto
+            && CarState.ShutdownSwitchesClosed // only allow startup procedure if shutdown switches open.
 #endif
 	   )
+	{
+		ReadyToStart = true;
+	} else
+	{
+		ReadyToStart = false;
+	}
+*/
+
+	if ( ReadyToStart == 0 )
 	{
 		blinkOutput(TSLED_Output, LEDBLINK_ONE, 1);
 			// devices are ready and in pre operation state.
@@ -361,7 +436,9 @@ int PreOperation( uint32_t OperationLoops  )
 	{ // hardware not ready for active state
 		if ( OperationLoops == 50 ) // 0.5 seconds, send reset nmt, try to get inverters online if not online at startup.
 		{
+#ifdef HPF19 // unsue on expected HPF20 behaviour yet.
 			if ( !CarState.TestHV )	NMTReset();
+#endif
 		}
 
 		if ( CheckActivationRequest() == 1 )
@@ -373,8 +450,6 @@ int PreOperation( uint32_t OperationLoops  )
 				CAN_SendStatus(1,PowerOnRequestBeforeReady,0);
 
 				// send NMT.
-
-
 			} else
 			{
 				OperationLoops = 0;
@@ -389,7 +464,7 @@ int PreOperation( uint32_t OperationLoops  )
 				}
 
 				// check if limp state possible?
-				// return LimpState; // either testing or limp mode requested requested.
+				// return LimpState; // either testing or limp mode requested requested. - not seperate state in current config.
 
 				return OperationalErrorState; // quit right away to error handler state if no possible special state requested on timeout
 			}
