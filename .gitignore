@@ -45,6 +45,7 @@
 .mxproject
 TrueSTUDIO/
 /Debug/
+/ECU/Debug/
 __history/
 __recovery/
 *.stat

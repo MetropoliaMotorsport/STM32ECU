@@ -77,7 +77,10 @@ void ResetStateData( void ) // set default startup values for global state value
 #endif
 
 	DeviceState.ADC = OFFLINE;
-	DeviceState.Inverters[INVERTERCOUNT] = OFFLINE;
+
+	for ( int i=0;i<INVERTERCOUNT;i++){
+		DeviceState.Inverters[i] = OFFLINE;
+	}
 
 	DeviceState.BMS = OFFLINE;
 	DeviceState.PDM = OFFLINE;
@@ -111,6 +114,14 @@ void ResetStateData( void ) // set default startup values for global state value
 		CanState.InverterPDO3[i].time = 0;
 	}
 
+	CarState.Inverters[0].COBID = InverterRL_COBID;
+	CarState.Inverters[1].COBID = InverterRR_COBID;
+
+#if INVERTERCOUNT > 2
+	CarState.Inverters[3].COBID = InverterRL_COBID;
+	CarState.Inverters[4].COBID = InverterRR_COBID;
+#endif
+
 	CarState.Torque_Req_Max = 0;
 	CarState.Torque_Req_CurrentMax = 0;
 	CarState.LimpRequest = 0;
@@ -123,6 +134,7 @@ void ResetStateData( void ) // set default startup values for global state value
 	Errors.ErrorReason = 0;
 	Errors.CANSendError1 = 0;
 	Errors.CANSendError2 = 0;
+	Errors.ADCSent = false;
 
 }
 
@@ -310,7 +322,13 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		char str[20];
 		lcd_setscrolltitle("ERROR State");
+		lcd_clearscroll();
+
+		sprintf(str,"Loc:%.2X Code:%.4X", Errors.ErrorPlace, Errors.ErrorReason);
+		lcd_send_stringscroll(str);
+
 		CarState.HighVoltageReady = 0; // no high voltage allowed in this state.
 
 		for ( int i=0;i<INVERTERCOUNT;i++){
@@ -321,8 +339,20 @@ int OperationalErrorHandler( uint32_t OperationLoops )
         CAN_SendTimeBase();
         
 		errorstate = CheckErrors();
+
+
+		sprintf(str,"Errorstate: %.4X", errorstate);
+		lcd_send_stringscroll(str);
 		// send cause of error state.
 		CanState.ECU.newdata = 0;
+
+
+		switch ( Errors.ErrorPlace )
+		{
+		case 0xF1 : 	sprintf(str,"CANBUS1 Offline"); break;
+		case 0xF2 : 	sprintf(str,"CANBUS2 Offline"); break;
+		}
+		lcd_send_stringscroll(str);
         
 //		CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
 		blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
@@ -330,7 +360,10 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		errorstatetime = gettimer();
 	}
 
-	if ( Errors.InverterError )	CAN_SENDINVERTERERRORS();
+	if ( Errors.InverterError ){
+		CAN_SENDINVERTERERRORS();
+		lcd_send_stringscroll("Inverter error");
+	}
 
 	if ( Errors.ErrorPlace ){
 		CAN_SendErrors();
@@ -340,6 +373,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	if ( !CarState.ShutdownSwitchesClosed ) // indicate shutdown switch status with blinking rate.
 	{
+		lcd_send_stringscroll("Shutdown switches");
 		blinkOutput(TSLED_Output,LEDBLINK_ONE,LEDBLINKNONSTOP);
 		blinkOutput(RTDMLED_Output,LEDBLINK_ONE,LEDBLINKNONSTOP);
 	} else
@@ -349,30 +383,66 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 	}
 
 #ifdef AUTORESET
-	bool allowreset = true;
+	bool allowautoreset = true;
 	bool invertererror = false;
 
 	for ( int i=0;i<INVERTERCOUNT;i++)
 	{
 		if ( DeviceState.Inverters[i] == ERROR ) invertererror = true;
-		if ( !Errors.InvAllowReset[i] ) allowreset = false;
+		if ( !Errors.InvAllowReset[i] ) allowautoreset = false;
 	}
 
 	// ( DeviceState.InverterRL == ERROR || DeviceState.InverterRR == ERROR )
 	// ( Errors.LeftInvAllowReset && Errors.RightInvAllowReset )
 #endif
 
-	// wait for restart request if allowed by error state.
-	if ( errorstatetime + 20000 < gettimer() // ensure error state is seen for at least 2 seconds.
-		//&& errorPDM() == 0
-		&& ( CheckErrors() == 0 || CheckErrors() == 99 ) // inverter error checked in next step.
-        && CheckADCSanity() == 0
+
+	int allowreset = 0; // allow reset if this is still 0 after checks.
+
+	char str[80] = "ERROR: ";
+
+	if ( errorstatetime + 20000 > gettimer() ) // ensure error state is seen for at least 2 seconds.
+	{
+		allowreset += 1;
+		strcat(str, "" );
+	}
+
+	if ( ! ( CheckErrors() == 0 || CheckErrors() == 99 ) ) // inverter error checked in next step.
+	{
+//		allowreset += 2;
+		strcat(str, "PDM " );
+	}
+
+	if ( ! ( CheckADCSanity() == 0 ))
+	{
+		allowreset +=4;
+		strcat(str, "PDL " );
+
+	}
+
 #ifdef SHUTDOWNSWITCHCHECK
-        && CarState.ShutdownSwitchesClosed // only allow exiting error state if shutdown switches closed. - maybe move to only for auto
+    if ( !CarState.ShutdownSwitchesClosed )
+    {
+    	allowreset +=8;  // only allow exiting error state if shutdown switches closed. - maybe move to only for auto
+    	strcat(str, "SHT " );
+    }
 #endif
-        && ( checkReset() == 1 // manual reset
+
+    strpad(str,20);
+
+    if ( allowreset == 0 )
+    {
+    	lcd_setscrolltitle("ERROR (Can Reset) ");
+    } else
+    {
+    	lcd_setscrolltitle(str);
+    }
+
+
+	// wait for restart request if allowed by error state.
+	if ( allowreset == 0 && ( checkReset() == 1 // manual reset
 #ifdef AUTORESET
-        		|| ( invertererror  && allowreset ) // or automatic reset if allowed inverter error.
+        		|| ( invertererror  && allowautoreset ) // or automatic reset if allowed inverter error.
 #endif
            )
 		)
@@ -570,7 +640,7 @@ int OperationalProcess( void )
 				Errors.ErrorPlace = 0xF2;
 				NewOperationalState = OperationalErrorState;
 			} */
-
+#ifndef ONECAN
 			if ( CAN2Status.BusOff) // detect passive error instead and try to stay off bus till clears?
 			{
 			//	Errors.ErrorPlace = 0xAA;
@@ -607,6 +677,7 @@ int OperationalProcess( void )
 				}
 			}
 #endif
+#endif
 
 /*			if ( HAL_FDCAN_IsRestrictedOperationMode(&hfdcan2) )
 			{
@@ -634,6 +705,8 @@ int OperationalProcess( void )
 			loopcount++;
 			totalloopcount++;
 		}
+#ifdef WFI
 		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
+#endif
 	}
 }

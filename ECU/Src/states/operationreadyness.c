@@ -149,7 +149,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 // 1.	Testing the functionality/readings from the different sensors
 // 2.	Checking that all expected CAN bus messages were received within specified time-interval
 //      (Both Inverters, both encoders, both accelerator pedal sensors, brake pressure sensor/s, BMS
-//      IVT-MOD, steering angle sensor, acceleration/yaw sensor….)
+//      IVT-MOD, steering angle sensor, acceleration/yaw sensorï¿½.)
 // 3.	Checking that the HV and LV batteries voltages and temperatures are within defined limits
 
 int OperationReadyness( uint32_t OperationLoops ) // process function for operation readyness state
@@ -160,6 +160,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
 		lcd_setscrolltitle("Readying Devices");
+		lcd_clearscroll();
 //		sanitystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		received = 0xFFFF;
 		InverterSent = 0;
@@ -177,7 +178,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 	if ( OperationLoops > 500 )	// how many loops allow to get all data on time?, failure timeout.
 	{
 		Errors.ErrorPlace = 0xBA;
-		return OperationalErrorState; // error, too long waiting for data
+		return OperationalErrorState; // error, too long waiting for data. Go to error state to inform and allow restart of process.
 	}
 
 	uint32_t loopstart = gettimer();
@@ -190,7 +191,9 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 		received = ReadyReceive( received );
         // check for incoming data, break when all received.
 		looptimer = gettimer() - loopstart;
+#ifdef WFI
 		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
+#endif
 	} while ( received != 0 && looptimer < PROCESSLOOPTIME-50 ); // check
 
 	// process data.

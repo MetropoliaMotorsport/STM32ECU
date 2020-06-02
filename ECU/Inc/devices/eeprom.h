@@ -88,6 +88,7 @@ typedef struct eepromdatastruct {
 
 int initiliseEEPROM();
 
+uint8_t * getEEPROMBuffer();
 
 #endif /* EEPROM_H_ */
 

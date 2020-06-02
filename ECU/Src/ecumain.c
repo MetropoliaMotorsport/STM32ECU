@@ -97,6 +97,8 @@ static int HardwareInit( void )
 	MX_GPIO_Init(); // no failure return value
 	// startup LCD first
 #ifdef HPF20
+#ifdef SCREEN
+
 	MX_I2C3_Init();
 	if ( lcd_init(&hi2c3) ){
 		DeviceState.LCD = DISABLED;
@@ -106,6 +108,7 @@ static int HardwareInit( void )
 		lcd_send_stringposDIR(0,0,"Startup...   ");
 		lcd_clearscroll();
 	}
+#endif
 
 	MX_TIM3_Init(); // at this point LED status should work.
 
@@ -295,6 +298,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
   */
 int realmain(void)
 {
+	ResetStateData(); // get values configured.
+
 #ifdef PWMSTEERINGTEST
 
 	MX_TIM8_Init(); // pwm

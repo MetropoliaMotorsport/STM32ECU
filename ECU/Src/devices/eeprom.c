@@ -29,13 +29,18 @@
 				eepromdata block2; // block 60-109
 			};
 
-			uint8_t reserved2[32*15]; // block 110-124  480 bytes
-			uint8_t errorlogs[32*4]; // block 125-128  128 bytes
+			uint8_t reserved2[32*14]; // block 110-123  448 bytes
+			uint8_t errorlogs[32*4]; // block 124-127  128 bytes
 		};
 	} EEPROMdata;
 
 	volatile bool eepromsendinprogress = false;
 	volatile bool eepromreceivedone = false;
+
+	uint8_t * getEEPROMBuffer()
+	{
+		return EEPROMdata.buffer;
+	}
 
 	// I2C Mem transfers only used for EEPROM currently so no need to check handle yet.
 
@@ -82,7 +87,7 @@
 	  */
 	 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *I2cHandle)
 	{
-		 if ( I2cHandle->Instance = I2C3 ){
+		 if ( I2cHandle->Instance == I2C3 ){
 			 LCD_I2CError();
 		 }
 	  /* Turn LED3 on: Transfer error in reception/transmission process */

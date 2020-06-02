@@ -14,6 +14,8 @@
 
 int lcd_update( void );
 
+void strpad(char * str, int len);
+
 void lcd_errormsg(char *str); // send an
 
 int lcd_clearerror( void ); // clear error message and allow normal display again.

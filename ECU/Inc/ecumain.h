@@ -9,6 +9,7 @@
 #define ECUMAIN_H_
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "main.h"
 
@@ -42,6 +43,7 @@
 #include "bms.h"
 #include "adcecu.h"
 #include "i2c-lcd.h"
+#include "eeprom.h"
 
 
 int realmain(void);

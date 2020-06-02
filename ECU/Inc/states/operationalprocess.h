@@ -14,5 +14,6 @@ extern int OperationalState;
 
 int OperationalProcess( void );
 uint16_t CheckErrors( void );
+void ResetStateData( void );
 
 #endif /* OPERATIONALPROCESS_H_ */

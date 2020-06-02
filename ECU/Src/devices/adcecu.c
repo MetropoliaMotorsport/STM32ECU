@@ -294,8 +294,9 @@ int getBrakeR(uint16_t RawADCInput)
 int getBrakeBalance(uint16_t ADCInputF, uint16_t ADCInputR)
 {
 	if( usecanADC )  // check if we're operating on fake canbus ADC
-	{
-	  return (CANADC.BrakeF * 100) / ( CANADC.BrakeF + CANADC.BrakeR );
+	{ // lovely divide by zero possible here.
+		if ( CANADC.BrakeF == 0) return 0;
+		return (CANADC.BrakeF * 100) / ( CANADC.BrakeF + CANADC.BrakeR );
 	}
 #ifndef STMADC
 	return 50;
@@ -655,11 +656,14 @@ uint16_t CheckADCSanity( void )
 	uint16_t returnvalue=(0x1 << BrakeFErrorBit)+
 						(0x1 << BrakeRErrorBit)+
 						(0x1 << AccelRErrorBit)+
-						(0x1 << AccelLErrorBit)+
-						(0x1 << CoolantLErrorBit)+
+						(0x1 << AccelLErrorBit)
+#ifdef HPF19
+					   +(0x1 << CoolantLErrorBit)+
 						(0x1 << CoolantRErrorBit)+
 						(0x1 << SteeringAngleErrorBit)+
-						(0x1 << DrivingModeErrorBit );
+						(0x1 << DrivingModeErrorBit )
+#endif
+						;
 					//	(0x1 << BMSVoltageErrorBit); // set all bits to error state at start, should be 0 by end if OK
 
 	// check bit bit = (number >> n) & 0x1;
@@ -781,11 +785,15 @@ uint16_t CheckADCSanity( void )
 		if ( Errors.ADCError < 5 )
 		{
 			returnvalue=0;
+			Errors.ADCSent = false;
 		} else
 		{
+			if ( !Errors.ADCSent ){
+				Errors.ADCSent = true;
+				CAN_SendADC(ADC_DataError, 1); // send error information to canbus - this should perhaps be latched to only happen once per error state.
+			}
 			returnvalue=0xFF; // 5 adc error reads happened in row, flag as error.
-			CAN_SendADC(ADC_DataError, 1); // send error information to canbus - this should perhaps be latched to only happen once per error state.
-		}
+}
 	} else // no errors, clear flags.
 	{
 		if ( Errors.ADCError > 0 )	Errors.ADCError--;

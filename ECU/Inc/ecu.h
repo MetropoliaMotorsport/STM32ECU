@@ -17,6 +17,7 @@
 
 #ifdef HPF20
 	#define EEPROM
+	#define SCREEN
 #endif
 // Calibration settings for pedals.
 
@@ -45,7 +46,7 @@
 #define USEADC3
 
 // Use only one canbus for all functions, for bench testing. Not fully working.
-//#define ONECAN
+#define ONECAN
 
 // Both CAN's are connected to one bus for bench testing, not entirely working.
 //#define sharedCAN
@@ -130,7 +131,9 @@
 //#define RETRANSMITBADDATA
 
 // Transmit error messages and status on 2nd CANBUS also.
+#ifndef ONECAN
 #define CAN2ERRORSTATUS
+#endif
 
 // Allow a 450ms window of brake + apps before throttle is cut.
 #define APPSALLOWBRAKE
@@ -144,7 +147,7 @@
 #define RTDMStopTime    3 // 3 seconds from entering RTDM before stop button active.
 
 // Try to restart CANBUS if ECU goes offbus.
-//#define RECOVERCAN
+#define RECOVERCAN
 
 // Do not send any torque request to inverters, for bench testing safely.
 //#define NOTORQUEREQUEST
@@ -215,11 +218,15 @@
 #define IdleState				3
 #define TSActiveState			4
 #define RunningState			5
-#define ReceivingConfig			30
+#define ReceivingData			30
+#define ReceiveAck				1
+#define ReceiveErr				99
 #define TestingState			10
 #define LimpState				20
 #define OperationalErrorState   50
+
 #define FatalErrorState			99
+
 
 uint16_t ErrorCode; // global error code.
 
@@ -249,6 +256,8 @@ uint16_t ErrorCode; // global error code.
 #define InverterFRErrorBit		10
 #endif
 
+
+
 #define Inverter1Received		0 //
 #define Inverter2Received		2
 
@@ -258,13 +267,13 @@ uint16_t ErrorCode; // global error code.
 //#define InverterFReceived		2
 //#define InverterFLReceived		3
 #else
-#define FLeftSpeedReceived		2
-#define FRightSpeedReceived		3
+  #define FLeftSpeedReceived		2 // TODO fix conflict?
+  #define FRightSpeedReceived		3
 #endif
 #define PedalADCReceived		4
 #define BMSReceived				5
-#define PDMReceived				4
-#define BMSReceived				5
+#define PDMReceived				6
+
 
 
 
@@ -292,7 +301,7 @@ uint16_t ErrorCode; // global error code.
 
 
 #ifdef HPF20
-#define INVERTERCOUNT			(4)
+#define INVERTERCOUNT			(2)
 #define Inverter1				(0)
 #define Inverter2				(2)
 #else
@@ -363,7 +372,7 @@ volatile struct CarState {
 //	int32_t Wheel_Speed_Average;
 
 //	uint8_t StopLED;
-} volatile CarState, LastCarState, ErrorCarState;  // define external into realmain?
+} CarState, LastCarState, ErrorCarState;  // define external into realmain?
 
 
 struct DeviceState {
@@ -411,6 +420,7 @@ struct ErrorCount {
 	uint32_t ADCError;
 	uint16_t ADCTimeout;
 	uint16_t ADCErrorState;
+	bool	 ADCSent;
 
 	uint16_t IVTIReceive;
 	uint16_t IVTTimeout;

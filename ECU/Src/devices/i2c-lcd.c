@@ -38,10 +38,22 @@ static int     sendbufferpos = 0;
 
 
 
-static bool inerror = false;
+volatile static bool inerror = false;
 
 volatile static bool readytosend = true;
+uint32_t lcderrortime = 0;
 
+
+void strpad(char * str, int len){
+	int strlength = strlen(str);
+	if ( strlength > 20 )
+	{
+		str[18] = '.'; str[19] = '.'; str[20] = 0;
+	} else
+	{ // pad string out to clear rest of line if shorter.
+		for (int i=strlength;i<20;i++) str[i] = 32;
+	};
+}
 
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
@@ -49,6 +61,7 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 	if ( hi2c->Instance == I2C3 ){
 		readytosend = true;
 		sendbufferpos=0;
+		inerror = false;
 	}
 }
 
@@ -57,6 +70,7 @@ void LCD_I2CError( void )
 {
 	readytosend = false;
 	inerror = true;
+	lcderrortime = gettimer();
 
 }
 
@@ -88,6 +102,7 @@ int lcd_update( void ) // batch send buffered LCD commands
 /* 		for ( int i=0;i<40;i++){
 			sendbuffer[len+i] = LCDBuffer[i];
 		} */
+
 /*
 		sendbuffer[sendbufferpos] = 0x80;
 		sendbuffer[sendbufferpos+1] = cmd;
@@ -99,12 +114,19 @@ int lcd_update( void ) // batch send buffered LCD commands
 
 */
 		// send whole screen buffer.
+#ifdef SCREEN
 		if ( HAL_I2C_Master_Transmit_IT(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, 83) != HAL_OK ){
 				sendbufferpos=0;
 				return 1;
 		}
+#endif
 	#endif
 		sendbufferpos=0;
+	} else if ( inerror && gettimer() > lcderrortime+10000 )
+		// been one second since lcd error, try again.
+	{	// avoid i2c constantly failing if lcd dropped off, but try to recover.
+		inerror = false;
+		readytosend = true;
 	}
 	return 0;
 
@@ -120,10 +142,10 @@ int lcd_update( void ) // batch send buffered LCD commands
 
 /*
  * After the transmission of the slave address, either the control byte or the data byte may be sent across the SDA.
- * A control byte mainly consists of Co and D/C# bits following by six “0”’s.
-a. If the Co bit is set as logic “0”, the transmission of the following information will contain data bytes only.
-b. The D/C# bit determines the next data byte is acted as a command or a data. If the D/C# bit is set to logic “0”,
-it defines the following data byte as a command. If the D/C# bit is set to logic “1”,
+ * A control byte mainly consists of Co and D/C# bits following by six ï¿½0ï¿½ï¿½s.
+a. If the Co bit is set as logic ï¿½0ï¿½, the transmission of the following information will contain data bytes only.
+b. The D/C# bit determines the next data byte is acted as a command or a data. If the D/C# bit is set to logic ï¿½0ï¿½,
+it defines the following data byte as a command. If the D/C# bit is set to logic ï¿½1ï¿½,
 it defines the following data byte as a data which will be stored at the DDRAM. The DDRAM address counter will be increased by one
 automatically after each data write.
  */

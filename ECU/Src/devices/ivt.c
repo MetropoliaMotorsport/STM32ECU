@@ -81,7 +81,7 @@ uint8_t processIVT(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
 	//			break;
 			case IVTWh_ID : if ( value < 100000)
 				{ RxOK[2] = 0;  RxOK[3] = 0;  RxOK[4] = 0;  RxOK[5] = 0; }
-				if ( CANRxData[0] == 7 )
+				if ( CANRxData[0] == 7 ) // TODO check value
 					RxOK[0] = 0;
 				break;
 

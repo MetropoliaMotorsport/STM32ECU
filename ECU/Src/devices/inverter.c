@@ -193,10 +193,14 @@ uint8_t processINVNMT(uint8_t CANRxData[8], uint32_t DataLength, volatile Invert
 
 uint8_t receiveINVNMT( volatile InverterState *Inverter)
 {
-	if ( // CanState.InverterNMT.time > 0 || // switch to using device state, as set in interrupt.
-			CarState.Inverters[RearLeftInverter].InvState != 0xFF && CarState.Inverters[RearRightInverter].InvState != 0xFF
+	// TODO check also inverters for bootup state.
+
+	if ( DeviceState.Inverters[Inverter->InverterNum] < OFFLINE // all valid operational states lower than offine.
+// TODO fix nmt detection
+			// CanState.InverterNMT.time > 0 || // switch to using device state, as set in interrupt.
+//			CarState.Inverters[RearLeftInverter].InvState != 0xFF && CarState.Inverters[RearRightInverter].InvState != 0xFF
 #ifdef HPF20
-			&& CarState.Inverters[FrontLeftInverter].InvState != 0xFF && CarState.Inverters[FrontLeftInverter].InvState != 0xFF
+//			&& CarState.Inverters[FrontLeftInverter].InvState != 0xFF && CarState.Inverters[FrontLeftInverter].InvState != 0xFF
 #endif
 	)
 	{

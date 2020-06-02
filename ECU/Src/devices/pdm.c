@@ -36,6 +36,11 @@ void processPDM(uint8_t CANRxData[8], uint32_t DataLength )
 		CarState.VoltageLV = (CANRxData[4] * 1216)/10;
 		CarState.CurrentLV = CANRxData[5];
 		CarState.ShutdownSwitchesClosed = CANRxData[6];
+		if (!CarState.ShutdownSwitchesClosed)
+		{
+			volatile int i = 1;
+			setOutputNOW(LED4_Output, LEDON);
+		} else setOutputNOW(LED4_Output, LEDOFF);
 
 		CarState.VoltageAIRPDM = (CANRxData[3] * 200);
 

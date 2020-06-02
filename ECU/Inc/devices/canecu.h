@@ -12,7 +12,7 @@
 
 // definition of CAN ID's for nodes - Bus definitions not currently used
 
-#define CANBUS0 					hfdcan2
+#define CANBUS0 				hfdcan2
 #define	CANBUS1					hfdcan1
 
 #define FLSpeed_COBID			0x71 // 112 // 0x70 orig
@@ -32,16 +32,31 @@
 #define IVTBase_ID 				IVTI_ID
 
 
-#define IVT_BUS					CAN0
-#define BMS_BUS					CAN1
-#define PDM_BUS
-#define INV1_BUS				CAN0
-#define INV2_BUS				CAN0
+#define CANB0					(2)
+#define CANB1					(1)
+
+#ifdef ONECAN
+
+	#define IVT_BUS					CANB1
+	#define BMS_BUS					CANB1
+	#define PDM_BUS					CANB1
+
+	#define INV1_BUS				CANB1
+	#define INV2_BUS				CANB1
+#else
+
+	#define IVT_BUS					CANB0
+	#define BMS_BUS					CANB1
+	#define PDM_BUS
+
+	#define INV1_BUS				CANB0
+	#define INV2_BUS				CANB0
+#endif
 
 #define InverterRL_COBID			0x7E // 126 // swap
 #define InverterRR_COBID			0x7F // 127 // swap
 
-#ifdef HPF2020
+#ifdef HPF20
 #define InverterFL_COBID			0x7C // 124 // swap
 #define InverterFR_COBID			0x7D // 125 // swap
 #endif
@@ -74,10 +89,10 @@ struct CanData {
 	uint8_t dlcsize;
 	uint8_t data[8];
 	uint32_t time;
-	uint32_t lastseen;
-	uint32_t count;
+//	uint32_t lastseen;  // removing unused variables.
+//	uint32_t count;
 	uint8_t newdata;
-	uint8_t processed;
+//	uint8_t processed;
 };
 
 // CANBus

@@ -26,14 +26,13 @@
 
 void setDriveMode(void)
 {
+	SetupNormalTorque();
+
+	CarState.LimpDisable = 0;
+	CarState.DrivingMode = ADCState.DrivingMode;
+
 	switch ( ADCState.DrivingMode )
 	{
-
-		SetupNormalTorque();
-
-		CarState.LimpDisable = 0;
-		CarState.DrivingMode = ADCState.DrivingMode;
-
 		case 1: // 5nm  5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    64,    65,   0
 			CarState.Torque_Req_Max = 5;
 #ifdef TORQUEVECTOR
@@ -147,15 +146,16 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 #endif
 
 
-	if ( receiveINVNMT(&CarState.Inverters[Inverter1]))
+	if ( receiveINVNMT(&CarState.Inverters[Inverter1])) // TODO check this for two inverters.
 	{
+		// only checks for inverters being present, both motors don't have to report present.
 	//		if ( ( CarState.LeftInvState != 0xFF || CarState.RightInvState != 0xFF ) )
 			if ( GetInverterState(CarState.Inverters[Inverter1].InvState) >= 0 || GetInverterState(CarState.Inverters[Inverter1+1].InvState) >= 0 )
 			{
 				returnvalue &= ~(0x1 << Inverter1Received);
 			} else returnvalue |= 0x1 << Inverter1Received;
 
-	}
+	} else returnvalue |= 0x1 << Inverter1Received; // TODO check if this works on HPF19
 
 #ifdef TWOINVERTERMODULES
 	if ( receiveINVNMT(CarState.Inverters[Inverter2]))
@@ -193,13 +193,14 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	}
 	else
 	{
-	//	returnvalue |= 0x1 << IVTReceived;
+		returnvalue |= 0x1 << IVTReceived; // why was this commented out?
 	}
 
 	// check datalogger response?   --
 
 	return returnvalue; // should be 0 when everything ready.
 }
+
 
 int NMTReset( void )
 {
@@ -226,7 +227,7 @@ int PreOperation( uint32_t OperationLoops  )
     if ( OperationLoops == 0 )
 	    {
     		lcd_setscrolltitle("Pre Operation");
-    		lcd_send_stringpos(3,0,"  <Red for config>");
+    //		lcd_send_stringpos(3,0,"  <Red for config>");
 	    	preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
 	    	CarState.HighVoltageReady = 0;
 	    	ReadyToStart = 0xFFFF;
@@ -257,30 +258,41 @@ int PreOperation( uint32_t OperationLoops  )
 #endif
 			if (preoperationstate & (0x1 << BMSReceived) ) { strcat(str, "BMS " );  }
 			if (preoperationstate & (0x1 << PDMReceived) ) { strcat(str, "PDM " ); }
+#ifndef STMADC // ADC is onboard, not waiting for it.
 			if (preoperationstate & (0x1 << PedalADCReceived) ) {strcat(str, "ADC " );  }
+#endif
 			if (preoperationstate & (0x1 << IVTReceived) ) { strcat(str, "IVT " );  }
 			if ( str[strlen(str)] == 32 ) { str[strlen(str)] = 0 ; }
-			if ( strlen(str) > 20 ) { str[18] = '.'; str[19] = '.'; str[20] = 0; };
+
+			strpad(str,20);
+
+
 			lcd_send_stringpos(1,0,str);
 
 			if ( ReadyToStart != 0 ){
 				strcpy(str, "Err:");
-
+#ifdef STMADC // ADC is onboard, any issues with it are an error not a wait.
+			if (preoperationstate & (0x1 << PedalADCReceived) ) {strcat(str, "ADC " );  }
+#endif
+			if (! ( preoperationstate & (0x1 << PDMReceived) ) ) {
+				// only show as PDM error if pdm is on bus.
 				if (ReadyToStart & (0x1 << 0 ) ) { strcat(str, "PDM " );  }
+			}
 				if (ReadyToStart & (0x1 << 2 ) ) { strcat(str, "INV " );  }
 				if (ReadyToStart & (0x1 << 3 ) ) { strcat(str, "ShutdownSW " );  }
 
-				if ( strlen(str) > 20 ) { str[18] = '.'; str[19] = '.'; str[20] = 0; };
+				strpad(str,20);
+
 				lcd_send_stringpos(2,0,str);
 			}
 
 		} else
 		{
-			lcd_clearscroll();
+	//		lcd_clearscroll();
+			lcd_send_stringpos(1,0,"                    ");
+			lcd_send_stringpos(2,0,"   Ready To Start   ");
 
-				lcd_send_stringpos(1,0,"Ready To Start      ");
-				lcd_send_stringpos(2,0,"                    ");
-				lcd_send_stringpos(3,0,"   <Press Yellow>   ");
+	//		lcd_send_stringpos(3,0,"                    ");
 
 //			char str[20] ="";
 //			lcd_send_stringpos(2,0,str);
@@ -293,6 +305,7 @@ int PreOperation( uint32_t OperationLoops  )
 	uint32_t loopstart = gettimer();
 	uint32_t looptimer = 0;
 
+
 	// check if received configuration requests, or mode change -> testing state.
 	switch ( CheckConfigurationRequest() ) // allows RequestState to be set to zero to prevent mode changing mid config, or request a different mode.
 	{
@@ -304,8 +317,7 @@ int PreOperation( uint32_t OperationLoops  )
 			RequestState = LimpState; // Limpmode state requested from Configuration, set as requested next state.
 			break; */
 
-		case ReceivingConfig :
-			preoperationstate = 2^15;
+		case ReceivingData :
 			RequestState = PreOperationalState; // don't allow leaving pre operation whilst
 												// in middle of processing a configuration / testing request.
 			break;
@@ -321,10 +333,12 @@ int PreOperation( uint32_t OperationLoops  )
 
 	while (  looptimer < PROCESSLOOPTIME-50 ) {
 		looptimer = gettimer() - loopstart;
+#ifdef WFI
 		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
+#endif
 	}; // check
 
-	preoperationstate |= DevicesOnline(preoperationstate);
+	preoperationstate = DevicesOnline(preoperationstate);
 
 	uint16_t error = CheckErrors();
 	// check error state.
@@ -366,9 +380,14 @@ int PreOperation( uint32_t OperationLoops  )
 		}
 	}
 
+	ReadyToStart = 0;
+
 	if ( !CarState.ShutdownSwitchesClosed )
 	{
 		blinkOutput(TSOFFLED_Output, LEDBLINK_FOUR, 1);
+#ifdef SHUTDOWNSWITCHCHECK
+	    ReadyToStart += 8;
+#endif
 	}  else
 	{
 		blinkOutput(TSOFFLED_Output, LEDON, 0);
@@ -382,14 +401,10 @@ int PreOperation( uint32_t OperationLoops  )
 	}
 
 
-	ReadyToStart = 0;
-
 	if ( errorPDM() ) { ReadyToStart += 1; }
 	if ( preoperationstate != 0 ) { ReadyToStart += 2; }
 	if ( !invonline ) { ReadyToStart += 4; }
-#ifdef SHUTDOWNSWITCHCHECK
-	if ( CarState.ShutdownSwitchesClosed )  { ReadyToStart += 8; }
-#endif
+
 
 /*	if ( !errorPDM()
 			&& preoperationstate == 0
@@ -437,6 +452,8 @@ int PreOperation( uint32_t OperationLoops  )
 		if ( OperationLoops == 50 ) // 0.5 seconds, send reset nmt, try to get inverters online if not online at startup.
 		{
 #ifdef HPF19 // unsue on expected HPF20 behaviour yet.
+			if ( !CarState.TestHV )	NMTReset();
+#else
 			if ( !CarState.TestHV )	NMTReset();
 #endif
 		}
