@@ -122,6 +122,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	} else if ( htim->Instance == TIM6 )
 	{
 
+	} else if ( htim->Instance == TIM16)
+	{
+		commitEEPROM();
 	}
 #ifdef LCD
 	else if ( htim->Instance == TIM17 )

@@ -422,6 +422,8 @@ struct ErrorCount {
 	uint16_t ADCErrorState;
 	bool	 ADCSent;
 
+	uint32_t eepromerror;
+
 	uint16_t IVTIReceive;
 	uint16_t IVTTimeout;
 

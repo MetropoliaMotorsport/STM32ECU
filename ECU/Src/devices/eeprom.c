@@ -34,7 +34,7 @@
 		};
 	} EEPROMdata;
 
-	volatile bool eepromsendinprogress = false;
+	volatile bool eepromwritinginprogress = false;
 	volatile bool eepromreceivedone = false;
 
 	uint8_t * getEEPROMBuffer()
@@ -90,12 +90,20 @@
 		 if ( I2cHandle->Instance == I2C3 ){
 			 LCD_I2CError();
 		 }
+
+		 if ( I2cHandle->Instance == I2C2 ){
+
+			 eepromwritinginprogress = false;
+
+		 }
+
+
 	  /* Turn LED3 on: Transfer error in reception/transmission process */
 		  toggleOutput(LED7_Output);
 	}
 
 	int initiliseEEPROM(){
-		HAL_Delay(100); // Allow time for EEPROM chip to initialise itself.
+		HAL_Delay(100); // Allow time for EEPROM chip to initialise itself before start trying to access.
 		HAL_I2CEx_ConfigAnalogFilter(&hi2c2,I2C_ANALOGFILTER_ENABLE);
 
 		HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0); // allow writing to eeprom
@@ -103,69 +111,131 @@
 
 		eepromreceivedone = false;
 
+		// start reading eeprom into ram, done t bootup so don't ne
+
 		if(HAL_I2C_Mem_Read_IT(&hi2c2 , (uint16_t)EEPROM_ADDRESS, 0, I2C_MEMADD_SIZE_16BIT, (uint8_t*)EEPROMdata.buffer, sizeof(EEPROMdata)+1)!= HAL_OK)
 		{
 		/* Reading process Error */
 		   return 0;// Error_Handler(); // failed to read data for some reason.
 		}
 
-		while ( !eepromreceivedone ) // TODO, add timeout.
+		uint32_t startread = gettimer();
+
+		while ( !eepromreceivedone || gettimer() < startread + 40000 ) // 4 sec read timeout so will still startup regardless.
 		{
-			__WFI();
-		}
+			//__WFI();
+			HAL_Delay(10);
+		};
 
 		return 1;
 	}
 
 	int readEEPROM( void ){
-		  if(HAL_I2C_Mem_Read_IT(&hi2c2 , (uint16_t)EEPROM_ADDRESS, 0, I2C_MEMADD_SIZE_16BIT, (uint8_t*)EEPROMdata.buffer, sizeof(EEPROMdata)+1)!= HAL_OK)
-		  {
-		    /* Reading process Error */
-			   Error_Handler();
-		  }
-		  return 0;
+	  eepromreceivedone = false;
+	  if(HAL_I2C_Mem_Read_IT(&hi2c2 , (uint16_t)EEPROM_ADDRESS, 0, I2C_MEMADD_SIZE_16BIT, (uint8_t*)EEPROMdata.buffer, sizeof(EEPROMdata)+1)!= HAL_OK)
+	  {
+		/* Reading process Error */
+		   Error_Handler();
+	  }
+	  return 0;
 	}
 
 
-	bool eepromerror = false;
+
+//	static bool eepromerror = false;
 
 	#define EEPROMMAXERROR (5)
 
-	void sendEEPROM() // progress EEPROM writing by sending next block over i2c, call from writing loop ( interrupt )
+	void commitEEPROM() // progress EEPROM writing by sending next block over i2c, call from writing loop ( interrupt )
 	{
 		static int errorcount = 0;
 
-		if ( hi2c2.State == HAL_I2C_STATE_READY && Remaining_Bytes > 0 ){ // i2c not busy
-
-	//		if(HAL_I2C_Mem_Write(&hi2c2 , (uint16_t)EEPROM_ADDRESS, Memory_Address, I2C_MEMADD_SIZE_16BIT, (uint8_t*)(EEprom + Memory_Address), EEPROM_PAGESIZE, 2)!= HAL_OK)
-
-			if(HAL_I2C_Mem_Write_IT(&hi2c2 , (uint16_t)EEPROM_ADDRESS, Memory_Address, I2C_MEMADD_SIZE_16BIT, (uint8_t*)(EEPROMdata.buffer + Memory_Address), EEPROM_PAGESIZE)!= HAL_OK)
-			{
-				Error_Handler(); //error here is not a hard error, don't hang code.
-			}
-			errorcount = 0;
-			Remaining_Bytes -= EEPROM_PAGESIZE;
-			if ( Remaining_Bytes <0 ) Remaining_Bytes = 0;
-			Memory_Address += EEPROM_PAGESIZE;
-		}  else  { errorcount++; }
-
-		if( Remaining_Bytes > 0 && errorcount <= EEPROMMAXERROR ) { // if not done sending and not in error state, start timer to next send event.
-
-			if ( HAL_TIM_Base_Start_IT(&htim16) != HAL_OK){
-				Error_Handler(); // timer should always be able to start.
-			}
-		} else if ( errorcount > EEPROMMAXERROR )
+		toggleOutputMetal(LED7_Output);
+		if ( eepromwritinginprogress )
 		{
-			eepromerror = true; // failed to send complete message
+			if ( Remaining_Bytes == 0 )
+			{
+				if ( hi2c2.State == HAL_I2C_STATE_READY )
+				{
+					// done with writing, lock write pin again.
+					HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 1);
+					eepromwritinginprogress = false;
+				}
+			} else
+			{
+				if ( hi2c2.State == HAL_I2C_STATE_READY && Remaining_Bytes > 0 ){ // i2c not busy
+
+					if(HAL_I2C_Mem_Write_IT(&hi2c2 , (uint16_t)EEPROM_ADDRESS, Memory_Address, I2C_MEMADD_SIZE_16BIT, (uint8_t*)(EEPROMdata.buffer + Memory_Address), EEPROM_PAGESIZE)!= HAL_OK)
+					{
+						Error_Handler(); //error here is not a hard error, don't hang code.
+					}
+					errorcount = 0;
+					Remaining_Bytes -= EEPROM_PAGESIZE;
+					if ( Remaining_Bytes <0 ) Remaining_Bytes = 0;
+					Memory_Address += EEPROM_PAGESIZE;
+				}  else  { errorcount++; }
+
+// count > 0
+				if( eepromwritinginprogress && errorcount <= EEPROMMAXERROR ) { // if not done sending and not in error state, start timer to next send event.
+					if ( HAL_TIM_Base_Start_IT(&htim16) != HAL_OK){
+						Error_Handler(); // timer should always be able to start.
+					}
+				} else if ( errorcount > EEPROMMAXERROR )
+				{
+					Errors.eepromerror++;// true; // failed to send complete message
+					eepromwritinginprogress = false;
+				}
+			}
 		}
+
 	}
 
+	int writeFullEEPROM()
+	{
+		if ( ! eepromwritinginprogress){
+
+			HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0); // enable write pin.
+
+			//setup data to write.
+
+			Remaining_Bytes = sizeof(EEPROMdata);
+			Memory_Address = 0;
+
+			// EEPROMdata.buffer
+
+			eepromwritinginprogress = true;
+
+
+			if ( HAL_TIM_Base_Start_IT(&htim16) != HAL_OK){ // start write timer.
+				Error_Handler();
+			}
+			return 1;
+
+		} else return 0;
+
+	}
 
 	int writeEEPROM( int bank )  //write one of the two config banks to EEPROM
 	{
-		if ( bank > 1 || bank < 0 ) return 0; // invalid bank number given.
-		HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0);
-		return 1;
+		if ( ! eepromwritinginprogress){
+
+
+			if ( bank > 1 || bank < 0 ) return 0; // invalid bank number given.
+			HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0); // enable write pin.
+
+			//setup data to write.
+
+		//	if ( bank = 0 )	Memory_Address =
+
+			eepromwritinginprogress = true;
+
+			if ( HAL_TIM_Base_Start_IT(&htim16) != HAL_OK){ // start write timer.
+				Error_Handler();
+			}
+			return 1;
+
+		} else return 0;
+
 	}
 
 	int writeEEPROMEmergency( )   // write emergency packet to end of EEPROM.
@@ -173,4 +243,9 @@
 		return 0;
 	}
 
+
+	bool writeEEPROMDone()
+	{
+		return !eepromwritinginprogress;
+	}
 

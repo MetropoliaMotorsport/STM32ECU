@@ -115,6 +115,9 @@ static int HardwareInit( void )
 	MX_TIM7_Init();
 
 	MX_TIM6_Init();
+
+	MX_TIM16_Init();
+
 	if ( DeviceState.LCD == ENABLED )
 		lcd_send_stringscroll("Interrupts");
 	setupInterrupts(); // start timers etc // move earlier to make display updating easier?

@@ -18,6 +18,8 @@ static bool SendInProgress = false;
 static uint32_t SendLast = 0;
 static uint32_t BufferPos = 0;
 
+static bool eepromwrite = false;
+static uint32_t eepromwritestart = 0;
 
 // move full data receive handling to can interrupt, would work faster?
 
@@ -78,6 +80,22 @@ int CheckConfigurationRequest( void )
 		ReceiveInProgress = false;
 		lcd_send_stringpos(3,0,"Receive Timeout.   ");
 		// TODO send timeout error
+	}
+
+	if ( eepromwrite )
+	{
+
+		if ( writeEEPROMDone() )
+		{
+			lcd_send_stringpos(3,0,"EEPROM Write done.");
+			eepromwrite=false;
+		} else if ( gettimer() > eepromwritestart + 100000 )
+		{
+			lcd_send_stringpos(3,0,"EEPROM Write timeout");
+			eepromwrite=false;
+		}
+
+
 	}
 
 	// check for config change messages. - broken?
@@ -176,6 +194,15 @@ int CheckConfigurationRequest( void )
 						ReceiveInProgress = false;
 						BufferPos+=CanState.ECUConfig.data[3];
 						lcd_send_stringpos(3,0,"Receive Done.   ");
+
+						// TODO verify eeprom, move to eeprom.c
+
+						memcpy(getEEPROMBuffer(), Buffer, 4096); // copy received data into local eeprom buffer before write.
+
+//						lcd_send_stringpos(3,0,"Writing To EEPROM.  ");
+
+//						writeFullEEPROM();
+
 						// call a callback to process the fully received data?
 
 					} else
@@ -279,6 +306,17 @@ int CheckConfigurationRequest( void )
 
 							lcd_send_stringpos(3,0,"Send Start     "); // gets here ok.
 						}
+
+					break;
+
+				case 11 : // test eeprom writing.
+					eepromwrite=true;
+
+					eepromwritestart = gettimer();
+
+					lcd_send_stringpos(3,0,"EEPROM Write");
+
+					writeFullEEPROM();
 
 					break;
 

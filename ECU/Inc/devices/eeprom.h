@@ -90,5 +90,11 @@ int initiliseEEPROM();
 
 uint8_t * getEEPROMBuffer();
 
+void commitEEPROM(); // function for timer callback to handle writing.
+
+int writeFullEEPROM();
+
+bool writeEEPROMDone();
+
 #endif /* EEPROM_H_ */
 
