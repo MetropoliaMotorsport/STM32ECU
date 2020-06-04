@@ -127,6 +127,8 @@ void ResetStateData( void ) // set default startup values for global state value
 	CarState.LimpRequest = 0;
 	CarState.LimpActive = 0;
     CarState.LimpDisable = 0;
+    CarState.PedalProfile = 0;
+    CarState.DrivingMode = 0;
 
 
 	Errors.InverterError = 0; // reset logged errors.
@@ -591,10 +593,14 @@ int OperationalProcess( void )
 
 
 			static uint8_t offcan1 = 0;
+#ifndef ONECAN
 			static uint8_t offcan2 = 0;
+#endif
 #ifdef RECOVERCAN
 			static uint32_t offcan1time = 0;
+#ifndef ONECAN
 			static uint32_t offcan2time = 0;
+#endif
 #endif
 
 			if ( CAN1Status.BusOff) // detect passive error instead and try to stay off bus till clears?

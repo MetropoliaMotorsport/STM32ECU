@@ -37,9 +37,40 @@
 	volatile bool eepromwritinginprogress = false;
 	volatile bool eepromreceivedone = false;
 
+	bool checkversion(char * data)
+	{
+		if ( strcmp( (char *) data, EEPROMVERSIONSTR ) == 0 )
+			return true;
+		else
+			return false;
+	}
+
 	uint8_t * getEEPROMBuffer()
 	{
 		return EEPROMdata.buffer;
+	}
+
+
+	eepromdata * getEEPROMBlock(int block )
+	{
+
+		/*		if ( activeblock==1 )
+					return EEPROMdata.block1
+		*/
+
+		if ( block == 0 )
+		{
+//			if ( activeblock==1 )
+				return &EEPROMdata.block1;
+//			else
+				return &EEPROMdata.block2; // no valid data.
+		} else
+		if ( block == 1 )
+				return &EEPROMdata.block1; // no valid data.
+		else
+		if ( block == 2 )
+				return &EEPROMdata.block2; // no valid data.
+		return NULL;
 	}
 
 	// I2C Mem transfers only used for EEPROM currently so no need to check handle yet.
@@ -103,6 +134,9 @@
 	}
 
 	int initiliseEEPROM(){
+
+		// TODO could be optimised to only read necessary block.
+
 		HAL_Delay(100); // Allow time for EEPROM chip to initialise itself before start trying to access.
 		HAL_I2CEx_ConfigAnalogFilter(&hi2c2,I2C_ANALOGFILTER_ENABLE);
 
@@ -116,7 +150,7 @@
 		if(HAL_I2C_Mem_Read_IT(&hi2c2 , (uint16_t)EEPROM_ADDRESS, 0, I2C_MEMADD_SIZE_16BIT, (uint8_t*)EEPROMdata.buffer, sizeof(EEPROMdata)+1)!= HAL_OK)
 		{
 		/* Reading process Error */
-		   return 0;// Error_Handler(); // failed to read data for some reason.
+		   return 1;// Error_Handler(); // failed to read data for some reason.
 		}
 
 		uint32_t startread = gettimer();
@@ -127,7 +161,15 @@
 			HAL_Delay(10);
 		};
 
-		return 1;
+		if ( !eepromreceivedone )
+		{
+			return 2;
+		}
+
+		if ( checkversion(EEPROMdata.buffer) )
+		{
+			return 0;
+		} else return 1;
 	}
 
 	int readEEPROM( void ){

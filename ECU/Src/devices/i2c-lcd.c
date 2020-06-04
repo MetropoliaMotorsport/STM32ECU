@@ -36,7 +36,8 @@ DMA_BUFFER ALIGN_32BYTES (static uint8_t LCDBuffer[LCDBUFSIZE]);
 DMA_BUFFER ALIGN_32BYTES (static uint8_t sendbuffer[LCDBUFSIZE*2]); // allow for command codes etc.
 static int     sendbufferpos = 0;
 
-
+static uint8_t LinePriority[4] = {0};
+static uint32_t LinePriorityTime[4] = {0};
 
 volatile static bool inerror = false;
 
@@ -76,7 +77,19 @@ void LCD_I2CError( void )
 
 int lcd_update( void ) // batch send buffered LCD commands
 {
+//	static lastcall;
+
+//	lastcall = gettimer();
 #ifdef LCDBUFFER
+
+	for ( int row=0;row<LCDROWS;row++)
+	{
+		if ( LinePriorityTime[row] < gettimer() )
+		{
+			 LinePriority[row]=255;
+		}
+	}
+
 	if ( sendbufferpos != 0 && readytosend ) // used for initialisation, and any other special commands. send blocking to ensure works.
 	{
 		if ( HAL_I2C_Master_Transmit(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, sendbufferpos, 10) != HAL_OK ){
@@ -329,6 +342,9 @@ void lcd_put_cur(int row, int col)
 		LCDBuffer[i] = 32;
 	}
 
+	for ( int i=0;i<LCDROWS;i++)
+		LinePriority[i] = 255;
+
 	if ( lcd_send_cmd(0x2A) ){	 //function set (extended command set)
 		return 1;
 	}
@@ -397,11 +413,38 @@ void lcd_put_cur(int row, int col)
 	return 0;
 }
 
+int lcd_send_stringline( int row, char *str, uint8_t priority )
+{
+	if ( priority <= LinePriority[row]) // only allow update if not priority overridden
+	{
+		char line[21] = "                    ";
+
+		int copylen = strlen(str);
+
+		if ( copylen > 20 )
+			copylen = 20; // ensure don't print off screen.
+
+		memcpy(line, str, copylen); // copy string into
+
+		lcd_send_stringpos( row, 0, line );
+		LinePriorityTime[row] = gettimer()+10000; // show for at least 200ms
+		LinePriority[row]=priority;
+		return 0;
+	} else return 1; // no update allowed.
+
+
+}
+
 int lcd_send_stringpos( int row, int col, char *str )
 {
 	if ( !inerror ) {
 
-		memcpy(&LCDBuffer[col+row*20], str, strlen(str)); // copy sring into
+		int copylen = strlen(str);
+
+		if ( col + copylen > 20 )
+			copylen = 20-copylen; // ensure don't print off screen.
+
+		memcpy(&LCDBuffer[col+row*20], str, copylen); // copy sring into
 
 #ifdef DIRECT
 		uint8_t data_t[40];
@@ -508,10 +551,11 @@ int ScrollLinesPos = 0;
 void lcd_setscrolltitle( char * str )
 {
 
-	char strbuf[21];
+	char strbuf[21] = "";
 
-	for ( int i=0;i<21;i++)
+	for ( int i=0;i<20;i++)
 		strbuf[i] = 32;
+	strbuf[20] = 0;
 
 	int copylen = strlen(str);
 	if ( copylen > 20 ) copylen = 20;

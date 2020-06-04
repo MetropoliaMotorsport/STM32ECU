@@ -45,17 +45,82 @@ uint16_t TorqueVectInput3[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTOR
 int16_t TorqueVectOutput3[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
 #endif
 
+#ifdef EEPROM
+
+#ifdef HPF19
+
+uint16_t SteeringInput[ sizeof(((eepromdata*)0)->ADCSteeringInput)/2 +2 ] = { 0 };
+int16_t SteeringOutput[ sizeof(((eepromdata*)0)->ADCSteeringOutput)/2 +2 ] = { 0 };
+uint8_t SteeringSize = 0;
+
+#endif
+
+uint16_t BrakeRInput[sizeof(((eepromdata*)0)->ADCBrakeRPresInput)/2 +3 ] = { 1024, 1025, 	  0, 	 0, 65535 }; // at 240bar, should be 240 output, at 0 bar should be 0 // 62914
+int16_t BrakeROutput[sizeof(((eepromdata*)0)->ADCBrakeRPresOutput)/2 +3 ] = { -1,     0,    0,     240,  255 }; // output range // 240
+uint8_t BrakeRSize = sizeof(BrakeRInput)/sizeof(BrakeRInput[0]);
+
+
+uint16_t BrakeFInput[sizeof(((eepromdata*)0)->ADCBrakeFPresInput)/2 +3 ] = { 1024, 1025,    0,	 0, 65535 }; // at 240bar, should be 240 output, at 0 bar should be 0 // 62914
+int16_t BrakeFOutput[sizeof(((eepromdata*)0)->ADCBrakeFPresOutput)/2 +3 ] = { -1,     0,    0,     240,  255 }; // output range // 240
+uint8_t BrakeFSize = sizeof(BrakeFInput)/sizeof(BrakeFInput[0]);
+
+
+// define zero as 5% actual travel and 100% as 95% of actual travel
+uint16_t TorqueReqLInput[sizeof(((eepromdata*)0)->ADCTorqueReqLInput)/2+4] = {  1999,  2000, 0,     0,     64000,  64001 }; // calibration values for left input // 5800
+int16_t TorqueReqLOutput[sizeof(((eepromdata*)0)->ADCTorqueReqLInput)/2+4] = {  -1,  0,      0,     1000,   1000,  1001 }; // range defined 0-1000 to allow percentage accuracy even if not using full travel range.
+uint8_t TorqueReqLSize = sizeof(TorqueReqLInput)/sizeof(TorqueReqLInput[0]);
+
+
+// TorqueRMin(6798) / TorqueRMax(54369)
+uint16_t TorqueReqRInput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] =  {  1999,  2000, 0,     0,      64000,  64001 };; // calibration values for right input // 6200
+int16_t TorqueReqROutput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] = { -1,      0,      0,   1000,   1000,   1001 };
+
+uint8_t TorqueReqRSize = sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
+
+
+// TODO verify initialiser zeros out.
+uint16_t TorqueInputs[5][sizeof(((eepromdata*)0)->pedalcurves[0].PedalCurveInput)/2] = {{50,950}}; // start registered travel at 8%
+int16_t TorqueOutputs[5][sizeof(((eepromdata*)0)->pedalcurves[0].PedalCurveOutput)/2] = {{0,1000}};
+uint8_t TorqueCurveSize[5] = { 2, 0 };
+uint8_t TorqueCurveCount = 1;
+
+/*
+uint16_t TorqueLowTravelInput[sizeof(((eepromdata*)0)->] = {50,500}; // start registered travel at 10%
+int16_t TorqueLowTravelOutput[sizeof(((eepromdata*)0)->] = {0, 1000};
+
+uint16_t TorqueLargelowRangeInput[sizeof(((eepromdata*)0)->] = {50,600, 950}; // start registered travel at 10%
+int16_t TorqueLargelowRangeOutput[sizeof(((eepromdata*)0)->] = {0, 400,1000};
+*/
+
+#ifdef HPF19
+
+uint16_t CoolantInput[sizeof(((eepromdata*)0)->CoolantInput)/2] =  { 0 }; // { 1000,4235, 4851, 5661, 6889, 8952, 11246, 14262, 18894, 22968, 27081, 33576, 39050, 44819, 49192, 54011, 58954,  64113, 64112};
+int16_t CoolantOutput[sizeof(((eepromdata*)0)->CoolantOutput)/2] = { 0 }; // { -1,   120,   115,  109,  101,   90,    82,    72,    60,    52,    46,    38,    32,    26,    22,    16,    11,    6, -1};
+uint8_t CoolantSize = 0;
+
+uint16_t DrivingModeInput[sizeof(((eepromdata*)0)->DrivingModeInput)/2+4] = { 0 }; // { 0 , 1022, 1023, 1024,4500, 13500, 23500, 33000, 40000, 49000, 57500, 65534, 65535 };
+int16_t DrivingModeOutput[sizeof(((eepromdata*)0)->DrivingModeInput)/2+4] = { 0 }; // { 1 , 1,    0,     1,   1,    2,    3,      4,     5,     6,    7,      8,     0 };
+uint8_t DriveModeSize = 0;
+
+#endif
+
+#else
+
+
 // 19500 ~ -90  // 13300 full lock, 45000 ~ 90 deg right. 50000 full lock right. ~120
-uint16_t SteeringInput[] = { 6539, 13300, 20000, 33500, 63019 }; // going to pwm this year, no ADC needed.
+uint16_t SteeringInput[] = { 6539, 13300, 20000, 33500, 63019}; // going to pwm this year, no ADC needed.
 int16_t SteeringOutput[] = { -210,  -120,  -90,   0,    210 };
+uint8_t SteeringSize = sizeof(SteeringInput)/sizeof(SteeringInput[0])
 
 // -1 needs to be at minimum
 // should be 0 to 25bar at 1-5v   0.6666v to 3.3v at adc -> 13107 -> 65536
 uint16_t BrakeRInput[] = {1024, 1025, BRAKEZERO, BRAKEMAX, 65535 }; // at 240bar, should be 240 output, at 0 bar should be 0 // 62914
 int16_t BrakeROutput[] = {-1,     0,    0,     240,  255 }; // output range // 240
+uint8_t BrakeRSize = sizeof(BrakeRInput)/sizeof(BrakeRInput[0]);
 
 uint16_t BrakeFInput[] = { 1024, 1025, BRAKEZERO,   BRAKEMAX, 65535 }; // calibrated input range //62914
 int16_t BrakeFOutput[] = { -1,     0,    0,     240,    255 }; // output range // 240
+uint8_t BrakeFSize = sizeof(BrakeFInput)/sizeof(BrakeFInput[0]);
 
 // zero should be approx real pedal zero, zero is read below this to allow for some variance without triggering errors.
 // ditto max value.
@@ -63,10 +128,13 @@ int16_t BrakeFOutput[] = { -1,     0,    0,     240,    255 }; // output range /
 // define zero as 5% actual travel and 100% as 95% of actual travel
 uint16_t TorqueReqLInput[] = { 1999,  2000, (ACCELERATORLMAX-ACCELERATORLZERO)/100*5+ACCELERATORLZERO,   (ACCELERATORLMAX-ACCELERATORLZERO)/100*98+ACCELERATORLZERO,  64000,  64001 }; // calibration values for left input // 5800
 int16_t TorqueReqLOutput[] = {  -1,  0,     0,     1000,      1000,  1001 }; // range defined 0-1000 to allow percentage accuracy even if not using full travel range.
+uint8_t TorqueReqLSize = sizeof(TorqueReqLInput)/sizeof(TorqueReqLInput[0]);
 
 // TorqueRMin(6798) / TorqueRMax(54369)
 uint16_t TorqueReqRInput[] = { 1999, 2000, (ACCELERATORRMAX-ACCELERATORRZERO)/100*5+ACCELERATORRZERO,  (ACCELERATORRMAX-ACCELERATORRZERO)/100*98+ACCELERATORRZERO,   64000,   64001 }; // calibration values for right input // 6200
 int16_t TorqueReqROutput[] = { -1,      0,      0,      1000,   1000,   1001 };
+uint8_t TorqueReqRSize = sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
+
 
 uint16_t TorqueLinearInput[] = {50,950}; // start registered travel at 8%
 int16_t TorqueLinearOutput[] = {0,1000};
@@ -79,62 +147,168 @@ int16_t TorqueLargelowRangeOutput[] = {0, 400,1000};
 
 uint16_t CoolantInput[] = { 1000,4235, 4851, 5661, 6889, 8952, 11246, 14262, 18894, 22968, 27081, 33576, 39050, 44819, 49192, 54011, 58954,  64113, 64112};
 int16_t CoolantOutput[] = { -1,   120,   115,  109,  101,   90,    82,    72,    60,    52,    46,    38,    32,    26,    22,    16,    11,    6, -1};
+uint8_t CoolantLElements = sizeof(CoolantInput)/sizeof(CoolantInput[0]);
+
 
 uint16_t DrivingModeInput[] = { 0 , 1022, 1023, 1024,4500, 13500, 23500, 33000, 40000, 49000, 57500, 65534, 65535 };
-int16_t DrivingModeOutput[] = { 1 , 1,    0,     1,   1,    2,    3,    4,   5,     6,    7,    8,   0 };
+int16_t DrivingModeOutput[] = { 1 , 1,    0,     1,   1,    2,    3,      4,     5,     6,    7,      8,     0 };
+uint8_t DriveModeSize = sizeof(DrivingModeInput)/sizeof(DrivingModeInput[0]);
+#endif
 
-void SetupADCInterpolationTables( void )
+
+bool SetupADCInterpolationTables( eepromdata * data )
 {
     // calibrated input range for steering, from left lock to center to right lock.
     // check if this can be simplified?
 
+#ifdef EEPROM
+
+	if ( checkversion(data->VersionString) )
+	{
+
+	int i = 0;
+
+#ifdef HPF19
+	for (;data->ADCSteeringInput[i]!=0;i++)
+	{
+		SteeringInput[i] = data->ADCSteeringInput[i];
+		SteeringOutput[i] = data->ADCSteeringOutput[i];
+	}
+	SteeringSize = i;
+#endif
+
+	BrakeRInput[2] = data->ADCBrakeRPresInput[0];
+	BrakeRInput[3] = data->ADCBrakeRPresInput[1];
+
+	BrakeROutput[2] = data->ADCBrakeRPresOutput[0];
+	BrakeROutput[3] = data->ADCBrakeRPresOutput[1];
+
+	BrakeFInput[2] = data->ADCBrakeFPresInput[0];
+	BrakeFInput[3] = data->ADCBrakeFPresInput[1];
+
+	BrakeFOutput[2] = data->ADCBrakeFPresOutput[0];
+	BrakeFOutput[3] = data->ADCBrakeFPresOutput[1];
+
+
+	i = 0;
+
+	int ACCMin = data->ADCTorqueReqLInput[0];
+	int ACCMax = data->ADCTorqueReqLInput[1];
+	int ACCMinOffset = 5;
+	int ACCMaxOffset = 98;
+
+	if ( data->ADCTorqueReqLInput[3] != 0 )
+	{
+		ACCMinOffset = data->ADCTorqueReqLInput[2];
+		ACCMaxOffset = data->ADCTorqueReqLInput[3];
+
+	}
+
+	TorqueReqLInput[2] = (ACCMax-ACCMin)/100*ACCMinOffset+ACCMin;
+	TorqueReqLInput[3] = (ACCMax-ACCMin)/100*ACCMaxOffset+ACCMin;
+
+
+	ACCMin = data->ADCTorqueReqRInput[0];
+	ACCMax = data->ADCTorqueReqRInput[1];
+	ACCMinOffset = 5;
+	ACCMaxOffset = 98;
+
+	if ( data->ADCTorqueReqRInput[3] != 0 )
+	{
+		ACCMinOffset = data->ADCTorqueReqRInput[2];
+		ACCMaxOffset = data->ADCTorqueReqRInput[3];
+	}
+
+	TorqueReqRInput[2] = (ACCMax-ACCMin)/100*ACCMinOffset+ACCMin;
+	TorqueReqRInput[3] = (ACCMax-ACCMin)/100*ACCMaxOffset+ACCMin;
+
+
+	i = 0;
+	for (;data->pedalcurves[i].PedalCurveInput[1]!=0;i++) // first number could be 0, but second will be non zero.
+	{
+		TorqueCurveCount++;
+
+		int j=0;
+		do {
+			TorqueInputs[i][j]=data->pedalcurves[i].PedalCurveInput[j];
+			TorqueOutputs[i][j]=data->pedalcurves[i].PedalCurveOutput[j];
+			j++;
+
+		} while ( data->pedalcurves[i].PedalCurveInput[j] != 0);
+		if ( j < 3 ) j = 0;
+		TorqueCurveSize[i] = j;
+	}
+
+#ifdef HPF19
+	i = 0;
+	for (;data->CoolantInput[i]!=0;i++)
+	{
+		CoolantInput[i] = data->CoolantInput[i];
+		CoolantOutput[i] = data->CoolantInput[i];
+	}
+	CoolantSize = i;
+
+
+	uint16_t DrivingModeInput[] = { 0 , 1022, 1023, 1024,4500, 13500, 23500, 33000, 40000, 49000, 57500, 65534, 65535 };
+	int16_t DrivingModeOutput[] = { 1 , 1,    0,     1,   1,    2,    3,      4,     5,     6,    7,      8,     0 };
+
+#endif
+
+#endif
+
+#ifdef HPF19
     ADCInterpolationTables.Steering.Input = SteeringInput;
     ADCInterpolationTables.Steering.Output = SteeringOutput;
 
-    ADCInterpolationTables.Steering.Elements = sizeof(SteeringInput)/sizeof(SteeringInput[0]); // calculate elements from memory size of whole array divided by size of on element.
+    // replace with exact size.
+    ADCInterpolationTables.Steering.Elements = SteeringSize; // calculate elements from memory size of whole array divided by size of on element.
+#endif
 
     ADCInterpolationTables.BrakeR.Input = BrakeRInput;
     ADCInterpolationTables.BrakeR.Output = BrakeROutput;
 
-    ADCInterpolationTables.BrakeR.Elements = sizeof(BrakeRInput)/sizeof(BrakeRInput[0]);
+    ADCInterpolationTables.BrakeR.Elements = BrakeRSize;
 
     ADCInterpolationTables.BrakeF.Input = BrakeFInput;
     ADCInterpolationTables.BrakeF.Output = BrakeFOutput;
 
-    ADCInterpolationTables.BrakeF.Elements = sizeof(BrakeFInput)/sizeof(BrakeFInput[0]);
+    ADCInterpolationTables.BrakeF.Elements = BrakeFSize;
 
     ADCInterpolationTables.AccelL.Input = TorqueReqLInput;
     ADCInterpolationTables.AccelL.Output = TorqueReqLOutput;
 
-    ADCInterpolationTables.AccelL.Elements = sizeof(TorqueReqLInput)/sizeof(TorqueReqLInput[0]);
+    ADCInterpolationTables.AccelL.Elements = TorqueReqLSize;
 
     ADCInterpolationTables.AccelR.Input = TorqueReqRInput;
     ADCInterpolationTables.AccelR.Output = TorqueReqROutput;
 
-    ADCInterpolationTables.AccelR.Elements = sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
+    ADCInterpolationTables.AccelR.Elements = TorqueReqRSize;
 
+    ADCInterpolationTables.TorqueCurve.Input = TorqueInputs[0];
+    ADCInterpolationTables.TorqueCurve.Output = TorqueOutputs[0];
 
-    ADCInterpolationTables.TorqueCurve.Input = TorqueLinearInput;
-    ADCInterpolationTables.TorqueCurve.Output = TorqueLinearOutput;
+    ADCInterpolationTables.TorqueCurve.Elements = TorqueCurveSize[0];
 
-    ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLinearInput)/sizeof(TorqueLinearInput[0]);
+#ifdef HPF19
 
     ADCInterpolationTables.CoolantL.Input = CoolantInput;
     ADCInterpolationTables.CoolantL.Output = CoolantOutput;
 
-    ADCInterpolationTables.CoolantL.Elements = sizeof(CoolantInput)/sizeof(CoolantInput[0]);
+    ADCInterpolationTables.CoolantL.Elements = CoolantSize;
 
     // currently set calibration of coolant 2 to same as coolant 1
 
     ADCInterpolationTables.CoolantR.Input = CoolantInput;
     ADCInterpolationTables.CoolantR.Output = CoolantOutput;
 
-    ADCInterpolationTables.CoolantR.Elements = sizeof(CoolantInput)/sizeof(CoolantInput[0]);
+    ADCInterpolationTables.CoolantR.Elements = CoolantSize;
 
     ADCInterpolationTables.ModeSelector.Input = DrivingModeInput;
     ADCInterpolationTables.ModeSelector.Output = DrivingModeOutput;
 
-    ADCInterpolationTables.ModeSelector.Elements = sizeof(DrivingModeInput)/sizeof(DrivingModeInput[0]);
+    ADCInterpolationTables.ModeSelector.Elements = DriveModeSize;
+
+#endif
 
 #ifdef TORQUEVECTOR
     ADCInterpolationTables.TorqueVector.Input = TorqueVectInput;
@@ -142,7 +316,22 @@ void SetupADCInterpolationTables( void )
 
     ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput)/sizeof(TorqueVectInput[0]);
 #endif
+    	return true;
+#ifdef EEPROM
+	} else return false;
+#endif
 }
+
+#ifdef EEPROM
+
+void SetupTorque( int request )
+{
+	ADCInterpolationTables.TorqueCurve.Input = TorqueInputs[request];
+	ADCInterpolationTables.TorqueCurve.Output = TorqueOutputs[request];
+	ADCInterpolationTables.TorqueCurve.Elements = TorqueCurveSize[request];
+}
+
+#else
 
 void SetupNormalTorque( void )
 {
@@ -164,6 +353,8 @@ void SetupLowTravelTorque( void )
     ADCInterpolationTables.TorqueCurve.Output = TorqueLowTravelOutput;
     ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLowTravelInput)/sizeof(TorqueLowTravelInput[0]);
 }
+
+#endif
 
 #ifdef TORQUEVECTOR
 
@@ -525,7 +716,7 @@ HAL_StatusTypeDef stopADC( void )
 
 void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 {
-	DeviceState.ADC == ERROR;
+	DeviceState.ADC = ERROR;
 	if ( DeviceState.LCD == ENABLED ){
 		lcd_errormsg("ADC Error Check .LD");
 	}

@@ -119,17 +119,14 @@ static int HardwareInit( void )
 	MX_TIM16_Init();
 
 	if ( DeviceState.LCD == ENABLED )
-		lcd_send_stringscroll("Interrupts");
+		lcd_send_stringscroll("Enable Interrupts");
 	setupInterrupts(); // start timers etc // move earlier to make display updating easier?
-
-
-	int i = 0;
 
 #elif
 	DeviceState.LCD = DISABLED;
 #endif
 	if ( DeviceState.LCD == ENABLED )
-		lcd_send_stringscroll("CANBUS");
+		lcd_send_stringscroll("Start CANBUS");
 	MX_FDCAN1_Init();
 #ifndef ONECAN
 	MX_FDCAN2_Init();
@@ -193,7 +190,7 @@ static int HardwareInit( void )
 	 } */
 #endif
 	if ( DeviceState.LCD == ENABLED ) // interrupts should not be running, so use regular update.
-		lcd_send_stringscroll("LEDS");
+		lcd_send_stringscroll("Enable LEDS");
 	 setupLEDs(); // set default led states and start life indicator LED blinking.
 
 #ifdef POWERLOSSDETECT
@@ -202,9 +199,23 @@ static int HardwareInit( void )
 
 #ifdef EEPROM
 	if ( DeviceState.LCD == ENABLED )
-		lcd_send_stringscroll("EEPRom");
+		lcd_send_stringscroll("Load EEPRom");
 	 MX_I2C2_Init();
-	 initiliseEEPROM();
+	 int eepromstatus = initiliseEEPROM();
+	 switch ( eepromstatus )
+	 {
+		 case 0 :
+				lcd_send_stringscroll("EEPRom Read");
+				break;
+		 case 1 :
+				lcd_send_stringscroll("EEPRom Bad Data");
+				lcd_send_stringscroll("  Load New Data");
+				HAL_Delay(3000); // ensure message can be seen.
+				break;
+		 default :
+				lcd_send_stringscroll("EEPRom Read Fail");
+				HAL_Delay(3000); // ensure message can be seen.
+	 };
 #endif
 
 /*	delay = TimeoutCalculation((hwwdg1.Init.Counter) + 1); // actual reset, 40ms.
@@ -221,7 +232,7 @@ static int HardwareInit( void )
 
 #ifdef STMADC
 	if ( DeviceState.LCD == ENABLED )
-		lcd_send_stringscroll("ADC");
+		lcd_send_stringscroll("Start ADC");
 	if ( startADC() == 0 )  //  starts the ADC dma processing.
 	{
 		DeviceState.ADC = 1;
@@ -234,9 +245,10 @@ static int HardwareInit( void )
 
 //	  uint16_t volatile * const power = (uint16_t *) PWR_D3CR;
 
-	char str[20];
+
 
 #ifdef TEST
+	char str[20];
 	i = 0;
 	while ( 1 ) {
 		sprintf(str,"%.8d", i);

@@ -7,6 +7,7 @@
 
 #ifndef ADCECU_H_
 #define ADCECU_H_
+#include "eeprom.h"
 
 // redefine channels to match shield pins to make easier.
 
@@ -142,11 +143,13 @@ int getTorqueVector(uint16_t RawADCInput);
 
 // car state
 
-void SetupADCInterpolationTables( void );
+bool SetupADCInterpolationTables( eepromdata * data );
+#ifdef HPF19
 void SetupNormalTorque( void );
 void SetupLargeLowRangeTorque( void );
 void SetupLowTravelTorque( void );
-
+#endif
+void SetupTorque( int request );
 
 HAL_StatusTypeDef startADC(void);
 HAL_StatusTypeDef stopADC( void );

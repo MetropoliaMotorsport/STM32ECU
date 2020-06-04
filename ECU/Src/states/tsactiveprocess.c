@@ -10,15 +10,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 
-#include "operationreadyness.h"
 #include "ecumain.h"
-#include "output.h"
-#include "ecu.h"
-#include "input.h"
-#include "dwt_delay.h"
-#include "canecu.h"
-
-
 
 int TSActiveINVRequest( volatile InverterState *Inverter )
 {

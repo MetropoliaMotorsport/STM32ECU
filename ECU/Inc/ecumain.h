@@ -32,6 +32,7 @@
 #include "idleprocess.h"
 #include "tsactiveprocess.h"
 #include "runningprocess.h"
+#include "configuration.h"
 
 #include "timerecu.h"
 #include "dwt_delay.h"

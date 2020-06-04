@@ -9,5 +9,6 @@
 #define CONFIGURATION_H_
 
 int CheckConfigurationRequest( void );
+void setDriveMode(void);
 
 #endif /* CONFIGURATION_H_ */

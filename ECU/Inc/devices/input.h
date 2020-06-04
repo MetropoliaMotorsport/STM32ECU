@@ -42,15 +42,23 @@ DI7 pin 25 PF12 ok    input 8
 #define Input8		(8) // -> input 7
 
 #ifdef HPF19
-	#define TS_Switch (4) // input 4.
-	#define RTDM_Switch (2) // input 2
-	#define StartStop_Switch (6)
+	#define TS_Input (4) // input 4.
+	#define RTDM_Input (2) // input 2
+	#define StartStop_Input (6)
 #endif
 
 #ifdef HPF20
-	#define TS_Switch (4) // input 4.
-	#define RTDM_Switch (2) // input 2
-	#define StartStop_Switch (6)
+	#define TS_Input (4) // input 4.
+	#define RTDM_Input (2) // input 2
+	#define StartStop_Input (6)
+	#define Config_Input (7)
+	#define Center_Input (8)
+	#define Left_Input (9)
+	#define Right_Input (10)
+	#define Up_Input (11)
+	#define Down_Input (12)
+
+
 #endif
 
 struct ButtonData {

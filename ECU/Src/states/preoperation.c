@@ -13,81 +13,15 @@
 /* Private includes ----------------------------------------------------------*/
 
 #include "ecumain.h"
-#include "ecu.h"
-#include "configuration.h"
-#include "output.h"
-#include "input.h"
-#include "canecu.h"
+//#include "ecu.h"
+//#include "configuration.h"
+//#include "output.h"
+//#include "input.h"
+//#include "canecu.h"
 
 #ifdef LCD
   #include "vhd44780.h"
 #endif
-
-
-void setDriveMode(void)
-{
-	SetupNormalTorque();
-
-	CarState.LimpDisable = 0;
-	CarState.DrivingMode = ADCState.DrivingMode;
-
-	switch ( ADCState.DrivingMode )
-	{
-		case 1: // 5nm  5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    64,    65,   0
-			CarState.Torque_Req_Max = 5;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
-#endif
-			break;
-		case 2: // 10nm
-			CarState.Torque_Req_Max = 25;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
-#endif
-			break;
-		case 3: // 15nm
-			CarState.Torque_Req_Max = 25;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 1;
-#endif
-			break;
-		case 4: // 20nm
-			CarState.Torque_Req_Max = 35;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
-#endif
-			break;
-		case 5: // 25nm
-			CarState.Torque_Req_Max = 35;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 1;
-#endif
-			break;
-		case 6: // 30nm
-			CarState.Torque_Req_Max = 65;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
-#endif
-			SetupLargeLowRangeTorque();
-			break;
-		case 7: // 65nm Track
-			CarState.Torque_Req_Max = 65;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 1;
-#endif
-			SetupLargeLowRangeTorque();
-			break;
-		case 8: // 65nm Accel
-			CarState.Torque_Req_Max = 65;
-			CarState.LimpDisable = 1;
-			SetupLowTravelTorque();
-			break;
-
-	}
-
-	CarState.Torque_Req_CurrentMax = CarState.Torque_Req_Max;
-
-}
 
 
 static uint16_t DevicesOnline( uint16_t returnvalue )

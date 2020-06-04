@@ -38,7 +38,6 @@ void processPDM(uint8_t CANRxData[8], uint32_t DataLength )
 		CarState.ShutdownSwitchesClosed = CANRxData[6];
 		if (!CarState.ShutdownSwitchesClosed)
 		{
-			volatile int i = 1;
 			setOutputNOW(LED4_Output, LEDON);
 		} else setOutputNOW(LED4_Output, LEDOFF);
 

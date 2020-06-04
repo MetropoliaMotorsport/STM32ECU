@@ -27,8 +27,8 @@ int checkReset( void )
 		}
 	}
 
-	if(Input[StartStop_Switch].pressed != 0){ //StartStop_Switch
-			Input[StartStop_Switch].pressed = 0;
+	if(Input[StartStop_Input].pressed != 0){ //StartStop_Switch
+			Input[StartStop_Input].pressed = 0;
 	//		blinkOutput(TSOFFLED_Output,LEDBLINK_FOUR,1);
 			return 1;
 	}
@@ -48,14 +48,25 @@ int CheckBrakeBalRequest( void ) // this should be a push-hold, so not a single 
 	}
 #endif
 
-	if(Input[StartStop_Switch].pressed != 0){ //StartStop_Switch
-			Input[StartStop_Switch].pressed = 0;
+	if(Input[StartStop_Input].pressed != 0){ //StartStop_Switch
+			Input[StartStop_Input].pressed = 0;
 	//		blinkOutput(TSOFFLED_Output,LEDBLINK_FOUR,1);
 			return 1;
 	}
 
 	return 0;
 }
+
+int CheckConfigRequest( void ) // this should be a push-hold, so not a single toggle read.
+{
+	if(Input[Config_Input].pressed != 0){ //StartStop_Switch
+			Input[Config_Input].pressed = 0;
+			return 1;
+	}
+
+	return 0;
+}
+
 
 
 int CheckActivationRequest( void )
@@ -67,8 +78,8 @@ int CheckActivationRequest( void )
 	}
 #endif
 
-	if(Input[StartStop_Switch].pressed != 0){ //StartStop_Switch
-			Input[StartStop_Switch].pressed = 0;
+	if(Input[StartStop_Input].pressed != 0){ //StartStop_Switch
+			Input[StartStop_Input].pressed = 0;
 	//		blinkOutput(TSOFFLED_Output,LEDBLINK_FOUR,1);
 			return 1;
 	}
@@ -85,6 +96,8 @@ int CheckLimpActivationRequest( void )
 			return 0;
 	}
 #endif
+
+	// driven by BMS.
 
 	// could be a can message or other source of activation request also.
 
@@ -103,8 +116,8 @@ int CheckTSActivationRequest( void )
 	}
 #endif
 
-	if(Input[TS_Switch].pressed){
-				Input[TS_Switch].pressed = 0;
+	if(Input[TS_Input].pressed){
+				Input[TS_Input].pressed = 0;
 		//		blinkOutput(TSLED_Output,LEDBLINK_FOUR,1);
 				return 1;
 	}
@@ -126,8 +139,8 @@ int CheckRTDMActivationRequest( void )
 			return 0;
 	}
 #endif
-	if(Input[RTDM_Switch].pressed){
-			Input[RTDM_Switch].pressed = 0;
+	if(Input[RTDM_Input].pressed){
+			Input[RTDM_Input].pressed = 0;
 	//		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,1);
 			return 1;
 	}

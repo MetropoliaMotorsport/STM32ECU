@@ -348,6 +348,7 @@ volatile struct CarState {
     uint8_t Torque_Req_CurrentMax;
     uint32_t PowerLimit;
     uint8_t DrivingMode;
+    uint8_t PedalProfile;
     
     uint8_t FanPowered;
 

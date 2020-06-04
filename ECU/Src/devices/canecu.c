@@ -601,11 +601,11 @@ char CAN_SendTimeBase( void )
 
 char CAN_SendStatus( char state, char substate, uint32_t errorcode )
 {
-	if ( state == 99 )
+/*	if ( state == 99 )
 	{
-		volatile i = 1;
+		volatile int i = 1;
 	}
-
+*/
 	TxHeader1.Identifier = ECU_CAN_ID; // decide on an ECU ID/
 	TxHeader1.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
 	TxHeader1.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
@@ -1156,10 +1156,6 @@ bool processInvMessage( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8])
 {
 	bool processed = false;
 
-	if ( RxHeader->Identifier == 0x2fe ){
-		volatile i = 1;
-	}
-
 	for ( int i=0;i<INVERTERCOUNT;i++) // FIX, checks not working.
 	{
 		 if ( RxHeader->Identifier - 0x80 - CarState.Inverters[i].COBID == 0 )
@@ -1238,9 +1234,6 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 		// process incoming packet
 
-		if ( RxHeader.Identifier == 0x2fe ){
-			volatile i = 1;
-		};
 	//
 #if INV1_BUS == CANB1
 		if ( !processInvMessage( &RxHeader, CANRxData ) )
@@ -1371,20 +1364,20 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				break;
 			case 0x610 : // debug id for CAN TS input
 				if(CANRxData[0]){
-					Input[TS_Switch].pressed = 1; // TS_Switch
-					Input[TS_Switch].lastpressed = gettimer();
+					Input[TS_Input].pressed = 1; // TS_Switch
+					Input[TS_Input].lastpressed = gettimer();
 				}
 				break;
 			case 0x611 : // debug id for CAN RTDM input
 				if(CANRxData[0]){
-					Input[RTDM_Switch].pressed = 1; // RTDM_Switch
-					Input[RTDM_Switch].lastpressed = gettimer();
+					Input[RTDM_Input].pressed = 1; // RTDM_Switch
+					Input[RTDM_Input].lastpressed = gettimer();
 				}
 				break;
 			case 0x612 : // debug id for CAN Stop Motors button
 				if(CANRxData[0]){
-					Input[StartStop_Switch].pressed = 1;  // StartStop_Switch
-					Input[StartStop_Switch].lastpressed = gettimer();
+					Input[StartStop_Input].pressed = 1;  // StartStop_Switch
+					Input[StartStop_Input].lastpressed = gettimer();
 				}
 				break;
 #ifdef debug
@@ -1395,7 +1388,34 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				}
 				break;
 #endif
+			case 0x614 : // debug id for CAN Stop Motors button
+				switch ( CANRxData[0])
+				{
+				case 1 :
+					Input[Center_Input].pressed = 1;
+					Input[Center_Input].lastpressed = gettimer();
+					break;
+				case 2 :
+					Input[Left_Input].pressed = 1;
+					Input[Left_Input].lastpressed = gettimer();
+					break;
+				case 4 :
+					Input[Right_Input].pressed = 1;
+					Input[Right_Input].lastpressed = gettimer();
+					break;
+				case 8 :
+					Input[Up_Input].pressed = 1;
+					Input[Up_Input].lastpressed = gettimer();
+					break;
+				case 16 :
+					Input[Down_Input].pressed = 1;
+					Input[Down_Input].lastpressed = gettimer();
+					break;
+				}
+				if(CANRxData[0]){
 
+				}
+				break;
 
 			case  0x0 :  // id 0x0,0,8 -> nmt_status // master should not be receiving, only sending.
 				break;

@@ -8,9 +8,13 @@
 #ifndef I2CLCD_H_
 #define I2CLCD_H_
 
-#define LCDBUFSIZE (20*4)
-
 #include "stm32h7xx_hal.h"
+
+#define LCDCOLUMNS (20)
+#define LCDROWS 	(4)
+
+#define LCDBUFSIZE (LCDCOLUMNS*LCDROWS)
+
 
 int lcd_update( void );
 
@@ -31,6 +35,7 @@ int lcd_send_stringscroll(char *str);
 int lcd_send_data (char data);  // send data to the lcd
 
 int lcd_send_stringpos( int row, int col, char *str );
+int lcd_send_stringline( int row, char *str, uint8_t priority );
 
 int lcd_send_stringposDIR( int row, int col, char *str ); // send string straight to screen using polling.
 
