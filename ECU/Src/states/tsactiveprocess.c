@@ -121,7 +121,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 		CarState.Inverters[i].Torque_Req = Torque_Req;
 	} //
 
-#ifdef TORQUEVECTOR
+#ifdef SIMPLETORQUEVECTOR
 	TorqueVectorProcess( Torque_Req );
 #endif
 

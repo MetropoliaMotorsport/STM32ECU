@@ -18,13 +18,9 @@ int checkReset( void )
 			return 1;
 	}
 
-	if ( CanState.ECU.newdata )
-	{ // check ECU can data for reset message.
-		CanState.ECU.newdata = 0; // we've seen message in error state loop.
-		if ( ( CanState.ECU.data[0] == 0x99 ) && ( CanState.ECU.data[1] == 0x99 ))
-		{
-			return 1;
-		}
+	if ( checkConfigReset() )
+	{
+		return 1;
 	}
 
 	if(Input[StartStop_Input].pressed != 0){ //StartStop_Switch
@@ -35,8 +31,6 @@ int checkReset( void )
 
 	return 0;
 }
-
-
 
 
 int CheckBrakeBalRequest( void ) // this should be a push-hold, so not a single toggle read.
@@ -57,16 +51,41 @@ int CheckBrakeBalRequest( void ) // this should be a push-hold, so not a single 
 	return 0;
 }
 
-int CheckConfigRequest( void ) // this should be a push-hold, so not a single toggle read.
+int CheckButtonPressed( uint8_t In )
 {
-	if(Input[Config_Input].pressed != 0){ //StartStop_Switch
-			Input[Config_Input].pressed = 0;
+	if(Input[In].pressed != 0){
+			Input[In].pressed = 0;
 			return 1;
 	}
-
 	return 0;
 }
 
+int GetUpDownPressed( void )
+{
+	if(Input[Up_Input].pressed != 0){
+			Input[Up_Input].pressed = 0;
+			return -1;
+	} else if(Input[Down_Input].pressed != 0)
+	{
+		Input[Down_Input].pressed = 0;
+		return 1;
+	} else
+	return 0;
+}
+
+
+int GetLeftRightPressed( void )
+{
+	if(Input[Left_Input].pressed != 0){
+			Input[Left_Input].pressed = 0;
+			return -1;
+	} else if(Input[Right_Input].pressed != 0)
+	{
+		Input[Right_Input].pressed = 0;
+		return 1;
+	} else
+	return 0;
+}
 
 
 int CheckActivationRequest( void )

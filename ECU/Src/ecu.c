@@ -33,7 +33,7 @@ void RearSpeedCalculation( long leftdata, long rightdata )
 */
 }
 
-char getByte(uint32_t input, int8_t returnbyte)
+uint8_t getByte(uint32_t input, int8_t returnbyte)
 {
 	union {
 		uint32_t integer;

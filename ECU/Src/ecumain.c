@@ -41,7 +41,7 @@
 #include "interrupts.h"
 #ifdef HPF20
 	#include "eeprom.h"
-	#include "powerloss.h"
+	#include <powernode.h>
 	#include "i2c-lcd.h"
 	#include <stdio.h>
 #endif
@@ -100,11 +100,10 @@ static int HardwareInit( void )
 #ifdef SCREEN
 
 	MX_I2C3_Init();
-	if ( lcd_init(&hi2c3) ){
+	if ( !lcd_init(&hi2c3) ){
 		DeviceState.LCD = DISABLED;
 	} else
 	{
-		DeviceState.LCD = ENABLED;
 		lcd_send_stringposDIR(0,0,"Startup...   ");
 		lcd_clearscroll();
 	}
@@ -118,14 +117,15 @@ static int HardwareInit( void )
 
 	MX_TIM16_Init();
 
-	if ( DeviceState.LCD == ENABLED )
+	if ( DeviceState.LCD == OPERATIONAL )
 		lcd_send_stringscroll("Enable Interrupts");
 	setupInterrupts(); // start timers etc // move earlier to make display updating easier?
+
 
 #elif
 	DeviceState.LCD = DISABLED;
 #endif
-	if ( DeviceState.LCD == ENABLED )
+	if ( DeviceState.LCD == OPERATIONAL )
 		lcd_send_stringscroll("Start CANBUS");
 	MX_FDCAN1_Init();
 #ifndef ONECAN
@@ -197,7 +197,7 @@ static int HardwareInit( void )
 	  MX_COMP1_Init();
 #endif
 
-#ifdef EEPROM
+#ifdef EEPROMSTORAGE
 	if ( DeviceState.LCD == ENABLED )
 		lcd_send_stringscroll("Load EEPRom");
 	 MX_I2C2_Init();
@@ -206,14 +206,17 @@ static int HardwareInit( void )
 	 {
 		 case 0 :
 				lcd_send_stringscroll("EEPRom Read");
+				DeviceState.EEPROM = ENABLED;
 				break;
 		 case 1 :
 				lcd_send_stringscroll("EEPRom Bad Data");
 				lcd_send_stringscroll("  Load New Data");
+				DeviceState.EEPROM = ERROR;
 				HAL_Delay(3000); // ensure message can be seen.
 				break;
 		 default :
 				lcd_send_stringscroll("EEPRom Read Fail");
+				DeviceState.EEPROM = DISABLED;
 				HAL_Delay(3000); // ensure message can be seen.
 	 };
 #endif
@@ -254,6 +257,24 @@ static int HardwareInit( void )
 		sprintf(str,"%.8d", i);
 		lcd_send_stringpos(0,0,str);
 		i++;
+	}
+#endif
+
+#ifdef SCROLLTEST
+	char str[20];
+	int i = 0;
+	for ( i=0;i<10;i++ ){
+		HAL_Delay(100);
+		sprintf(str,"%.8d", i);
+		lcd_send_stringscroll(str);
+	}
+
+	while ( 1 )
+	{
+
+		lcd_processscroll(GetUpDownPressed());
+		HAL_Delay(50);
+
 	}
 #endif
 

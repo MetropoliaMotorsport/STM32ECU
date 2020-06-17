@@ -19,6 +19,7 @@
 #include "fdcan.h"
 #include "tim.h"
 #include "adc.h"
+#include "comp.h"
 
 #include "ecu.h"
 
@@ -45,6 +46,8 @@
 #include "adcecu.h"
 #include "i2c-lcd.h"
 #include "eeprom.h"
+#include "memorator.h"
+#include "powernode.h"
 
 
 int realmain(void);

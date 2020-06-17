@@ -165,10 +165,10 @@ int8_t InverterStateMachine( volatile InverterState *Inverter ) // returns respo
 }
 
 
-long getInvSpeedValue( volatile struct CanData *data )
+long getInvSpeedValue( volatile uint8_t data[8])
 {
 	//		 Speed_Right_Inverter.data.longint * (1/4194304) * 60; - convert to rpm.
-	return (data->data[5]*16777216+data->data[4]*65536+data->data[3]*256+data->data[2]) * ( 1.0/4194304 ) * 60;
+	return (data[5]*16777216+data[4]*65536+data[3]*256+data[2]) * ( 1.0/4194304 ) * 60;
 }
 
 

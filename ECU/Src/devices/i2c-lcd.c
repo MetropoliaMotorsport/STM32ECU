@@ -1,3 +1,4 @@
+// Heavily modified i2c lcd library.
 
 /** Put this in the src folder **/
 
@@ -92,9 +93,15 @@ int lcd_update( void ) // batch send buffered LCD commands
 
 	if ( sendbufferpos != 0 && readytosend ) // used for initialisation, and any other special commands. send blocking to ensure works.
 	{
-		if ( HAL_I2C_Master_Transmit(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, sendbufferpos, 10) != HAL_OK ){
-				sendbufferpos=0;
-				return 1;
+		if ( lcdi2c->State == HAL_I2C_STATE_READY  )
+		{
+			if ( HAL_I2C_Master_Transmit(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, sendbufferpos, 10) != HAL_OK ){
+					sendbufferpos=0;
+					return 1;
+			}
+		} else
+		{
+//			volatile int i = 0;
 		}
 		sendbufferpos=0;
 		readytosend = true;
@@ -138,6 +145,7 @@ int lcd_update( void ) // batch send buffered LCD commands
 	} else if ( inerror && gettimer() > lcderrortime+10000 )
 		// been one second since lcd error, try again.
 	{	// avoid i2c constantly failing if lcd dropped off, but try to recover.
+//		lcd_init(lcdi2c); // TODO, lots of i2c lcd errors suddenly. can't figure out why, use probe later.
 		inerror = false;
 		readytosend = true;
 	}
@@ -379,11 +387,19 @@ void lcd_put_cur(int row, int col)
 	lcd_send_cmd(0x01); //clear display
 	lcd_send_cmd(0x80); //set DDRAM address to 0x00
 	lcd_send_cmd(0x0C); //display ON
-	return ( lcd_update() ); // don't wait for timer update.
+	if ( lcd_update() != 0 ) // don't wait for timer update.
+	{
+		DeviceState.LCD = OFFLINE;
+		return 0;
+	}
 
 	// manually send update.
 
-//	HAL_Delay(100);
+	HAL_Delay(50);
+
+	DeviceState.LCD = OPERATIONAL;
+
+	return 1;
 
 
 #else
@@ -427,7 +443,7 @@ int lcd_send_stringline( int row, char *str, uint8_t priority )
 		memcpy(line, str, copylen); // copy string into
 
 		lcd_send_stringpos( row, 0, line );
-		LinePriorityTime[row] = gettimer()+10000; // show for at least 200ms
+		LinePriorityTime[row] = gettimer()+2000; // show for at least 200ms
 		LinePriority[row]=priority;
 		return 0;
 	} else return 1; // no update allowed.
@@ -545,70 +561,108 @@ int lcd_send_stringposDIR( int row, int col, char *str )
 	return 0;
 }
 
-char ScrollLines[3][21] = { 0 };
+#define ScrollLinesMax 40
+char ScrollLines[ScrollLinesMax][21] = { 0 };
 int ScrollLinesPos = 0;
+int ScrollLinesRingStart = 0;
+int ScrollLinesTop = 0;
+char ScrollTitle[21] = "";
 
 void lcd_setscrolltitle( char * str )
 {
 
-	char strbuf[21] = "";
-
 	for ( int i=0;i<20;i++)
-		strbuf[i] = 32;
-	strbuf[20] = 0;
+		ScrollTitle[i] = 32;
+	ScrollTitle[20] = 0;
 
 	int copylen = strlen(str);
 	if ( copylen > 20 ) copylen = 20;
 
-	memcpy(strbuf, str, copylen);
+	memcpy(ScrollTitle, str, copylen);
 
-	lcd_send_stringpos( 0, 0, strbuf );
+	if ( LinePriority[0] == 255 ) // only allow update if not priority overridden
+	{
+
+		lcd_send_stringpos( 0, 0, ScrollTitle );
+	}
 
 }
 
 void lcd_clearscroll( void )
 {
 	ScrollLinesPos = 0;
+	ScrollLinesTop = 0;
 
 //	char *lines = (char*)ScrollLines;
 
-	for ( int i=0;i<3;i++){ 	// clear bottom of display buffer.
+	for ( int i=0;i<ScrollLinesMax;i++){ 	// clear bottom of display buffer.
 		for ( int j=0;j<20;j++){
 			ScrollLines[i][j] = 32;
 		}
 	}
 
 	for ( int i=0;i<3;i++){
-		lcd_send_stringpos( 1+i, 0, &ScrollLines[i][0] );
+		if ( LinePriority[i] == 255 ) // only allow update if not priority overridden
+		{
+			lcd_send_stringpos( 1+i, 0, &ScrollLines[i][0] );
+		}
 	}
+}
+
+int lcd_printscroll( void )
+{
+	for ( int i=0;i<20*3;i++){ 	// clear bottom of display buffer.
+		LCDBuffer[20+i] = 32;
+	}
+
+	for ( int i=0;i<3;i++){
+		if ( LinePriority[i] == 255 ) // only allow update if not priority overridden
+		{
+			if ( i+ScrollLinesTop <= ScrollLinesPos )
+				lcd_send_stringpos( 1+i, 0, &ScrollLines[i+ScrollLinesTop][0] );
+		}
+	}
+
+	if ( ScrollLinesTop > 0 ) LCDBuffer[20+19] = 18;
+
+	if ( ScrollLinesTop < ScrollLinesPos-3 ) LCDBuffer[20*3+19] = 19;
+
+	// TODO print arrrows to indicate more lines.
+	return 1;
+}
+
+int lcd_processscroll( int direction )
+{
+	ScrollLinesTop+= direction;
+
+	if ( ScrollLinesTop < 0 ) ScrollLinesTop = 0;
+	else if ( ScrollLinesTop > ScrollLinesMax-1 ) ScrollLinesTop = ScrollLinesMax-1;
+
+	return lcd_printscroll();
 }
 
 int lcd_send_stringscroll(char *str)
 {
 	if ( !inerror ) {
+		int scroll = 0;
 
-		if( ScrollLinesPos < 3 ){
+		if( ScrollLinesPos < ScrollLinesMax ){
 			memcpy(&ScrollLines[ScrollLinesPos][0],str,20); // copy string into lines
 			ScrollLinesPos++;
+			if ( ScrollLinesTop < ScrollLinesPos-3)
+				scroll = 1;
+
 		} else
 		{
-			memcpy(&ScrollLines[0][0],&ScrollLines[1][0],20);
-			memcpy(&ScrollLines[1][0],&ScrollLines[2][0],20);
-			memcpy(&ScrollLines[2][0],str,20); // copy string into lines
+			memmove(&ScrollLines[0][0],&ScrollLines[1][0],21*(ScrollLinesMax-1)); // TODO shunt lines back. Should reimplement as ring buffer?
+			memcpy(&ScrollLines[ScrollLinesPos-1][0],str,20); // copy string into lines
 		}
 
-//		if ( ScrollLinesPos > 2) ScrollLinesPos = 0;
-
-		for ( int i=0;i<20*3;i++){ 	// clear bottom of display buffer.
-			LCDBuffer[20+i] = 32;
-		}
-
-		for ( int i=0;i<3;i++){
-			lcd_send_stringpos( 1+i, 0, &ScrollLines[i][0] );
-		}
+		lcd_processscroll( scroll );
 	}
 	return 0;
 }
+
 
 void lcd_errormsg(char *str)
 {

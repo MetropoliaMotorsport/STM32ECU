@@ -7,14 +7,19 @@
 
 #include "ecumain.h"
 
+
+bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength );
+void PDMTimeout( void );
+
+
+CanData PDMCanData = { &DeviceState.PDM, PDM_ID, 8, processPDMData, PDMTimeout, PDMTIMEOUT };
+
+
 //	0x520,0,8 -> BMS_relay_status
 //	0x520,8,8 -> IMD_relay_status
 //	0x520,16,8 -> BSPD_relay_status
-void processPDM(uint8_t CANRxData[8], uint32_t DataLength )
+bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength )
 {
-	static uint8_t receiveerror = 0;
-	CanState.PDM.time = gettimer();
-
 	if ( DataLength == FDCAN_DLC_BYTES_8
 		&& CANRxData[0] < 2
 		&& CANRxData[1] < 2
@@ -27,9 +32,6 @@ void processPDM(uint8_t CANRxData[8], uint32_t DataLength )
 		&& ( CANRxData[6] == CANRxData[7] ) // all three last bytes are sending AIR status to help verification.
 		)
 	{
-		receiveerror=0;
-
-		DeviceState.PDM = OPERATIONAL; // received data without error bit set, so we can assume operational state
 		CarState.BMS_relay_status = CANRxData[0];
 		CarState.IMD_relay_status = CANRxData[1];
 		CarState.BSPD_relay_status = CANRxData[2];
@@ -47,86 +49,43 @@ void processPDM(uint8_t CANRxData[8], uint32_t DataLength )
 			CarState.AIROpen = 1;
 		else
 			CarState.AIROpen = 0;
-
-		DeviceState.PDM = OPERATIONAL;
-	} else // bad data.
-	{
-		receiveerror++;
-		Errors.CANError++;
-		Errors.PDMReceive++;
-/*		if ( receiveerror > 10 ), device is still responding, so don't put it offline.
-		{
-			CarState.VoltageBMS=0;
-			DeviceState.BMS = OFFLINE;
-			return 0; // returnval = 0;
-		} */
-#ifdef SENDBADDATAERROR
-		CAN_SendStatus(99,PDMReceived,99);
-#endif
-		reTransmitError(99,CANRxData, DataLength);
-	}
+		return true;
+	} else return false;
 }
 
-int receivedPDM( void )
+
+void processPDM(uint8_t CANRxData[8], uint32_t DataLength )
 {
-	uint32_t time = gettimer();
-	if ( CanState.PDM.time+PDMTIMEOUT >= time )
-    {
-		return 1;
-    }
-	else
-	{
-		return 0;
-	}
+	processCANData(&PDMCanData, CANRxData, DataLength );
 }
 
+void PDMTimeout( void )
+{
+    /* T 11.9.3
+     * Safe state is defined depending on the signals as follows:
+     • signals only influencing indicators – Indicating a failure of its own function or of the connected system
+
+  	  -- thus show a timeout as error status.
+
+     */
+
+    CarState.BMS_relay_status = 1;
+    CarState.IMD_relay_status = 1;
+    CarState.BSPD_relay_status = 1;
+    CarState.AIROpen = 0;
+}
 
 int receivePDM( void )
 {
-	uint32_t time=gettimer();
-	static uint8_t errorsent;
-
-#ifdef NOTIMEOUT
-		if ( DeviceState.PDM == OPERATIONAL )
-		{
-			errorsent = 0;
-			return 1;
-		} else return 0;
-#endif
-
-	if ( time - CanState.PDM.time <= PDMTIMEOUT && DeviceState.PDM == OPERATIONAL )
-	{
-		errorsent = 0;
-		return 1;
-	} else
-	{
-        /* T 11.9.3
-         * Safe state is defined depending on the signals as follows:
-         • signals only influencing indicators – Indicating a failure of its own function or of the connected system
-         */
-
-	//	if ( time - CanState.PDM.time > PDMTIMEOUT )
-        if ( DeviceState.PDM == OPERATIONAL )
-		{
-            CarState.BMS_relay_status = 1;
-            CarState.IMD_relay_status = 1;
-            CarState.BSPD_relay_status = 1;
-            CarState.AIROpen = 0;
-
-			if ( errorsent == 0 )
-			{
-				CAN_SendStatus(200,PDMReceived,(time-CanState.PDM.time)/10);
-				errorsent = 1;
-				Errors.CANTimeout++;
-				Errors.PDMTimeout++;
-				DeviceState.PDM = OFFLINE;
-			}
-			return 0;
-		}
-		return 0; // PDM is SCS, must always time out.
-	}
-	return 0;
+	return receivedCANData(&PDMCanData);
 }
+
+/*
+CanData * PDMCAN( void )
+{
+	return PDMCanData;
+}
+*/
 
 int errorPDM( void )
 {
@@ -211,6 +170,22 @@ int sendPDM( int buzzer )
 		return CANSendPDM(10,buzzer);
 	else
 		return CANSendPDM(0,buzzer);
+
+}
+
+
+void initPDM( void )
+{
+
+	PDMCanData.seen = false;
+	DeviceState.PDM = OFFLINE;
+
+	CarState.BMS_relay_status = 0; // these are latched
+	CarState.IMD_relay_status = 0;
+	CarState.BSPD_relay_status = 0;
+
+	CarState.AIROpen = 0;
+	CarState.ShutdownSwitchesClosed = 1;
 
 }
 

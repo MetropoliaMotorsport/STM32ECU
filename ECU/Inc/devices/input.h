@@ -51,7 +51,7 @@ DI7 pin 25 PF12 ok    input 8
 	#define TS_Input (4) // input 4.
 	#define RTDM_Input (2) // input 2
 	#define StartStop_Input (6)
-	#define Config_Input (7)
+	#define Config_Input (8) // same as center button
 	#define Center_Input (8)
 	#define Left_Input (9)
 	#define Right_Input (10)
@@ -64,7 +64,7 @@ DI7 pin 25 PF12 ok    input 8
 struct ButtonData {
 	uint32_t lastpressed;
 	uint32_t count;
-	char pressed;
+	bool pressed;
 	// define the hardware button for passing button data including reading it
 	GPIO_TypeDef * port;
 	uint16_t pin;
@@ -82,6 +82,10 @@ int CheckActivationRequest( void );
 int CheckLimpActivationRequest( void );
 int CheckTSActivationRequest( void );
 int CheckRTDMActivationRequest( void );
+
+int CheckButtonPressed( uint8_t In );
+int GetUpDownPressed( void );
+int GetLeftRightPressed( void );
 
 void setupButtons(void);
 void clearButtons(void);

@@ -16,8 +16,9 @@
 //#define HPF2019
 
 #ifdef HPF20
-	#define EEPROM
+	#define EEPROMSTORAGE
 	#define SCREEN
+	#define POWERNODES
 #endif
 // Calibration settings for pedals.
 
@@ -58,7 +59,7 @@
 #define STMADC
 
 // Use basic torquevectoring
-//#define TORQUEVECTOR
+//#define SIMPLETORQUEVECTOR
 #define TORQUEVECTORSTARTANGLE 20  //40
 #define TORQUEVECTORSTOPANGLE  70  //90
 #define TORQUEVECTORMAXNM	   8
@@ -85,6 +86,9 @@
 #define COOLANTLIMPTEMP 75
 #define COOLANTLIMPEXITTEMP 70
 #define COOLANTMAXTEMP	80
+
+
+#define MEMORATOR
 
 // Debug aids.
 
@@ -188,6 +192,13 @@
 #define SICKTIMEOUT             200 // 2 cycles, then set speeds to zero.
 #define STMADC
 #endif
+#ifdef MEMORATOR
+#define MEMORATORTIMEOUT		20000 // 2 seconds, should be sending one message a second.
+#endif
+
+#ifdef HPF20
+#define NODETIMEOUT				1000
+#endif
 
 #define DEBUGMCU 0x5C001000
 
@@ -224,6 +235,7 @@
 #define TestingState			10
 #define LimpState				20
 #define OperationalErrorState   50
+#define ReceiveTimeout			200
 
 #define FatalErrorState			99
 
@@ -273,8 +285,7 @@ uint16_t ErrorCode; // global error code.
 #define PedalADCReceived		4
 #define BMSReceived				5
 #define PDMReceived				6
-
-
+#define MEMORATORReceived		7
 
 
 #define IVTReceived				8
@@ -282,6 +293,8 @@ uint16_t ErrorCode; // global error code.
 //#define YAWReceived			8
 
 #define INVERTERRECEIVED		20
+
+#define POWERNODERECEIVED
 
 
 #define RearLeftInverter		0
@@ -355,8 +368,8 @@ volatile struct CarState {
 	uint8_t APPSstatus;
     
     uint8_t LimpRequest;
-    uint8_t LimpActive;
-    uint8_t LimpDisable;
+    bool LimpActive;
+    bool LimpDisable;
 
 	int32_t Current;
 	int32_t VoltageINV;
@@ -373,25 +386,77 @@ volatile struct CarState {
 //	int32_t Wheel_Speed_Average;
 
 //	uint8_t StopLED;
+
+	uint8_t I_BrakeLight;
+	uint8_t I_Buzzers;
+	uint8_t I_IVT;
+	uint8_t I_AccuPCBs;
+	uint8_t I_AccuFans;
+	uint8_t Freq_IMD;
+	uint8_t DC_IMD;
+
 } CarState, LastCarState, ErrorCarState;  // define external into realmain?
 
 
+/*
+struct Device {
+uint8_t	State;
+uint8_t id_count;
+ *CANid;
+		id_count
+		[can ids]
+			id
+			Timeout period Used to timeout operational state, if zero, don't timeout on this data.
+			id data handler func. ( return bool, data good or bad )
+			Errors.FLSpeedReceive++; ( data error )
+			LastReceived
+			timeouterrors.
+
+
+	};
+
+};
+*/
+
 struct DeviceState {
-	char CAN1;
-	char CAN2;
-	char FrontSpeedSensors;
-	char IVTEnabled;
-	char BMSEnabled;
-	char LoggingEnabled;
-	char ADC;
-	char Inverters[INVERTERCOUNT];
-	char BMS;
-	char PDM;
-	char FLSpeed;
-	char FRSpeed;
-	char IVT;
-	char LCD;
+	uint8_t CAN1;
+	uint8_t CAN2;
+	uint8_t FrontSpeedSensors;
+	uint8_t IVTEnabled;
+	uint8_t BMSEnabled;
+	uint8_t LoggingEnabled;
+	uint8_t ADC;
+	uint8_t Inverters[INVERTERCOUNT];
+	uint8_t BMS;
+	uint8_t PDM;
+	uint8_t FLSpeed;
+	uint8_t FRSpeed;
+	uint8_t IVT;
+	uint8_t LCD;
+	uint8_t EEPROM;
+	uint8_t Memorator;
+
+	uint8_t AnalogNode9;
+	uint8_t AnalogNode10;
+	uint8_t AnalogNode11;
+	uint8_t AnalogNode12;
+	uint8_t AnalogNode13;
+	uint8_t AnalogNode14;
+
+	uint8_t AnalogNode15; // tyre temps FL
+	uint8_t AnalogNode16; // tyre temps FR
+	uint8_t AnalogNode17; // tyre temps RL
+	uint8_t AnalogNode18; // tyre temps RR
+
+
+	uint8_t PowerNode33; // [BOTS, inertia switch, BSPD.], Telemetry, front power
+	uint8_t PowerNode34; // [shutdown switches.], inverters, ECU, Front,
+	uint8_t PowerNode35; // Cooling ( fans, pumps )
+	uint8_t PowerNode36; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
+	uint8_t PowerNode37; // [?], Current, TSAL.
+//	char ;
 } volatile DeviceState;
+
 
 struct ErrorCount {
 	uint16_t OperationalReceiveError;
@@ -413,10 +478,13 @@ struct ErrorCount {
 	uint32_t CANCount2;
 	uint32_t CANTimeout;
 
+ // specific devices
+#ifndef OLDCAN
+
 	uint16_t BMSError;
 	uint16_t BMSTimeout;
 	uint16_t BMSReceive;
-	uint16_t BMSReceiveMax;
+//	uint16_t BMSReceiveMax;
 
 	uint32_t ADCError;
 	uint16_t ADCTimeout;
@@ -438,7 +506,10 @@ struct ErrorCount {
 	uint16_t INVReceiveSpd[INVERTERCOUNT];
 	uint16_t INVReceiveTorque[INVERTERCOUNT];
 
-	uint16_t PDMError;
+	uint16_t MemoratorReceive;
+	uint16_t MemoratorTimeout;
+
+//	uint16_t PDMError;
 	uint16_t PDMTimeout;
 	uint16_t PDMReceive;
 
@@ -449,8 +520,13 @@ struct ErrorCount {
 	uint16_t FRSpeedError;
 	uint16_t FRSpeedTimeout;
 	uint16_t FRSpeedReceive;
+
+#endif
+
 	uint16_t CANSendError1;
 	uint16_t CANSendError2;
+
+
 
 } volatile Errors;
 
@@ -461,7 +537,7 @@ void storeBEint16(uint16_t input, uint8_t Data[2]);
 void storeLEint32(uint32_t input, uint8_t Data[4]);
 void storeLEint16(uint16_t input, uint8_t Data[2]);
 
-char getByte(uint32_t input, int8_t returnbyte);
+uint8_t getByte(uint32_t input, int8_t returnbyte);
 
 
 #endif /* ECU_H_ */

@@ -10,5 +10,7 @@
 
 extern volatile bool powerlost;
 
+int initPowerLossHandling( void );
+
 #endif /* EEPROM_H_ */
 

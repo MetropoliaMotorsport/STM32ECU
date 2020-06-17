@@ -18,20 +18,121 @@ uint8_t LastIVTU2[6] = {0,0,0,0,0,0};
 uint8_t LastIVTU3[6] = {0,0,0,0,0,0};
 uint8_t LastIVTW[6] = {0,0,0,0,0,0};
 
-// IVTWh = 0x528
+bool processIVTData(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field );
+
+bool processIVTMsgData(uint8_t CANRxData[8], uint32_t DataLength );
+
+bool processIVTIData(uint8_t CANRxData[8], uint32_t DataLength );
+bool processIVTU1Data(uint8_t CANRxData[8], uint32_t DataLength );
+bool processIVTU2Data(uint8_t CANRxData[8], uint32_t DataLength );
+bool processIVTU3Data(uint8_t CANRxData[8], uint32_t DataLength );
+bool processIVTTData(uint8_t CANRxData[8], uint32_t DataLength );
+bool processIVTWData(uint8_t CANRxData[8], uint32_t DataLength );
+bool processIVTAsData(uint8_t CANRxData[8], uint32_t DataLength );
+bool processIVTWhData(uint8_t CANRxData[8], uint32_t DataLength );
+
+
+void IVTTimeout( void );
+
+CanData IVTMsg=	{ &DeviceState.IVT, IVTMsg_ID, 6, processIVTMsgData, NULL, 0 };
+
+CanData IVT[8] = {
+	{ &DeviceState.IVT,	IVTBase_ID,   6, processIVTIData, IVTTimeout, IVTTIMEOUT },
+	{ &DeviceState.IVT, IVTBase_ID+1, 6, processIVTU1Data, NULL, 0 },
+	{ &DeviceState.IVT, IVTBase_ID+2, 6, processIVTU2Data, NULL, 0 },
+	{ &DeviceState.IVT, IVTBase_ID+3, 6, processIVTU3Data, NULL, 0 },
+	{ &DeviceState.IVT, IVTBase_ID+4, 6, processIVTTData, NULL, 0 },
+	{ &DeviceState.IVT, IVTBase_ID+5, 6, processIVTWData, NULL, 0 },
+	{ &DeviceState.IVT, IVTBase_ID+6, 6, processIVTAsData, NULL, 0 },
+	{ &DeviceState.IVT, IVTBase_ID+7, 6, processIVTWhData, NULL, 0 }
+};
 
 uint8_t processIVT(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
 {
+	CanData * datahandle = &IVT[field - IVTBase_ID];
+	processCANData(datahandle, CANRxData, DataLength );
+	return 0;
+}
+
+
+// IVTWh = 0x528
+bool processIVTIData(uint8_t CANRxData[8], uint32_t DataLength )
+{
+	if ( DeviceState.IVTEnabled )
+	{
+
+		return processIVTData( CANRxData, DataLength, IVTI_ID);
+	} else return true;
+}
+
+bool processIVTU1Data(uint8_t CANRxData[8], uint32_t DataLength )
+{
+	if ( DeviceState.IVTEnabled )
+	{
+		return processIVTData( CANRxData, DataLength, IVTU1_ID);
+	} else return true;
+}
+
+bool processIVTU2Data(uint8_t CANRxData[8], uint32_t DataLength )
+{
+	if ( DeviceState.IVTEnabled )
+	{
+		return processIVTData( CANRxData, DataLength, IVTU2_ID);
+	} else return true;
+}
+
+bool processIVTU3Data(uint8_t CANRxData[8], uint32_t DataLength )
+{
+	if ( DeviceState.IVTEnabled )
+	{
+		return processIVTData( CANRxData, DataLength, IVTU3_ID);
+	} else return true;
+}
+
+bool processIVTTData(uint8_t CANRxData[8], uint32_t DataLength )
+{
+	if ( DeviceState.IVTEnabled )
+	{
+		return processIVTData( CANRxData, DataLength, IVTT_ID);
+	} else return true;
+}
+
+bool processIVTWData(uint8_t CANRxData[8], uint32_t DataLength )
+{
+	if ( DeviceState.IVTEnabled )
+	{
+		return processIVTData( CANRxData, DataLength, IVTW_ID);
+	} else return true;
+}
+
+bool processIVTAsData(uint8_t CANRxData[8], uint32_t DataLength )
+{
+	if ( DeviceState.IVTEnabled )
+	{
+		return processIVTData( CANRxData, DataLength, IVTAs_ID);
+	} else return true;
+}
+
+bool processIVTWhData(uint8_t CANRxData[8], uint32_t DataLength )
+{
+	if ( DeviceState.IVTEnabled )
+	{
+		return processIVTData( CANRxData, DataLength, IVTWh_ID);
+	} else return true;
+}
+
+
+
+bool processIVTData(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
+{
 //	static uint8_t receiveerror[8] = {0,0,0,0,0,0,0,0};
-
-
 	if ( DeviceState.IVTEnabled )
 	{
 		long value = CANRxData[2]*16777216+ CANRxData[3]*65536+ CANRxData[4]*256+ CANRxData[5];
 
 		uint8_t RxOK[7] = {1,1,1,1,1,1,1};
 
-		CanState.IVT[field - IVTBase_ID].time = gettimer();
+		IVT[field - IVTBase_ID].time = gettimer();
 
 		if ( DataLength == FDCAN_DLC_BYTES_6) RxOK[6] = 0;
 
@@ -149,87 +250,29 @@ uint8_t processIVT(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
 #ifdef retransmitIVT
             reTransmitOnCan1(field,CANRxData,DataLength);
 #endif
+			return true;
 
-			return 1;
-
-		} else // bad data.
-		{
-	//		receiveerror++;
-			Errors.CANError++;
-
-			switch ( field ) // set state data.
-			{
-		//		IVTMsg_ID : ;
-				case IVTI_ID : Errors.IVTIReceive++; break;
-				case IVTU1_ID : Errors.IVTU1Receive++; break;
-				case IVTU2_ID : Errors.IVTU2Receive++; break;
-		//		case IVTU3_ID : break;
-		//		case case IVTT_ID : break;
-				case IVTW_ID : Errors.IVTWReceive++; break;
-				case IVTAs_ID : break;
-				case IVTWh_ID : break;
-			}
-
-
-	/*		if ( receiveerror > 10 ), device is still responding, so don't put it offline.
-			{
-				CarState.VoltageBMS=0;
-				DeviceState.BMS = OFFLINE;
-				return 0; // returnval = 0;
-			} */
-#ifdef SENDBADDATAERROR
-			CAN_SendErrorStatus(99,IVTReceived+110+field-IVTBase_ID,99);
-#endif
-			reTransmitError(99,CANRxData, DataLength >> 16); // put into a retransmit queue?
-			return 0; // bad data received, but still heard from device device.
-		}
-
-	} else return 1;
+		} return false;
+	} return true;
 }
 
+
+void IVTTimeout( void )
+{
+#ifdef errorLED
+    blinkOutput(IMDLED_Output,LEDBLINK_FOUR,255);
+#endif
+	CarState.Power=0;
+	CarState.Current=0;
+}
 
 int receiveIVT( void )
 {
 	if ( DeviceState.IVTEnabled )
 	{
-		uint32_t time=gettimer();
-		static uint8_t errorsent = 0;
-
-#ifdef NOTIMEOUT
-		if ( DeviceState.IVT == OPERATIONAL ) // 5 second timeout should be enough.
-		{
-			errorsent = 0;
-			return 1;
-		} else return 0;
-#endif
-        
-		if ( time - CanState.IVT[0].time <= IVTTIMEOUT && DeviceState.IVT == OPERATIONAL )
-		{
-			errorsent = 0;  // IVT seen within timeout.
-			return 1;
-		} else
-		{
-
-			if ( DeviceState.IVT == OPERATIONAL )
-			{
-#ifdef errorLED
-                blinkOutput(IMDLED_Output,LEDBLINK_FOUR,255);
-#endif
-				if ( errorsent == 0 )
-				{
-					CAN_SendErrorStatus(200,IVTReceived+110,(time-CanState.IVT[0].time+IVTTIMEOUT)/10);
-					errorsent = 1;
-					Errors.CANTimeout++;
-					Errors.IVTTimeout++;
-					DeviceState.IVT = OFFLINE;
-            		CarState.Power=0;
-            		CarState.Current=0;
-				}
-
-			}
 
 #ifdef NOIVTTIMEOUT
-			if ( DeviceState.IVT == OFFLINE )
+			if ( *IVT[0].devicestate == OFFLINE )
 			{
 				// retransmit last messages here to keep BMS operating if IVT Lost.
 
@@ -237,17 +280,14 @@ int receiveIVT( void )
 				 reTransmitOnCan1(IVTU1_ID,LastIVTU1,FDCAN_DLC_BYTES_6);
 				 reTransmitOnCan1(IVTU2_ID,LastIVTU2,FDCAN_DLC_BYTES_6);
 			}
-			return 1; // never time out, just set data non operational.
+			returnval = 1; // never time out, just set data non operational.
 #else
-			return 0;
+			int returnval = receivedCANData(&IVT[0]);
 #endif
-			 // time out
-	//
-		}
-	//	return 0;
+		return returnval;
 	} else // IVT reading disabled, set 'default' values to allow operation regardless.
 	{
-		DeviceState.IVT = OPERATIONAL;
+		*IVT[0].devicestate = OPERATIONAL;
 		CarState.VoltageINV=540; // set an assumed voltage that forces TSOFF indicator to go out on timeout for SCS.
 		CarState.VoltageIVTAccu=540;
 		CarState.Power=0;
@@ -262,20 +302,41 @@ int requestIVT( void )
 	return 0; // this is operating with , no extra needed.
 }
 
+
+bool processIVTMsgData(uint8_t CANRxData[8], uint32_t DataLength )
+{
+	return true;
+}
+
 int IVTstate( void ) // not currently being used, not properly functional
 {
-	if ( CanState.IVTMsg.time > 0 ) // packet has been received
+	if ( IVTMsg.time > 0 ) // packet has been received
 	{
-		if ( CanState.IVTMsg.data[0] == 0xBF )
+//		if ( CanState.IVTMsg.data[0] == 0xBF )
 		{
 		    DeviceState.IVT = OPERATIONAL;
 		}
 		return 1;
 
-	} else if (gettimer() - CanState.IVTU1.time < IVTTIMEOUT )
+	} else if (gettimer() - IVT[IVTBase_ID-IVTU1_ID].time < IVTTIMEOUT )
 	{
 		return 1;
 	} else
+	return 0;
+}
+
+
+int initIVT( void )
+{
+#ifdef IVTEnable
+	DeviceState.IVTEnabled = ENABLED;
+#else
+	DeviceState.IVTEnabled = DISABLED;
+#endif
+
+	DeviceState.IVT = OFFLINE;
+	CarState.Power=0;
+	CarState.Current=0;
 	return 0;
 }
 

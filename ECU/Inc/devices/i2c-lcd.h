@@ -34,6 +34,8 @@ int lcd_send_stringscroll(char *str);
 
 int lcd_send_data (char data);  // send data to the lcd
 
+int lcd_processscroll( int direction );
+
 int lcd_send_stringpos( int row, int col, char *str );
 int lcd_send_stringline( int row, char *str, uint8_t priority );
 

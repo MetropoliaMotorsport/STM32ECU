@@ -161,7 +161,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	}
 }
 
-#ifdef TORQUEVECTOR
+#ifdef SIMPLETORQUEVECTOR
 uint16_t TorqueVectorProcess( int torquerequest )
 {
 /*
@@ -401,7 +401,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
     		CarState.Inverters[i].Torque_Req = Torque_Req;
     	} // if any inverter is not ready, readystate will not be 0.
 
-#ifdef TORQUEVECTOR
+#ifdef SIMPLETORQUEVECTOR
 
 // first check if we've requested toggling state and toggle it accelerator pedal not pressed.
 		if ( CheckTSActivationRequest() && ADCState.Torque_Req_R_Percent < 5 && ADCState.Torque_Req_L_Percent < 5 ) // toggle torque vectoring with TS start button.

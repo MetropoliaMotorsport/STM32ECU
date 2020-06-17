@@ -24,7 +24,16 @@ uint32_t gettimer(void)
 
 HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 {
-  SysTick_Config(40000);
+
+	// TODO check why wrong systemcoreclock variable, = default 64mhz hsi.
+
+  uint16_t volatile * const chiprevision = (uint16_t *) DEBUGMCU+1;
+
+  if ( *chiprevision==REVV ) // revision V
+	  SysTick_Config(48000);// SystemCoreClock giving wrong value?, is definitely running at right value though.
+
+  else // revision Y
+	  SysTick_Config(40000);// Right now bodging with chip detection
 
   /* Configure the SysTick IRQ priority */
   if (TickPriority < (1UL << __NVIC_PRIO_BITS))
@@ -44,7 +53,11 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 void HAL_IncTick(void)
 {
   timerticks++; // 10khz timer base.
-  if ( timerticks % 10 == 0) stTick++;
+  if ( timerticks % 10 == 0)
+  {
+	  stTick++;
+	  if ( stTick % 1000 == 0 && rtctime != 0 ) rtctime++;
+  }
 }
 
 uint32_t HAL_GetTick(void)
@@ -73,7 +86,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	if ( htim->Instance == TIM3 ){
 //		timerticks++; // increment global time counter
 
-		lcd_update();
+		if ( DeviceState.LCD == OPERATIONAL )
+		{
+			lcd_update();
+		}
 
 		static uint8_t blinkcounter = 0;
 

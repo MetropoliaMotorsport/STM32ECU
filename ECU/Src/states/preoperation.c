@@ -158,9 +158,14 @@ int PreOperation( uint32_t OperationLoops  )
 
 	char RequestState = PreOperationalState; // initialise to PreOperationalState as default requested next state.
 
+	char str[80] = "PreStart    ";
+	strcat(str,getTimeStr());
+
+	lcd_send_stringline(0,str, 255);
+
     if ( OperationLoops == 0 )
 	    {
-    		lcd_setscrolltitle("Pre Operation");
+    	//	lcd_setscrolltitle("Pre Operation");
     //		lcd_send_stringpos(3,0,"  <Red for config>");
 	    	preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
 	    	CarState.HighVoltageReady = 0;
@@ -180,11 +185,28 @@ int PreOperation( uint32_t OperationLoops  )
 		if ( preoperationstate != 0 || ReadyToStart != 0 ){
  //   		lcd_send_stringpos(1,0,"Waiting for:");
 
-			char str[80] = "Wait:";
+			// TODO add a checker that if all devices on canbus missing, show this instead of individual.
+
+			strcpy(str, "Wait:");
+
+#ifdef POWERNODES
+
+			uint8_t powernodeson = receivePowerNodes();
+			if ( powernodeson != 0 )
+			{
+				sprintf(&str[strlen(str)],"P%s%s%s%s%s ",
+					    (powernodeson & (0x1 << 0) ? "3" : ""),
+						(powernodeson & (0x1 << 1) ? "4" : ""),
+						(powernodeson & (0x1 << 2) ? "5" : ""),
+						(powernodeson & (0x1 << 3) ? "6" : ""),
+						(powernodeson & (0x1 << 4) ? "7" : "")
+				);
+			}
+#endif
 
 #ifdef HPF19
-			if (preoperationstate & (0x1 << FLeftSpeedReceived) )  { strcat(str, "FSL" ); }
-			if (preoperationstate & (0x1 << FRightSpeedReceived) )  {strcat(str, "FSR" );  }
+			if (preoperationstate & (0x1 << FLeftSpeedReceived) )  { strcat(str, "FSL " ); }
+			if (preoperationstate & (0x1 << FRightSpeedReceived) )  {strcat(str, "FSR " );  }
 #endif
 			if (preoperationstate & (0x1 << Inverter1Received) ) { strcat(str, "IV1 " ); }
 #ifdef TWOINVERTERMODULES
@@ -201,7 +223,7 @@ int PreOperation( uint32_t OperationLoops  )
 			strpad(str,20);
 
 
-			lcd_send_stringpos(1,0,str);
+			lcd_send_stringline(1,str, 255);
 
 			if ( ReadyToStart != 0 ){
 				strcpy(str, "Err:");
@@ -217,7 +239,7 @@ int PreOperation( uint32_t OperationLoops  )
 
 				strpad(str,20);
 
-				lcd_send_stringpos(2,0,str);
+				lcd_send_stringline(2,str,255);
 			}
 
 		} else
@@ -261,7 +283,13 @@ int PreOperation( uint32_t OperationLoops  )
 			// do nothing
 	}
 
+#ifdef POWERNODES
+	CAN_NMTSyncRequest();
+#endif
+
+#ifdef USEPDM
 	sendPDM( 0 );
+#endif
 
 	// checks if we have heard from other necessary connected devices for operation.
 

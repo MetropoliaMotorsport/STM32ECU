@@ -10,9 +10,11 @@
 
 void processPDM(uint8_t CANRxData[8], uint32_t DataLength );
 void processPDMVolts(uint8_t CANRxData[8], uint32_t DataLength );
+void PDMTimeout( void );
 int receivePDM( void );
 int errorPDM( void );
 int sendPDM( int buzzer );
+void initPDM( void );
 
 #endif /* PDM_H_ */
 

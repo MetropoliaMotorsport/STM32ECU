@@ -64,11 +64,7 @@ void ResetStateData( void ) // set default startup values for global state value
 	DeviceState.LoggingEnabled = DISABLED;
 #endif
 
-#ifdef IVTEnable
-	DeviceState.IVTEnabled = ENABLED;
-#else
-	DeviceState.IVTEnabled = DISABLED;
-#endif
+	initIVT();
 
 #ifdef BMSEnable
 	DeviceState.BMSEnabled = ENABLED;
@@ -83,14 +79,8 @@ void ResetStateData( void ) // set default startup values for global state value
 	}
 
 	DeviceState.BMS = OFFLINE;
-	DeviceState.PDM = OFFLINE;
 
-	CarState.BMS_relay_status = 0; // these are latched
-	CarState.IMD_relay_status = 0;
-	CarState.BSPD_relay_status = 0;
-
-	CarState.AIROpen = 0;
-	CarState.ShutdownSwitchesClosed = 1;
+	initPDM();
 
 	CarState.brake_balance = 0;
 
@@ -161,7 +151,8 @@ int Startup( uint32_t OperationLoops  )
 		// reset all state information.
 
 		ResetStateData(); // set car state settings back to blank state.
-		ResetCanReceived(); // clear any previously received candata, incase we're doing a complete new startup.
+
+//		ResetCanReceived(); // clear any previously received candata, incase we're doing a complete new startup.
 
 		setOutput(RTDMLED_Output,LEDOFF);
 		setOutput(TSLED_Output,LEDOFF);
@@ -346,7 +337,8 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		sprintf(str,"Errorstate: %.4X", errorstate);
 		lcd_send_stringscroll(str);
 		// send cause of error state.
-		CanState.ECU.newdata = 0;
+
+		ConfigReset();
 
 
 		switch ( Errors.ErrorPlace )
@@ -707,7 +699,7 @@ int OperationalProcess( void )
 				if ( Errors.OperationalReceiveError == 0) CAN_SendADC(ADC_Data, 0);
 				if ( DeviceState.LoggingEnabled ) CANLogDataSlow();
 			}
-			clearButtons();
+	//		clearButtons();
 			loopcount++;
 			totalloopcount++;
 		}

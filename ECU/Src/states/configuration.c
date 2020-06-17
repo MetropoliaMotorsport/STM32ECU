@@ -22,16 +22,79 @@ static uint32_t SendLast = 0;
 static uint32_t BufferPos = 0;
 
 static bool eepromwrite = false;
+static uint8_t eepromwritetype = 0;
 static uint32_t eepromwritestart = 0;
+
+
+static uint8_t ECUConfigdata[8] = {0};
+static bool	   ECUConfignewdata = false;
+static uint32_t ECUConfigDataTime = 0;
+
+
+CanData ECUConfig = { NULL, 21, 8, GetConfigCmd, NULL, 0 };
+
+static bool configReset = false;
+
+bool checkConfigReset( void )
+{
+	if ( configReset )
+	{
+/*
+		CanState.ECU.newdata = 0; // we've seen message in error state loop.
+		if ( ( CanState.ECU.data[0] == 0x99 ) && ( CanState.ECU.data[1] == 0x99 ))
+		{
+			return true;
+		}
+*/
+		configReset = false;
+		return true;
+	} else return false;
+}
+
+void ConfigReset( void )
+{
+	configReset = false;
+}
+
+
+bool GetConfigCmd(uint8_t CANRxData[8], uint32_t DataLength )
+{
+	if ( ECUConfignewdata )
+	{
+// TODO received data before processing old, send error?
+	} else
+	{
+		ECUConfigDataTime= gettimer();
+		memcpy(ECUConfigdata, CANRxData, 8);
+		ECUConfignewdata = true; // moved to end to ensure data is not read before updated.
+	}
+	return true;
+}
+
 
 void setDriveMode(void)
 {
-#ifdef EEPROM
-	SetupTorque(0);
+#ifndef HPF19
+
+//	EEPROMdata
+
+	if ( DeviceState.EEPROM == ENABLED )
+	{
+		CarState.PedalProfile = getEEPROMBlock(0)->PedalProfile;
+		SetupTorque(CarState.PedalProfile);
+		CarState.LimpDisable = !getEEPROMBlock(0)->LimpMode;
+		CarState.Torque_Req_Max = getEEPROMBlock(0)->MaxTorque;
+	} else
+	{
+		CarState.PedalProfile = 0;
+		SetupTorque(CarState.PedalProfile);
+		CarState.LimpDisable = 0;
+		CarState.Torque_Req_Max = 5;
+	}
+
+
 #else
 	SetupNormalTorque();
-#endif
-
 	CarState.LimpDisable = 0;
 	CarState.DrivingMode = ADCState.DrivingMode;
 
@@ -103,6 +166,8 @@ void setDriveMode(void)
 
 	}
 
+#endif
+
 	CarState.Torque_Req_CurrentMax = CarState.Torque_Req_Max;
 
 }
@@ -146,18 +211,222 @@ void SetDataType( char * str, uint8_t datatype )
 	}
 }
 
-char * GetPedalProfile( uint8_t profile )
+char * GetPedalProfile( uint8_t profile , bool shortform )
 {
 	switch ( profile )
 	{
 		case 0 : // Full EEPROM
-			return "Lin";
+			if ( shortform )
+				return "Lin";
+			else return "Linear";
 		case 1 : // Full EEPROM
-			return "Low";
+			if ( shortform )
+				return "Low";
+			else return "Low Range";
 		case 2 : // Full EEPROM
-			return "Acc";
+			if ( shortform )
+				return "Acc";
+			else return "Acceleration";
 	}
-	return "-";
+	return NULL;
+}
+
+
+void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editing,
+		volatile uint8_t * value, const uint8_t * validvalues )
+{
+	char str[LCDCOLUMNS+1] = "";
+
+	for ( int i=0;i<LCDCOLUMNS;i++) display[i] = ' ';
+
+	int len = sprintf(str, "%c%s:", (selected) ? '>' :' ', menuitem);
+	memcpy(display, str, len);
+
+	if ( selected  )
+	{
+		if ( CheckButtonPressed(Config_Input) )
+		{
+			*editing = !*editing;
+			GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
+		}
+
+
+		if ( *editing )
+		{
+			display[LCDCOLUMNS-1-5] = '<';
+			display[LCDCOLUMNS-1] = '>';
+			int change = GetLeftRightPressed();
+			int position = 0;
+
+			// find current value position. will default to first item if an invalid value was given.
+			for ( int i=1;validvalues[i]!=0;i++)
+			{
+				if ( *value ==  validvalues[i] ) position = i;
+			}
+
+			// work out new value change attempted.
+			if ( change < 0 && position > 0)
+			{
+				*value = validvalues[position-1];
+			} else if ( change > 0 && validvalues[position+1] != 0)
+			{
+				*value = validvalues[position+1];
+			}
+	//		if ( change + *value >= min && change + *value <= max ) *value+=change;
+		}
+	}
+
+	// print value
+	len = sprintf(str, "%3d", *value);
+	memcpy(&display[LCDCOLUMNS-1-3], str, len);
+}
+
+
+
+void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * editing,
+		volatile uint8_t * value )
+{
+	char str[LCDCOLUMNS+1] = "";
+
+	for ( int i=0;i<LCDCOLUMNS;i++) display[i] = ' ';
+
+	int len = sprintf(str, "%c%s", (selected) ? '>' :' ', menuitem);
+	memcpy(display, str, len);
+
+	if ( selected  )
+	{
+		if ( CheckButtonPressed(Config_Input) )
+		{
+			*editing = !*editing;
+			GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
+		}
+
+
+		if ( *editing )
+		{
+			display[LCDCOLUMNS-1-10] = '<';
+			display[LCDCOLUMNS-1] = '>';
+			int change = GetLeftRightPressed();
+			int max = 0;
+
+			for ( max=0; GetPedalProfile(max, false)!=NULL;max++);
+
+			if ( change + *value >= 0 && change + *value <= max-1 ) *value+=change;
+		}
+	}
+
+	// print value
+	len = sprintf(str, "%9s", GetPedalProfile(*value, false));
+	if ( len > 9 ) len = 9;
+	memcpy(&display[LCDCOLUMNS-1-9], str, len);
+}
+
+
+
+void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * editing,
+		volatile bool * value )
+{
+	char str[LCDCOLUMNS+1] = "";
+
+	for ( int i=0;i<LCDCOLUMNS;i++) display[i] = ' ';
+
+	int len = sprintf(str, "%c%s", (selected) ? '>' :' ', menuitem);
+	memcpy(display, str, len);
+
+	if ( selected  )
+	{
+		if ( CheckButtonPressed(Config_Input) )
+		{
+			*editing = !*editing;
+			GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
+		}
+
+
+		if ( *editing )
+		{
+			display[LCDCOLUMNS-1-6] = '<';
+			display[LCDCOLUMNS-1] = '>';
+			int change = GetLeftRightPressed();
+			if ( change != 0 )
+				*value= !*value;
+		}
+	}
+
+	// print value
+	len = sprintf(str, "%5s", (*value)? "True" : "False");
+	memcpy(&display[LCDCOLUMNS-1-5], str, len);
+}
+
+
+bool DoMenu()
+{
+	static bool inmenu = false;
+	static int8_t selection = 0;
+	static int8_t top = 0;
+	static bool inedit = false;
+
+	static int menusize = 4;
+
+	static char MenuLines[6][21] = { 0 };
+
+	const uint8_t torquevals[] = {0,5,10,25,65,0}; // zero terminate so function can find end.
+
+	if ( inmenu )
+	{
+		if ( selection == 0 && CheckButtonPressed(Config_Input) )
+		{
+			inmenu = false;
+			inedit = false;
+			if (writeEEPROMDone() ) // try to commit config changes. How to deal with fail?
+			{
+				writeEEPROMCurConf();
+			}
+			return false;
+		}
+
+
+		if ( !inedit )
+		{
+			selection+=GetUpDownPressed(); // allow position adjustment if not editing item.
+
+			if ( selection <  0) selection=0;
+			if ( selection > menusize-1) selection=menusize-1;
+
+			if ( top + 2 < selection ) top +=1;
+			if ( selection < top ) top -=1;
+		}
+
+		strcpy(MenuLines[0], "Config Menu:");
+
+		sprintf(MenuLines[1], "%cBack & Save", (selection==0) ? '>' :' ');
+		doMenuIntEdit( MenuLines[2], "Max Nm", (selection==1), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals );
+		doMenuPedalEdit( MenuLines[3], "Accel", (selection==2), &inedit, &getEEPROMBlock(0)->PedalProfile );
+		doMenuBoolEdit( MenuLines[4], "LimpDisable", (selection==3), &inedit, &getEEPROMBlock(0)->LimpMode);
+
+//		sprintf(MenuLines[3], "%cAccel: %s", (selection==2) ? '>' :' ', GetPedalProfile(CarState.PedalProfile, false));
+
+		lcd_send_stringline( 0, MenuLines[0], 5 );
+
+		for ( int i=0;i<3;i++)
+		{
+			 lcd_send_stringline( i+1, MenuLines[i+top+1], 5 );
+		}
+		return true;
+	}
+
+	if ( !inmenu )
+	{
+		if ( CheckButtonPressed(Config_Input) )
+		{
+			inmenu = true;
+			GetUpDownPressed(); // clear any queued actions.
+			return true;
+		}
+	}
+
+
+	return false;
+
 }
 
 
@@ -166,18 +435,6 @@ int CheckConfigurationRequest( void )
 {
 
 	char str[40] = "";
-
-	FDCAN_TxHeaderTypeDef TxHeaderData;
-
-	TxHeaderData.Identifier = 0x21;
-	TxHeaderData.IdType = FDCAN_STANDARD_ID;
-	TxHeaderData.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderData.DataLength = FDCAN_DLC_BYTES_8; // only one byte defined, check this
-	TxHeaderData.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderData.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderData.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderData.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderData.MessageMarker = 0;
 
 //	static int configstart = 0;
 	int returnvalue = 0;
@@ -188,6 +445,7 @@ int CheckConfigurationRequest( void )
 
 	if ( initialconfig )
 	{
+
 		if ( !SetupADCInterpolationTables(getEEPROMBlock(0)) )
 		{
 				// bad config.
@@ -198,7 +456,7 @@ int CheckConfigurationRequest( void )
 		CarState.Torque_Req_CurrentMax = 5;
 	}
 
-	if ( ReceiveInProgress && gettimer() > CanState.ECUConfig.time + 10000 )
+	if ( ReceiveInProgress && gettimer() > ECUConfigDataTime + 10000 )
 	{ // don't get stuck in receiving data for more than 1 second if data flow stopped.
 		ReceiveInProgress = false;
 		lcd_send_stringline(3,"Receive Timeout", 1);
@@ -219,29 +477,38 @@ int CheckConfigurationRequest( void )
 		{
 			lcd_send_stringline(3,"EEPROM Write done", 1);
 			eepromwrite=false;
+			eepromwritetype=0;
 		} else if ( gettimer() > eepromwritestart + 100000 )
 		{
 			lcd_send_stringline(3,"EEPROM Write timeout", 1);
 			eepromwrite=false;
-		}
+			eepromwritetype=0;
+		} else
+			lcd_send_stringline(3,"EEPROM Write", 1);
 	}
 
-	sprintf(str,"Conf: %dnm, %s", CarState.Torque_Req_Max, GetPedalProfile(CarState.PedalProfile) );
+
+	if ( ! ( SendInProgress || ReceiveInProgress ) )
+	{
+		DoMenu();
+	}
+
+	sprintf(str,"Conf: %dnm %s %c", CarState.Torque_Req_Max, GetPedalProfile(CarState.PedalProfile, true), (!CarState.LimpDisable)?'T':'F' );
 	lcd_send_stringline(3,str, 255);
 
 	// check for config change messages. - broken?
 
 	// data receive block [ block sequence[2], data size[1] ]
 
-	if ( CanState.ECUConfig.newdata )
+	if ( ECUConfignewdata )
 	{
-		CanState.ECUConfig.newdata = 0;
+		ECUConfignewdata = false;
 
-		if ( SendInProgress && CanState.ECUConfig.data[0] == 30 ) 			// send processing.
+		if ( SendInProgress && ECUConfigdata[0] == 30 ) 			// send processing.
 		{
 			// ack received.
 
-			 if ( CanState.ECUConfig.data[1] == 1 ) // ack
+			 if ( ECUConfigdata[1] == 1 ) // ack
 			 {
 				 if ( BufferPos < TransferSize )
 				 {
@@ -259,7 +526,7 @@ int CheckConfigurationRequest( void )
 
 					 lcd_send_stringline(3,str, 1);
 
-					 CAN1Send(&TxHeaderData, CANTxData);
+					 CAN1Send(0x21, 8, CANTxData);
 					 BufferPos += SendSize;
 					 SendLast = gettimer();
 
@@ -268,13 +535,13 @@ int CheckConfigurationRequest( void )
 				    BufferPos = TransferSize;
 					uint8_t CANTxData[8] = { 9, BufferPos>>8,BufferPos, 0, 0, 0, 0, 0};
 
-					CAN1Send(&TxHeaderData, CANTxData);
+					CAN1Send(0x21, 8, CANTxData);
 					SendInProgress = false;
 
  					lcd_send_stringline(3,"Send Done", 1);
 				 }
 
-			 } else if ( CanState.ECUConfig.data[1] == 99 )
+			 } else if ( ECUConfigdata[1] == 99 )
 			 { // error.
 				 SendInProgress = false;
 				 lcd_send_stringline(3,"Send Error Rec", 1);
@@ -284,7 +551,7 @@ int CheckConfigurationRequest( void )
 		} else
 		if ( ReceiveInProgress )
 		{ // in middle of receiving a data block, ignore anything else.
-			int receivepos = (CanState.ECUConfig.data[1]*256+CanState.ECUConfig.data[2]);
+			int receivepos = (ECUConfigdata[1]*256+ECUConfigdata[2]);
 			// check receive buffer address matches sending position
 			if ( receivepos != BufferPos )
 			{
@@ -299,7 +566,7 @@ int CheckConfigurationRequest( void )
 			} else // position good, continue.
 			{
 
-				if (BufferPos+CanState.ECUConfig.data[3]<=TransferSize)
+				if (BufferPos+ECUConfigdata[3]<=TransferSize)
 				{
 
 					sprintf(str,"Get: %s %.4d", datatype, receivepos );
@@ -308,12 +575,16 @@ int CheckConfigurationRequest( void )
 
 					lcd_send_stringline(3,str, 1);
 
-					memcpy(&Buffer[BufferPos],(uint8_t*)&CanState.ECUConfig.data[4],CanState.ECUConfig.data[3]);
+					memcpy(&Buffer[BufferPos],(uint8_t*)&ECUConfigdata[4],ECUConfigdata[3]);
 
-					if (CanState.ECUConfig.data[3] <  4) // data received ok, but wasn't full block. end of data.
+					if (ECUConfigdata[3] <  4) // data received ok, but wasn't full block. end of data.
 					{
+
 						ReceiveInProgress = false;
-						BufferPos+=CanState.ECUConfig.data[3];
+
+
+
+						BufferPos+=ECUConfigdata[3];
 
 						if ( checkversion((char *)Buffer) ) // received data has valid header.
 						{
@@ -321,14 +592,18 @@ int CheckConfigurationRequest( void )
 							switch ( ReceiveType )
 							{
 								case 0 : // Full EEPROM
+									eepromwritetype=0;
 									memcpy(getEEPROMBuffer(), Buffer,  TransferSize);
 									break;
 
 								case 1 : // Block 1
+									eepromwritetype=1;
 									TransferSize = sizeof(eepromdata);
+									// copy block to both memory areas.
 									memcpy(getEEPROMBlock(1), Buffer, TransferSize);
+									memcpy(getEEPROMBlock(2), Buffer, TransferSize);
 									break;
-								case 2 : // Block 2
+//								case 2 : // Block 2
 									TransferSize = sizeof(eepromdata);
 									memcpy(getEEPROMBlock(2), Buffer, TransferSize);
 									break;
@@ -339,7 +614,6 @@ int CheckConfigurationRequest( void )
 						} else
 						{
 							lcd_send_stringline(3,"Get Bad Header", 1);
-
 						}
 
 						// don't commit to eeprom unless get write request.
@@ -373,11 +647,11 @@ int CheckConfigurationRequest( void )
 
 			// if ( data size < 5 then end receiving )
 		} else
-		if ( CanState.ECUConfig.data[0] != 0)
+		if ( ECUConfigdata[0] != 0)
 		{
 
 	//		returnvalue = ReceivingConfig;
-			switch ( CanState.ECUConfig.data[0] )
+			switch ( ECUConfigdata[0] )
 			{
 				case 1 : // send ADC
 					CAN_SendADC(ADC_Data,0);
@@ -405,14 +679,14 @@ int CheckConfigurationRequest( void )
 				case 8 : // start receiving data packet. bytes 2 & 3 define how much data being sent.
 
 
-					TransferSize = CanState.ECUConfig.data[1]*256+CanState.ECUConfig.data[2];
+					TransferSize = ECUConfigdata[1]*256+ECUConfigdata[2];
 
 					if ( TransferSize <= BUFSIZE )
 					{
 						resetReceive();
-						ReceiveType = CanState.ECUConfig.data[3];
+						ReceiveType = ECUConfigdata[3];
 						SetDataType( datatype, ReceiveType );
-						TransferSize = CanState.ECUConfig.data[1]*256+CanState.ECUConfig.data[2];
+						TransferSize = ECUConfigdata[1]*256+ECUConfigdata[2];
 						ReceiveInProgress = true;
 						returnvalue = ReceivingData;
 
@@ -439,20 +713,20 @@ int CheckConfigurationRequest( void )
 				case 10 : // send data
 					resetSend();
 
-					SetDataType(datatype, CanState.ECUConfig.data[1] );
+					SetDataType(datatype, ECUConfigdata[1] );
 
-					switch ( CanState.ECUConfig.data[1] )
+					switch ( ECUConfigdata[1] )
 					{
 						case 0 : // Full EEPROM
 							TransferSize = 4096;
 							memcpy(Buffer, getEEPROMBuffer(), TransferSize);
 							break;
 
-						case 1 : // Full EEPROM
+						case 1 : // EEPROM Block
 							TransferSize = sizeof(eepromdata);
 							memcpy(Buffer, getEEPROMBlock(1), TransferSize);
 							break;
-						case 2 : // Full EEPROM
+						case 2 :
 							TransferSize = sizeof(eepromdata);
 							memcpy(Buffer, getEEPROMBlock(2), TransferSize);
 							break;
@@ -465,8 +739,8 @@ int CheckConfigurationRequest( void )
 				    BufferPos = 0;
 
 					if ( TransferSize > 0 ){
-						uint8_t CANTxData[8] = { 8, TransferSize>>8,TransferSize, CanState.ECUConfig.data[1], 0, 0, 0, 0};
-						CAN1Send(&TxHeaderData, CANTxData);
+						uint8_t CANTxData[8] = { 8, TransferSize>>8,TransferSize, ECUConfigdata[1], 0, 0, 0, 0};
+						CAN1Send(0x21, 8, CANTxData);
 
 						char str[20] = "Send: ";
 
@@ -482,10 +756,19 @@ int CheckConfigurationRequest( void )
 
 					eepromwritestart = gettimer();
 
-					lcd_send_stringline(3,"Full EEPROM Write", 1);
+					switch ( eepromwritetype )
+					{
+						case 0 :
+							lcd_send_stringline(3,"Full EEPROM Write", 1);
+							writeFullEEPROM();
+							break;
+						case 1 :
+							lcd_send_stringline(3,"Config EEPROM Write", 1);
+							writeConfigEEPROM();
+							break;
+					}
 
-					writeFullEEPROM();
-
+					if ( eepromwritetype == 2 )
 					break;
 
 				case 30 :

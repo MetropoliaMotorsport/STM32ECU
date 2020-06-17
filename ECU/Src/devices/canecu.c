@@ -47,8 +47,8 @@ void FDCAN1_start(void)
   sFilterConfig1.FilterConfig = FDCAN_FILTER_TO_RXFIFO0; // FDCAN_FILTER_TO_RXFIFO0; // set can1 to receive via fifo0
 
   sFilterConfig1.FilterIndex = 1; // BMS CAN 1
-  sFilterConfig1.FilterID1 = 0x8; // 0xf 0x0 for all
-  sFilterConfig1.FilterID2 = 0xB; // 07ff  0x0 for all
+  sFilterConfig1.FilterID1 = BMS_ID; // 0xf 0x0 for all
+  sFilterConfig1.FilterID2 = BMS_ID+3; // 07ff  0x0 for all
 
 
   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
@@ -75,8 +75,8 @@ void FDCAN1_start(void)
   }
 
   sFilterConfig1.FilterIndex++; // filter for PDM CAN 1
-  sFilterConfig1.FilterID1 = 0x520;
-  sFilterConfig1.FilterID2 = 0x520;
+  sFilterConfig1.FilterID1 = PDM_ID;
+  sFilterConfig1.FilterID2 = PDM_ID;
 
   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
   {
@@ -84,26 +84,53 @@ void FDCAN1_start(void)
     Error_Handler();
   }
 
+
+  #ifdef POWERNODES
+  sFilterConfig1.FilterIndex++; // filter for canbus ADC id's
+  sFilterConfig1.FilterID1 = PowerNodeErr_ID;
+  sFilterConfig1.FilterID2 = PowerNodeAck_ID;
+
+  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
+  {
+    // Filter configuration Error
+    Error_Handler();
+  }
 
   sFilterConfig1.FilterIndex++; // filter for canbus ADC id's
-  sFilterConfig1.FilterID1 = 0x600;
-  sFilterConfig1.FilterID2 = 0x605;
+  sFilterConfig1.FilterID1 = PowerNode33_ID;
+  sFilterConfig1.FilterID2 = PowerNode37_ID;
 
   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
   {
     // Filter configuration Error
     Error_Handler();
   }
+
+  #endif
 
   sFilterConfig1.FilterIndex++; // filter for fake button presses id's + induce hang.
-  sFilterConfig1.FilterID1 = 0x610;
-  sFilterConfig1.FilterID2 = 0x614;
+  sFilterConfig1.FilterID1 = AdcSimInput_ID;
+  sFilterConfig1.FilterID2 = AdcSimInput_ID+6;
 
   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
   {
     // Filter configuration Error
     Error_Handler();
   }
+
+#ifdef MEMORATOR
+
+  sFilterConfig1.FilterIndex++; // filter for fake button presses id's + induce hang.
+  sFilterConfig1.FilterID1 = MEMORATOR_ID;
+  sFilterConfig1.FilterID2 = MEMORATOR_ID;
+
+  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
+  {
+    // Filter configuration Error
+    Error_Handler();
+  }
+#endif
+
 
   // Front WheelSpeed CANOpen Filters
 
@@ -148,7 +175,7 @@ void FDCAN1_start(void)
 #endif
 
   // Prepare Tx Headers
-
+/*
   // header for sending time base
   TxHeaderTime.Identifier = 0x100;
   TxHeaderTime.IdType = FDCAN_STANDARD_ID;
@@ -160,17 +187,6 @@ void FDCAN1_start(void)
   TxHeaderTime.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
   TxHeaderTime.MessageMarker = 0;
 
-  // general purpose debug tx header
-  TxHeader1.Identifier = 0x101;
-  TxHeader1.IdType = FDCAN_STANDARD_ID;
-  TxHeader1.TxFrameType = FDCAN_DATA_FRAME;
-  TxHeader1.DataLength = FDCAN_DLC_BYTES_8;
-  TxHeader1.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-  TxHeader1.BitRateSwitch = FDCAN_BRS_OFF;
-  TxHeader1.FDFormat = FDCAN_CLASSIC_CAN;
-  TxHeader1.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-  TxHeader1.MessageMarker = 0;
-
   TxHeader2.Identifier = 0x102;
   TxHeader2.IdType = FDCAN_STANDARD_ID;
   TxHeader2.TxFrameType = FDCAN_DATA_FRAME;
@@ -179,7 +195,7 @@ void FDCAN1_start(void)
   TxHeader2.BitRateSwitch = FDCAN_BRS_OFF;
   TxHeader2.FDFormat = FDCAN_CLASSIC_CAN;
   TxHeader2.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-  TxHeader2.MessageMarker = 0;
+  TxHeader2.MessageMarker = 0; */
 }
 
 void FDCAN2_start(void)
@@ -222,8 +238,8 @@ void FDCAN2_start(void)
 
 
    sFilterConfig2.FilterIndex++; // filter IVT MSG. CAN2
-   sFilterConfig2.FilterID1 = 0x511;
-   sFilterConfig2.FilterID2 = 0x511;
+   sFilterConfig2.FilterID1 = IVTMsg_ID;
+   sFilterConfig2.FilterID2 = IVTMsg_ID;
 
    if (HAL_FDCAN_ConfigFilter(hfdcan2p, &sFilterConfig2) != HAL_OK)
    {
@@ -233,8 +249,8 @@ void FDCAN2_start(void)
 
 
    sFilterConfig2.FilterIndex++; // IVT CAN2
-   sFilterConfig2.FilterID1 = 0x521;
-   sFilterConfig2.FilterID2 = 0x528;
+   sFilterConfig2.FilterID1 = IVTBase_ID;
+   sFilterConfig2.FilterID2 = IVTBase_ID+7; // IVTI_ID
 
    if (HAL_FDCAN_ConfigFilter(hfdcan2p, &sFilterConfig2) != HAL_OK)
    {
@@ -324,20 +340,6 @@ int ResetCanReceived( void ) // only wait for new data since request.
 	ResetCanData(&CanState.BMSError);
 	ResetCanData(&CanState.BMSOpMode);
 
-	// pdm
-
-	ResetCanData(&CanState.PDM);
-
-	// ivvt
-
-	ResetCanData(&CanState.IVTI);
-	ResetCanData(&CanState.IVTU1);
-	ResetCanData(&CanState.IVTU2);
-	ResetCanData(&CanState.IVTW);
-	ResetCanData(&CanState.IVTWh);
-	ResetCanData(&CanState.IVTT);
-	ResetCanData(&CanState.IVTAs);
-
 	// front wheel encoders
 #ifndef HPF20
 	ResetCanData(&CanState.FLeftSpeedERR);
@@ -358,7 +360,7 @@ void resetCanTx(volatile uint8_t CANTxData[8])
 }
 
 
-int getNMTstate(volatile struct CanData *data )
+int getNMTstate(volatile CanData *data )
 {
 
 	if ( data->dlcsize == 1 )
@@ -368,19 +370,33 @@ int getNMTstate(volatile struct CanData *data )
   return 0;
 }
 
-void ResetCanData(volatile struct CanData *data )
+void ResetCanData(volatile CanData *data )
 {
 	data->time = 0;
 	for ( int i=0; i<data->dlcsize; i++)
 	{
-		data->data[i] = 0;
+	//	data->data[i] = 0;
 	}
-	data->newdata = 0;
+//	data->newdata = 0;
 //	data->processed = 0;
 }
 
-char CAN1Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData )
+char CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 {
+
+	FDCAN_TxHeaderTypeDef TxHeader = {
+	.Identifier = id, // decide on an ECU ID/
+	.IdType = FDCAN_STANDARD_ID,
+	.TxFrameType = FDCAN_DATA_FRAME,
+	.DataLength = dlc << 16, // only two bytes defined in send protocol, check this
+	.ErrorStateIndicator = FDCAN_ESI_ACTIVE,
+	.BitRateSwitch = FDCAN_BRS_OFF,
+	.FDFormat = FDCAN_CLASSIC_CAN,
+	.TxEventFifoControl = FDCAN_NO_TX_EVENTS,
+	.MessageMarker = 0
+	};
+
+
 	if ( DeviceState.CAN1 == OFFLINE )
 	{
 		return 3;
@@ -402,7 +418,7 @@ char CAN1Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData )
 
 //	if ( !HAL_FDCAN_IsRestrictedOperationMode(&hfdcan1) )
 	{
-		if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, pTxHeader, pTxData) != HAL_OK)
+		if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, pTxData) != HAL_OK)
 		{
 				  // Transmission request Error
 			//     HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
@@ -420,8 +436,20 @@ char CAN1Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData )
 }
 
 
-char CAN2Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData )
+char CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 {
+	FDCAN_TxHeaderTypeDef TxHeader = {
+	.Identifier = id, // decide on an ECU ID/
+	.IdType = FDCAN_STANDARD_ID,
+	.TxFrameType = FDCAN_DATA_FRAME,
+	.DataLength = dlc << 16, // only two bytes defined in send protocol, check this
+	.ErrorStateIndicator = FDCAN_ESI_ACTIVE,
+	.BitRateSwitch = FDCAN_BRS_OFF,
+	.FDFormat = FDCAN_CLASSIC_CAN,
+	.TxEventFifoControl = FDCAN_NO_TX_EVENTS,
+	.MessageMarker = 0
+	};
+
 	if ( DeviceState.CAN2 == OFFLINE )
 	{
 		return 3;
@@ -433,7 +461,7 @@ char CAN2Send( FDCAN_TxHeaderTypeDef *pTxHeader, uint8_t *pTxData )
 		return 2;
 	}
 
-	if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcan2p, pTxHeader, pTxData) != HAL_OK)
+	if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcan2p, &TxHeader, pTxData) != HAL_OK)
 	{
 		Errors.CANSendError2++;
 		return 1;
@@ -453,42 +481,19 @@ char reTransmitError(uint32_t canid, uint8_t *CANRxData, uint32_t DataLength )
 #ifndef RETRANSMITBADDATA
 	return 0;
 #endif
-	FDCAN_TxHeaderTypeDef TxHeaderNMT;
-	TxHeaderNMT.Identifier = canid;
-	TxHeaderNMT.IdType = FDCAN_STANDARD_ID;
-	TxHeaderNMT.TxFrameType = FDCAN_DATA_FRAME;
 
-	TxHeaderNMT.DataLength = DataLength<<16;; // only one byte defined, check this
-	TxHeaderNMT.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderNMT.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderNMT.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderNMT.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderNMT.MessageMarker = 0;
 #ifdef CAN2ERRORSTATUS
-	CAN2Send( &TxHeaderNMT, CANRxData );
+	CAN2Send( canid, DataLength >> 16, CANRxData );
 #endif
-	CAN1Send( &TxHeaderNMT, CANRxData ); // return values.
-//#endif
+	CAN1Send( canid, DataLength >> 16, CANRxData ); // return values.
+
 	return 0;
 }
 
 char reTransmitOnCan1(uint32_t canid, uint8_t *CANRxData, uint32_t DataLength )
 {
 #ifndef sharedCAN // only retransmit if can1 and can2 are not sharing lines.
-	FDCAN_TxHeaderTypeDef TxHeaderNMT;
-
-	TxHeaderNMT.Identifier = canid;
-	TxHeaderNMT.IdType = FDCAN_STANDARD_ID;
-	TxHeaderNMT.TxFrameType = FDCAN_DATA_FRAME;
-
-	TxHeaderNMT.DataLength = DataLength; // only one byte defined, check this
-	TxHeaderNMT.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderNMT.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderNMT.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderNMT.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderNMT.MessageMarker = 0;
-
-	CAN1Send( &TxHeaderNMT, CANRxData ); // return values.
+	CAN1Send( canid, DataLength >> 16, CANRxData ); // return values.
 #endif
 	return 0;
 }
@@ -499,22 +504,10 @@ char CAN_NMTSyncRequest( void )
 
 	// send can id 0x80 to can 0 value 1. Call once per update loop.
 
-	FDCAN_TxHeaderTypeDef TxHeaderNMT;
-
-	TxHeaderNMT.Identifier = 0x80;
-	TxHeaderNMT.IdType = FDCAN_STANDARD_ID;
-	TxHeaderNMT.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderNMT.DataLength = FDCAN_DLC_BYTES_1; // only one byte defined, check this
-	TxHeaderNMT.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderNMT.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderNMT.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderNMT.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderNMT.MessageMarker = 0;
-
 	uint8_t CANTxData[1] = { 1 };
-	CAN1Send( &TxHeaderNMT, CANTxData ); // return values.
+	CAN1Send( 0x80, 1, CANTxData ); // return values.
 #ifndef sharedCAN
-	CAN2Send( &TxHeaderNMT, CANTxData ); // return values.
+	CAN2Send( 0x80, 1, CANTxData ); // return values.
 #endif
 	return 1;
 	// send to both buses.
@@ -522,62 +515,33 @@ char CAN_NMTSyncRequest( void )
 
 uint8_t CANSendPDM( uint8_t highvoltage, uint8_t buzz )
 {
-	FDCAN_TxHeaderTypeDef TxHeaderHV;
-
-	TxHeaderHV.Identifier = 0x118;
-	TxHeaderHV.IdType = FDCAN_STANDARD_ID;
-	TxHeaderHV.TxFrameType = FDCAN_DATA_FRAME;
-
 #ifndef PDMSECONDMESSAGE
 	#ifdef FANCONTROL
-	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_3; // only two bytes defined in send protocol, check this
+	uint8_t DataLength = 3; // only two bytes defined in send protocol, check this
 	uint8_t CANTxData[3] = { highvoltage, buzz, CarState.FanPowered };
 	#else
-	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_2; // only two bytes defined in send protocol, check this
+	uint8_t DataLength = 2; // only two bytes defined in send protocol, check this
 	uint8_t CANTxData[2] = { highvoltage, buzz };
 	#endif
 #else
-	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_2; // only two bytes defined in send protocol, check this
+	uint8_t DataLength = 2;; // only two bytes defined in send protocol, check this
 	uint8_t CANTxData[2] = { highvoltage, buzz };
 #endif
 
-	TxHeaderHV.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderHV.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderHV.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderHV.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderHV.MessageMarker = 0;
-
-
-	return CAN1Send( &TxHeaderHV, CANTxData );
+	return CAN1Send( 0x118, DataLength, CANTxData );
 }
 
 #ifdef PDMSECONDMESSAGE
 uint8_t CANSendPDMFAN( void )
 {
-	FDCAN_TxHeaderTypeDef TxHeaderHV;
-
-	TxHeaderHV.Identifier = 0x119;
-	TxHeaderHV.IdType = FDCAN_STANDARD_ID;
-	TxHeaderHV.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_1; // only two bytes defined in send protocol, check this
-	TxHeaderHV.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderHV.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderHV.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderHV.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderHV.MessageMarker = 0;
-
 	uint8_t CANTxData[1] = { CarState.FanPowered };
-	return CAN1Send( &TxHeaderHV, CANTxData );
+	return CAN1Send( 0x118, 1, CANTxData );
 }
 #endif
 
-char CAN_SendTimeBase( void )
+char CAN_SendTimeBase( void ) // sends how long since power up and primary inverter status.
 {
-
-	TxHeader1.Identifier = 0x101; // decide on an ECU ID/
-	TxHeader1.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
-	TxHeader1.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeader1.MessageMarker = 0;
+	// TODO check time being sent.
 
 	uint32_t time = gettimer();
 	uint8_t CANTxData[8] = {
@@ -593,10 +557,10 @@ char CAN_SendTimeBase( void )
 			getByte(time,3)
 	};
 #ifdef CAN2ERRORSTATUS
-	CAN2Send( &TxHeader1, CANTxData );
+	CAN2Send( 0x101, 8, CANTxData );
 #endif
 
-	return CAN1Send( &TxHeader1, CANTxData );
+	return CAN1Send( 0x101, 8, CANTxData );
 }
 
 char CAN_SendStatus( char state, char substate, uint32_t errorcode )
@@ -606,10 +570,7 @@ char CAN_SendStatus( char state, char substate, uint32_t errorcode )
 		volatile int i = 1;
 	}
 */
-	TxHeader1.Identifier = ECU_CAN_ID; // decide on an ECU ID/
-	TxHeader1.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
-	TxHeader1.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeader1.MessageMarker = 0;
+
 	uint8_t stateless = 0;
 	if ( state == 3 )
 	{
@@ -628,18 +589,14 @@ char CAN_SendStatus( char state, char substate, uint32_t errorcode )
 
 	uint8_t CANTxData[8] = { stateless, substate, getByte(errorcode, 0), getByte(errorcode, 1), getByte(errorcode, 2), getByte(errorcode, 3),HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1),HAL_FDCAN_GetRxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)};
 #ifdef CAN2ERRORSTATUS
-	CAN2Send( &TxHeader1, CANTxData );
+	CAN2Send( ECU_CAN_ID, 8, CANTxData );
 #endif
-	return CAN1Send( &TxHeader1, CANTxData );
+	return CAN1Send( ECU_CAN_ID, 8, CANTxData );
 }
 
 
 char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode )
 {
-	TxHeader1.Identifier = ECU_CAN_ID; // decide on an ECU ID/
-	TxHeader1.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
-	TxHeader1.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeader1.MessageMarker = 0;
 	uint8_t stateless = 0;
 	if ( state == 3 )
 	{
@@ -658,25 +615,14 @@ char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode )
 
 	uint8_t CANTxData[8] = { stateless, substate, getByte(errorcode, 0), getByte(errorcode, 1), getByte(errorcode, 2), getByte(errorcode, 3),HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1),HAL_FDCAN_GetTxFifoFreeLevel(hfdcan2p)};
 #ifdef CAN2ERRORSTATUS
-	CAN2Send( &TxHeader1, CANTxData );
+	CAN2Send( ECU_CAN_ID, 8, CANTxData );
 #endif
-	return CAN1Send( &TxHeader1, CANTxData );
+	return CAN1Send( ECU_CAN_ID, 8, CANTxData );
 }
 
 
 char CAN_SendLED( void )
 {
-	FDCAN_TxHeaderTypeDef TxHeaderHV;
-
-	TxHeaderHV.Identifier = ECU_CAN_ID+2; // decide on an ECU ID/
-	TxHeaderHV.IdType = FDCAN_STANDARD_ID;
-	TxHeaderHV.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
-	TxHeaderHV.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderHV.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderHV.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderHV.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderHV.MessageMarker = 0;
     uint8_t CANTxData[8] = { 10, LEDs[TSLED_Output].state, LEDs[RTDMLED_Output].state, LEDs[TSOFFLED_Output].state,
 							LEDs[IMDLED_Output].state, LEDs[BMSLED_Output].state, LEDs[BSPDLED_Output].state, 0};
 
@@ -695,25 +641,14 @@ char CAN_SendLED( void )
     	CANTxData[6] = LEDs[BSPDLED_Output].blinkingrate;
     }
 #ifdef CAN2ERRORSTATUS
-	CAN2Send( &TxHeaderHV, CANTxData );
+	CAN2Send( ECU_CAN_ID+2, 8, CANTxData );
 #endif
-	return CAN1Send( &TxHeaderHV, CANTxData );
+	return CAN1Send( ECU_CAN_ID+2, 8, CANTxData );
 }
 
 
 char CAN_SENDINVERTERERRORS( void )
 {
-	FDCAN_TxHeaderTypeDef TxHeaderHV;
-
-	TxHeaderHV.Identifier = 0xEE; // decide on an ECU ID/
-	TxHeaderHV.IdType = FDCAN_STANDARD_ID;
-	TxHeaderHV.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
-	TxHeaderHV.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderHV.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderHV.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderHV.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderHV.MessageMarker = 0;
 
     uint8_t CANTxData[8] =
     { CarState.Inverters[RearLeftInverter].InvState,CarState.Inverters[RearRightInverter].InvState, CarState.Inverters[RearLeftInverter].InvStateCheck, CarState.Inverters[RearRightInverter].InvStateCheck,
@@ -725,9 +660,9 @@ char CAN_SENDINVERTERERRORS( void )
     };
 
 #ifdef CAN2ERRORSTATUS
-	CAN2Send( &TxHeaderHV, CANTxData );
+	CAN2Send( 0xEE, 8, CANTxData );
 #endif
-	CAN1Send( &TxHeaderHV, CANTxData );
+	CAN1Send( 0xEE, 8, CANTxData );
 
 	for( int j=0;j<Errors.InverterErrorHistoryPosition;j++)
 	{
@@ -735,10 +670,10 @@ char CAN_SENDINVERTERERRORS( void )
 			CANTxData[i] = Errors.InverterErrorHistory[j][i];
 		}
 #ifdef CAN2ERRORSTATUS
-		CAN2Send( &TxHeaderHV, CANTxData );
+		CAN2Send( 0xEE, 8, CANTxData );
 		DWT_Delay(100);
 #endif
-		CAN1Send( &TxHeaderHV, CANTxData );
+		CAN1Send( 0xEE, 8, CANTxData );
 		DWT_Delay(100);
 	}
 
@@ -748,40 +683,17 @@ char CAN_SENDINVERTERERRORS( void )
 
 char CAN_SendADCValue( uint16_t adcdata, uint8_t index )
 {
-	FDCAN_TxHeaderTypeDef TxHeaderHV;
-
-	TxHeaderHV.Identifier = ECU_CAN_ID; // decide on an ECU ID/
-	TxHeaderHV.IdType = FDCAN_STANDARD_ID;
-	TxHeaderHV.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_4; // only two bytes defined in send protocol, check this
-	TxHeaderHV.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderHV.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderHV.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderHV.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderHV.MessageMarker = 0;
-
     uint8_t CANTxData[4] = { 20, index, getByte(adcdata, 0), getByte(adcdata, 1) };
-	return CAN1Send( &TxHeaderHV, CANTxData );
+	return CAN1Send(ECU_CAN_ID, 4, CANTxData );
 }
 
 char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error )
 {
-	FDCAN_TxHeaderTypeDef TxHeaderHV;
+	uint16_t id = ECU_CAN_ID+0x10;
 
-	if ( error == 0 ){
-		TxHeaderHV.Identifier = ECU_CAN_ID+0x10;
-	} else
-	{
-		TxHeaderHV.Identifier = ECU_CAN_ID+0x12;
+	if ( error != 0 ){
+		id = ECU_CAN_ID+0x12;
 	}
-	TxHeaderHV.IdType = FDCAN_STANDARD_ID;
-	TxHeaderHV.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderHV.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
-	TxHeaderHV.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderHV.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderHV.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderHV.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderHV.MessageMarker = 0;
 
 	uint8_t CANTxData[8] = {
 			getByte(ADC_Data[ThrottleLADC], 0), getByte(ADC_Data[ThrottleLADC], 1),
@@ -790,11 +702,11 @@ char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error )
 			getByte(ADC_Data[BrakeRADC], 0), getByte(ADC_Data[BrakeRADC], 1),
 	};
 
-	CAN1Send( &TxHeaderHV, CANTxData );
+	CAN1Send( id, 8, CANTxData );
 
 	if ( error == 0 ){
-		TxHeaderHV.Identifier = ECU_CAN_ID+0x11;
-	} else TxHeaderHV.Identifier = ECU_CAN_ID+0x13;
+		id = ECU_CAN_ID+0x11;
+	} else id = ECU_CAN_ID+0x13;
 
 //	int16_t steering12bit = ADC_Data[SteeringADC] >> 4;
 #ifdef HPF19
@@ -807,7 +719,7 @@ char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error )
 //			getByte(ADC_Data[CoolantTempRADC], 0), getByte(ADC_Data[CoolantTempRADC], 1),
 	};
 
-	return CAN1Send( &TxHeaderHV, CANTxData2 );
+	return CAN1Send( id, 8, CANTxData2 );
 
 #endif
 
@@ -818,7 +730,7 @@ char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error )
 			0, 0,
 			0, 0,
 	};
-	return CAN1Send( &TxHeaderHV, CANTxData2 );
+	return CAN1Send( id, 8, CANTxData2 );
 #endif
 }
 
@@ -854,39 +766,15 @@ char CAN_SendADCminmax( void )
 
 char CAN_SendIVTTrigger( void )
 {
-	FDCAN_TxHeaderTypeDef TxHeaderIVT;
-
-	TxHeaderIVT.Identifier = 0x411;
-	TxHeaderIVT.IdType = FDCAN_STANDARD_ID;
-	TxHeaderIVT.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderIVT.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
-	TxHeaderIVT.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderIVT.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderIVT.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderIVT.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderIVT.MessageMarker = 0;
-
 	uint8_t CANTxData[8] = { 49, 0, 175,0,0,0,0,0 };
-	return CAN1Send( &TxHeaderIVT, CANTxData );
+	return CAN1Send( IVTCmd_ID, 8, CANTxData );
 }
 
 
 char CAN_SendIVTTurnon( void )
 {
-	FDCAN_TxHeaderTypeDef TxHeaderIVT;
-
-	TxHeaderIVT.Identifier = 0x411;
-	TxHeaderIVT.IdType = FDCAN_STANDARD_ID;
-	TxHeaderIVT.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderIVT.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
-	TxHeaderIVT.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderIVT.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderIVT.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderIVT.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderIVT.MessageMarker = 0;
-
 	uint8_t CANTxData[8] = { 52, 1,0,0,0,0,0,0 }; // turn on from pre operation.
-	return CAN1Send( &TxHeaderIVT, CANTxData );
+	return CAN1Send( IVTCmd_ID, 8, CANTxData );
 }
 // send nmt command to all nodes.
 
@@ -901,67 +789,30 @@ Reset Communication			cs = 130 (82hex)	Node ID
 
 char CAN_NMT( uint8_t command, uint8_t node )
 {
-	FDCAN_TxHeaderTypeDef TxHeaderNMT;
-
-	TxHeaderNMT.Identifier = 0x0;
-	TxHeaderNMT.IdType = FDCAN_STANDARD_ID;
-	TxHeaderNMT.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderNMT.DataLength = FDCAN_DLC_BYTES_2; // only two bytes defined in send protocol, check this
-	TxHeaderNMT.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderNMT.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderNMT.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderNMT.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderNMT.MessageMarker = 0;
-
 #ifndef sharedCAN
 	uint8_t CANTxData2[2] = { command, node }; // 0 sends command to all nodes.
-	CAN2Send( &TxHeaderNMT, CANTxData2 ); // return values.
+	CAN2Send( 0,2, CANTxData2 ); // return values.
 #endif
 //	DWT_Delay(100); // delay of ~ > 80us needed, or messages entangle and error frame somehow if both can outputs are connected. unknown bug.
 	uint8_t CANTxData[2] = { command,node }; // 0 sends command to all nodes.
-	CAN1Send( &TxHeaderNMT, CANTxData ); // send command to both buses.
+	CAN1Send( 0,2, CANTxData ); // send command to both buses.
 	return 1;
 }
 
 char CAN_ConfigRequest( uint8_t command, uint8_t success )
 {
-	FDCAN_TxHeaderTypeDef TxHeaderCfg;
-
-	TxHeaderCfg.Identifier = 0x20;
-	TxHeaderCfg.IdType = FDCAN_STANDARD_ID;
-	TxHeaderCfg.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderCfg.DataLength = FDCAN_DLC_BYTES_3; // only two bytes defined in send protocol, check this
-	TxHeaderCfg.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderCfg.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderCfg.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderCfg.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderCfg.MessageMarker = 0;
-
 	uint8_t CANTxData[3] = { 0x21, command, success }; // 0 sends command to all nodes.
-	CAN1Send( &TxHeaderCfg, CANTxData ); // send command to both buses.
+	CAN1Send( 0x20, 3, CANTxData ); // send command to both buses.
 	return 1;
 }
 
 char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter )
 {
-	FDCAN_TxHeaderTypeDef TxHeaderInverter;
-
-	TxHeaderInverter.Identifier = 0x400 + CarState.Inverters[inverter].COBID;
 
 #ifdef HPF19
 left  // 0x47e
 right // 0x47f
 #endif
-
-	TxHeaderInverter.IdType = FDCAN_STANDARD_ID;
-	TxHeaderInverter.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderInverter.DataLength = FDCAN_DLC_BYTES_4; // only two bytes defined in send protocol, check this // four seen in logs
-	TxHeaderInverter.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderInverter.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderInverter.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderInverter.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderInverter.MessageMarker = 0;
-
 	uint8_t CANTxData[8];
 
 	resetCanTx(CANTxData);
@@ -969,24 +820,12 @@ right // 0x47f
 	storeLEint16(response,&CANTxData[0]);
 	storeLEint16(request,&CANTxData[2]);
 
-	return CAN2Send( &TxHeaderInverter, CANTxData );
+	return CAN2Send( 0x400 + CarState.Inverters[inverter].COBID, 4, CANTxData );
 }
 
 
 char CAN_SendErrors( void )
 {
-	FDCAN_TxHeaderTypeDef TxHeaderNMT;
-
-	TxHeaderNMT.Identifier = 0x66; // 102
-	TxHeaderNMT.IdType = FDCAN_STANDARD_ID;
-	TxHeaderNMT.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderNMT.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
-	TxHeaderNMT.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderNMT.BitRateSwitch = FDCAN_BRS_OFF;
-	TxHeaderNMT.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderNMT.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderNMT.MessageMarker = 0;
-
 #ifndef sharedCAN
 #endif
 
@@ -1002,9 +841,9 @@ char CAN_SendErrors( void )
 	storeBEint16(Errors.ErrorPlace, &CANTxData[0]);
 	storeBEint16(Errors.ErrorReason, &CANTxData[2]);
 #ifdef CAN2ERRORSTATUS
-	CAN2Send( &TxHeaderNMT, CANTxData );
+	CAN2Send( 0x66, 8, CANTxData );
 #endif
-	CAN1Send( &TxHeaderNMT, CANTxData ); // send command to both buses.
+	CAN1Send( 0x66, 8, CANTxData ); // send command to both buses.
 	return 1;
 }
 
@@ -1017,65 +856,56 @@ char CANLogDataSlow( void )
 char CANLogDataFast( void )
 {
 	// build data logging blocks
-	FDCAN_TxHeaderTypeDef TxHeaderLog;
 	uint8_t CANTxData[8];
 
-	TxHeaderLog.IdType = FDCAN_STANDARD_ID;
-	TxHeaderLog.TxFrameType = FDCAN_DATA_FRAME;
-	TxHeaderLog.DataLength = FDCAN_DLC_BYTES_8; // only two bytes defined in send protocol, check this
-	TxHeaderLog.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-	TxHeaderLog.BitRateSwitch = FDCAN_BRS_OFF; // irrelevant to classic can
-	TxHeaderLog.FDFormat = FDCAN_CLASSIC_CAN;
-	TxHeaderLog.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	TxHeaderLog.MessageMarker = 0;
+
  //   HAL_Delay(1); // for some reason without small delay here the first log ID 0x7C6 only sometimes sent
     // investigate to find out why, perhaps fifo buffer not acting as expect?
 
 	resetCanTx(CANTxData);
-	TxHeaderLog.Identifier = 0x7C6;
 	storeBEint16(CarState.Inverters[RearLeftInverter].Torque_Req, &CANTxData[0]); 	//torq_req_l can0 0x7C6 0,16be
 	storeBEint16(CarState.Inverters[RearRightInverter].Torque_Req, &CANTxData[2]); 	//torq_req_r can0 0x7C6 16,16be
 
 	storeBEint16(ADCState.BrakeF, &CANTxData[4]); 	//brk_press_f can0 0x7C6 32,16bee
 	storeBEint16(ADCState.BrakeR, &CANTxData[6]); 	//brk_press_r can0 0x7C6 48,16be
 
-	CAN1Send( &TxHeaderLog, CANTxData ); // lagging in sending
+	CAN1Send( 0x7C6, 8, CANTxData ); // lagging in sending
 
 	resetCanTx(CANTxData);
-	TxHeaderLog.Identifier = 0x7C7;
+
 	storeBEint32(CarState.Inverters[RearLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
 
 	storeBEint32(CarState.Inverters[RearRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
-	CAN1Send( &TxHeaderLog, CANTxData );
+	CAN1Send( 0x7C7, 8, CANTxData );
 
 	resetCanTx(CANTxData);
-	TxHeaderLog.Identifier = 0x7C8;
+
 	CANTxData[0] = ADCState.CoolantTempL; //temp_sensor1 can0 0x7c8 0,8
 	CANTxData[1] = CarState.Torque_Req_CurrentMax; // CarState.Torque_Req_Max; //torq_req_max can0 0x7c8 8,8
 	CANTxData[2] = ADCState.CoolantTempR; 	//temp_sensor_2 can0 0x7c8 16,8
 	CANTxData[3] = ADCState.DrivingMode; //future_torq_req_max can0 0x7c8 24,8
 	storeBEint16(ADCState.Torque_Req_L_Percent/10, &CANTxData[4]); //torq_req_l_perc can0 0x7c8 32,16be
 	storeBEint16(ADCState.Torque_Req_R_Percent/10, &CANTxData[6]); //torq_req_r_perc can0 0x7c8 48,16be
-	CAN1Send( &TxHeaderLog, CANTxData );
+	CAN1Send( 0x7C8, 8, CANTxData );
 
 	resetCanTx(CANTxData);
-	TxHeaderLog.Identifier = 0x7C9;
+
 	storeBEint16(CarState.Inverters[RearLeftInverter].InvTorque, &CANTxData[0]); //actual_torque_left_inverter_raw can0 0x7c9 0,16be
 	storeBEint16(CarState.Inverters[RearRightInverter].InvTorque, &CANTxData[2]); //actual_torque_right_inverter_raw can0 0x7c9 16,16be
 
-	CAN1Send( &TxHeaderLog, CANTxData );
+	CAN1Send( 0x7C9, 8, CANTxData );
 
 	resetCanTx(CANTxData);
 
-	TxHeaderLog.Identifier = 0x7CA; // not being sent in current simulink, but is set?
+  // not being sent in current simulink, but is set?
 	storeBEint32(CarState.brake_balance,&CANTxData[0]); //brake_balance can0 0x7CA 0,32be
 	storeBEint32(ADCState.SteeringAngle,&CANTxData[4]);
 
-	CAN1Send( &TxHeaderLog, CANTxData );
+	CAN1Send( 0x7CA, 8, CANTxData );
 
 	resetCanTx(CANTxData);
 
-	TxHeaderLog.Identifier = 0x7CB; // IVT
+ // IVT
 
 	storeBEint16(CarState.Current, &CANTxData[0]);
 #ifdef IVTEnable
@@ -1087,18 +917,18 @@ char CANLogDataFast( void )
 //	storeBEint16(CarState.Power, &CANTxData[6]);
 //	storeBEint16(ADCloops, &CANTxData[6]);
 	ADCloops=0;
-	CAN1Send( &TxHeaderLog, CANTxData );
+	CAN1Send( 0x7CB, 8, CANTxData );
 
 
 	resetCanTx(CANTxData);
-	TxHeaderLog.Identifier = 0x7C7;
+
 	storeBEint32(CarState.Inverters[RearLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
 
 	storeBEint32(CarState.Inverters[RearRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
-	CAN1Send( &TxHeaderLog, CANTxData );
+	CAN1Send( 0x7C7, 8, CANTxData );
 
 	resetCanTx(CANTxData);
-	TxHeaderLog.Identifier = 0x7CC;
+
 #ifndef HPF20
 	storeBEint32(CarState.SpeedFL, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
 
@@ -1108,7 +938,7 @@ char CANLogDataFast( void )
 
 	storeBEint32(CarState.Inverters[FrontRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
 #endif
-	CAN1Send( &TxHeaderLog, CANTxData );
+	CAN1Send( 0x7CC, 8, CANTxData );
 
 
 	CAN_SendTimeBase();
@@ -1116,12 +946,13 @@ char CANLogDataFast( void )
 	return 0;
 }
 
-void SetCanData(volatile struct CanData *data, uint8_t *CANRxData, uint32_t DataLength )
+void SetCanData(volatile CanData *data, uint8_t *CANRxData, uint32_t DataLength )
 {
 	int time = gettimer();
 //	data->count++;
 //	if ( data->newdata == 0 ) // only update data if previous data has been looked at.
 	{
+#ifdef OLDCAN
 		data->dlcsize = DataLength>>16;
 		data->data[0] = CANRxData[0];
 		data->data[1] = CANRxData[1];
@@ -1131,13 +962,84 @@ void SetCanData(volatile struct CanData *data, uint8_t *CANRxData, uint32_t Data
 		data->data[5] = CANRxData[5];
 		data->data[6] = CANRxData[6];
 		data->data[7] = CANRxData[7];
+#endif
 		data->time = time;
 	//	int copylength = DataLength>>16;
 	//	memcpy(data->data, CANRxData, copylength);
 	//	data->dlcsize = DataLength>>16;
-		data->newdata = 1; // moved to end to ensure data is not read before updated.
+//		data->newdata = 1; // moved to end to ensure data is not read before updated.
 	}
 }
+
+
+void processCANData(CanData * datahandle, uint8_t CANRxData[8], uint32_t DataLength )
+{
+	datahandle->time = gettimer();
+
+	if ( datahandle->getData(CANRxData, DataLength))
+	{
+		datahandle->receiveerr = 0;
+		*datahandle->devicestate = OPERATIONAL;
+	} else // bad data.
+	{
+		Errors.CANError++;
+		datahandle->receiveerr++;
+#ifdef SENDBADDATAERROR
+		CAN_SendStatus(ReceiveErr,0,datahandle->id);
+#endif
+		reTransmitError(99,CANRxData, DataLength);
+	}
+}
+
+
+// write a generic handler?
+int receivedCANData( CanData * datahandle )
+{
+	if ( datahandle->devicestate == NULL )
+	{
+		return -1; // no device state associated.
+	}
+	uint32_t time=gettimer();
+
+#ifdef NOTIMEOUT
+		if ( datahandle->devicestate == OPERATIONAL )
+		{
+			datahandle->errorsent = false;
+			return 1;
+		} else return 0;
+#endif
+
+	if ( datahandle->timeout > 0 )
+	{
+		if ( time - datahandle->time <= datahandle->timeout && *datahandle->devicestate == OPERATIONAL )
+		{
+			datahandle->errorsent = false;
+			return 1;
+		} else
+		{
+			if ( *datahandle->devicestate == OPERATIONAL )
+			{
+				if ( datahandle->doTimeout != NULL ) datahandle->doTimeout();
+
+				if ( !datahandle->errorsent )
+				{
+					CAN_SendStatus(ReceiveTimeout,0,(time-datahandle->time)/10); // TODO assign a better ID
+					datahandle->errorsent = true;
+					Errors.CANTimeout++;
+					*datahandle->devicestate = OFFLINE;
+				}
+				return 0;
+			}
+			return 0;
+		}
+
+	} else return 1; // set to never time out.
+}
+
+
+
+
+
 
 /* HAL_FDCAN_HighPriorityMessageCallback(FDCAN_HandleTypeDef *hfdcan)
 {
@@ -1256,57 +1158,96 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				break;
 
 			case 0x20 : // messages to ECU specifically.
-				SetCanData((struct CanData *)&CanState.ECU, CANRxData, RxHeader.DataLength );
+				SetCanData((CanData *)&CanState.ECU, CANRxData, RxHeader.DataLength );
 				break;
 
-			case 0x21 : // messages to ECU specifically.
-				SetCanData((struct CanData *)&CanState.ECUConfig, CANRxData, RxHeader.DataLength );
+			case 0x21 : // config messages to ECU.
+				GetConfigCmd(CANRxData, RxHeader.DataLength );
+//				SetCanData((struct CanData *)&CanState.ECUConfig, CANRxData, RxHeader.DataLength );
 				break;
 				//  0x500-0x505 ? PDM, what. ?
 
+
+			case MEMORATOR_ID :
+			    processTime(CANRxData, RxHeader.DataLength );
+				break;
 
 // IVT
 
 #if IVT_BUS == CANB1
 
-			case 0x511 : // IVT Control Message
+			case IVTMsg_ID : // IVT Control Message
 				//SetCanData((struct CanData *)&CanState.IVTMsg, CANRxData, RxHeader.DataLength );
 				break;
 
 			case IVTI_ID : // IVT Current 0x521,24,24BE * 0.001 -> Accu_Voltage // not in current logs. -- current, not voltage.
 		        // Accu_Current.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
+//				processIVTIData( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTI_ID );
 				break;
 
 			case IVTU1_ID : // IVT Voltage1 0x522
+//				processIVTU1Data( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTU1_ID );
 				break;
 
 			case IVTU2_ID : // IVT Can0 0x523,24,24BE * 0.001 -> Accu_Current -- voltage, not current
 				// Accu_Voltage.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
+//				processIVTU2Data( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTU2_ID );
 				break;
 
 			case IVTU3_ID : // IVT Voltage3 0x524
+//				processIVTU3Data( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTU3_ID );
 				break;
 			case IVTT_ID : // IVT Temp 0x525
+//				processIVTTData( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTT_ID );
 				break;
 			case IVTW_ID : // IVT Wattage 0x526
+//				processIVTWData( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTW_ID );
 				break;
 			case IVTAs_ID : // IVT As? 0x527
+//				processIVTAsData( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTAs_ID );
 				break;
 			case IVTWh_ID : // IVT WattHours 0x528
+//				processIVTWhData( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTWh_ID );
+				break;
+#endif
+
+#ifdef POWERNODES
+			case PowerNodeErr_ID :
+				processCANData(&PowerNodeErr, CANRxData, RxHeader.DataLength );
+				break;
+
+			case PowerNodeAck_ID :
+				processCANData(&PowerNodeAck, CANRxData, RxHeader.DataLength );
+				break;
+
+			case PowerNode33_ID :
+				processCANData(&PowerNode33, CANRxData, RxHeader.DataLength );
+				break;
+			case PowerNode34_ID :
+				processCANData(&PowerNode34, CANRxData, RxHeader.DataLength );
+				break;
+			case PowerNode35_ID :
+				processCANData(&PowerNode35, CANRxData, RxHeader.DataLength );
+				break;
+			case PowerNode36_ID :
+				processCANData(&PowerNode36, CANRxData, RxHeader.DataLength );
+				break;
+			case PowerNode37_ID :
+				processCANData(&PowerNode37, CANRxData, RxHeader.DataLength );
 				break;
 #endif
 
 // PDM
 
-			case 0x520 : // PDM can0
+			case PDM_ID : // PDM can0
 				//	0x520,0,8 -> BMS_relay_status
 				//	0x520,8,8 -> IMD_relay_status
 				//	0x520,16,8 -> BSPD_relay_status
@@ -1325,7 +1266,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 				// formulaSIM commands.
 
-			case 0x600 : // debug ID to send arbitraty 'ADC' values for testing.
+			case AdcSimInput_ID : // debug ID to send arbitraty 'ADC' values for testing.
 				if( CANRxData[0] == 1 && CANRxData[1]== 99 ) // if received value in ID is not 0 assume true and switch to fakeADC over CAN.
 				{
 			//		stopADC(); //  disable ADC DMA interrupt to stop processing ADC input.
@@ -1345,7 +1286,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				}
 				break;
 
-			case 0x601 : // debug ID for steering data.
+			case AdcSimInput_ID+1 : // debug ID for steering data.
 				CANADC.SteeringAngle = CANRxData[0]; // set ADC_Data for steering
 				CANADC.Torque_Req_L_Percent = CANRxData[1]; // set ADC_data for Left Throttle
 				CANADC.Torque_Req_R_Percent = CANRxData[2]; // set ADC_data for Right Throttle
@@ -1362,19 +1303,19 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 				}
 				break;
-			case 0x610 : // debug id for CAN TS input
+			case AdcSimInput_ID+2 : // debug id for CAN TS input
 				if(CANRxData[0]){
 					Input[TS_Input].pressed = 1; // TS_Switch
 					Input[TS_Input].lastpressed = gettimer();
 				}
 				break;
-			case 0x611 : // debug id for CAN RTDM input
+			case AdcSimInput_ID+3 : // debug id for CAN RTDM input
 				if(CANRxData[0]){
 					Input[RTDM_Input].pressed = 1; // RTDM_Switch
 					Input[RTDM_Input].lastpressed = gettimer();
 				}
 				break;
-			case 0x612 : // debug id for CAN Stop Motors button
+			case AdcSimInput_ID+4 : // debug id for CAN Stop Motors button
 				if(CANRxData[0]){
 					Input[StartStop_Input].pressed = 1;  // StartStop_Switch
 					Input[StartStop_Input].lastpressed = gettimer();
@@ -1382,13 +1323,13 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				break;
 #ifdef debug
 //REMOVE FROM LIVE CODE.
-			case 0x613 : // debug id to induce a hang state, for testing watchdog.
+			case AdcSimInput_ID+5 : // debug id to induce a hang state, for testing watchdog.
 				while ( 1 ){
 					// do nothing.
 				}
 				break;
 #endif
-			case 0x614 : // debug id for CAN Stop Motors button
+			case AdcSimInput_ID+6 : // controller input.
 				switch ( CANRxData[0])
 				{
 				case 1 :
@@ -1411,9 +1352,6 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 					Input[Down_Input].pressed = 1;
 					Input[Down_Input].lastpressed = gettimer();
 					break;
-				}
-				if(CANRxData[0]){
-
 				}
 				break;
 

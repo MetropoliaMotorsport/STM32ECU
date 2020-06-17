@@ -82,8 +82,8 @@ typedef struct eepromdatastruct {
 
 	uint8_t MaxTorque;
 	uint8_t PedalProfile;
-	uint8_t LimpMode;
-	uint8_t TorqueVectoring;
+	bool LimpMode;
+	bool TorqueVectoring;
 
 } eepromdata;
 
@@ -98,19 +98,23 @@ typedef struct eepromdatastruct {
 // use last 32bytes as emergency data.
 
 
-int initiliseEEPROM();
+int initiliseEEPROM( void );
 
 bool checkversion(char * data);
 
-uint8_t * getEEPROMBuffer();
+uint8_t * getEEPROMBuffer( void );
 
 eepromdata * getEEPROMBlock(int block );
 
-void commitEEPROM(); // function for timer callback to handle writing.
+int readEEPROMAddr( uint16_t address, uint16_t size );
 
-int writeFullEEPROM();
+void commitEEPROM( void ); // function for timer callback to handle writing.
 
-bool writeEEPROMDone();
+int writeFullEEPROM( void );
+int writeConfigEEPROM( void );
+int writeEEPROMCurConf( void );
+
+bool writeEEPROMDone( void );
 
 #endif /* EEPROM_H_ */
 

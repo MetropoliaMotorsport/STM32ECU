@@ -34,7 +34,7 @@ volatile bool ADC3read = false;
  DMA_BUFFER ALIGN_32BYTES (static uint32_t aADCxConvertedDataADC3[ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3]);
 // new calibration
 
-#ifdef TORQUEVECTOR
+#ifdef SIMPLETORQUEVECTOR
 uint16_t TorqueVectInput[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTORSTARTANGLE+UINTOFFSET, 0, TORQUEVECTORSTARTANGLE+UINTOFFSET,  TORQUEVECTORSTOPANGLE+UINTOFFSET };
 int16_t TorqueVectOutput[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
 
@@ -45,7 +45,7 @@ uint16_t TorqueVectInput3[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTOR
 int16_t TorqueVectOutput3[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
 #endif
 
-#ifdef EEPROM
+#ifdef EEPROMSTORAGE
 
 #ifdef HPF19
 
@@ -161,7 +161,7 @@ bool SetupADCInterpolationTables( eepromdata * data )
     // calibrated input range for steering, from left lock to center to right lock.
     // check if this can be simplified?
 
-#ifdef EEPROM
+#ifdef EEPROMSTORAGE
 
 	if ( checkversion(data->VersionString) )
 	{
@@ -310,19 +310,19 @@ bool SetupADCInterpolationTables( eepromdata * data )
 
 #endif
 
-#ifdef TORQUEVECTOR
+#ifdef SIMPLETORQUEVECTOR
     ADCInterpolationTables.TorqueVector.Input = TorqueVectInput;
     ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput;
 
     ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput)/sizeof(TorqueVectInput[0]);
 #endif
     	return true;
-#ifdef EEPROM
+#ifdef EEPROMSTORAGE
 	} else return false;
 #endif
 }
 
-#ifdef EEPROM
+#ifdef EEPROMSTORAGE
 
 void SetupTorque( int request )
 {
@@ -356,7 +356,7 @@ void SetupLowTravelTorque( void )
 
 #endif
 
-#ifdef TORQUEVECTOR
+#ifdef SIMPLETORQUEVECTOR
 
 void setuptorquesteering1( void )
 {
@@ -634,7 +634,7 @@ int getCoolantTemp2(uint16_t RawADCInput)
 #endif
 }
 
-#ifdef TORQUEVECTOR
+#ifdef SIMPLETORQUEVECTOR
 int getTorqueVector(uint16_t RawADCInput)
 {
     struct ADCTable ADC = ADCInterpolationTables.TorqueVector;
@@ -717,7 +717,7 @@ HAL_StatusTypeDef stopADC( void )
 void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 {
 	DeviceState.ADC = ERROR;
-	if ( DeviceState.LCD == ENABLED ){
+	if ( DeviceState.LCD == OPERATIONAL ){
 		lcd_errormsg("ADC Error Check .LD");
 	}
 

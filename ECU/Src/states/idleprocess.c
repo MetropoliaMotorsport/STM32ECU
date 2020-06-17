@@ -29,6 +29,12 @@ char IdleRequest( void )   // request data / invalidate existing data to ensure 
 			command = InverterStateMachine( &CarState.Inverters[i] ); // request left inv state machine to On from ready.
 			CANSendInverter( command, 0, i );
 		}
+
+		if (  !CarState.Inverters[i].HighVoltageAllowed && GetInverterState( CarState.Inverters[i].InvState ) == INVERTERREADY )
+		{
+			InverterStateMachine( &CarState.Inverters[i] );
+		}
+
 	}
 
 //	CarState.RearLeftInvCommand = InverterStateMachine( LeftInverter );
@@ -266,7 +272,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	}
 
 	if ( TSRequested == 1
-		&& HVEnableTimer+9000 < gettimer()
+		&& HVEnableTimer+90000 < gettimer()
 		&& !InvHVPresent // make this optional so IVT can be disabled.
 		)
 	{

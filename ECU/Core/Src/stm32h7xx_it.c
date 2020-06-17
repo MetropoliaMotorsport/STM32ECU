@@ -100,7 +100,7 @@ void HardFault_Handler(void)
 	sendPDM( 0 ); //disable high voltage on error state;
 	CheckErrors();
 	// send cause of error state.
-	CanState.ECU.newdata = 0;
+	ConfigReset();
 	CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
 	blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
     blinkOutput(TSOFFLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
