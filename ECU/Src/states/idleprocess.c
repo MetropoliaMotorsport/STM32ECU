@@ -272,7 +272,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	}
 
 	if ( TSRequested == 1
-		&& HVEnableTimer+90000 < gettimer()
+		&& HVEnableTimer+9000 < gettimer()
 		&& !InvHVPresent // make this optional so IVT can be disabled.
 		)
 	{
