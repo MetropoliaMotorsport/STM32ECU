@@ -223,8 +223,12 @@ int RunningRequest( void )
 	/* EV 4.12.1
 	 * The vehicle must make a characteristic sound, continuously for at least one second and a maximum of three seconds when it enters ready-to-drive mode.
 	 */
-
+#ifdef PDM
 	sendPDM( 1 ); // buzzer only sounds when value changes from 0 to 1
+#endif
+#ifdef POWERNODES
+	setDevicePower(Buzzer, 1);
+#endif
 
 	for ( int i=0;i<INVERTERCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
 	{

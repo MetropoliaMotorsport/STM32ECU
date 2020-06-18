@@ -36,7 +36,7 @@ void IVTTimeout( void );
 
 CanData IVTMsg=	{ &DeviceState.IVT, IVTMsg_ID, 6, processIVTMsgData, NULL, 0 };
 
-CanData IVT[8] = {
+CanData IVTCan[8] = {
 	{ &DeviceState.IVT,	IVTBase_ID,   6, processIVTIData, IVTTimeout, IVTTIMEOUT },
 	{ &DeviceState.IVT, IVTBase_ID+1, 6, processIVTU1Data, NULL, 0 },
 	{ &DeviceState.IVT, IVTBase_ID+2, 6, processIVTU2Data, NULL, 0 },
@@ -49,7 +49,7 @@ CanData IVT[8] = {
 
 uint8_t processIVT(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
 {
-	CanData * datahandle = &IVT[field - IVTBase_ID];
+	CanData * datahandle = &IVTCan[field - IVTBase_ID];
 	processCANData(datahandle, CANRxData, DataLength );
 	return 0;
 }
@@ -132,7 +132,7 @@ bool processIVTData(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
 
 		uint8_t RxOK[7] = {1,1,1,1,1,1,1};
 
-		IVT[field - IVTBase_ID].time = gettimer();
+		IVTCan[field - IVTBase_ID].time = gettimer();
 
 		if ( DataLength == FDCAN_DLC_BYTES_6) RxOK[6] = 0;
 
@@ -282,12 +282,12 @@ int receiveIVT( void )
 			}
 			returnval = 1; // never time out, just set data non operational.
 #else
-			int returnval = receivedCANData(&IVT[0]);
+			int returnval = receivedCANData(&IVTCan[0]);
 #endif
 		return returnval;
 	} else // IVT reading disabled, set 'default' values to allow operation regardless.
 	{
-		*IVT[0].devicestate = OPERATIONAL;
+		*IVTCan[0].devicestate = OPERATIONAL;
 		CarState.VoltageINV=540; // set an assumed voltage that forces TSOFF indicator to go out on timeout for SCS.
 		CarState.VoltageIVTAccu=540;
 		CarState.Power=0;
@@ -318,7 +318,7 @@ int IVTstate( void ) // not currently being used, not properly functional
 		}
 		return 1;
 
-	} else if (gettimer() - IVT[IVTBase_ID-IVTU1_ID].time < IVTTIMEOUT )
+	} else if (gettimer() - IVTCan[IVTBase_ID-IVTU1_ID].time < IVTTIMEOUT )
 	{
 		return 1;
 	} else

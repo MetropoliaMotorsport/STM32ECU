@@ -6,13 +6,65 @@
  */
 
 #include "ecumain.h"
+#include <stdarg.h>
 
 #include <stdio.h>
 #include <time.h>
 
 time_t rtctime;
 
-#define MAXECUCURRENT 20
+#define POWERNODECOUNT		5
+
+#define MAXECUCURRENT 		20
+#define MAXFANCURRENT		20
+#define MAXPUMPCURRENT		20
+
+typedef struct nodepowerreqstruct {
+	uint8_t nodeid; //
+	uint8_t output; // enable
+	uint8_t state; // request state
+} nodepowerreq;
+
+typedef struct devicepowerreqstruct {
+	DeviceId device; //
+	uint8_t nodeid;
+	uint8_t output; // enable
+	uint8_t state; // request state
+} devicepowerreq;
+
+devicepowerreq DevicePowerList[] =
+{
+		{ Telemetry, 33, 4 },
+		{ Front1, 33, 5 },
+
+
+		{ Inverters, 34, 3 },
+		{ ECU, 34, 4 },
+		{ Front2, 34, 5 },
+
+		{ LeftFans, 35, 2 },
+		{ RightFans, 35, 3 },
+		{ LeftPump, 35, 4 },
+		{ RightPump, 35, 5 },
+
+		{ IVT, 36, 1 },
+		{ Buzzer, 36, 0 },
+
+		{ Current, 37, 4 },
+		{ TSAL, 37, 5 },
+
+		{ 0 }
+};
+
+nodepowerreq PowerRequests[] =
+{		{ 33, 0, 0 },
+		{ 34, 0, 0 },
+		{ 35, 0, 0 },
+		{ 36, 0, 0 },
+		{ 37, 0, 0 },
+		{ 0 }
+};
+
 
 bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength );
 bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength );
@@ -34,6 +86,7 @@ CanData  PowerNodeAck = { NULL, PowerNodeAck_ID, 3, processPNodeAckData, NULL, 0
 
 
 #define MAXPNODEERRORS		40
+
 
 struct PowerNodeError
 {
@@ -83,8 +136,8 @@ bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength )
 
 	if ( DataLength >> 16 == PowerNode33.dlcsize
 		&& CANRxData[0] <= 0b00011101 // max possible value. check for zeros in unused fields?
-		&& CANRxData[1] < 100
-		&& ( CANRxData[2] >= 0 && CANRxData[2] <= 100 )
+		&& CANRxData[1] < 255
+		&& ( CANRxData[2] >= 0 && CANRxData[2] < 255 )
 		)
 	{
 //		CarState.BOTS = (CANRxData[0] & (0x1 << 4) );
@@ -107,7 +160,7 @@ bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength )
 	if ( DataLength >> 16 == PowerNode34.dlcsize
 		&& CANRxData[0] <= 0b00011100 // max possible value. check for zeros in unused fields?
 		&& CANRxData[1] < 255
-		&& ( CANRxData[2] >= 0 && CANRxData[2] <= MAXECUCURRENT )
+		&& ( CANRxData[2] >= 0 && CANRxData[2] <= 255 )
 		&& CANRxData[3] < 255
 		)
 	{
@@ -123,8 +176,6 @@ bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength )
 	}
 }
 
-#define MAXFANCURRENT		20
-#define MAXPUMPCURRENT		20
 
 bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength ) // Cooling
 {
@@ -201,6 +252,16 @@ bool processPNodeErrData(uint8_t CANRxData[8], uint32_t DataLength )
 }
 bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength )
 {
+
+//	CANRxData[0] ==     // nodeid
+	for ( int i=0;PowerRequests[i].nodeid != 0;i++)
+	{
+		if ( PowerRequests[i].nodeid == CANRxData[0] )
+		{ // found the device in list, try to set request.
+			PowerRequests[i].output = 0; // we've had ack that request on this node was processed, clear it.
+			PowerRequests[i].state = 0;
+		}
+	}
 	return true;
 }
 
@@ -216,24 +277,71 @@ int receivePowerNodes( void )
 	return nodesonline;
 }
 
-#define DeviceIVT 1
 
-int setdevicepower( uint32_t device, bool state )
+int setinitialdevicepower( void )
 {
-	switch ( device )
+
+}
+
+int average(int count, ...)
+{
+
+
+}
+
+
+int setDevicePower( DeviceId device, bool state )
+{
+	int powerreqset = 1;
+
+	for ( int i=0;DevicePowerList[i].device != 0;i++)
 	{
-		case DeviceIVT :
-			if ( receivePowerNodes() & (0x1 << 3) ? "6" : "")
+		if ( DevicePowerList[i].device == device )
+		{ // found the device in list, try to set request.
+
+			for ( int j=0;PowerRequests[j].nodeid != 0;j++)
 			{
-
+				if ( PowerRequests[j].nodeid ==  DevicePowerList[i].nodeid )
+				{
+					// check existing request.
+					bool enabled = PowerRequests[j].output & (0x1 <<  DevicePowerList[i].output);
+					if ( !enabled || // no request not yet made
+						( enabled && (PowerRequests[j].state & (0x1 << DevicePowerList[i].output) ) != state ) // request different to previously not processed request
+					)
+					{
+						PowerRequests[j].output |= (0x1 << DevicePowerList[i].output); // set enable output
+						if ( state == true )
+						  PowerRequests[j].state |=(0x1 << DevicePowerList[i].output); // set bit
+						else
+						  PowerRequests[j].state &= ~(0x1 << DevicePowerList[i].output); // unset bit
+						powerreqset = 0;
+					} else powerreqset = 1; // request already set
+				}
+				if ( powerreqset == 0 ) break;
 			}
-
-		break;
-
-		default:
-			 break;
-
+			if ( powerreqset == 0 ) break;
+		}
 	}
+	return powerreqset; // return if device was found and request set.
+}
 
-	return 0;
+int sendPowerNodeReq( void )
+{
+	uint8_t candata[8] = { 0, 1, 0, 0 };
+	bool senderror = false;
+
+	for ( int i=0;i<POWERNODECOUNT;i++)
+	{
+
+		if ( PowerRequests[i].output != 0 )
+		{
+			candata[0] = PowerRequests[i].nodeid;
+			candata[2] = PowerRequests[i].output;
+			candata[3] = PowerRequests[i].state;
+			CAN1Send(PowerNodeCmd_ID, 8, candata );
+			// don't reset request until we've seen an ack -> use ack handler to clear request.
+		}
+
+	};
+	return senderror;
 }

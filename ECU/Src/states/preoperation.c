@@ -171,6 +171,9 @@ int PreOperation( uint32_t OperationLoops  )
 	    	CarState.HighVoltageReady = 0;
 	    	ReadyToStart = 0xFFFF;
 	    	minmaxADCReset();
+	    	setDevicePower(IVT, 1);
+	    	setDevicePower(Buzzer, 0);
+
 	 //   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
 	    	// send to individual devices rather than reset everything if needed.
 	    }
@@ -179,6 +182,7 @@ int PreOperation( uint32_t OperationLoops  )
 #endif
 	{
 		CAN_SendStatus(1, PreOperationalState, preoperationstate );
+		if ( ( OperationLoops % 10 ) == 0 ) { sendPowerNodeReq(); }
 
 		// generate device waiting string.
 

@@ -31,8 +31,12 @@ int TSActiveRequest( void )
 {
 //	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
 	CAN_NMTSyncRequest();
+#ifdef PDM
 	sendPDM( 0 ); // will enable HV if inverters in ready status and HV enabled flag set.
-
+#endif
+#ifdef POWERNODES
+	setDevicePower(IVT, 0);
+#endif
 	for ( int i=0;i<INVERTERCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
 	{
 		 TSActiveINVRequest( &CarState.Inverters[i] );

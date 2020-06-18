@@ -13,6 +13,10 @@
 #endif
 
 
+#ifdef ONECAN
+	#define sharedCAN
+#endif
+
 FDCAN_HandleTypeDef * hfdcan2p = NULL;
 
 //variables that need to be accessible in ISR's
@@ -1035,9 +1039,6 @@ int receivedCANData( CanData * datahandle )
 
 	} else return 1; // set to never time out.
 }
-
-
-
 
 
 

@@ -32,6 +32,15 @@ extern SPI_HandleTypeDef hspi4;
 #define OLED_Command_Mode 0x80
 #define OLED_Data_Mode 0x40
 
+#define ScrollLinesMax 40
+
+char ScrollLines[ScrollLinesMax][21] = { 0 };
+int ScrollLinesPos = 0;
+int ScrollLinesRingStart = 0;
+int ScrollLinesTop = 0;
+char ScrollTitle[21] = "";
+
+
 DMA_BUFFER ALIGN_32BYTES (static uint8_t LCDBuffer[LCDBUFSIZE]);
 
 DMA_BUFFER ALIGN_32BYTES (static uint8_t sendbuffer[LCDBUFSIZE*2]); // allow for command codes etc.
@@ -179,6 +188,7 @@ uint8_t reverse_byte(uint8_t byte)
      return byte;
  }
 
+
 int lcd_send_cmd (char cmd)
 {
 
@@ -212,6 +222,7 @@ int lcd_send_cmd (char cmd)
 
 	return 0;
 }
+
 
 int lcd_send_data (char data)
 {
@@ -291,6 +302,7 @@ void lcd_clear (void)
 	}
 }
 
+
 void lcd_put_cur(int row, int col)
 {
 #ifdef US2066
@@ -312,6 +324,7 @@ void lcd_put_cur(int row, int col)
 
     lcd_send_cmd (col);
 }
+
 
  int lcd_init (I2C_HandleTypeDef *i2chandle)
 {
@@ -429,6 +442,7 @@ void lcd_put_cur(int row, int col)
 	return 0;
 }
 
+
 int lcd_send_stringline( int row, char *str, uint8_t priority )
 {
 	if ( priority <= LinePriority[row]) // only allow update if not priority overridden
@@ -450,6 +464,7 @@ int lcd_send_stringline( int row, char *str, uint8_t priority )
 
 
 }
+
 
 int lcd_send_stringpos( int row, int col, char *str )
 {
@@ -528,7 +543,6 @@ int lcd_send_stringpos( int row, int col, char *str )
 }
 
 
-
 int lcd_send_stringposDIR( int row, int col, char *str )
 {
 	uint8_t data_t[40];
@@ -561,12 +575,6 @@ int lcd_send_stringposDIR( int row, int col, char *str )
 	return 0;
 }
 
-#define ScrollLinesMax 40
-char ScrollLines[ScrollLinesMax][21] = { 0 };
-int ScrollLinesPos = 0;
-int ScrollLinesRingStart = 0;
-int ScrollLinesTop = 0;
-char ScrollTitle[21] = "";
 
 void lcd_setscrolltitle( char * str )
 {
@@ -588,6 +596,7 @@ void lcd_setscrolltitle( char * str )
 
 }
 
+
 void lcd_clearscroll( void )
 {
 	ScrollLinesPos = 0;
@@ -608,6 +617,7 @@ void lcd_clearscroll( void )
 		}
 	}
 }
+
 
 int lcd_printscroll( void )
 {
@@ -631,6 +641,7 @@ int lcd_printscroll( void )
 	return 1;
 }
 
+
 int lcd_processscroll( int direction )
 {
 	ScrollLinesTop+= direction;
@@ -640,6 +651,7 @@ int lcd_processscroll( int direction )
 
 	return lcd_printscroll();
 }
+
 
 int lcd_send_stringscroll(char *str)
 {
