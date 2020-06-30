@@ -28,28 +28,6 @@ typedef enum DeviceIDtype {
 
 } DeviceId;
 
-/*
-#define DeviceBuzzer 	1
-#define DeviceTelemetry	2
-#define DeviceFront1	3
-
-
-#define DeviceInverters	4
-#define DeviceECU		5
-#define DeviceFront2	6
-
-#define DeviceLeftFans	7
-#define DeviceRightFans	8
-#define DeviceLeftPump 	9
-#define DeviceRightPump 10
-
-#define DeviceIVT		11
-#define DeviceBuzzer	12
-
-#define DeviceCurrentMeasurement	13
-#define DeviceTSAL		14
-*/
-
 extern CanData PowerNodeErr;
 extern CanData PowerNodeAck;
 
@@ -59,10 +37,15 @@ extern CanData PowerNode35;
 extern CanData PowerNode36;
 extern CanData PowerNode37;
 
+bool processPNodeErr(uint8_t nodeid, uint32_t errorcode );
+bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength );
+
 int receivePowerNodes( void );
 
 int setDevicePower( DeviceId device, bool state );
 int sendPowerNodeReq( void );
+
+bool powerErrorOccurred( DeviceID device );
 
 #endif /* POWERNODE_H_ */
 

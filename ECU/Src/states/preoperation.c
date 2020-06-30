@@ -150,7 +150,7 @@ int NMTReset( void )
 }
 
 // get external hardware upto state to allow entering operational state on request.
-int PreOperation( uint32_t OperationLoops  )
+int PreOperationState( uint32_t OperationLoops  )
 {
 //	static int OperationLoops = 0;
 	static uint16_t preoperationstate;
@@ -171,7 +171,6 @@ int PreOperation( uint32_t OperationLoops  )
 	    	CarState.HighVoltageReady = 0;
 	    	ReadyToStart = 0xFFFF;
 	    	minmaxADCReset();
-	    	setDevicePower(IVT, 1);
 	    	setDevicePower(Buzzer, 0);
 
 	 //   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
@@ -182,6 +181,20 @@ int PreOperation( uint32_t OperationLoops  )
 #endif
 	{
 		CAN_SendStatus(1, PreOperationalState, preoperationstate );
+
+    	if ( DeviceState.IVTEnabled && DeviceState.IVT == OFFLINE )
+    	{
+    		if ( !powerErrorOccurred( DeviceId.IVT) )
+    			setDevicePower(IVT, 1);
+    		else
+    		{
+				Errors.ErrorPlace = 0xAA;
+				Errors.ErrorReason = OperationalError;
+    			return OperationalErrorState;
+    		}
+
+    	}
+
 		if ( ( OperationLoops % 10 ) == 0 ) { sendPowerNodeReq(); }
 
 		// generate device waiting string.
@@ -206,6 +219,20 @@ int PreOperation( uint32_t OperationLoops  )
 						(powernodeson & (0x1 << 4) ? "7" : "")
 				);
 			}
+#endif
+
+#ifdef ANALOGNODES
+
+			uint8_t analognodeson = receiveAnalogNodesCritical();
+			if ( powernodeson != 0 )
+			{
+				sprintf(&str[strlen(str)],"A%s%s ",
+					    (analognodeson & (0x1 << 0) ? "1" : ""),
+						(analognodeson & (0x1 << 1) ? "A" : "")
+
+				);
+			}
+
 #endif
 
 #ifdef HPF19

@@ -71,7 +71,7 @@ int8_t InverterStateMachine( volatile InverterState *Inverter ) // returns respo
 {
 	uint16_t State, TXState;
 
-	char HighVoltageAllowed;//, ReadyToDriveAllowed; //, TsLED, RtdmLED;
+	bool HighVoltageAllowed;//, ReadyToDriveAllowed; //, TsLED, RtdmLED;
 
 	State = Inverter->InvState;
 	HighVoltageAllowed = Inverter->HighVoltageAllowed;
@@ -83,12 +83,12 @@ int8_t InverterStateMachine( volatile InverterState *Inverter ) // returns respo
 	switch ( GetInverterState(State) )
 	{
 		case 0 : // state 0: Not ready to switch on, no can message. Internal state only at startup.
-			HighVoltageAllowed = 0;  // High Voltage is not allowed
+			HighVoltageAllowed = false;  // High Voltage is not allowed
 			TXState=0b10000000; // send bit 128 reset message to enter state 1 in case in fault. - fault reset.
 			break;
 
 		case 1 : // State 1: Switch on Disabled.
-			HighVoltageAllowed = 0;
+			HighVoltageAllowed = false;
 			TXState = 0b00000110; // send 0110 shutdown message to request move to State 2.
 			break;
 
@@ -102,7 +102,7 @@ int8_t InverterStateMachine( volatile InverterState *Inverter ) // returns respo
 				TXState = 0b00000111; // request Switch on message, State 3..
 			} else
 			{
-				HighVoltageAllowed = 0;
+				HighVoltageAllowed = false;
 				TXState = 0b00000110; // no change, continue to request State 2.
 			}
 			break;
@@ -111,12 +111,12 @@ int8_t InverterStateMachine( volatile InverterState *Inverter ) // returns respo
 			  // we are powered on, so allow high voltage.
 			if ( CarState.HighVoltageReady )// IdleState ) <-
 			{  // TS enable button has been pressed, proceed to request power on if both inverters on.
-				HighVoltageAllowed = 1;
+				HighVoltageAllowed = true;
 				TXState = 0b00001111; // Request Enable operation, State 4.
 			}
 			else if ( !CarState.HighVoltageReady )
 			{ // return to switched on state.
-				HighVoltageAllowed = 0;
+				HighVoltageAllowed = false;
 				TXState = 0b00000110; // 0b00000000; // request Disable Voltage, drop to ready state., alternately Quick Stop 0b00000010
 			}
 			else
@@ -135,13 +135,13 @@ int8_t InverterStateMachine( volatile InverterState *Inverter ) // returns respo
 			else */
 			if ( !CarState.HighVoltageReady )
 			{ // full motor stop has been requested
-				HighVoltageAllowed = 0; // drop back to ready to switch on.
+				HighVoltageAllowed = false; // drop back to ready to switch on.
 				TXState = 0b00000110;//0b00000000; // request Disable Voltage., alternately Quick Stop 0b00000010 - test to see if any difference in behaviour.
 			}
 			else
 			{ // no change, continue to request operation.
 				TXState = 0b00001111;
-				HighVoltageAllowed = 1;
+				HighVoltageAllowed = true;
 			}
 			break;
 
@@ -152,7 +152,7 @@ int8_t InverterStateMachine( volatile InverterState *Inverter ) // returns respo
 		case -99 : //99 Fault
 
 		default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
-			HighVoltageAllowed = 0;
+			HighVoltageAllowed = false;
 			TXState = 0b10000000; // 128
 			//TXState = 0b00000000; // 0
 			break;

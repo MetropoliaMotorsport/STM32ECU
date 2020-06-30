@@ -35,17 +35,29 @@
 #define PDM_ID					0x520
 #define MEMORATOR_ID			0x7B
 
-#define PowerNodeErr_ID         0x600
-#define PowerNodeCmd_ID			0x601
-#define PowerNodeAck_ID			0x602
+#define NodeErr_ID         0x600
+#define NodeCmd_ID			0x602
+#define NodeAck_ID			0x601
 
 #define AdcSimInput_ID			0x608
 
-#define PowerNode33_ID			1710
-#define PowerNode34_ID			1711
-#define PowerNode35_ID			1712
-#define PowerNode36_ID			1713
-#define PowerNode37_ID			1714
+#define AnalogNode1_ID			(1664)
+#define AnalogNode9_ID			(1680)
+#define AnalogNode10_ID			(1682)
+#define AnalogNode11_ID			(1684)
+#define AnalogNode12_ID			(1686)
+#define AnalogNode13_ID			(1688)
+#define AnalogNode14_ID			(1690)
+#define AnalogNode15_ID			(1692)
+#define AnalogNode16_ID			(1694)
+#define AnalogNode17_ID			(1696)
+#define AnalogNode18_ID			(1698)
+
+#define PowerNode33_ID			(1710)
+#define PowerNode34_ID			(1711)
+#define PowerNode35_ID			(1712)
+#define PowerNode36_ID			(1713)
+#define PowerNode37_ID			(1714)
 
 #define CANB0					(2)
 #define CANB1					(1)
@@ -87,22 +99,26 @@
 
 // can open guard/states.
 
+/*
 #define PREOPERATION			0x7F
 #define OPERATIONAL				0x05
 #define STOPPED					0x04
 #define BOOTUP					0x00
 #define OFFLINE					0xFE
 #define ERROR					0xFF
+*/
 
-#define ENABLED					1
-#define DISABLED				0
+
+
+#define ENABLED					(true)
+#define DISABLED				(false)
 
 
 int cancount;
 
 
 typedef bool (*DataHandler)(uint8_t CANRxData[8], uint32_t DataLength );
-typedef void (*TimeoutHandler)( void );
+typedef void (*TimeoutHandler)( uint16_t id );
 
 
 typedef volatile struct CanDataType {

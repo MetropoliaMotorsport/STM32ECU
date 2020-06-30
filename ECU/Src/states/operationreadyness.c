@@ -137,7 +137,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 #ifdef STMADC
     if ( CheckADCSanity() == 0 ) returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
 #else
-	if ( DeviceState.ADC == OPERATIONAL )
+	if ( DeviceState.ADC == Operational )
 	{
 		returnvalue &= ~(0x1 << PedalADCReceived); // using local adc, already established online in initialisation.
 	}

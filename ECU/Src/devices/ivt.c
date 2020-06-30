@@ -32,7 +32,7 @@ bool processIVTAsData(uint8_t CANRxData[8], uint32_t DataLength );
 bool processIVTWhData(uint8_t CANRxData[8], uint32_t DataLength );
 
 
-void IVTTimeout( void );
+void IVTTimeout( uint16_t id );
 
 CanData IVTMsg=	{ &DeviceState.IVT, IVTMsg_ID, 6, processIVTMsgData, NULL, 0 };
 
@@ -257,7 +257,7 @@ bool processIVTData(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
 }
 
 
-void IVTTimeout( void )
+void IVTTimeout( uint16_t id )
 {
 #ifdef errorLED
     blinkOutput(IMDLED_Output,LEDBLINK_FOUR,255);

@@ -47,6 +47,8 @@
 #include "i2c-lcd.h"
 #include "eeprom.h"
 #include "memorator.h"
+#include "node.h"
+#include "analognode.h"
 #include "powernode.h"
 
 

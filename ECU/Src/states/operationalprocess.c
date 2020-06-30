@@ -96,7 +96,7 @@ void ResetStateData( void ) // set default startup values for global state value
 		CarState.Inverters[i].InvBadStatus = 1;
 		CarState.Inverters[i].Torque_Req = 0;
 		CarState.Inverters[i].Speed = 0;
-		CarState.Inverters[i].HighVoltageAllowed = 0;
+		CarState.Inverters[i].HighVoltageAllowed = false;
 
 		CanState.InverterERR[i].time = 0;
 		CanState.InverterPDO1[i].time = 0;
@@ -527,7 +527,7 @@ int OperationalProcess( void )
 					break;
 
 				case PreOperationalState : // pre operation - configuration, wait for device presence announcements in pre operation state.
-					NewOperationalState = PreOperation(loopcount);
+					NewOperationalState = PreOperationState(loopcount);
 					break;
 
 				case OperationalReadyState : // operation has been requested, get all devices to operational ready state and check sanity.

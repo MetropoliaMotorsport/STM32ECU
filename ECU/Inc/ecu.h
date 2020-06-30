@@ -19,6 +19,7 @@
 	#define EEPROMSTORAGE
 	#define SCREEN
 	#define POWERNODES
+	#define ANALOGNODES
 #endif
 // Calibration settings for pedals.
 
@@ -324,7 +325,7 @@ extern volatile uint32_t ADCloops;
 
 typedef struct { // new structure for inverter related data, so that it can be used as general pointer.
 	uint8_t InverterNum;
-	char HighVoltageAllowed;
+	bool HighVoltageAllowed;
 	uint16_t InvState;
 	uint16_t InvBadStatus;
 	uint16_t InvStateCheck;
@@ -418,42 +419,53 @@ uint8_t id_count;
 };
 */
 
+typedef enum DeviceStatustype {
+	BOOTUP,
+	STOPPED,
+	PREOPERATIONAL,
+	OPERATIONAL,
+	OFFLINE,
+	INERROR
+} DeviceStatus;
+
 struct DeviceState {
-	uint8_t CAN1;
-	uint8_t CAN2;
-	uint8_t FrontSpeedSensors;
-	uint8_t IVTEnabled;
-	uint8_t BMSEnabled;
-	uint8_t LoggingEnabled;
-	uint8_t ADC;
-	uint8_t Inverters[INVERTERCOUNT];
-	uint8_t BMS;
-	uint8_t PDM;
-	uint8_t FLSpeed;
-	uint8_t FRSpeed;
-	uint8_t IVT;
-	uint8_t LCD;
-	uint8_t EEPROM;
-	uint8_t Memorator;
-
-	uint8_t AnalogNode9;
-	uint8_t AnalogNode10;
-	uint8_t AnalogNode11;
-	uint8_t AnalogNode12;
-	uint8_t AnalogNode13;
-	uint8_t AnalogNode14;
-
-	uint8_t AnalogNode15; // tyre temps FL
-	uint8_t AnalogNode16; // tyre temps FR
-	uint8_t AnalogNode17; // tyre temps RL
-	uint8_t AnalogNode18; // tyre temps RR
+	DeviceStatus CAN1;
+	DeviceStatus CAN2;
+	bool FrontSpeedSensors;
+	bool IVTEnabled;
+	bool BMSEnabled;
+	bool LoggingEnabled;
+	DeviceStatus ADC;
+	DeviceStatus Inverters[INVERTERCOUNT];
+	DeviceStatus BMS;
+	DeviceStatus PDM;
+	DeviceStatus FLSpeed;
+	DeviceStatus FRSpeed;
+	DeviceStatus IVT;
+	DeviceStatus LCD;
+	DeviceStatus EEPROM;
+	DeviceStatus Memorator;
 
 
-	uint8_t PowerNode33; // [BOTS, inertia switch, BSPD.], Telemetry, front power
-	uint8_t PowerNode34; // [shutdown switches.], inverters, ECU, Front,
-	uint8_t PowerNode35; // Cooling ( fans, pumps )
-	uint8_t PowerNode36; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
-	uint8_t PowerNode37; // [?], Current, TSAL.
+	DeviceStatus AnalogNode1;
+	DeviceStatus AnalogNode9;
+	DeviceStatus AnalogNode10;
+	DeviceStatus AnalogNode11;
+	DeviceStatus AnalogNode12;
+	DeviceStatus AnalogNode13;
+	DeviceStatus AnalogNode14;
+
+	DeviceStatus AnalogNode15; // tyre temps FL
+	DeviceStatus AnalogNode16; // tyre temps FR
+	DeviceStatus AnalogNode17; // tyre temps RL
+	DeviceStatus AnalogNode18; // tyre temps RR
+
+
+	DeviceStatus PowerNode33; // [BOTS, inertia switch, BSPD.], Telemetry, front power
+	DeviceStatus PowerNode34; // [shutdown switches.], inverters, ECU, Front,
+	DeviceStatus PowerNode35; // Cooling ( fans, pumps )
+	DeviceStatus PowerNode36; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
+	DeviceStatus PowerNode37; // [?], Current, TSAL.
 //	char ;
 } volatile DeviceState;
 

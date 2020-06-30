@@ -8,6 +8,6 @@
 #ifndef PREOPERATION_H_
 #define PREOPERATION_H_
 
-int PreOperation( uint32_t OperationLoops );
+int PreOperationState( uint32_t OperationLoops );
 
 #endif /* PREOPERATION_H_ */

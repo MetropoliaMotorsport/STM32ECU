@@ -91,8 +91,8 @@ void FDCAN1_start(void)
 
   #ifdef POWERNODES
   sFilterConfig1.FilterIndex++; // filter for canbus ADC id's
-  sFilterConfig1.FilterID1 = PowerNodeErr_ID;
-  sFilterConfig1.FilterID2 = PowerNodeAck_ID;
+  sFilterConfig1.FilterID1 = NodeErr_ID;
+  sFilterConfig1.FilterID2 = NodeAck_ID;
 
   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
   {
@@ -101,7 +101,7 @@ void FDCAN1_start(void)
   }
 
   sFilterConfig1.FilterIndex++; // filter for canbus ADC id's
-  sFilterConfig1.FilterID1 = PowerNode33_ID;
+  sFilterConfig1.FilterID1 = AnalogNode9_ID;
   sFilterConfig1.FilterID2 = PowerNode37_ID;
 
   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
@@ -278,6 +278,17 @@ void FDCAN2_start(void)
 	    Error_Handler();
 	  }
   }
+
+  sFilterConfig2.FilterIndex++; // filter for canbus ADC id's
+  sFilterConfig2.FilterID1 = AnalogNode1_ID;
+  sFilterConfig2.FilterID2 = AnalogNode1_ID+1;
+
+  if (HAL_FDCAN_ConfigFilter(hfdcan2p, &sFilterConfig2) != HAL_OK)
+  {
+    // Filter configuration Error
+    Error_Handler();
+  }
+
 
   /*
   sFilterConfig2.FilterIndex++;
@@ -1023,7 +1034,7 @@ int receivedCANData( CanData * datahandle )
 		{
 			if ( *datahandle->devicestate == OPERATIONAL )
 			{
-				if ( datahandle->doTimeout != NULL ) datahandle->doTimeout();
+				if ( datahandle->doTimeout != NULL ) datahandle->doTimeout(datahandle->id);
 
 				if ( !datahandle->errorsent )
 				{
@@ -1102,6 +1113,63 @@ bool processInvMessage( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8])
 
 }
 
+
+
+bool Fifo1Process(uint32_t id, uint8_t CANRxData[8], uint32_t DataLength)
+{
+	bool processed = true;
+
+	switch ( id ){ // identify which data packet we are processing.
+
+#ifdef ANALOGNODES
+	case AnalogNode1_ID :
+		processCANData(&AnalogNode1, CANRxData, DataLength );
+		break;
+#endif
+
+// IVT
+#if IVT_BUS == CANB0
+			case 0x511 : // IVT Control Message
+				//SetCanData((struct CanData *)&CanState.IVTMsg, CANRxData, RxHeader.DataLength );
+				break;
+
+			case IVTI_ID : // IVT Current 0x521,24,24BE * 0.001 -> Accu_Voltage // not in current logs. -- current, not voltage.
+		        // Accu_Current.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
+				processIVT(CANRxData, DataLength, IVTI_ID );
+				break;
+
+			case IVTU1_ID : // IVT Voltage1 0x522
+				processIVT(CANRxData, DataLength, IVTU1_ID );
+				break;
+
+			case IVTU2_ID : // IVT Can0 0x523,24,24BE * 0.001 -> Accu_Current -- voltage, not current
+				// Accu_Voltage.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
+				processIVT(CANRxData, DataLength, IVTU2_ID );
+				break;
+
+			case IVTU3_ID : // IVT Voltage3 0x524
+				processIVT(CANRxData, DataLength, IVTU3_ID );
+				break;
+			case IVTT_ID : // IVT Temp 0x525
+				processIVT(CANRxData, DataLength, IVTT_ID );
+				break;
+			case IVTW_ID : // IVT Wattage 0x526
+				processIVT(CANRxData, DataLength, IVTW_ID );
+				break;
+			case IVTAs_ID : // IVT As? 0x527
+				processIVT(CANRxData, DataLength, IVTAs_ID );
+				break;
+			case IVTWh_ID : // IVT WattHours 0x528
+				processIVT(CANRxData, DataLength, IVTWh_ID );
+				break;
+#endif
+	default : // any other received packets, shouldn't be any due to filters.
+		processed = false;
+		break;
+	}
+	return processed;
+}
+
 /**
  * interrupt rx callback for canbus messages
  */
@@ -1138,6 +1206,10 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 		// process incoming packet
 
 	//
+#ifdef ONECAN
+		if ( !Fifo1Process(RxHeader.Identifier, CANRxData, RxHeader.DataLength) )
+#endif
+
 #if INV1_BUS == CANB1
 		if ( !processInvMessage( &RxHeader, CANRxData ) )
 #endif
@@ -1221,12 +1293,12 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 #endif
 
 #ifdef POWERNODES
-			case PowerNodeErr_ID :
-				processCANData(&PowerNodeErr, CANRxData, RxHeader.DataLength );
+			case NodeErr_ID :
+				processCANData(&NodeErr, CANRxData, RxHeader.DataLength );
 				break;
 
-			case PowerNodeAck_ID :
-				processCANData(&PowerNodeAck, CANRxData, RxHeader.DataLength );
+			case NodeAck_ID :
+				processCANData(&NodeAck, CANRxData, RxHeader.DataLength );
 				break;
 
 			case PowerNode33_ID :
@@ -1243,6 +1315,39 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				break;
 			case PowerNode37_ID :
 				processCANData(&PowerNode37, CANRxData, RxHeader.DataLength );
+				break;
+#endif
+
+#ifdef ANALOGNODES
+			case AnalogNode9_ID :
+				processCANData(&AnalogNode9, CANRxData, RxHeader.DataLength );
+				break;
+			case AnalogNode10_ID :
+				processCANData(&AnalogNode10, CANRxData, RxHeader.DataLength );
+				break;
+			case AnalogNode11_ID :
+				processCANData(&AnalogNode11, CANRxData, RxHeader.DataLength );
+				break;
+			case AnalogNode12_ID :
+				processCANData(&AnalogNode12, CANRxData, RxHeader.DataLength );
+				break;
+			case AnalogNode13_ID :
+				processCANData(&AnalogNode13, CANRxData, RxHeader.DataLength );
+				break;
+			case AnalogNode14_ID :
+				processCANData(&AnalogNode14, CANRxData, RxHeader.DataLength );
+				break;
+			case AnalogNode15_ID :
+				processCANData(&AnalogNode15, CANRxData, RxHeader.DataLength );
+				break;
+			case AnalogNode16_ID :
+				processCANData(&AnalogNode16, CANRxData, RxHeader.DataLength );
+				break;
+			case AnalogNode17_ID :
+				processCANData(&AnalogNode16, CANRxData, RxHeader.DataLength );
+				break;
+			case AnalogNode18_ID :
+				processCANData(&AnalogNode16, CANRxData, RxHeader.DataLength );
 				break;
 #endif
 
@@ -1442,47 +1547,7 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 #if INV1_BUS == CANB0
 		if ( !processInvMessage( &RxHeader, CANRxData ) )
 #endif
-		switch ( RxHeader.Identifier ){ // identify which data packet we are processing.
-
-		// IVT
-#if IVT_BUS == CANB0
-					case 0x511 : // IVT Control Message
-						//SetCanData((struct CanData *)&CanState.IVTMsg, CANRxData, RxHeader.DataLength );
-						break;
-
-					case IVTI_ID : // IVT Current 0x521,24,24BE * 0.001 -> Accu_Voltage // not in current logs. -- current, not voltage.
-				        // Accu_Current.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
-						processIVT(CANRxData, RxHeader.DataLength, IVTI_ID );
-						break;
-
-					case IVTU1_ID : // IVT Voltage1 0x522
-						processIVT(CANRxData, RxHeader.DataLength, IVTU1_ID );
-						break;
-
-					case IVTU2_ID : // IVT Can0 0x523,24,24BE * 0.001 -> Accu_Current -- voltage, not current
-						// Accu_Voltage.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
-						processIVT(CANRxData, RxHeader.DataLength, IVTU2_ID );
-						break;
-
-					case IVTU3_ID : // IVT Voltage3 0x524
-						processIVT(CANRxData, RxHeader.DataLength, IVTU3_ID );
-						break;
-					case IVTT_ID : // IVT Temp 0x525
-						processIVT(CANRxData, RxHeader.DataLength, IVTT_ID );
-						break;
-					case IVTW_ID : // IVT Wattage 0x526
-						processIVT(CANRxData, RxHeader.DataLength, IVTW_ID );
-						break;
-					case IVTAs_ID : // IVT As? 0x527
-						processIVT(CANRxData, RxHeader.DataLength, IVTAs_ID );
-						break;
-					case IVTWh_ID : // IVT WattHours 0x528
-						processIVT(CANRxData, RxHeader.DataLength, IVTWh_ID );
-						break;
-#endif
-			default : // any other received packets, shouldn't be any due to filters.
-				break;
-		}
+		Fifo1Process(RxHeader.Identifier, CANRxData, RxHeader.DataLength);
 
 	/*	if ((RxHeader2.Identifier == 0x2) && (RxHeader2.IdType == FDCAN_STANDARD_ID) && (RxHeader2.DataLength == FDCAN_DLC_BYTES_1))
 		{

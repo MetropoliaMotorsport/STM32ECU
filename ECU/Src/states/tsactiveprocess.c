@@ -35,7 +35,7 @@ int TSActiveRequest( void )
 	sendPDM( 0 ); // will enable HV if inverters in ready status and HV enabled flag set.
 #endif
 #ifdef POWERNODES
-	setDevicePower(IVT, 0);
+	setDevicePower(IVT, 1);
 #endif
 	for ( int i=0;i<INVERTERCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
 	{
