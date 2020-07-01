@@ -9,7 +9,7 @@
 
 
 bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength );
-void PDMTimeout( void );
+void PDMTimeout( uint16_t id );
 
 
 CanData PDMCanData = { &DeviceState.PDM, PDM_ID, 8, processPDMData, PDMTimeout, PDMTIMEOUT };
@@ -50,16 +50,13 @@ bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength )
 		else
 			CarState.AIROpen = 0;
 		return true;
-	} else return false;
+	}
+	else
+		return false;
 }
 
 
-void processPDM(uint8_t CANRxData[8], uint32_t DataLength )
-{
-	processCANData(&PDMCanData, CANRxData, DataLength );
-}
-
-void PDMTimeout( void )
+void PDMTimeout( uint16_t id )
 {
     /* T 11.9.3
      * Safe state is defined depending on the signals as follows:

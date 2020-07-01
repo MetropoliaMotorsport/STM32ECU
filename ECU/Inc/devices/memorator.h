@@ -10,8 +10,8 @@
 
 extern time_t rtctime;
 
-void processTime(uint8_t CANRxData[8], uint32_t DataLength );
-int receivedTime( void );
+extern CanData Memorator;
+
 char * getTimeStr( void );
 
 #endif /* PDM_H_ */

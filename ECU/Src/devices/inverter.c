@@ -66,7 +66,6 @@ bool invertersStateCheck(int state )
 }
 
 
-
 int8_t InverterStateMachine( volatile InverterState *Inverter ) // returns response to send inverter based on current state.
 {
 	uint16_t State, TXState;

@@ -45,7 +45,7 @@ int receivePowerNodes( void );
 int setDevicePower( DeviceId device, bool state );
 int sendPowerNodeReq( void );
 
-bool powerErrorOccurred( DeviceID device );
+bool powerErrorOccurred( DeviceId device );
 
 #endif /* POWERNODE_H_ */
 

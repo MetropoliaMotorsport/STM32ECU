@@ -382,11 +382,11 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	for ( int i=0;i<INVERTERCOUNT;i++)
 	{
-		if ( DeviceState.Inverters[i] == ERROR ) invertererror = true;
+		if ( DeviceState.Inverters[i] == INERROR ) invertererror = true;
 		if ( !Errors.InvAllowReset[i] ) allowautoreset = false;
 	}
 
-	// ( DeviceState.InverterRL == ERROR || DeviceState.InverterRR == ERROR )
+	// ( DeviceState.InverterRL == INERROR || DeviceState.InverterRR == INERROR )
 	// ( Errors.LeftInvAllowReset && Errors.RightInvAllowReset )
 #endif
 

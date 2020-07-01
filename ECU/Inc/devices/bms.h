@@ -8,10 +8,10 @@
 #ifndef BMS_H_
 #define BMS_H_
 
-//uint8_t processBMS(uint8_t CANRxData[8], uint32_t DataLength );
-uint8_t processBMSVoltage(uint8_t CANRxData[8], uint32_t DataLength );
-uint8_t processBMSOpMode(uint8_t CANRxData[8], uint32_t DataLength );
-uint8_t processBMSError(uint8_t CANRxData[8], uint32_t DataLength );
+extern CanData BMSVoltage;
+extern CanData BMSOpMode;
+extern CanData BMSError;
+
 int receiveBMS( void );
 void sendBMS( void );
 

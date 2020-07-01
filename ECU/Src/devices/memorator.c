@@ -12,15 +12,16 @@
 
 time_t rtctime;
 
+bool processTimeData(uint8_t CANRxData[8], uint32_t DataLength );
 
-void processTime(uint8_t CANRxData[8], uint32_t DataLength )
+CanData  Memorator = { &DeviceState.Memorator, MEMORATOR_ID, 3, processTimeData, NULL, 1000 }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
+
+
+bool processTimeData(uint8_t CANRxData[8], uint32_t DataLength )
 {
 
 	if ( rtctime == 0 ) // only set time once?
 	{
-		static uint8_t receiveerror = 0;
-		CanState.Memorator.time = gettimer();
-
 		if ( DataLength == FDCAN_DLC_BYTES_6
 			&& CANRxData[0] > 19
 			&& CANRxData[1] <= 12
@@ -30,8 +31,6 @@ void processTime(uint8_t CANRxData[8], uint32_t DataLength )
 			&& CANRxData[5] <= 60
 			)
 		{
-			receiveerror=0;
-
 			struct tm receivetime;
 
 			receivetime.tm_isdst = -1;        // Is DST on? 1 = yes, 0 = no, -1 = unknown
@@ -43,64 +42,15 @@ void processTime(uint8_t CANRxData[8], uint32_t DataLength )
 			receivetime.tm_min = CANRxData[4];
 			receivetime.tm_sec = CANRxData[5];
 			rtctime  =	mktime ( &receivetime );
+			return true;
 
-			DeviceState.Memorator = OPERATIONAL; // received data without error bit set, so we can assume operational state
 		} else // bad data.
 		{
-			receiveerror++;
-			Errors.CANError++;
-			Errors.MemoratorReceive++;
-	/*		if ( receiveerror > 10 ), device is still responding, so don't put it offline.
-			{
-				CarState.VoltageBMS=0;
-				DeviceState.BMS = OFFLINE;
-				return 0; // returnval = 0;
-			} */
-	#ifdef SENDBADDATAERROR
-			CAN_SendStatus(99,MEMORATORReceived,99);
-	#endif
-			reTransmitError(99,CANRxData, DataLength);
+			return false;
 		}
-	}
+	} return true;
 }
 
-// write a generic handler?
-int receiveTime( void )
-{
-	uint32_t time=gettimer();
-	static uint8_t errorsent;
-
-#ifdef NOTIMEOUT
-		if ( DeviceState.Memorator == OPERATIONAL )
-		{
-			errorsent = 0;
-			return 1;
-		} else return 0;
-#endif
-
-	if ( time - CanState.Memorator.time <= MEMORATORTIMEOUT && DeviceState.Memorator == OPERATIONAL )
-	{
-		errorsent = 0;
-		return 1;
-	} else
-	{
-        if ( DeviceState.Memorator == OPERATIONAL )
-		{
-
-			if ( errorsent == 0 )
-			{
-				CAN_SendStatus(200,MEMORATORReceived,(time-CanState.Memorator.time)/10);
-				errorsent = 1;
-				Errors.CANTimeout++;
-				Errors.MemoratorTimeout++;
-				DeviceState.Memorator = OFFLINE;
-			}
-			return 0;
-		}
-		return 0; // PDM is SCS, must always time out.
-	}
-	return 0;
-}
 
 char * getTimeStr( void ){
 	static char timestr[9] = "00:00:00";

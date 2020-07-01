@@ -182,9 +182,11 @@ int PreOperationState( uint32_t OperationLoops  )
 	{
 		CAN_SendStatus(1, PreOperationalState, preoperationstate );
 
+		uint8_t OperationalError = OperationalReceiveLoop();
+
     	if ( DeviceState.IVTEnabled && DeviceState.IVT == OFFLINE )
     	{
-    		if ( !powerErrorOccurred( DeviceId.IVT) )
+    		if ( !powerErrorOccurred( IVT) )
     			setDevicePower(IVT, 1);
     		else
     		{

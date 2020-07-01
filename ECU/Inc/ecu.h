@@ -491,55 +491,19 @@ struct ErrorCount {
 	uint32_t CANTimeout;
 
  // specific devices
-#ifndef OLDCAN
-
-	uint16_t BMSError;
-	uint16_t BMSTimeout;
-	uint16_t BMSReceive;
-//	uint16_t BMSReceiveMax;
+	bool	 ADCSent;
+	uint32_t eepromerror;
 
 	uint32_t ADCError;
 	uint16_t ADCTimeout;
 	uint16_t ADCErrorState;
-	bool	 ADCSent;
-
-	uint32_t eepromerror;
-
-	uint16_t IVTIReceive;
-	uint16_t IVTTimeout;
-
-	uint16_t IVTU1Receive;
-
-	uint16_t IVTU2Receive;
-
-	uint16_t IVTWReceive;
 
 	uint16_t INVReceiveStatus[INVERTERCOUNT];
 	uint16_t INVReceiveSpd[INVERTERCOUNT];
 	uint16_t INVReceiveTorque[INVERTERCOUNT];
 
-	uint16_t MemoratorReceive;
-	uint16_t MemoratorTimeout;
-
-//	uint16_t PDMError;
-	uint16_t PDMTimeout;
-	uint16_t PDMReceive;
-
-	uint16_t FLSpeedError;
-	uint16_t FLSpeedTimeout;
-	uint16_t FLSpeedReceive;
-
-	uint16_t FRSpeedError;
-	uint16_t FRSpeedTimeout;
-	uint16_t FRSpeedReceive;
-
-#endif
-
 	uint16_t CANSendError1;
 	uint16_t CANSendError2;
-
-
-
 } volatile Errors;
 
 // helpers

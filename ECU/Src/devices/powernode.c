@@ -380,7 +380,7 @@ int sendPowerNodeErrReset( uint8_t id, uint8_t channel )
 	CAN1Send(NodeCmd_ID, 3, candata );
 }
 
-bool powerErrorOccurred( DeviceID device )
+bool powerErrorOccurred( DeviceId device )
 {
 
 	for ( int i=0;DevicePowerList[i].device != 0;i++)

@@ -16,7 +16,8 @@
 #define	CANBUS1					hfdcan1
 
 
-#define BMS_ID					0xB
+#define BMSBASE_ID				0x8
+#define BMSVOLT_ID				BMSBASE_ID+3 // 0xB is voltage.
 #define FLSpeed_COBID			0x71 // 112 // 0x70 orig
 #define FLSpeed_BUS				CAN1
 #define FRSpeed_COBID			0x70 // 113  // 0x71 orig
@@ -160,9 +161,9 @@ volatile struct CanState {
 
 	volatile CanData Memorator;
 
-	volatile CanData BMSVolt;
-	volatile CanData BMSError;
-	volatile CanData BMSOpMode;
+//	volatile CanData BMSVolt;
+//	volatile CanData BMSError;
+//	volatile CanData BMSOpMode;
 
 	volatile CanData ECU;
 //	volatile CanData ECUConfig;

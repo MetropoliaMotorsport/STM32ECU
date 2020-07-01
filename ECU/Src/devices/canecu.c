@@ -51,8 +51,8 @@ void FDCAN1_start(void)
   sFilterConfig1.FilterConfig = FDCAN_FILTER_TO_RXFIFO0; // FDCAN_FILTER_TO_RXFIFO0; // set can1 to receive via fifo0
 
   sFilterConfig1.FilterIndex = 1; // BMS CAN 1
-  sFilterConfig1.FilterID1 = BMS_ID; // 0xf 0x0 for all
-  sFilterConfig1.FilterID2 = BMS_ID+3; // 07ff  0x0 for all
+  sFilterConfig1.FilterID1 = BMSBASE_ID; // 0xf 0x0 for all
+  sFilterConfig1.FilterID2 = BMSBASE_ID+3; // 07ff  0x0 for all
 
 
   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
@@ -347,13 +347,6 @@ int ResetCanReceived( void ) // only wait for new data since request.
 		ResetCanData(&CanState.InverterPDO4[i]);
 		ResetCanData(&CanState.InverterERR[i]);
 	}
-
-
-	// bms
-
-	ResetCanData(&CanState.BMSVolt);
-	ResetCanData(&CanState.BMSError);
-	ResetCanData(&CanState.BMSOpMode);
 
 	// front wheel encoders
 #ifndef HPF20
@@ -991,6 +984,11 @@ void processCANData(CanData * datahandle, uint8_t CANRxData[8], uint32_t DataLen
 {
 	datahandle->time = gettimer();
 
+	if ( datahandle->devicestate == NULL )
+	{ // No handler.
+		return;
+	}
+
 	if ( datahandle->getData(CANRxData, DataLength))
 	{
 		datahandle->receiveerr = 0;
@@ -1215,19 +1213,19 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 #endif
 		switch ( RxHeader.Identifier )
         {
-			case 0x9 :  // BMS OpMode
-  //              processBMSOpMode(CANRxData, RxHeader.DataLength);
+			case BMSBASE_ID+1 :  // BMS OpMode
+				processCANData(&BMSOpMode, CANRxData, RxHeader.DataLength );
                 break;
 
-			case 0xA :  // BMS Error
-  //              processBMSError(CANRxData, RxHeader.DataLength);
+			case BMSBASE_ID+2 :  // BMS Error
+				processCANData(&BMSError, CANRxData, RxHeader.DataLength );
 				break;
 
-			case 0xB :  // BMS can0 id 0xA - BMS total voltage.
+			case BMSVOLT_ID :  // BMS can0 id 0xA - BMS total voltage.
 	//			offset 0 length 32: power
     //			offset 32 length 16 big endian: BatAmps
 	//			offset 48 length 16: BatVoltage
-				processBMSVoltage(CANRxData, RxHeader.DataLength);
+				processCANData(&BMSVoltage, CANRxData, RxHeader.DataLength );
 				break;
 
 			case 0x20 : // messages to ECU specifically.
@@ -1240,9 +1238,8 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				break;
 				//  0x500-0x505 ? PDM, what. ?
 
-
 			case MEMORATOR_ID :
-			    processTime(CANRxData, RxHeader.DataLength );
+				processCANData(&Memorator, CANRxData, RxHeader.DataLength );
 				break;
 
 // IVT
@@ -1359,7 +1356,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				//	0x520,16,8 -> BSPD_relay_status
 				//  0x529,24,8 AIR Voltage
 				//  0x529,32,8 LV Voltage.
-				processPDM(CANRxData, RxHeader.DataLength );
+				processCANData(&PDMCanData, CANRxData, RxHeader.DataLength );
 				break;
 
 
