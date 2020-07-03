@@ -182,8 +182,6 @@ int PreOperationState( uint32_t OperationLoops  )
 	{
 		CAN_SendStatus(1, PreOperationalState, preoperationstate );
 
-		uint8_t OperationalError = OperationalReceiveLoop();
-
     	if ( DeviceState.IVTEnabled && DeviceState.IVT == OFFLINE )
     	{
     		if ( !powerErrorOccurred( IVT) )
@@ -191,7 +189,7 @@ int PreOperationState( uint32_t OperationLoops  )
     		else
     		{
 				Errors.ErrorPlace = 0xAA;
-				Errors.ErrorReason = OperationalError;
+				Errors.ErrorReason = 0;//TODO error code for lost power.;
     			return OperationalErrorState;
     		}
 

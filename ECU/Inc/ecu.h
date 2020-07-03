@@ -182,7 +182,7 @@
 #define IVTTIMEOUTLONG			5000
 #define IVTTIMEOUTWATTS			5000
 #define PROCESSLOOPTIME 		2000
-#define INVERTERTIMEOUT			1000
+#define INVERTERTIMEOUT			5000
 #else
 #define PDMTIMEOUT				4500 // 450ms to be rules compliant
 #define PROCESSLOOPTIME 		100   // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?

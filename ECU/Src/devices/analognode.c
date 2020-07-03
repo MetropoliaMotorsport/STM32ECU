@@ -26,17 +26,17 @@ bool processANode17Data(uint8_t CANRxData[8], uint32_t DataLength );
 bool processANode18Data(uint8_t CANRxData[8], uint32_t DataLength );
 
 
-CanData  AnalogNode1 =  { &DeviceState.AnalogNode1, AnalogNode1_ID, 3, processANode1Data, NULL, 1000 };
-CanData  AnalogNode9 =  { &DeviceState.AnalogNode9, AnalogNode9_ID, 3, processANode9Data, NULL, 1000 };
-CanData  AnalogNode10 = { &DeviceState.AnalogNode10, AnalogNode10_ID, 3, processANode10Data, NULL, 1000 };
-CanData  AnalogNode11=  { &DeviceState.AnalogNode11, AnalogNode11_ID, 3, processANode11Data, NULL, 1000 };
-CanData  AnalogNode12 = { &DeviceState.AnalogNode12, AnalogNode12_ID, 3, processANode12Data, NULL, 1000 };
-CanData  AnalogNode13 = { &DeviceState.AnalogNode13, AnalogNode13_ID, 3, processANode13Data, NULL, 1000 };
-CanData  AnalogNode14 = { &DeviceState.AnalogNode14, AnalogNode14_ID, 3, processANode14Data, NULL, 1000 };
-CanData  AnalogNode15 = { &DeviceState.AnalogNode15, AnalogNode15_ID, 3, processANode15Data, NULL, 1000 };
-CanData  AnalogNode16 = { &DeviceState.AnalogNode16, AnalogNode16_ID, 3, processANode16Data, NULL, 1000 };
-CanData  AnalogNode17 = { &DeviceState.AnalogNode17, AnalogNode17_ID, 3, processANode17Data, NULL, 1000 };
-CanData  AnalogNode18 = { &DeviceState.AnalogNode18, AnalogNode18_ID, 3, processANode18Data, NULL, 1000 };
+CanData  AnalogNode1 =  { &DeviceState.AnalogNode1, AnalogNode1_ID, 3, processANode1Data, NULL, NODETIMEOUT };
+CanData  AnalogNode9 =  { &DeviceState.AnalogNode9, AnalogNode9_ID, 3, processANode9Data, NULL, NODETIMEOUT };
+CanData  AnalogNode10 = { &DeviceState.AnalogNode10, AnalogNode10_ID, 3, processANode10Data, NULL, NODETIMEOUT };
+CanData  AnalogNode11=  { &DeviceState.AnalogNode11, AnalogNode11_ID, 3, processANode11Data, NULL, NODETIMEOUT };
+CanData  AnalogNode12 = { &DeviceState.AnalogNode12, AnalogNode12_ID, 3, processANode12Data, NULL, NODETIMEOUT };
+CanData  AnalogNode13 = { &DeviceState.AnalogNode13, AnalogNode13_ID, 3, processANode13Data, NULL, NODETIMEOUT };
+CanData  AnalogNode14 = { &DeviceState.AnalogNode14, AnalogNode14_ID, 3, processANode14Data, NULL, NODETIMEOUT };
+CanData  AnalogNode15 = { &DeviceState.AnalogNode15, AnalogNode15_ID, 3, processANode15Data, NULL, NODETIMEOUT };
+CanData  AnalogNode16 = { &DeviceState.AnalogNode16, AnalogNode16_ID, 3, processANode16Data, NULL, NODETIMEOUT };
+CanData  AnalogNode17 = { &DeviceState.AnalogNode17, AnalogNode17_ID, 3, processANode17Data, NULL, NODETIMEOUT };
+CanData  AnalogNode18 = { &DeviceState.AnalogNode18, AnalogNode18_ID, 3, processANode18Data, NULL, NODETIMEOUT };
 
 
 bool processANode1Data(uint8_t CANRxData[8], uint32_t DataLength )

@@ -78,11 +78,11 @@ bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength );
 bool processPNodeErr(uint8_t nodeid, uint32_t errorcode );
 bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength );
 
-CanData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, NULL, 1000 }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
-CanData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, NULL, 1000 }; // [shutdown switches.], inverters, ECU, Front,
-CanData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, 1000 }; // Cooling ( fans, pumps )
-CanData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, NULL, 1000 }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
-CanData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 3, processPNode37Data, NULL, 1000 }; // [?], Current, TSAL.
+CanData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, NULL, NODETIMEOUT }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
+CanData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, NULL, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
+CanData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
+CanData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, NULL, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
+CanData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 3, processPNode37Data, NULL, NODETIMEOUT }; // [?], Current, TSAL.
 
 
 int sendPowerNodeErrReset( uint8_t id, uint8_t channel );

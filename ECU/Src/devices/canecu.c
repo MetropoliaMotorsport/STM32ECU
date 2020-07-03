@@ -573,11 +573,11 @@ char CAN_SendTimeBase( void ) // sends how long since power up and primary inver
 
 char CAN_SendStatus( char state, char substate, uint32_t errorcode )
 {
-/*	if ( state == 99 )
+	if ( substate == 15 )
 	{
 		volatile int i = 1;
 	}
-*/
+
 
 	uint8_t stateless = 0;
 	if ( state == 3 )
