@@ -8,11 +8,11 @@
 #ifndef PDM_H_
 #define PDM_H_
 
-extern CanData PDMCanData;
+extern CANData PDMCanData;
 
 int receivePDM( void );
 int errorPDM( void );
-int sendPDM( int buzzer );
+int sendPDM( bool buzzer );
 void initPDM( void );
 
 #endif /* PDM_H_ */

@@ -15,7 +15,7 @@ volatile bool powerlost = false;
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp) {
 	powerlost = true;
 // send lost power indicator to canbus.
-	CAN_SendErrorStatus( 50, 100, 0xFFFF ); // TODO send loosing power error, choose message.
+	CAN_SendStatus( 50, 100, 0xFFFF ); // TODO send loosing power error, choose message.
 	setOutput(LED7_Output,LEDON);
 }
 

@@ -44,7 +44,9 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 						  (0x1 << Inverter2Received)+
 #endif
 						  (0x1 << BMSReceived)+
+#ifndef POWERNODES
 						  (0x1 << PDMReceived)+
+#endif
 						  (0x1 << PedalADCReceived)+
 						  (0x1 << IVTReceived);
 	}
@@ -103,6 +105,10 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	}
 #endif
 
+
+#ifndef POWERNODES
+
+
 	if ( receivePDM() )// && !errorPDM() )
 	{
 		returnvalue &= ~(0x1 << PDMReceived);
@@ -111,6 +117,7 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	{
 		returnvalue |= 0x1 << PDMReceived;
 	}
+#endif
 
 	if ( receiveBMS() ) // ensure heard from BMS
 	{
@@ -173,6 +180,14 @@ int PreOperationState( uint32_t OperationLoops  )
 	    	minmaxADCReset();
 	    	setDevicePower(Buzzer, 0);
 
+			setDevicePower(Telemetry, 1);
+	    	setDevicePower(IVT, 1);
+			setDevicePower(Telemetry, 1);
+			setDevicePower(Front1, 1);
+
+			setDevicePower(Inverters, 1);
+			setDevicePower(Front2, 1);
+
 	 //   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
 	    	// send to individual devices rather than reset everything if needed.
 	    }
@@ -182,9 +197,11 @@ int PreOperationState( uint32_t OperationLoops  )
 	{
 		CAN_SendStatus(1, PreOperationalState, preoperationstate );
 
+		// do power request
+
     	if ( DeviceState.IVTEnabled && DeviceState.IVT == OFFLINE )
     	{
-    		if ( !powerErrorOccurred( IVT) )
+    		if ( !powerErrorOccurred( IVT ) )
     			setDevicePower(IVT, 1);
     		else
     		{
@@ -192,8 +209,11 @@ int PreOperationState( uint32_t OperationLoops  )
 				Errors.ErrorReason = 0;//TODO error code for lost power.;
     			return OperationalErrorState;
     		}
-
     	}
+
+// pumps on 35
+
+
 
 		if ( ( OperationLoops % 10 ) == 0 ) { sendPowerNodeReq(); }
 
@@ -244,7 +264,9 @@ int PreOperationState( uint32_t OperationLoops  )
 			if (preoperationstate & (0x1 << Inverter2Received) )  { strcat(str, "IV2" );  }
 #endif
 			if (preoperationstate & (0x1 << BMSReceived) ) { strcat(str, "BMS " );  }
+#ifndef POWERNODES
 			if (preoperationstate & (0x1 << PDMReceived) ) { strcat(str, "PDM " ); }
+#endif
 #ifndef STMADC // ADC is onboard, not waiting for it.
 			if (preoperationstate & (0x1 << PedalADCReceived) ) {strcat(str, "ADC " );  }
 #endif
@@ -256,15 +278,21 @@ int PreOperationState( uint32_t OperationLoops  )
 
 			lcd_send_stringline(1,str, 255);
 
-			if ( ReadyToStart != 0 ){
+			if ( ReadyToStart != 0 )
+			{
 				strcpy(str, "Err:");
 #ifdef STMADC // ADC is onboard, any issues with it are an error not a wait.
-			if (preoperationstate & (0x1 << PedalADCReceived) ) {strcat(str, "ADC " );  }
+				if (preoperationstate & (0x1 << PedalADCReceived) ) { strcat(str, "ADC " ); }
 #endif
-			if (! ( preoperationstate & (0x1 << PDMReceived) ) ) {
+
+#ifndef POWERNODES
+				if (! ( preoperationstate & (0x1 << PDMReceived) ) ) {
 				// only show as PDM error if pdm is on bus.
-				if (ReadyToStart & (0x1 << 0 ) ) { strcat(str, "PDM " );  }
-			}
+					if (preoperationstate & (0x1 << PDMReceived) ) { strcat(str, "PDM " ); }
+
+					if (ReadyToStart & (0x1 << 0 ) ) { strcat(str, "PDM " );  } // ?
+				}
+#endif
 				if (ReadyToStart & (0x1 << 2 ) ) { strcat(str, "INV " );  }
 				if (ReadyToStart & (0x1 << 3 ) ) { strcat(str, "ShutdownSW " );  }
 
@@ -275,6 +303,9 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		} else
 		{
+
+			// TODO print any non critical warning still.
+
 	//		lcd_clearscroll();
 			lcd_send_stringpos(1,0,"                    ");
 			lcd_send_stringpos(2,0,"   Ready To Start   ");
@@ -318,9 +349,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	CAN_NMTSyncRequest();
 #endif
 
-#ifdef USEPDM
-	sendPDM( 0 );
-#endif
+	sendHV( 0 );
 
 	// checks if we have heard from other necessary connected devices for operation.
 
@@ -348,7 +377,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	// allow APPS checking before RTDM
 	int Torque_Req = PedalTorqueRequest();
 
-	for ( int i=0;i<INVERTERCOUNT;i++){
+	for ( int i=0;i<MOTORCOUNT;i++){
 		CarState.Inverters[i].Torque_Req = Torque_Req;
 	}
 
@@ -365,7 +394,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	if ( !CarState.TestHV )
 	{
-		for ( int i=0;i<INVERTERCOUNT;i++)
+		for ( int i=0;i<MOTORCOUNT;i++)
 		{
 			receiveINVStatus(&CarState.Inverters[i]);
 			receiveINVSpeed(&CarState.Inverters[i]);
@@ -388,13 +417,13 @@ int PreOperationState( uint32_t OperationLoops  )
 	}
 
 	bool invonline = true;
-	for ( int i=0;i<INVERTERCOUNT;i++)
+	for ( int i=0;i<MOTORCOUNT;i++)
 	{
 		if ( CarState.Inverters[i].InvState == 0xFF ) invonline = false; // if any inverter has yet to be put in a status, all inverters are not ready.
 	}
 
 
-	if ( errorPDM() ) { ReadyToStart += 1; }
+	if ( errorPDM() ) { ReadyToStart += 1; } // TODO replace errorPDM with generic error checker for non pdm.
 	if ( preoperationstate != 0 ) { ReadyToStart += 2; }
 	if ( !invonline ) { ReadyToStart += 4; }
 
@@ -431,7 +460,7 @@ int PreOperationState( uint32_t OperationLoops  )
 			{
 				OperationLoops = 0;
 
-				for ( int i=0;i<INVERTERCOUNT;i++){
+				for ( int i=0;i<MOTORCOUNT;i++){
 					CarState.Inverters[i].Torque_Req = 0;
 				}
 

@@ -31,13 +31,13 @@ int TSActiveRequest( void )
 {
 //	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
 	CAN_NMTSyncRequest();
-#ifdef PDM
-	sendPDM( 0 ); // will enable HV if inverters in ready status and HV enabled flag set.
-#endif
+
+	sendHV( 0 ); // will enable HV if inverters in ready status and HV enabled flag set.
+
 #ifdef POWERNODES
 	setDevicePower(IVT, 1);
 #endif
-	for ( int i=0;i<INVERTERCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
+	for ( int i=0;i<MOTORCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
 	{
 		 TSActiveINVRequest( &CarState.Inverters[i] );
 	}
@@ -120,7 +120,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	// allow APPS checking before RTDM
 	int Torque_Req = PedalTorqueRequest();
 
-	for ( int i=0;i<INVERTERCOUNT;i++)  // set all wheels to same torque request
+	for ( int i=0;i<MOTORCOUNT;i++)  // set all wheels to same torque request
 	{
 		CarState.Inverters[i].Torque_Req = Torque_Req;
 	} //
@@ -150,6 +150,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	{
 	    return RunningState;
 	}
+
 
 	if ( CheckActivationRequest() && prechargedone ) return IdleState;  // if requested disable TS drop state
 

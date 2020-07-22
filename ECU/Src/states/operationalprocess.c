@@ -43,7 +43,7 @@ void ResetStateData( void ) // set default startup values for global state value
 	CarState.FanPowered = 1;
 #endif
 
-	for ( int i=0;i<INVERTERCOUNT;i++)
+	for ( int i=0;i<MOTORCOUNT;i++)
 	{
 		Errors.InvAllowReset[i] = 1;
 	}
@@ -74,7 +74,7 @@ void ResetStateData( void ) // set default startup values for global state value
 
 	DeviceState.ADC = OFFLINE;
 
-	for ( int i=0;i<INVERTERCOUNT;i++){
+	for ( int i=0;i<MOTORCOUNT;i++){
 		DeviceState.Inverters[i] = OFFLINE;
 	}
 
@@ -88,7 +88,7 @@ void ResetStateData( void ) // set default startup values for global state value
 
 	CarState.HighVoltageReady = 0;
 
-	for ( int i=0;i<INVERTERCOUNT; i++)
+	for ( int i=0;i<MOTORCOUNT; i++)
 	{
 		CarState.Inverters[i].InvState = 0xFF;
 		CarState.Inverters[i].InvStateCheck = 0xFF;
@@ -97,9 +97,10 @@ void ResetStateData( void ) // set default startup values for global state value
 		CarState.Inverters[i].Torque_Req = 0;
 		CarState.Inverters[i].Speed = 0;
 		CarState.Inverters[i].HighVoltageAllowed = false;
+		CarState.Inverters[i].InverterNum = i;
 
 		CanState.InverterERR[i].time = 0;
-		CanState.InverterPDO1[i].time = 0;
+//		CanState.InverterPDO1[i].time = 0;
 		CanState.InverterPDO2[i].time = 0;
 		CanState.InverterPDO3[i].time = 0;
 	}
@@ -107,9 +108,9 @@ void ResetStateData( void ) // set default startup values for global state value
 	CarState.Inverters[0].COBID = InverterRL_COBID;
 	CarState.Inverters[1].COBID = InverterRR_COBID;
 
-#if INVERTERCOUNT > 2
-	CarState.Inverters[3].COBID = InverterRL_COBID;
-	CarState.Inverters[4].COBID = InverterRR_COBID;
+#if MOTORCOUNT > 2
+	CarState.Inverters[2].COBID = InverterFL_COBID;
+	CarState.Inverters[3].COBID = InverterFR_COBID;
 #endif
 
 	CarState.Torque_Req_Max = 0;
@@ -175,6 +176,7 @@ int Startup( uint32_t OperationLoops  )
 		CAN_NMT(0x81,FLSpeed_COBID);
 		CAN_NMT(0x81,FRSpeed_COBID);
 
+		ShutdownCircuitSet( false );
 
 		if ( CAN_NMTSyncRequest() ) // sent NMT sync packet to can to ensure we hear from any awake devices.
 		{
@@ -202,7 +204,7 @@ int Startup( uint32_t OperationLoops  )
 
 	uint8_t invertercount = 0;
 
-	for ( int i=0;i<INVERTERCOUNT;i++) // speed isreceived
+	for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
 	{
 		receiveINVStatus(&CarState.Inverters[i]);
 		receiveINVSpeed(&CarState.Inverters[i]);
@@ -211,7 +213,7 @@ int Startup( uint32_t OperationLoops  )
 		if ( CarState.Inverters[i].InvState != 0xFF ) invertercount++;
 	}
 
-	if ( invertercount == INVERTERCOUNT	) // we've received status from inverters, don't send reset.
+	if ( invertercount == MOTORCOUNT	) // we've received status from inverters, don't send reset.
 	{
 		return PreOperationalState;
 	} else if ( CAN_NMT( 0x81, 0x0 ) ) // sent NMT reset packet to can buses if not received inverter status.
@@ -243,7 +245,7 @@ uint16_t CheckErrors( void )
 		return 98; // PDM error, stop operation.
 	}
 
-	for ( int i=0;i<INVERTERCOUNT;i++) // speed isreceived
+	for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
 	{
 		// send request to enter operational mode
 		if ( !CarState.TestHV && CarState.Inverters[i].InvState == INVERTERERROR )
@@ -276,7 +278,7 @@ int LimpProcess( uint32_t OperationLoops  )
 {
 	lcd_setscrolltitle("LimpProcess(NA)");
 	CAN_SendStatus(1, LimpState, 0 );
-	sendPDM( 0 );
+	sendHV( false );
 	return LimpState;
 }
 
@@ -284,7 +286,7 @@ int TestingProcess( uint32_t OperationLoops  )
 {
 	lcd_setscrolltitle("TestingProcess(NA)");
 	CAN_SendStatus(1, TestingState, 0 );
-	sendPDM( 0 );
+	sendHV( false );
 	return TestingState;
 }
 
@@ -324,15 +326,15 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 		CarState.HighVoltageReady = 0; // no high voltage allowed in this state.
 
-		for ( int i=0;i<INVERTERCOUNT;i++){
+		for ( int i=0;i<MOTORCOUNT;i++){
 	        CANSendInverter( 0b00000110, 0, i );  // request inverters go to non operational state before cutting power.
 		}
 
         sendPDM( 0 ); //disable high voltage on error state;
+
         CAN_SendTimeBase();
         
 		errorstate = CheckErrors();
-
 
 		sprintf(str,"Errorstate: %.4X", errorstate);
 		lcd_send_stringscroll(str);
@@ -353,6 +355,10 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
 		errorstatetime = gettimer();
 	}
+
+#ifdef POWERNODES
+	CAN_NMTSyncRequest();
+#endif
 
 	if ( Errors.InverterError ){
 		CAN_SENDINVERTERERRORS();
@@ -380,7 +386,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 	bool allowautoreset = true;
 	bool invertererror = false;
 
-	for ( int i=0;i<INVERTERCOUNT;i++)
+	for ( int i=0;i<MOTORCOUNT;i++)
 	{
 		if ( DeviceState.Inverters[i] == INERROR ) invertererror = true;
 		if ( !Errors.InvAllowReset[i] ) allowautoreset = false;
@@ -696,7 +702,9 @@ int OperationalProcess( void )
 //#endif
 			{
 				CAN_SendLED(); // send LED statuses for debug, make toggleable.
+#ifndef ANALOGNODES
 				if ( Errors.OperationalReceiveError == 0) CAN_SendADC(ADC_Data, 0);
+#endif
 				if ( DeviceState.LoggingEnabled ) CANLogDataSlow();
 			}
 	//		clearButtons();

@@ -18,11 +18,11 @@ int ReadyRequest( void )   // request data / invalidate existing data to ensure 
 
 //	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
 	CAN_NMTSyncRequest(); // anything working with cansync will respond with
-	sendPDM( 0 );
+	sendHV( false );
 
 	// request ready states from devices.
 
-	for ( int i=0;i<INVERTERCOUNT;i++) // speed isreceived
+	for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
 	{
 		// send request to enter operational mode
 		if ( ( CarState.Inverters[i].InvState != 0xFF && GetInverterState( CarState.Inverters[i].InvState ) != INVERTERREADY) ) // || InverterSent == 0  ) // uncomment if doesn't work anymore, can't see why set.
@@ -60,7 +60,9 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 	if ( returnvalue == 0xFFFF)
 	{
 		returnvalue =
+#ifndef POWERNODES
 					(0X1 << PDMReceived)+
+#endif
 					(0X1 << BMSReceived)+
 					(0X1 << IVTReceived)+
 #ifdef HPF19
@@ -70,7 +72,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 					(0x1 << PedalADCReceived);//
 
 #ifdef HPF20
-		for ( int i=0;i<INVERTERCOUNT;i++)
+		for ( int i=0;i<MOTORCOUNT;i++)
 		{
 			returnvalue += (0x1 << (InverterReceived+i));
 		}
@@ -82,7 +84,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 
 	// change order, get status from pdo3, and then compare against pdo2?, 2 should be more current being higher priority
 
-	for ( int i=0;i<INVERTERCOUNT;i++) // speed isreceived
+	for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
 	{
 		receiveINVStatus(&CarState.Inverters[i]);
 
@@ -127,12 +129,14 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 		returnvalue &= ~(0x1 << IVTReceived); // check values
 	}
 
+#ifndef POWERNODES
 	if ( DeviceState.PDM != OFFLINE )
 	{
 		returnvalue &= ~(0x1 << PDMReceived);
 // ensure in communication with PDM.
 
 	}
+#endif
 
 #ifdef STMADC
     if ( CheckADCSanity() == 0 ) returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
@@ -212,7 +216,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 
 
 	bool invready = true;
-	for ( int i=0;i<INVERTERCOUNT;i++)
+	for ( int i=0;i<MOTORCOUNT;i++)
 	{
 		if ( GetInverterState(CarState.Inverters[i].InvState) != INVERTERREADY ) invready = false;
 		// if any inverter has yet to be put in ready status, we are not ready.

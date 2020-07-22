@@ -28,17 +28,17 @@ typedef enum DeviceIDtype {
 
 } DeviceId;
 
-extern CanData PowerNodeErr;
-extern CanData PowerNodeAck;
+extern CANData PowerNodeErr;
+extern CANData PowerNodeAck;
 
-extern CanData PowerNode33; // [BOTS, inertia switch, BSPD.], Telemetry, front power
-extern CanData PowerNode34;
-extern CanData PowerNode35;
-extern CanData PowerNode36;
-extern CanData PowerNode37;
+extern CANData PowerNode33; // [BOTS, inertia switch, BSPD.], Telemetry, front power
+extern CANData PowerNode34;
+extern CANData PowerNode35;
+extern CANData PowerNode36;
+extern CANData PowerNode37;
 
-bool processPNodeErr(uint8_t nodeid, uint32_t errorcode );
-bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength );
+bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle );
+bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
 int receivePowerNodes( void );
 

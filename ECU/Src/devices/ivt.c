@@ -18,25 +18,25 @@ uint8_t LastIVTU2[6] = {0,0,0,0,0,0};
 uint8_t LastIVTU3[6] = {0,0,0,0,0,0};
 uint8_t LastIVTW[6] = {0,0,0,0,0,0};
 
-bool processIVTData(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field );
+bool processIVTData(uint8_t * CANRxData, uint32_t DataLength, uint16_t field );
 
-bool processIVTMsgData(uint8_t CANRxData[8], uint32_t DataLength );
+bool processIVTMsgData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
-bool processIVTIData(uint8_t CANRxData[8], uint32_t DataLength );
-bool processIVTU1Data(uint8_t CANRxData[8], uint32_t DataLength );
-bool processIVTU2Data(uint8_t CANRxData[8], uint32_t DataLength );
-bool processIVTU3Data(uint8_t CANRxData[8], uint32_t DataLength );
-bool processIVTTData(uint8_t CANRxData[8], uint32_t DataLength );
-bool processIVTWData(uint8_t CANRxData[8], uint32_t DataLength );
-bool processIVTAsData(uint8_t CANRxData[8], uint32_t DataLength );
-bool processIVTWhData(uint8_t CANRxData[8], uint32_t DataLength );
+bool processIVTIData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processIVTU1Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
+bool processIVTU2Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processIVTU3Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processIVTTData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processIVTWData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processIVTAsData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processIVTWhData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
 
 void IVTTimeout( uint16_t id );
 
-CanData IVTMsg=	{ &DeviceState.IVT, IVTMsg_ID, 6, processIVTMsgData, NULL, 0 };
+CANData IVTMsg=	{ &DeviceState.IVT, IVTMsg_ID, 6, processIVTMsgData, NULL, 0 };
 
-CanData IVTCan[8] = {
+CANData IVTCan[8] = {
 	{ &DeviceState.IVT,	IVTBase_ID,   6, processIVTIData, IVTTimeout, IVTTIMEOUT },
 	{ &DeviceState.IVT, IVTBase_ID+1, 6, processIVTU1Data, NULL, 0 },
 	{ &DeviceState.IVT, IVTBase_ID+2, 6, processIVTU2Data, NULL, 0 },
@@ -49,14 +49,14 @@ CanData IVTCan[8] = {
 
 uint8_t processIVT(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
 {
-	CanData * datahandle = &IVTCan[field - IVTBase_ID];
+	CANData * datahandle = &IVTCan[field - IVTBase_ID];
 	processCANData(datahandle, CANRxData, DataLength );
 	return 0;
 }
 
 
 // IVTWh = 0x528
-bool processIVTIData(uint8_t CANRxData[8], uint32_t DataLength )
+bool processIVTIData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -65,7 +65,7 @@ bool processIVTIData(uint8_t CANRxData[8], uint32_t DataLength )
 	} else return true;
 }
 
-bool processIVTU1Data(uint8_t CANRxData[8], uint32_t DataLength )
+bool processIVTU1Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -73,7 +73,7 @@ bool processIVTU1Data(uint8_t CANRxData[8], uint32_t DataLength )
 	} else return true;
 }
 
-bool processIVTU2Data(uint8_t CANRxData[8], uint32_t DataLength )
+bool processIVTU2Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -81,7 +81,7 @@ bool processIVTU2Data(uint8_t CANRxData[8], uint32_t DataLength )
 	} else return true;
 }
 
-bool processIVTU3Data(uint8_t CANRxData[8], uint32_t DataLength )
+bool processIVTU3Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -89,7 +89,7 @@ bool processIVTU3Data(uint8_t CANRxData[8], uint32_t DataLength )
 	} else return true;
 }
 
-bool processIVTTData(uint8_t CANRxData[8], uint32_t DataLength )
+bool processIVTTData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -97,7 +97,7 @@ bool processIVTTData(uint8_t CANRxData[8], uint32_t DataLength )
 	} else return true;
 }
 
-bool processIVTWData(uint8_t CANRxData[8], uint32_t DataLength )
+bool processIVTWData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -105,7 +105,7 @@ bool processIVTWData(uint8_t CANRxData[8], uint32_t DataLength )
 	} else return true;
 }
 
-bool processIVTAsData(uint8_t CANRxData[8], uint32_t DataLength )
+bool processIVTAsData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -113,7 +113,7 @@ bool processIVTAsData(uint8_t CANRxData[8], uint32_t DataLength )
 	} else return true;
 }
 
-bool processIVTWhData(uint8_t CANRxData[8], uint32_t DataLength )
+bool processIVTWhData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -123,7 +123,7 @@ bool processIVTWhData(uint8_t CANRxData[8], uint32_t DataLength )
 
 
 
-bool processIVTData(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
+bool processIVTData(uint8_t * CANRxData, uint32_t DataLength, uint16_t field )
 {
 //	static uint8_t receiveerror[8] = {0,0,0,0,0,0,0,0};
 	if ( DeviceState.IVTEnabled )
@@ -303,7 +303,7 @@ int requestIVT( void )
 }
 
 
-bool processIVTMsgData(uint8_t CANRxData[8], uint32_t DataLength )
+bool processIVTMsgData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 	return true;
 }

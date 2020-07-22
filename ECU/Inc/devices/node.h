@@ -11,11 +11,8 @@
 #include "ecumain.h"
 
 
-extern CanData NodeErr; // [BOTS, inertia switch, BSPD.], Telemetry, front power
-extern CanData NodeAck;
-
-bool processNodeErrData(uint8_t CANRxData[8], uint32_t DataLength );
-bool processNodeAckData(uint8_t CANRxData[8], uint32_t DataLength );
+extern CANData NodeErr; // [BOTS, inertia switch, BSPD.], Telemetry, front power
+extern CANData NodeAck;
 
 #endif /* NODE_H_ */
 

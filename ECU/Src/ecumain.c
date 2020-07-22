@@ -136,7 +136,7 @@ static int HardwareInit( void )
 	FDCAN2_start(); // starts up can bus 2
 
 	CarState.HighVoltageReady = 0;
-	sendPDM( 0 ); // send high voltage off request to PDM.
+	sendHV( false ); // send high voltage off request to PDM.
 
 	CAN_SendStatus(0,0,1); // earliest possible place to send can message signifying wakeup.
 

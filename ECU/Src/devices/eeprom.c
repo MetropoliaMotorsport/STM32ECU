@@ -120,7 +120,7 @@
 	 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *I2cHandle)
 	{
 		 if ( I2cHandle->Instance == I2C3 ){
-			 volatile I2C_HandleTypeDef temp = *I2cHandle;
+		//	 volatile I2C_HandleTypeDef temp = *I2cHandle;
 			 LCD_I2CError();
 		 }  // HAL_I2C_ERROR_AF
 

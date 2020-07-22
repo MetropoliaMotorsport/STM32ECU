@@ -18,11 +18,12 @@ char IdleRequest( void )   // request data / invalidate existing data to ensure 
 
 //	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
 	CAN_NMTSyncRequest();
-	sendPDM( 0 );
+
+	sendHV( false );
 
 	// request ready states from devices.
 
-	for ( int i=0;i<INVERTERCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
+	for ( int i=0;i<MOTORCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
 	{
 		if ( GetInverterState( CarState.Inverters[i].InvState ) != INVERTERREADY ) // should be in ready state, if not, send state request.
 		{
@@ -57,10 +58,12 @@ char OperationalReceive( uint16_t returnvalue )
 				  (0x1 << FRightSpeedReceived) +
 #endif
 				  (0x1 << BMSReceived)+
+#ifndef POWERNODES
 				  (0x1 << PDMReceived)+
+#endif
 				  (0x1 << PedalADCReceived);
 #ifdef HPF20
-		for ( int i=0;i<INVERTERCOUNT;i++){
+		for ( int i=0;i<MOTORCOUNT;i++){
 			returnvalue+=InverterReceived+i;
 		}
 //				  (0x1 << InverterLReceived)+
@@ -74,7 +77,7 @@ char OperationalReceive( uint16_t returnvalue )
 
 //	if ( OperationalState == RunningState )
 	{
-		for ( int i=0;i<INVERTERCOUNT;i++) // speed isreceived
+		for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
 		{
 			receiveINVStatus(&CarState.Inverters[i]);
 
@@ -97,8 +100,9 @@ char OperationalReceive( uint16_t returnvalue )
 	}
 #endif
 
+#ifndef POWERNODES
 	if ( receivePDM() ) returnvalue &= ~(0x1 << PDMReceived);
-
+#endif
 	if ( receiveBMS() )
 		returnvalue &= ~(0x1 << BMSReceived);
 
@@ -137,7 +141,7 @@ char OperationalReceiveLoop( void )
 
 	// check what not received here, only error for inverters
 
-	if ( received != 0 ) //  PROCESSLOOPTIME-50 ) // spent too long waiting for data.
+	if ( received != 0 ) // not all expected data received in window.
 	{
 		CAN_SendStatus(1, OperationalState, received);
 		Errors.ErrorPlace = 0x9A;
@@ -249,7 +253,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 // allow APPS checking before RTDM
 	int Torque_Req = PedalTorqueRequest();
 
-	for ( int i=0;i<INVERTERCOUNT;i++)  // set all wheels to same torque request
+	for ( int i=0;i<MOTORCOUNT;i++)  // set all wheels to same torque request
 	{
 		CarState.Inverters[i].Torque_Req = Torque_Req;
 	} //

@@ -177,29 +177,6 @@ void FDCAN1_start(void)
   }
 
 #endif
-
-  // Prepare Tx Headers
-/*
-  // header for sending time base
-  TxHeaderTime.Identifier = 0x100;
-  TxHeaderTime.IdType = FDCAN_STANDARD_ID;
-  TxHeaderTime.TxFrameType = FDCAN_DATA_FRAME;
-  TxHeaderTime.DataLength = FDCAN_DLC_BYTES_3;
-  TxHeaderTime.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-  TxHeaderTime.BitRateSwitch = FDCAN_BRS_OFF;
-  TxHeaderTime.FDFormat = FDCAN_CLASSIC_CAN;
-  TxHeaderTime.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-  TxHeaderTime.MessageMarker = 0;
-
-  TxHeader2.Identifier = 0x102;
-  TxHeader2.IdType = FDCAN_STANDARD_ID;
-  TxHeader2.TxFrameType = FDCAN_DATA_FRAME;
-  TxHeader2.DataLength = FDCAN_DLC_BYTES_8;
-  TxHeader2.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-  TxHeader2.BitRateSwitch = FDCAN_BRS_OFF;
-  TxHeader2.FDFormat = FDCAN_CLASSIC_CAN;
-  TxHeader2.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-  TxHeader2.MessageMarker = 0; */
 }
 
 void FDCAN2_start(void)
@@ -266,7 +243,7 @@ void FDCAN2_start(void)
 
   sFilterConfig2.FilterType = FDCAN_FILTER_MASK;  // configure CANOpen device filters by mask.
 
-  for ( int i = 0;i<INVERTERCOUNT;i++)
+  for ( int i = 0;i<MOTORCOUNT;i++)
   {
 	  sFilterConfig2.FilterIndex++;
 	  sFilterConfig2.FilterID1 = CarState.Inverters[i].COBID;
@@ -335,13 +312,14 @@ void FDCAN2_start(void)
 #endif
 }
 
+/*
 int ResetCanReceived( void ) // only wait for new data since request.
 {
 	// inverters.
 
-	for ( int i=0;i<INVERTERCOUNT;i++)
+	for ( int i=0;i<MOTORCOUNT;i++)
 	{
-		ResetCanData(&CanState.InverterPDO1[i]);
+//		ResetCanData(&CanState.InverterPDO1[i]);
 		ResetCanData(&CanState.InverterPDO2[i]);
 		ResetCanData(&CanState.InverterPDO3[i]);
 		ResetCanData(&CanState.InverterPDO4[i]);
@@ -358,7 +336,7 @@ int ResetCanReceived( void ) // only wait for new data since request.
 	ResetCanData(&CanState.FRightSpeedNMT);
 #endif
 	return 0;
-}
+} */
 
 void resetCanTx(volatile uint8_t CANTxData[8])
 {
@@ -368,7 +346,7 @@ void resetCanTx(volatile uint8_t CANTxData[8])
 }
 
 
-int getNMTstate(volatile CanData *data )
+int getNMTstate(volatile CANData *data )
 {
 
 	if ( data->dlcsize == 1 )
@@ -378,7 +356,7 @@ int getNMTstate(volatile CanData *data )
   return 0;
 }
 
-void ResetCanData(volatile CanData *data )
+void ResetCanData(volatile CANData *data )
 {
 	data->time = 0;
 	for ( int i=0; i<data->dlcsize; i++)
@@ -573,12 +551,6 @@ char CAN_SendTimeBase( void ) // sends how long since power up and primary inver
 
 char CAN_SendStatus( char state, char substate, uint32_t errorcode )
 {
-	if ( substate == 15 )
-	{
-		volatile int i = 1;
-	}
-
-
 	uint8_t stateless = 0;
 	if ( state == 3 )
 	{
@@ -605,6 +577,7 @@ char CAN_SendStatus( char state, char substate, uint32_t errorcode )
 
 char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode )
 {
+
 	uint8_t stateless = 0;
 	if ( state == 3 )
 	{
@@ -632,7 +605,7 @@ char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode )
 char CAN_SendLED( void )
 {
     uint8_t CANTxData[8] = { 10, LEDs[TSLED_Output].state, LEDs[RTDMLED_Output].state, LEDs[TSOFFLED_Output].state,
-							LEDs[IMDLED_Output].state, LEDs[BMSLED_Output].state, LEDs[BSPDLED_Output].state, 0};
+							LEDs[IMDLED_Output].state, LEDs[BMSLED_Output].state, LEDs[BSPDLED_Output].state, ShutdownCircuitState()};
 
     if ( LEDs[TSLED_Output].blinkingrate )
     	CANTxData[1] = LEDs[TSLED_Output].blinkingrate;
@@ -954,7 +927,7 @@ char CANLogDataFast( void )
 	return 0;
 }
 
-void SetCanData(volatile CanData *data, uint8_t *CANRxData, uint32_t DataLength )
+void SetCanData(volatile CANData *data, uint8_t *CANRxData, uint32_t DataLength )
 {
 	int time = gettimer();
 //	data->count++;
@@ -980,16 +953,16 @@ void SetCanData(volatile CanData *data, uint8_t *CANRxData, uint32_t DataLength 
 }
 
 
-void processCANData(CanData * datahandle, uint8_t CANRxData[8], uint32_t DataLength )
+void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLength )
 {
 	datahandle->time = gettimer();
 
-	if ( datahandle->devicestate == NULL )
+	if ( datahandle->getData == NULL )
 	{ // No handler.
 		return;
 	}
 
-	if ( datahandle->getData(CANRxData, DataLength))
+	if ( datahandle->getData(CANRxData, DataLength, datahandle))
 	{
 		datahandle->receiveerr = 0;
 		*datahandle->devicestate = OPERATIONAL;
@@ -1000,13 +973,15 @@ void processCANData(CanData * datahandle, uint8_t CANRxData[8], uint32_t DataLen
 #ifdef SENDBADDATAERROR
 		CAN_SendStatus(ReceiveErr,0,datahandle->id);
 #endif
+#ifdef RETRANSMITBADDATAERROR
 		reTransmitError(99,CANRxData, DataLength);
+#endif
 	}
 }
 
 
 // write a generic handler?
-int receivedCANData( CanData * datahandle )
+int receivedCANData( CANData * datahandle )
 {
 	if ( datahandle->devicestate == NULL )
 	{
@@ -1050,7 +1025,6 @@ int receivedCANData( CanData * datahandle )
 }
 
 
-
 /* HAL_FDCAN_HighPriorityMessageCallback(FDCAN_HandleTypeDef *hfdcan)
 {
 // test, put response to emergency events here?
@@ -1068,41 +1042,45 @@ bool processInvMessage( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8])
 {
 	bool processed = false;
 
-	for ( int i=0;i<INVERTERCOUNT;i++) // FIX, checks not working.
+	// 				processCANData(&BMSVoltage, CANRxData, RxHeader.DataLength );
+
+	for ( int i=0;i<MOTORCOUNT;i++) // FIX, checks not working.
 	{
 		 if ( RxHeader->Identifier - 0x80 - CarState.Inverters[i].COBID == 0 )
 		 {
-				processINVError( CANRxData, RxHeader->DataLength, &CarState.Inverters[i]);
+				processCANData(&InverterCANErr[i], CANRxData, RxHeader->DataLength );
 				processed = true;
 		 }
 
 		 if (RxHeader->Identifier - 0x180 - CarState.Inverters[i].COBID == 0)  // 0x1FE,16,32LE -> Status_Right_Inverter
 		 {
-				processINVStatus(CANRxData, RxHeader->DataLength, &CarState.Inverters[i]);
+				processCANData(&InverterCANPDO1[i], CANRxData, RxHeader->DataLength );
 				processed = true;
 		 }
 
 
 		 if (RxHeader->Identifier - 0x280 - CarState.Inverters[i].COBID == 0)  // 0x2FE,16,32LE -> Speed_Right_Inverter
 		 {
-				processINVSpeed(CANRxData, RxHeader->DataLength, &CarState.Inverters[i]);
+				processCANData(&InverterCANPDO2[i], CANRxData, RxHeader->DataLength );
 				processed = true;
 		 }
 
 		 if ( RxHeader->Identifier - 0x380 - CarState.Inverters[i].COBID == 0)  // 0x3fe/f and 0x4fe/f also sent by inverters, ignored in elektrobit.
 		 {
-				processINVTorque(CANRxData, RxHeader->DataLength, &CarState.Inverters[i]);
+				processCANData(&InverterCANPDO3[i], CANRxData, RxHeader->DataLength );
 				processed = true;
 		 }
 
 		 if ( RxHeader->Identifier - 0x480 - CarState.Inverters[i].COBID == 0)  // not used
 		 {
+			  processCANData(&InverterCANPDO4[i], CANRxData, RxHeader->DataLength );
 			  processed = true;
 		 }
 
 		 if ( RxHeader->Identifier - 0x700 - CarState.Inverters[i].COBID == 0)  // 0x77E,8,16LE -> // inverter NMT monitoring id // layout of inverters for HPF20 - one handles each side of car.
 		 {
-				processINVNMT(CANRxData, RxHeader->DataLength, &CarState.Inverters[i]);
+				processCANData(&InverterCANNMT[i], CANRxData, RxHeader->DataLength );
+//				processINVNMT(CANRxData, RxHeader->DataLength, &CarState.Inverters[i]);
 				processed = true;
 		 }
 	}
@@ -1168,13 +1146,24 @@ bool Fifo1Process(uint32_t id, uint8_t CANRxData[8], uint32_t DataLength)
 	return processed;
 }
 
+
+// TODO Investigate potential memory corruption. Workaround using circular buffer.
+
+volatile struct {
+		FDCAN_RxHeaderTypeDef RxHeader;
+		uint8_t CANRxData[8];
+} CanRX[8];
+
+volatile uint8_t CanRXPos = 0;
+
 /**
  * interrupt rx callback for canbus messages
  */
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
 	FDCAN_RxHeaderTypeDef RxHeader;
-	uint8_t CANRxData[8];
+	uint8_t *CANRxData;
+
 	if(hfdcan->Instance == FDCAN1){
 		toggleOutput(LED3_Output);
 		Errors.CANCount1++;
@@ -1185,15 +1174,21 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 	if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET)
 	{
+		uint8_t curpos = CanRXPos;
     // Retreive Rx messages from RX FIFO0
-		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, CANRxData) != HAL_OK)
+		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &CanRX[curpos].RxHeader, CanRX[curpos].CANRxData) != HAL_OK)
 		{
 			// Reception Error
 			Error_Handler();
 	//		CAN_SendErrorStatus(103,103,103);
 		}
+		CanRXPos++;
+		if ( CanRXPos > 7 ) CanRXPos = 0;
 
-		uint8_t bufferlevel = HAL_FDCAN_GetRxFifoFillLevel(hfdcan,FDCAN_RX_FIFO0);
+		RxHeader = CanRX[curpos].RxHeader;
+		CANRxData = CanRX[curpos].CANRxData;
+
+		volatile uint8_t bufferlevel = HAL_FDCAN_GetRxFifoFillLevel(hfdcan,FDCAN_RX_FIFO0);
 		if (bufferlevel > 25 ) // buffer shouldn't fill up under normal use, not sending >30 messages per cycle.
 		{
 			// return error, can fifo full.
@@ -1229,12 +1224,12 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 				break;
 
 			case 0x20 : // messages to ECU specifically.
-				SetCanData((CanData *)&CanState.ECU, CANRxData, RxHeader.DataLength );
+				SetCanData((CANData *)&CanState.ECU, CANRxData, RxHeader.DataLength );
 				break;
 
 			case 0x21 : // config messages to ECU.
-				GetConfigCmd(CANRxData, RxHeader.DataLength );
-//				SetCanData((struct CanData *)&CanState.ECUConfig, CANRxData, RxHeader.DataLength );
+				processCANData(&ECUConfig, CANRxData, RxHeader.DataLength );
+//				GetConfigCmd(CANRxData, RxHeader.DataLength );
 				break;
 				//  0x500-0x505 ? PDM, what. ?
 
@@ -1252,39 +1247,31 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 			case IVTI_ID : // IVT Current 0x521,24,24BE * 0.001 -> Accu_Voltage // not in current logs. -- current, not voltage.
 		        // Accu_Current.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
-//				processIVTIData( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTI_ID );
 				break;
 
 			case IVTU1_ID : // IVT Voltage1 0x522
-//				processIVTU1Data( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTU1_ID );
 				break;
 
 			case IVTU2_ID : // IVT Can0 0x523,24,24BE * 0.001 -> Accu_Current -- voltage, not current
 				// Accu_Voltage.data.longint = CANRxData[3]*16777216+CANRxData[4]*65536+CANRxData[5]*256+CANRxData[6];
-//				processIVTU2Data( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTU2_ID );
 				break;
 
 			case IVTU3_ID : // IVT Voltage3 0x524
-//				processIVTU3Data( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTU3_ID );
 				break;
 			case IVTT_ID : // IVT Temp 0x525
-//				processIVTTData( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTT_ID );
 				break;
 			case IVTW_ID : // IVT Wattage 0x526
-//				processIVTWData( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTW_ID );
 				break;
 			case IVTAs_ID : // IVT As? 0x527
-//				processIVTAsData( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTAs_ID );
 				break;
 			case IVTWh_ID : // IVT WattHours 0x528
-//				processIVTWhData( CANRxData, RxHeader.DataLength );
 				processIVT(CANRxData, RxHeader.DataLength, IVTWh_ID );
 				break;
 #endif
@@ -1368,7 +1355,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 
 				// formulaSIM commands.
-
+#ifdef HPF19
 			case AdcSimInput_ID : // debug ID to send arbitraty 'ADC' values for testing.
 				if( CANRxData[0] == 1 && CANRxData[1]== 99 ) // if received value in ID is not 0 assume true and switch to fakeADC over CAN.
 				{
@@ -1406,6 +1393,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 				}
 				break;
+#endif
 			case AdcSimInput_ID+2 : // debug id for CAN TS input
 				if(CANRxData[0]){
 					Input[TS_Input].pressed = 1; // TS_Switch

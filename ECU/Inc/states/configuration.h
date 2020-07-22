@@ -8,10 +8,12 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
+CANData ECUConfig;
+
 int CheckConfigurationRequest( void );
 void setDriveMode(void);
 
-bool GetConfigCmd(uint8_t CANRxData[8], uint32_t DataLength );
+
 void ConfigReset( void );
 bool checkConfigReset( void );
 

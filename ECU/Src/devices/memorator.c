@@ -12,12 +12,12 @@
 
 time_t rtctime;
 
-bool processTimeData(uint8_t CANRxData[8], uint32_t DataLength );
+bool processTimeData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
-CanData  Memorator = { &DeviceState.Memorator, MEMORATOR_ID, 3, processTimeData, NULL, 1000 }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
+CANData  Memorator = { &DeviceState.Memorator, MEMORATOR_ID, 3, processTimeData, NULL, 1000 }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
 
 
-bool processTimeData(uint8_t CANRxData[8], uint32_t DataLength )
+bool processTimeData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 
 	if ( rtctime == 0 ) // only set time once?

@@ -97,7 +97,8 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
 	CarState.HighVoltageReady = 0; // no high voltage allowed in this state.
-	sendPDM( 0 ); //disable high voltage on error state;
+
+	sendHV( false ); //disable high voltage on error state;
 	CheckErrors();
 	// send cause of error state.
 	ConfigReset();

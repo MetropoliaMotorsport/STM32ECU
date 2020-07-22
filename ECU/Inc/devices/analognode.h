@@ -12,17 +12,17 @@
 
 
 
-extern CanData AnalogNode1;
-extern CanData AnalogNode9;
-extern CanData AnalogNode10;
-extern CanData AnalogNode11;
-extern CanData AnalogNode12;
-extern CanData AnalogNode13;
-extern CanData AnalogNode14;
-extern CanData AnalogNode15;
-extern CanData AnalogNode16;
-extern CanData AnalogNode17;
-extern CanData AnalogNode18;
+extern CANData AnalogNode1;
+extern CANData AnalogNode9;
+extern CANData AnalogNode10;
+extern CANData AnalogNode11;
+extern CANData AnalogNode12;
+extern CANData AnalogNode13;
+extern CANData AnalogNode14;
+extern CANData AnalogNode15;
+extern CANData AnalogNode16;
+extern CANData AnalogNode17;
+extern CANData AnalogNode18;
 
 int receiveAnalogNodes( void );
 

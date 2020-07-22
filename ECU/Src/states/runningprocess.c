@@ -223,14 +223,14 @@ int RunningRequest( void )
 	/* EV 4.12.1
 	 * The vehicle must make a characteristic sound, continuously for at least one second and a maximum of three seconds when it enters ready-to-drive mode.
 	 */
-#ifdef PDM
-	sendPDM( 1 ); // buzzer only sounds when value changes from 0 to 1
-#endif
+
+	sendHV( 1 ); // buzzer only sounds when value changes from 0 to 1
+
 #ifdef POWERNODES
 	setDevicePower(Buzzer, 1);
 #endif
 
-	for ( int i=0;i<INVERTERCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
+	for ( int i=0;i<MOTORCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
 	{
 		if ( GetInverterState( CarState.Inverters[i].InvState ) == INVERTERON ) // should be in ready state, so request ON state.
 		{
@@ -293,7 +293,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	// check data validity, // any critical errors, drop state.
 
-	for ( int i=0;i<INVERTERCOUNT;i++){
+	for ( int i=0;i<MOTORCOUNT;i++){
 		if  ( !( GetInverterState( CarState.Inverters[i].InvState ) == INVERTEROPERATING
 			  || GetInverterState( CarState.Inverters[i].InvState ) == INVERTERON ) )
 		{
@@ -310,7 +310,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	bool moving = false;
 
-	for ( int i=0;i<INVERTERCOUNT;i++){
+	for ( int i=0;i<MOTORCOUNT;i++){
 		if ( CarState.Inverters[i].Speed > 100 ) moving = true;
 	}
 
@@ -341,7 +341,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 		// drop inverter state before switching main state.
 
-		for ( int i=0;i<INVERTERCOUNT;i++)
+		for ( int i=0;i<MOTORCOUNT;i++)
 		{
 			CANSendInverter( InverterStateMachine( &CarState.Inverters[i] ), 0, i );
 		}
@@ -350,7 +350,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		return IdleState; // check if need to drop HV in a special order.
 	}
 
-	for ( int i=0;i<INVERTERCOUNT;i++)
+	for ( int i=0;i<MOTORCOUNT;i++)
 	{
 		CarState.Inverters[i].Torque_Req = 0; // APPS
 	}
@@ -400,7 +400,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         int Torque_Req = PedalTorqueRequest();  // calculate request from APPS
 
-    	for ( int i=0;i<INVERTERCOUNT;i++)  // set all wheels to same torque request
+    	for ( int i=0;i<MOTORCOUNT;i++)  // set all wheels to same torque request
     	{
     		CarState.Inverters[i].Torque_Req = Torque_Req;
     	} // if any inverter is not ready, readystate will not be 0.
@@ -483,12 +483,12 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 #endif
 
 #ifdef NOTORQUEREQUEST
-	    for ( int i=0;i<INVERTERCOUNT;i++)
+	    for ( int i=0;i<MOTORCOUNT;i++)
 	    {
 			CANSendInverter( 0b00001111, 0, i );
 	    }
 #else
-	    for ( int i=0;i<INVERTERCOUNT;i++)
+	    for ( int i=0;i<MOTORCOUNT;i++)
 	    {
 			CANSendInverter( 0b00001111, CarState.Inverters[i].Torque_Req, i ); // send defined state request, else non consistent behaviour can happen.
 	    }

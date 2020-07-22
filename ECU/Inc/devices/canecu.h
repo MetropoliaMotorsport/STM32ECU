@@ -117,8 +117,9 @@
 
 int cancount;
 
+typedef volatile struct CanDataType CANData;
 
-typedef bool (*DataHandler)(uint8_t CANRxData[8], uint32_t DataLength );
+typedef bool (*DataHandler)(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 typedef void (*TimeoutHandler)( uint16_t id );
 
 
@@ -129,43 +130,44 @@ typedef volatile struct CanDataType {
 	DataHandler getData;
 	TimeoutHandler doTimeout;
 	uint32_t timeout;
+	uint8_t  index;
 	uint32_t time;
 	bool	 seen;
 	uint16_t error;
 	uint16_t receiveerr;
 	bool	 errorsent;
-} CanData;
+} CANData;
 
 // CANBus
 
 volatile struct CanState {
-	volatile CanData InverterERR[INVERTERCOUNT];
+	volatile CANData InverterERR[MOTORCOUNT];
 
-	volatile CanData InverterPDO1[INVERTERCOUNT];
-	volatile CanData InverterPDO2[INVERTERCOUNT];
-	volatile CanData InverterPDO3[INVERTERCOUNT];
-	volatile CanData InverterPDO4[INVERTERCOUNT];
+//	volatile CanData InverterPDO1[MOTORCOUNT];
+	volatile CANData InverterPDO2[MOTORCOUNT];
+	volatile CANData InverterPDO3[MOTORCOUNT];
+	volatile CANData InverterPDO4[MOTORCOUNT];
 
-	volatile CanData InverterNMT;
+	volatile CANData InverterNMT;
 
 #ifndef HPF20
-	volatile struct CanData FLeftSpeedERR;
-	volatile struct CanData FRightSpeedERR;
+	volatile struct CANData FLeftSpeedERR;
+	volatile struct CANData FRightSpeedERR;
 
-	volatile struct CanData FLeftSpeedPDO1;
-	volatile struct CanData FRightSpeedPDO1;
+	volatile struct CANData FLeftSpeedPDO1;
+	volatile struct CANData FRightSpeedPDO1;
 
-	volatile struct CanData FLeftSpeedNMT;
-	volatile struct CanData FRightSpeedNMT;
+	volatile struct CANData FLeftSpeedNMT;
+	volatile struct CANData FRightSpeedNMT;
 #endif
 
-	volatile CanData Memorator;
+	volatile CANData Memorator;
 
 //	volatile CanData BMSVolt;
 //	volatile CanData BMSError;
 //	volatile CanData BMSOpMode;
 
-	volatile CanData ECU;
+	volatile CANData ECU;
 //	volatile CanData ECUConfig;
 
 	/*
@@ -178,7 +180,7 @@ volatile struct CanState {
 
 //canbus
 
-int getNMTstate(volatile CanData *data );
+int getNMTstate(volatile CANData *data );
 
 void resetCanTx(volatile uint8_t CANTxData[8]);
 int ResetCanReceived( void );
@@ -208,7 +210,7 @@ char CAN_SENDINVERTERERRORS( void );
 char CAN_SendIVTTurnon( void );
 char CAN_SendIVTTrigger( void );
 
-void ResetCanData(volatile CanData *data );
+void ResetCanData(volatile CANData *data );
 
 
 char CAN_SendErrors( void );
@@ -222,8 +224,8 @@ char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error );
 //char CAN_SendADCVals( void );
 
 
-void processCANData(CanData * datahandle, uint8_t CANRxData[8], uint32_t DataLength );
-int receivedCANData( CanData * datahandle );
+void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLength );
+int receivedCANData( CANData * datahandle );
 
 // initialisation
 void FDCAN1_start(void);

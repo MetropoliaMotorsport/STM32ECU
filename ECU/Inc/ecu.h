@@ -115,7 +115,7 @@
 #define BMSEnable				// if not defined, BMS ignored and assumed present.
 
 // Retransmit IVT messages for BMS
-#define retransmitIVT
+// #define retransmitIVT
 
 // Define whether front speed encoders are expected.
 //#define FRONTSPEED				// enable front speed encoder reading.
@@ -198,7 +198,7 @@
 #endif
 
 #ifdef HPF20
-#define NODETIMEOUT				1000
+#define NODETIMEOUT				10000
 #endif
 
 #define DEBUGMCU 0x5C001000
@@ -315,11 +315,11 @@ uint16_t ErrorCode; // global error code.
 
 
 #ifdef HPF20
-#define INVERTERCOUNT			(2)
+#define MOTORCOUNT				(4)
 #define Inverter1				(0)
 #define Inverter2				(2)
 #else
-#define INVERTERCOUNT			(2)
+#define MOTORCOUNT				(2)
 #endif
 extern volatile uint32_t ADCloops;
 
@@ -351,7 +351,7 @@ volatile struct CarState {
 	char AIROpen;
 	char ShutdownSwitchesClosed;
 
-	InverterState Inverters[INVERTERCOUNT];
+	InverterState Inverters[MOTORCOUNT];
 	uint16_t COBID;
 
 #ifdef TORQUEVECTOR
@@ -436,7 +436,7 @@ struct DeviceState {
 	bool BMSEnabled;
 	bool LoggingEnabled;
 	DeviceStatus ADC;
-	DeviceStatus Inverters[INVERTERCOUNT];
+	DeviceStatus Inverters[MOTORCOUNT];
 	DeviceStatus BMS;
 	DeviceStatus PDM;
 	DeviceStatus FLSpeed;
@@ -473,7 +473,7 @@ struct DeviceState {
 struct ErrorCount {
 	uint16_t OperationalReceiveError;
 	uint16_t State;
-	uint8_t  InvAllowReset[INVERTERCOUNT];
+	uint8_t  InvAllowReset[MOTORCOUNT];
 //	uint8_t  LeftInvAllowReset;
 //    uint8_t  RightInvAllowReset;
 	uint16_t ErrorReason;
@@ -498,9 +498,9 @@ struct ErrorCount {
 	uint16_t ADCTimeout;
 	uint16_t ADCErrorState;
 
-	uint16_t INVReceiveStatus[INVERTERCOUNT];
-	uint16_t INVReceiveSpd[INVERTERCOUNT];
-	uint16_t INVReceiveTorque[INVERTERCOUNT];
+	uint16_t INVReceiveStatus[MOTORCOUNT];
+	uint16_t INVReceiveSpd[MOTORCOUNT];
+	uint16_t INVReceiveTorque[MOTORCOUNT];
 
 	uint16_t CANSendError1;
 	uint16_t CANSendError2;

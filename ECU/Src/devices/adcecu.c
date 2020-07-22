@@ -66,16 +66,23 @@ uint8_t BrakeFSize = sizeof(BrakeFInput)/sizeof(BrakeFInput[0]);
 
 
 // define zero as 5% actual travel and 100% as 95% of actual travel
-uint16_t TorqueReqLInput[sizeof(((eepromdata*)0)->ADCTorqueReqLInput)/2+4] = {  1999,  2000, 0,     0,     64000,  64001 }; // calibration values for left input // 5800
+uint16_t TorqueReqLInput[sizeof(((eepromdata*)0)->ADCTorqueReqLInput)/2+4] = {  1024,  1025, 0,     0,     64000,  64001 }; // calibration values for left input // 5800
 int16_t TorqueReqLOutput[sizeof(((eepromdata*)0)->ADCTorqueReqLInput)/2+4] = {  -1,  0,      0,     1000,   1000,  1001 }; // range defined 0-1000 to allow percentage accuracy even if not using full travel range.
-uint8_t TorqueReqLSize = sizeof(TorqueReqLInput)/sizeof(TorqueReqLInput[0]);
+uint8_t TorqueReqLSize = 6; //sizeof(TorqueReqLInput)/sizeof(TorqueReqLInput[0]);
 
 
 // TorqueRMin(6798) / TorqueRMax(54369)
-uint16_t TorqueReqRInput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] =  {  1999,  2000, 0,     0,      64000,  64001 };; // calibration values for right input // 6200
+uint16_t TorqueReqRInput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] =  {  1024,  1025, 0,     0,      64000,  64001 };; // calibration values for right input // 6200
 int16_t TorqueReqROutput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] = { -1,      0,      0,   1000,   1000,   1001 };
 
-uint8_t TorqueReqRSize = sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
+uint8_t TorqueReqRSize = 6; //sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
+
+// Regen sensor.
+uint16_t BrakeTravelInput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] =  {  1024,  1025, 0,     0,      64000,  64001 };; // calibration values for right input // 6200
+int16_t BrakeTravelOutput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] = { -1,      0,      0,   1000,   1000,   1001 };
+
+uint8_t BrakeTravelSize = 6; //sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
+
 
 
 // TODO verify initialiser zeros out.
@@ -166,156 +173,172 @@ bool SetupADCInterpolationTables( eepromdata * data )
 	if ( checkversion(data->VersionString) )
 	{
 
-	int i = 0;
+		int i = 0;
 
-#ifdef HPF19
-	for (;data->ADCSteeringInput[i]!=0;i++)
-	{
-		SteeringInput[i] = data->ADCSteeringInput[i];
-		SteeringOutput[i] = data->ADCSteeringOutput[i];
-	}
-	SteeringSize = i;
-#endif
+	#ifdef HPF19
+		for (;data->ADCSteeringInput[i]!=0;i++)
+		{
+			SteeringInput[i] = data->ADCSteeringInput[i];
+			SteeringOutput[i] = data->ADCSteeringOutput[i];
+		}
+		SteeringSize = i;
+	#endif
 
-	BrakeRInput[2] = data->ADCBrakeRPresInput[0];
-	BrakeRInput[3] = data->ADCBrakeRPresInput[1];
+		BrakeRInput[2] = data->ADCBrakeRPresInput[0];
+		BrakeRInput[3] = data->ADCBrakeRPresInput[1];
 
-	BrakeROutput[2] = data->ADCBrakeRPresOutput[0];
-	BrakeROutput[3] = data->ADCBrakeRPresOutput[1];
+		BrakeROutput[2] = data->ADCBrakeRPresOutput[0];
+		BrakeROutput[3] = data->ADCBrakeRPresOutput[1];
 
-	BrakeFInput[2] = data->ADCBrakeFPresInput[0];
-	BrakeFInput[3] = data->ADCBrakeFPresInput[1];
+		BrakeFInput[2] = data->ADCBrakeFPresInput[0];
+		BrakeFInput[3] = data->ADCBrakeFPresInput[1];
 
-	BrakeFOutput[2] = data->ADCBrakeFPresOutput[0];
-	BrakeFOutput[3] = data->ADCBrakeFPresOutput[1];
-
-
-	i = 0;
-
-	int ACCMin = data->ADCTorqueReqLInput[0];
-	int ACCMax = data->ADCTorqueReqLInput[1];
-	int ACCMinOffset = 5;
-	int ACCMaxOffset = 98;
-
-	if ( data->ADCTorqueReqLInput[3] != 0 )
-	{
-		ACCMinOffset = data->ADCTorqueReqLInput[2];
-		ACCMaxOffset = data->ADCTorqueReqLInput[3];
-
-	}
-
-	TorqueReqLInput[2] = (ACCMax-ACCMin)/100*ACCMinOffset+ACCMin;
-	TorqueReqLInput[3] = (ACCMax-ACCMin)/100*ACCMaxOffset+ACCMin;
+		BrakeFOutput[2] = data->ADCBrakeFPresOutput[0];
+		BrakeFOutput[3] = data->ADCBrakeFPresOutput[1];
 
 
-	ACCMin = data->ADCTorqueReqRInput[0];
-	ACCMax = data->ADCTorqueReqRInput[1];
-	ACCMinOffset = 5;
-	ACCMaxOffset = 98;
+		i = 0;
 
-	if ( data->ADCTorqueReqRInput[3] != 0 )
-	{
-		ACCMinOffset = data->ADCTorqueReqRInput[2];
-		ACCMaxOffset = data->ADCTorqueReqRInput[3];
-	}
+		int TravMin = data->ADCTorqueReqLInput[0];
+		int TravMax = data->ADCTorqueReqLInput[1];
+		int TravMinOffset = 5;
+		int TravMaxOffset = 98;
 
-	TorqueReqRInput[2] = (ACCMax-ACCMin)/100*ACCMinOffset+ACCMin;
-	TorqueReqRInput[3] = (ACCMax-ACCMin)/100*ACCMaxOffset+ACCMin;
+		if ( data->ADCTorqueReqLInput[3] != 0 )
+		{
+			TravMinOffset = data->ADCTorqueReqLInput[2];
+			TravMaxOffset = data->ADCTorqueReqLInput[3];
 
+		}
 
-	i = 0;
-	for (;data->pedalcurves[i].PedalCurveInput[1]!=0;i++) // first number could be 0, but second will be non zero.
-	{
-		TorqueCurveCount++;
-
-		int j=0;
-		do {
-			TorqueInputs[i][j]=data->pedalcurves[i].PedalCurveInput[j];
-			TorqueOutputs[i][j]=data->pedalcurves[i].PedalCurveOutput[j];
-			j++;
-
-		} while ( data->pedalcurves[i].PedalCurveInput[j] != 0);
-		if ( j < 3 ) j = 0;
-		TorqueCurveSize[i] = j;
-	}
-
-#ifdef HPF19
-	i = 0;
-	for (;data->CoolantInput[i]!=0;i++)
-	{
-		CoolantInput[i] = data->CoolantInput[i];
-		CoolantOutput[i] = data->CoolantInput[i];
-	}
-	CoolantSize = i;
+		TorqueReqLInput[2] = (TravMax-TravMin)/100*TravMinOffset+TravMin;
+		TorqueReqLInput[3] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
 
 
-	uint16_t DrivingModeInput[] = { 0 , 1022, 1023, 1024,4500, 13500, 23500, 33000, 40000, 49000, 57500, 65534, 65535 };
-	int16_t DrivingModeOutput[] = { 1 , 1,    0,     1,   1,    2,    3,      4,     5,     6,    7,      8,     0 };
+		TravMin = data->ADCTorqueReqRInput[0];
+		TravMax = data->ADCTorqueReqRInput[1];
+		TravMinOffset = 5;
+		TravMaxOffset = 98;
 
-#endif
+		if ( data->ADCTorqueReqRInput[3] != 0 )
+		{
+			TravMinOffset = data->ADCTorqueReqRInput[2];
+			TravMaxOffset = data->ADCTorqueReqRInput[3];
+		}
 
-#endif
+		TorqueReqRInput[2] = (TravMax-TravMin)/100*TravMinOffset+TravMin;
+		TorqueReqRInput[3] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
 
-#ifdef HPF19
-    ADCInterpolationTables.Steering.Input = SteeringInput;
-    ADCInterpolationTables.Steering.Output = SteeringOutput;
 
-    // replace with exact size.
-    ADCInterpolationTables.Steering.Elements = SteeringSize; // calculate elements from memory size of whole array divided by size of on element.
-#endif
+		TravMin = data->ADCBrakeTravelInput[0];
+		TravMax = data->ADCBrakeTravelInput[1];
+		TravMinOffset = 5;
+		TravMaxOffset = 98;
 
-    ADCInterpolationTables.BrakeR.Input = BrakeRInput;
-    ADCInterpolationTables.BrakeR.Output = BrakeROutput;
+		if ( data->ADCBrakeTravelInput[3] != 0 )
+		{
+			TravMinOffset = data->ADCBrakeTravelInput[2];
+			TravMaxOffset = data->ADCBrakeTravelInput[3];
+		}
 
-    ADCInterpolationTables.BrakeR.Elements = BrakeRSize;
+	// regen
+		BrakeTravelInput[2] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
+		BrakeTravelInput[3] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
 
-    ADCInterpolationTables.BrakeF.Input = BrakeFInput;
-    ADCInterpolationTables.BrakeF.Output = BrakeFOutput;
+		i = 0;
+		for (;data->pedalcurves[i].PedalCurveInput[1]!=0;i++) // first number could be 0, but second will be non zero.
+		{
+			TorqueCurveCount++;
 
-    ADCInterpolationTables.BrakeF.Elements = BrakeFSize;
+			int j=0;
+			do {
+				TorqueInputs[i][j]=data->pedalcurves[i].PedalCurveInput[j];
+				TorqueOutputs[i][j]=data->pedalcurves[i].PedalCurveOutput[j];
+				j++;
 
-    ADCInterpolationTables.AccelL.Input = TorqueReqLInput;
-    ADCInterpolationTables.AccelL.Output = TorqueReqLOutput;
+			} while ( data->pedalcurves[i].PedalCurveInput[j] != 0);
+			if ( j < 3 ) j = 0;
+			TorqueCurveSize[i] = j;
+		}
 
-    ADCInterpolationTables.AccelL.Elements = TorqueReqLSize;
+	#ifdef HPF19
+		i = 0;
+		for (;data->CoolantInput[i]!=0;i++)
+		{
+			CoolantInput[i] = data->CoolantInput[i];
+			CoolantOutput[i] = data->CoolantInput[i];
+		}
+		CoolantSize = i;
 
-    ADCInterpolationTables.AccelR.Input = TorqueReqRInput;
-    ADCInterpolationTables.AccelR.Output = TorqueReqROutput;
 
-    ADCInterpolationTables.AccelR.Elements = TorqueReqRSize;
+		uint16_t DrivingModeInput[] = { 0 , 1022, 1023, 1024,4500, 13500, 23500, 33000, 40000, 49000, 57500, 65534, 65535 };
+		int16_t DrivingModeOutput[] = { 1 , 1,    0,     1,   1,    2,    3,      4,     5,     6,    7,      8,     0 };
 
-    ADCInterpolationTables.TorqueCurve.Input = TorqueInputs[0];
-    ADCInterpolationTables.TorqueCurve.Output = TorqueOutputs[0];
+	#endif
 
-    ADCInterpolationTables.TorqueCurve.Elements = TorqueCurveSize[0];
+	#endif
 
-#ifdef HPF19
+	#ifdef HPF19
+		ADCInterpolationTables.Steering.Input = SteeringInput;
+		ADCInterpolationTables.Steering.Output = SteeringOutput;
 
-    ADCInterpolationTables.CoolantL.Input = CoolantInput;
-    ADCInterpolationTables.CoolantL.Output = CoolantOutput;
+		// replace with exact size.
+		ADCInterpolationTables.Steering.Elements = SteeringSize; // calculate elements from memory size of whole array divided by size of on element.
+	#endif
 
-    ADCInterpolationTables.CoolantL.Elements = CoolantSize;
+		ADCInterpolationTables.BrakeR.Input = BrakeRInput;
+		ADCInterpolationTables.BrakeR.Output = BrakeROutput;
 
-    // currently set calibration of coolant 2 to same as coolant 1
+		ADCInterpolationTables.BrakeR.Elements = BrakeRSize;
 
-    ADCInterpolationTables.CoolantR.Input = CoolantInput;
-    ADCInterpolationTables.CoolantR.Output = CoolantOutput;
+		ADCInterpolationTables.BrakeF.Input = BrakeFInput;
+		ADCInterpolationTables.BrakeF.Output = BrakeFOutput;
 
-    ADCInterpolationTables.CoolantR.Elements = CoolantSize;
+		ADCInterpolationTables.BrakeF.Elements = BrakeFSize;
 
-    ADCInterpolationTables.ModeSelector.Input = DrivingModeInput;
-    ADCInterpolationTables.ModeSelector.Output = DrivingModeOutput;
+		ADCInterpolationTables.AccelL.Input = TorqueReqLInput;
+		ADCInterpolationTables.AccelL.Output = TorqueReqLOutput;
 
-    ADCInterpolationTables.ModeSelector.Elements = DriveModeSize;
+		ADCInterpolationTables.AccelL.Elements = TorqueReqLSize;
 
-#endif
+		ADCInterpolationTables.AccelR.Input = TorqueReqRInput;
+		ADCInterpolationTables.AccelR.Output = TorqueReqROutput;
 
-#ifdef SIMPLETORQUEVECTOR
-    ADCInterpolationTables.TorqueVector.Input = TorqueVectInput;
-    ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput;
+		ADCInterpolationTables.AccelR.Elements = TorqueReqRSize;
 
-    ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput)/sizeof(TorqueVectInput[0]);
-#endif
+		ADCInterpolationTables.TorqueCurve.Input = TorqueInputs[0];
+		ADCInterpolationTables.TorqueCurve.Output = TorqueOutputs[0];
+
+		ADCInterpolationTables.TorqueCurve.Elements = TorqueCurveSize[0];
+
+	#ifdef HPF19
+
+		ADCInterpolationTables.CoolantL.Input = CoolantInput;
+		ADCInterpolationTables.CoolantL.Output = CoolantOutput;
+
+		ADCInterpolationTables.CoolantL.Elements = CoolantSize;
+
+		// currently set calibration of coolant 2 to same as coolant 1
+
+		ADCInterpolationTables.CoolantR.Input = CoolantInput;
+		ADCInterpolationTables.CoolantR.Output = CoolantOutput;
+
+		ADCInterpolationTables.CoolantR.Elements = CoolantSize;
+
+		ADCInterpolationTables.ModeSelector.Input = DrivingModeInput;
+		ADCInterpolationTables.ModeSelector.Output = DrivingModeOutput;
+
+		ADCInterpolationTables.ModeSelector.Elements = DriveModeSize;
+
+	#endif
+
+	#ifdef SIMPLETORQUEVECTOR
+		ADCInterpolationTables.TorqueVector.Input = TorqueVectInput;
+		ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput;
+
+		ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput)/sizeof(TorqueVectInput[0]);
+	#endif
+
     	return true;
 #ifdef EEPROMSTORAGE
 	} else return false;
@@ -389,6 +412,11 @@ int16_t linearInterpolate(uint16_t Input[], int16_t Output[], uint16_t count, ui
 {
     int i;
 
+    if ( Input == NULL )
+    {
+    	return 0;
+    }
+
     if(RawADCInput < Input[0])
     {  // if input less than first table value return first.
         return Output[0];
@@ -422,21 +450,22 @@ int16_t linearInterpolate(uint16_t Input[], int16_t Output[], uint16_t count, ui
  */
 int getSteeringAngle(uint16_t RawADCInput) // input is only 12bit
 {
+#ifdef HPF19
 	if( usecanADC )  // check if we're operating on fake canbus ADC
 	{
 	  return CANADC.SteeringAngle;
 	}
+#endif
+#ifdef NODES
+
+#endif
+
 #ifndef STMADC
 	return 0;
 #endif
-
-#ifdef NOSTEERING
-	return 0;
-#else
     struct ADCTable ADC = ADCInterpolationTables.Steering;
     int angle=linearInterpolate(ADC.Input, ADC.Output, ADC.Elements, RawADCInput); // make input 12bit.
     return angle;
-#endif
 }
 
 /**
@@ -444,10 +473,12 @@ int getSteeringAngle(uint16_t RawADCInput) // input is only 12bit
  */
 int getBrakeF(uint16_t RawADCInput)
 {
+#ifdef HPF19
 	if( usecanADC )  // check if we're operating on fake canbus ADC
 	{
 	  return CANADC.BrakeF;
 	}
+#endif
 #ifndef STMADC
 	return 0;
 #endif
@@ -464,10 +495,12 @@ int getBrakeF(uint16_t RawADCInput)
  */
 int getBrakeR(uint16_t RawADCInput)
 {
+#ifdef HPF19
 	if( usecanADC )  // check if we're operating on fake canbus ADC
 	{
 	  return CANADC.BrakeR;
 	}
+#endif
 #ifndef STMADC
 	return 0;
 #endif
@@ -484,11 +517,13 @@ int getBrakeR(uint16_t RawADCInput)
  */
 int getBrakeBalance(uint16_t ADCInputF, uint16_t ADCInputR)
 {
+#ifdef HPF19
 	if( usecanADC )  // check if we're operating on fake canbus ADC
 	{ // lovely divide by zero possible here.
 		if ( CANADC.BrakeF == 0) return 0;
 		return (CANADC.BrakeF * 100) / ( CANADC.BrakeF + CANADC.BrakeR );
 	}
+#endif
 #ifndef STMADC
 	return 50;
 #endif
@@ -503,10 +538,12 @@ int getBrakeBalance(uint16_t ADCInputF, uint16_t ADCInputR)
 
 int getTorqueReqPercR( uint16_t RawADCInputR )
 {
+#ifdef HPF19
 	if( usecanADC )  // check if we're operating on fake canbus ADC
 	{
 	  return CANADC.Torque_Req_R_Percent;
 	}
+#endif
 #ifndef STMADC
 	return 0;
 #endif
@@ -521,10 +558,26 @@ int getTorqueReqPercR( uint16_t RawADCInputR )
 
 int getTorqueReqPercL( uint16_t RawADCInputF )
 {
+#ifdef HPF19
 	if( usecanADC )  // check if we're operating on fake canbus ADC
 	{
 	  return CANADC.Torque_Req_L_Percent;
 	}
+#endif
+#ifndef STMADC
+	return 0;
+#endif
+#ifdef NOAPPS
+	return 0;
+#else
+    struct ADCTable ADC = ADCInterpolationTables.AccelL;
+	return linearInterpolate(ADC.Input, ADC.Output, ADC.Elements, RawADCInputF);
+#endif
+}
+
+int getBrakeTravelPerc( uint16_t RawADCInputF )
+{
+
 #ifndef STMADC
 	return 0;
 #endif
@@ -537,13 +590,14 @@ int getTorqueReqPercL( uint16_t RawADCInputF )
 }
 
 
-
 int getTorqueReqCurve( uint16_t ADCInput )
 {
+#ifdef HPF19
 	if( usecanADC )  // check if we're operating on fake canbus ADC
 	{
 	  return CANADC.Torque_Req_L_Percent;
 	}
+#endif
 #ifndef STMADC
 	return 0;
 #endif
@@ -562,10 +616,12 @@ int getTorqueReqCurve( uint16_t ADCInput )
 int getDrivingMode(uint16_t RawADCInput)
 // this will become a configuration setting, changed at config portion of bootup only.
 { // torq_req_max, call once a second
+#ifdef HPF19
 	if( usecanADC )  // check if we're operating on fake canbus ADC
 	{
 	  return CANADC.DrivingMode;
 	}
+#endif
 #ifndef STMADC
 	return 5;
 #endif
@@ -588,11 +644,12 @@ int getDrivingMode(uint16_t RawADCInput)
 
 int getCoolantTemp1(uint16_t RawADCInput)
 {
+#ifdef HPF19
 	if( usecanADC )  // check if we're operating on fake canbus ADC
 	{
 	  return CANADC.CoolantTempL;
 	}
-
+#endif
 #ifndef STMADC
 	return 20;
 #endif
@@ -613,10 +670,12 @@ int getCoolantTemp1(uint16_t RawADCInput)
 
 int getCoolantTemp2(uint16_t RawADCInput)
 {
+#ifdef HPF19
 	if( usecanADC )  // check if we're operating on fake canbus ADC
 	{
 	  return CANADC.CoolantTempR;
 	}
+#endif
 #ifndef STMADC
 	return 20;
 #endif
@@ -754,6 +813,7 @@ void ReadADC1(bool half)
 		ADCState.newdata = 1;
 		ADC3read=false;
 		ADC1read=false;
+		ADCState.lastread=gettimer();
 	}
 
 }
@@ -775,6 +835,7 @@ void ReadADC3(bool half)
 		{
 			datasum += aADCxConvertedDataADC3[start+(i+j*NumADCChanADC3)];
 		}
+
 		ADC_Data[pos] = datasum / (SampleSize);
 		if ( minmaxADC )
 		{
@@ -787,6 +848,7 @@ void ReadADC3(bool half)
 		ADCState.newdata = 1;
 		ADC3read=false;
 		ADC1read=false;
+		ADCState.lastread=gettimer();
 	}
 }
 
@@ -864,6 +926,7 @@ uint16_t CheckADCSanity( void )
 		// request ADC data.
         // check adc's are giving values in acceptable range.
 
+#ifdef HPF19
         ADCState.BrakeF = getBrakeF(ADC_Data[BrakeFADC]); // if value is not between 0 and 255 then out of range error
 		if ( ADCState.BrakeF < 0 || ADCState.BrakeF >= 240 )
 		   returnvalue |= 0x1 << BrakeFErrorBit; // error
@@ -884,7 +947,7 @@ uint16_t CheckADCSanity( void )
             returnvalue |= 0x1 << AccelLErrorBit;
         else returnvalue &= ~(0x1 << AccelLErrorBit);
 
-#ifdef HPF19
+
         ADCState.CoolantTempL = getCoolantTemp1(ADC_Data[CoolantTempLADC]);
         if ( ADCState.CoolantTempL <= 0 || ADCState.CoolantTempL >= 255 )
         {
@@ -953,7 +1016,43 @@ uint16_t CheckADCSanity( void )
          //   returnvalue |= 0x1 << DrivingModeErrorBit;
         }
         else returnvalue &= ~(0x1 << DrivingModeErrorBit);
+#else
+        // check can data is uptodate.
+
+    	if ( receiveAnalogNodesCritical() == 0 )
+    	{
+
+			if ( ADCState.BrakeF < 0 || ADCState.BrakeF >= 240 )
+			   returnvalue |= 0x1 << BrakeFErrorBit; // error
+			else returnvalue &= ~(0x1 << BrakeFErrorBit); // ok
+
+			if ( ADCState.BrakeR < 0 || ADCState.BrakeR >= 240 )
+				returnvalue |= 0x1 << BrakeRErrorBit;
+			else returnvalue &= ~(0x1 << BrakeRErrorBit);
+
+			if ( ADCState.Torque_Req_R_Percent < 0 || ADCState.Torque_Req_R_Percent > 1000 ) // if value is not between 0 and 100 then out of range error
+				returnvalue |= 0x1 << AccelRErrorBit;
+			else returnvalue &= ~(0x1 << AccelRErrorBit);
+
+		    if ( ADCState.Torque_Req_L_Percent < 0 || ADCState.Torque_Req_L_Percent > 1000 ) // if value is not between 0 and 100 then out of range error
+				returnvalue |= 0x1 << AccelLErrorBit;
+			else returnvalue &= ~(0x1 << AccelLErrorBit);
+
+    	} else
+    	{ // not received data, set error bits.
+			returnvalue |= 0x1 << BrakeFErrorBit; // error
+			returnvalue |= 0x1 << BrakeRErrorBit;
+			returnvalue |= 0x1 << AccelRErrorBit;
+			returnvalue |= 0x1 << AccelLErrorBit;
+            ADCState.BrakeF = 0; // if value is not between 0 and 255 then out of range error
+            ADCState.BrakeR = 0;
+            ADCState.Torque_Req_R_Percent = 0;
+            ADCState.Torque_Req_L_Percent = 0;
+    	}
 #endif
+
+
+
 	} else // set all ADC to error bit if not online.
 	{
 		for ( int i=0;i<7;i++)

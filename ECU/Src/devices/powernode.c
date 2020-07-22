@@ -65,29 +65,29 @@ nodepowerreq PowerRequests[] =
 
 
 
-bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength );
-bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength );
-bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength );
-bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength );
-bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength );
+bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
 
 //bool processPNodeTimeout(uint8_t CANRxData[8], uint32_t DataLength );
 
 
-bool processPNodeErr(uint8_t nodeid, uint32_t errorcode );
-bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength );
+bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle );
+bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
-CanData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, NULL, NODETIMEOUT }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
-CanData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, NULL, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
-CanData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
-CanData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, NULL, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
-CanData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 3, processPNode37Data, NULL, NODETIMEOUT }; // [?], Current, TSAL.
+CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, NULL, NODETIMEOUT }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
+CANData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, NULL, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
+CANData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
+CANData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, NULL, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
+CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 3, processPNode37Data, NULL, NODETIMEOUT }; // [?], Current, TSAL.
 
 
 int sendPowerNodeErrReset( uint8_t id, uint8_t channel );
 
-bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength )
+bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 
 	if ( DataLength >> 16 == PowerNode33.dlcsize
@@ -110,7 +110,7 @@ bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength )
 	}
 }
 
-bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength )
+bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 
 	if ( DataLength >> 16 == PowerNode34.dlcsize
@@ -133,7 +133,7 @@ bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength )
 }
 
 
-bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength ) // Cooling
+bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle ) // Cooling
 {
 
 	if ( DataLength >> 16 == PowerNode35.dlcsize
@@ -155,7 +155,7 @@ bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength ) // Cooling
 	}
 }
 
-bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength ) // Rear
+bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle ) // Rear
 {
 
 	if ( DataLength >> 16 == PowerNode36.dlcsize
@@ -183,7 +183,7 @@ bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength ) // Rear
 	}
 }
 
-bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength )
+bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 
 	if ( DataLength >> 16 == PowerNode37.dlcsize
@@ -203,7 +203,7 @@ bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength )
 }
 
 
-bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength )
+bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 
 //	CANRxData[0] ==     // nodeid
@@ -279,7 +279,7 @@ bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength )
 
 
 
-bool processPNodeErr(uint8_t nodeid, uint32_t errorcode )
+bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle )
 {
 	// acknowledge error received.
 	uint8_t channel = 255;
@@ -300,7 +300,7 @@ bool processPNodeErr(uint8_t nodeid, uint32_t errorcode )
 		sendPowerNodeErrReset( nodeid,  channel );
 		for ( int i=0;PowerRequests[i].nodeid != 0;i++)
 		{ // find the node record where error occurred.
-			if ( PowerRequests[i].nodeid = nodeid )
+			if ( PowerRequests[i].nodeid == nodeid )
 			{
 				if ( PowerRequests[i].error[channel] < 255 ) PowerRequests[i].error[channel]++;
 				// keep a count of how many times error occurred.
@@ -329,13 +329,12 @@ int receivePowerNodes( void )
 
 int setinitialdevicepower( void )
 {
-
+	return 0;
 }
 
 int average(int count, ...)
 {
-
-
+	return 0;
 }
 
 
@@ -378,6 +377,7 @@ int sendPowerNodeErrReset( uint8_t id, uint8_t channel )
 {
 	uint8_t candata[8] = { id, 12, };
 	CAN1Send(NodeCmd_ID, 3, candata );
+	return 0;
 }
 
 bool powerErrorOccurred( DeviceId device )

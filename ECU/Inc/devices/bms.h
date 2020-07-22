@@ -8,9 +8,9 @@
 #ifndef BMS_H_
 #define BMS_H_
 
-extern CanData BMSVoltage;
-extern CanData BMSOpMode;
-extern CanData BMSError;
+extern CANData BMSVoltage;
+extern CANData BMSOpMode;
+extern CANData BMSError;
 
 int receiveBMS( void );
 void sendBMS( void );

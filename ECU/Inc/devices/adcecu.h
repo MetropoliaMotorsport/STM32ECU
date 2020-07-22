@@ -71,6 +71,7 @@ volatile uint32_t ADC_DataMin[NumADCChan+NumADCChanADC3];
 volatile uint32_t ADC_DataMax[NumADCChan+NumADCChanADC3];
 
 struct  {
+	uint32_t lastread;
 	volatile char newdata;
 	int16_t SteeringAngle;
 	uint8_t BrakeF;
@@ -80,9 +81,12 @@ struct  {
 	uint16_t CoolantTempRRaw;
 	uint16_t Torque_Req_L_Percent;
 	uint16_t Torque_Req_R_Percent;
+	uint16_t Regen_Percent;
+
 	uint8_t DrivingMode;
 } ADCState;
 
+#ifdef HPF19
 struct  {
 	volatile char newdata;
 	int16_t SteeringAngle;
@@ -94,7 +98,7 @@ struct  {
 	uint8_t Torque_Req_R_Percent;
 	uint8_t DrivingMode;
 } CANADC;
-
+#endif
 
 struct ADCTable {
 	uint16_t *Input;
@@ -135,6 +139,8 @@ int getCoolantTemp1(uint16_t RawADCInput);
 int getCoolantTemp2(uint16_t RawADCInput);
 int getTorqueReqPercL(uint16_t RawADCInputL);
 int getTorqueReqPercR(uint16_t RawADCInputR);
+int getBrakeTravelPerc(uint16_t RawADCInput);
+
 int getTorqueReqCurve( uint16_t ADCInput );
 
 #ifdef TORQUEVECTOR

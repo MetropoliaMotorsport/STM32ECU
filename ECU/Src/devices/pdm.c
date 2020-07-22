@@ -8,18 +8,19 @@
 #include "ecumain.h"
 
 
-bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength );
+bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 void PDMTimeout( uint16_t id );
 
 
-CanData PDMCanData = { &DeviceState.PDM, PDM_ID, 8, processPDMData, PDMTimeout, PDMTIMEOUT };
+CANData PDMCanData = { &DeviceState.PDM, PDM_ID, 8, processPDMData, PDMTimeout, PDMTIMEOUT };
 
 
 //	0x520,0,8 -> BMS_relay_status
 //	0x520,8,8 -> IMD_relay_status
 //	0x520,16,8 -> BSPD_relay_status
-bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength )
+bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
+#ifdef PDM
 	if ( DataLength == FDCAN_DLC_BYTES_8
 		&& CANRxData[0] < 2
 		&& CANRxData[1] < 2
@@ -53,6 +54,9 @@ bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength )
 	}
 	else
 		return false;
+#else
+	return true;
+#endif
 }
 
 
@@ -88,10 +92,12 @@ int errorPDM( void )
 {
 	int returnval = 0;
 
+#ifndef POWERNODES
     if ( receivePDM() == 0 )
     {
     	returnval +=1;
     }
+#endif
 
 	if ( CarState.BMS_relay_status == 1 )
 	{
@@ -152,13 +158,13 @@ int requestPDM( int nodeid )
 	return 0; // this is operating with cansync, no extra needed.
 }
 
-int sendPDM( int buzzer )
+int sendPDM( bool buzzer )
 {
 #ifdef PDMSECONDMESSAGE
 	CANSendPDMFAN();
 #endif
 	bool HVR = true;
-	for ( int i = 0;i<INVERTERCOUNT;i++)
+	for ( int i = 0;i<MOTORCOUNT;i++)
 	{
 		if ( ! CarState.Inverters[i].HighVoltageAllowed) HVR = false;
 	} // HVR will be false if any of the inverters are not in true state.

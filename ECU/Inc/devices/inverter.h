@@ -8,12 +8,12 @@
 #ifndef INVERTER_H_
 #define INVERTER_H_
 
-uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, volatile InverterState *Inverter);
-uint8_t processINVStatus(uint8_t CANRxData[8], uint32_t DataLength, volatile InverterState *Inverter); // try to reread if possible?
-uint8_t processINVTorque(uint8_t CANRxData[8], uint32_t DataLength, volatile InverterState *Inverter);
-uint8_t processINVSpeed(uint8_t CANRxData[8], uint32_t DataLength, volatile InverterState *Inverter); // try to reread if possible?
-uint8_t processINVEmergency(uint8_t CANRxData[8], uint32_t DataLength, volatile InverterState *Inverter); // try to reread if possible?
-uint8_t processINVNMT(uint8_t CANRxData[8], uint32_t DataLength, volatile InverterState *Inverter); // try to reread if possible?
+extern CANData InverterCANErr[];;
+extern CANData InverterCANNMT[];
+extern CANData InverterCANPDO1[];
+extern CANData InverterCANPDO2[];
+extern CANData InverterCANPDO3[];
+extern CANData InverterCANPDO4[];
 
 uint8_t receiveINVNMT( volatile InverterState *Inverter);
 uint8_t receiveINVStatus( volatile InverterState *Inverter );

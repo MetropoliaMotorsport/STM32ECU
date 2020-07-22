@@ -10,7 +10,7 @@
 
 extern time_t rtctime;
 
-extern CanData Memorator;
+extern CANData Memorator;
 
 char * getTimeStr( void );
 

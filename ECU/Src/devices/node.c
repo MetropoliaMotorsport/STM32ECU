@@ -7,14 +7,13 @@
 
 #include "ecumain.h"
 #include <stdarg.h>
-
 #include <stdio.h>
 
-bool processNodeErrData(uint8_t CANRxData[8], uint32_t DataLength );
-bool processNodeAckData(uint8_t CANRxData[8], uint32_t DataLength );
+bool processNodeErrData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
-CanData NodeErr = { NULL, NodeErr_ID, 6, processNodeErrData, NULL, 0 };
-CanData NodeAck = { NULL, NodeAck_ID, 3, processNodeAckData, NULL, 0 };
+CANData NodeErr = { NULL, NodeErr_ID, 6, processNodeErrData, NULL, 0 };
+CANData NodeAck = { NULL, NodeAck_ID, 3, processNodeAckData, NULL, 0 };
 
 
 #define MAXPNODEERRORS		40
@@ -65,7 +64,7 @@ uint32_t Get_Error(uint8_t errorpage, uint8_t errorbit )
 }
 
 
-bool processNodeErrData(uint8_t data[8], uint32_t DataLength)
+bool processNodeErrData(uint8_t data[8], uint32_t DataLength, CANData * datahandle )
 {
 
 	//  0   1536    6  36   4   0   0   0 112   808.810870 R  //  0b01110000   4, 5, 6 + 4*  132, 133,   switch off.
@@ -83,7 +82,7 @@ bool processNodeErrData(uint8_t data[8], uint32_t DataLength)
 					PowerNodeErrors[PowerNodeErrorCount].nodeid = data[0];
 					PowerNodeErrors[PowerNodeErrorCount].error = Get_Error(data[1], i );
 					// do something with the found error.
-					processPNodeErr(PowerNodeErrors[PowerNodeErrorCount].nodeid, PowerNodeErrors[PowerNodeErrorCount].error);
+					processPNodeErr(PowerNodeErrors[PowerNodeErrorCount].nodeid, PowerNodeErrors[PowerNodeErrorCount].error, datahandle );
 					PowerNodeErrorCount++;
 				}
 			}
@@ -92,10 +91,9 @@ bool processNodeErrData(uint8_t data[8], uint32_t DataLength)
 	return true;
 }
 
-bool processNodeAckData(uint8_t CANRxData[8], uint32_t DataLength )
+bool processNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
-
-	if ( CANRxData[0] > 30) processPNodeAckData(CANRxData, DataLength);
+	if ( CANRxData[0] > 30) processPNodeAckData(CANRxData, DataLength, datahandle);
 
 	return true;
 }

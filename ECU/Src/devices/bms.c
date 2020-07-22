@@ -11,16 +11,16 @@
 // byte 5, cell with min voltage - mv, use to trigger
 // 0x9   byte 6-7 last two.
 
-bool processBMSVoltageData(uint8_t CANRxData[8], uint32_t DataLength );
+bool processBMSVoltageData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 void BMSTimeout( uint16_t id );
 
-CanData  BMSVoltage = { &DeviceState.BMS, BMSVOLT_ID, 3, processBMSVoltageData, BMSTimeout, 1000 };
-CanData  BMSOpMode = { &DeviceState.BMS, BMSVOLT_ID, 3, NULL, NULL, 1000 };
-CanData  BMSError = { &DeviceState.BMS, BMSVOLT_ID, 3, NULL, NULL, 1000 };
+CANData  BMSVoltage = { &DeviceState.BMS, BMSVOLT_ID, 3, processBMSVoltageData, BMSTimeout, 1000 };
+CANData  BMSOpMode = { &DeviceState.BMS, BMSVOLT_ID, 3, NULL, NULL, 1000 };
+CANData  BMSError = { &DeviceState.BMS, BMSVOLT_ID, 3, NULL, NULL, 1000 };
 
 
 
-bool processBMSVoltageData(uint8_t CANRxData[8], uint32_t DataLength )
+bool processBMSVoltageData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 	if ( DeviceState.BMSEnabled )
 	{
@@ -91,7 +91,6 @@ bool processBMSError(uint8_t CANRxData[8], uint32_t DataLength )
             return true;
         } else // bad data.
         {
-
             return false;
         }
     } else return true;

@@ -30,8 +30,9 @@ static uint8_t ECUConfigdata[8] = {0};
 static bool	   ECUConfignewdata = false;
 static uint32_t ECUConfigDataTime = 0;
 
+bool GetConfigCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
-CanData ECUConfig = { NULL, 21, 8, GetConfigCmd, NULL, 0 };
+CANData ECUConfig = { NULL, 21, 8, GetConfigCmd, NULL, 0 };
 
 static bool configReset = false;
 
@@ -57,7 +58,7 @@ void ConfigReset( void )
 }
 
 
-bool GetConfigCmd(uint8_t CANRxData[8], uint32_t DataLength )
+bool GetConfigCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 	if ( ECUConfignewdata )
 	{
