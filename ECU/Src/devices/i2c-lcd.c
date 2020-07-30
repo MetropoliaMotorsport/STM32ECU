@@ -693,3 +693,18 @@ int lcd_clearerror( void )
 	inerror = false;
 	return 0;
 }
+
+
+int initLCD( void )
+{
+#ifdef SCREEN
+	MX_I2C3_Init();
+	if ( !lcd_init(&hi2c3) ){
+		DeviceState.LCD = DISABLED;
+	} else
+	{
+		lcd_send_stringposDIR(0,0,"Startup...   ");
+		lcd_clearscroll();
+	}
+#endif
+}

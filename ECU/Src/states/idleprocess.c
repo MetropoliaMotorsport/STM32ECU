@@ -19,7 +19,8 @@ char IdleRequest( void )   // request data / invalidate existing data to ensure 
 //	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
 	CAN_NMTSyncRequest();
 
-	sendHV( false );
+	setHV( false );
+	//setDevicePower( Brake, buzzer );
 
 	// request ready states from devices.
 
@@ -69,8 +70,6 @@ char OperationalReceive( uint16_t returnvalue )
 //				  (0x1 << InverterLReceived)+
 //				  (0x1 << InverterRReceived);
 #endif
-
-
 	}
 
 	// change order, get status from pdo3, and then compare against pdo2?, 2 should be more current being higher priority
@@ -128,16 +127,17 @@ char OperationalReceiveLoop( void )
 
 	// loop for upto 5ms before end process loop time waiting for data or all data received.
 	// allows time to process incoming data, should be ~5ms.
-	do
-	{
+
+	DWT_Delay((PROCESSLOOPTIME-50-(gettimer()-loopstart))*100); // wait for 5ms
+//	do
+//	{
 		// check for resanityceived data and set states
         // check for incoming data, break when all received.
-		looptimer = gettimer() - loopstart;
-		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
-	} while ( /* received != 0 && */ looptimer < PROCESSLOOPTIME-50 ); // check
+//		looptimer = gettimer() - loopstart;
+//		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
+//	} while ( /* received != 0 && */ looptimer < PROCESSLOOPTIME-50 ); // check
 
 	received = OperationalReceive( received );
-
 
 	// check what not received here, only error for inverters
 
@@ -190,6 +190,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	{
 							 //12345678901234567890
 		lcd_setscrolltitle("Ready to activate TS");
+		lcd_clearscroll();
 		CarState.HighVoltageReady = 0;
 		HVEnableTimer = 0;
 		TSRequested = 0;
@@ -203,6 +204,8 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	{
 		CAN_SendStatus(1, IdleState, readystate );
 	}
+
+	PrintRunning();
 
 	IdleRequest(); // process requests
 
@@ -236,7 +239,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	#endif
 #endif
 #ifdef SHUTDOWNSWITCHCHECK
-	  && CarState.ShutdownSwitchesClosed // only allow TS enabling if shutdown switches are all closed.
+	  && CheckShutdown() // only allow TS enabling if shutdown switches are all closed.
 #endif
 	  ) // minimum accumulator voltage to allow TS, set a little above BMS limit, so we can
 	{
@@ -246,20 +249,20 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	}
 
 #ifdef SETDRIVEMODEINIDLE
-	setDriveMode();
+	setCurConfig();
 #endif
 
 
 // allow APPS checking before RTDM
-	int Torque_Req = PedalTorqueRequest();
+	CarState.Torque_Req = PedalTorqueRequest();
 
 	for ( int i=0;i<MOTORCOUNT;i++)  // set all wheels to same torque request
 	{
-		CarState.Inverters[i].Torque_Req = Torque_Req;
-	} //
+		CarState.Inverters[i].Torque_Req = CarState.Torque_Req;
+	}
 
 #ifdef TORQUEVECTOR
-	TorqueVectorProcess( Torque_Req );
+	TorqueVectorProcess( CarState.Torque_Req );
 #endif
 	// fail process, inverters go from 33->60->68  when no HV supplied and request startup.
 
@@ -284,6 +287,14 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		CarState.HighVoltageReady = 0;
 //		blinkOutput(TSLED_Output,LEDBLINK_FOUR,1);
 		TSRequested = 0;
+
+		// SHOW ERROR.
+
+		if ( CheckShutdown() )
+		{
+			lcd_send_stringline(1,"Error Activating TS", 255);
+			lcd_send_stringline(2,"Check TSMS & HVD.", 255);
+		}
 	}
 
 	if ( readystate == 0 && CheckTSActivationRequest() )
@@ -291,18 +302,6 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		TSRequested = 1;
 		HVEnableTimer = gettimer();
 		CarState.HighVoltageReady = 1; // start timer, go to error state after 1am
-
-/*		CarState.HighVoltageReady = 1;
-
-		CarState.HighVoltageAllowedL = 1;
-		CarState.HighVoltageAllowedR = 1;
-
-		while ( 1 )
-		{
-			HAL_Delay(10);
-			sendPDM( 0 );
-		}  */
-		// enable HV, then if successfull, enter TS, otherwise flash error.
 	}
 
 	return IdleState;

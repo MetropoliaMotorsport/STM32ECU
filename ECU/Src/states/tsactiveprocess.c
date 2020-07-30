@@ -32,7 +32,7 @@ int TSActiveRequest( void )
 //	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
 	CAN_NMTSyncRequest();
 
-	sendHV( 0 ); // will enable HV if inverters in ready status and HV enabled flag set.
+	setHV( 0 ); // will enable HV if inverters in ready status and HV enabled flag set.
 
 #ifdef POWERNODES
 	setDevicePower(IVT, 1);
@@ -56,6 +56,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	{
 		 	 	 	 	 	 //12345678901234567890
 		lcd_setscrolltitle("TS Active");
+		lcd_clearscroll();
 		prechargetimer = gettimer();
 		CarState.HighVoltageReady = 1; // only enable if reading high enough voltage.
 		setOutput(TSLED_Output,LEDON);
@@ -151,8 +152,14 @@ int TSActiveProcess( uint32_t OperationLoops )
 	    return RunningState;
 	}
 
+	if ( CheckActivationRequest() )
+	{
+		if ( !prechargedone )
+		{
+		 lcd_send_stringline(1,"Wait for Precharge", 255);
+		} else return IdleState;  // if requested disable TS drop state
+	}
 
-	if ( CheckActivationRequest() && prechargedone ) return IdleState;  // if requested disable TS drop state
 
 	return TSActiveState;
 }

@@ -86,11 +86,13 @@ void setOutputNOW(int output, char state); //  doesn't wait for timer to set out
 void toggleOutput(int output);
 void toggleOutputMetal(int output);
 void blinkOutput(int output, int blinkingrate, int time);
-void setupLEDs( void );
+
 void setLEDs( void );
 void startupLEDs(void);
 
 int getGpioPin(int output);
 GPIO_TypeDef* getGpioPort(int output);
+
+int initOutput( void );
 
 #endif /* OUTPUT_H_ */

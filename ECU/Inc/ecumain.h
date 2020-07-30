@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
+
 #include "main.h"
 
 #ifdef HPF19
@@ -18,14 +20,19 @@
 #endif
 #include "fdcan.h"
 #include "tim.h"
+#include "dma.h"
+#include "i2c.h"
 #include "adc.h"
 #include "comp.h"
 
 #include "ecu.h"
 
+#include "canecu.h"
+
+extern CANData ECUCAN;
+
 #include "output.h"
 #include "input.h"
-#include "canecu.h"
 
 #include "preoperation.h"
 #include "operationreadyness.h"
@@ -52,7 +59,8 @@
 #include "node.h"
 #include "shutdown.h"
 #include "power.h"
-
+#include "imu.h"
+#include "torquecontrol.h"
 
 int realmain(void);
 

@@ -36,6 +36,13 @@ CANData ECUConfig = { NULL, 21, 8, GetConfigCmd, NULL, 0 };
 
 static bool configReset = false;
 
+
+int initConfig( void )
+{
+	RegisterCan1Message(&ECUConfig);
+	return 0;
+}
+
 bool checkConfigReset( void )
 {
 	if ( configReset )
@@ -73,7 +80,7 @@ bool GetConfigCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandl
 }
 
 
-void setDriveMode(void)
+void setCurConfig(void)
 {
 #ifndef HPF19
 
@@ -85,12 +92,15 @@ void setDriveMode(void)
 		SetupTorque(CarState.PedalProfile);
 		CarState.LimpDisable = !getEEPROMBlock(0)->LimpMode;
 		CarState.Torque_Req_Max = getEEPROMBlock(0)->MaxTorque;
+		CarState.FanPowered = getEEPROMBlock(0)->Fans;
+
 	} else
 	{
 		CarState.PedalProfile = 0;
 		SetupTorque(CarState.PedalProfile);
 		CarState.LimpDisable = 0;
 		CarState.Torque_Req_Max = 5;
+		CarState.FanPowered = true;
 	}
 
 
@@ -366,7 +376,7 @@ bool DoMenu()
 	static int8_t top = 0;
 	static bool inedit = false;
 
-	static int menusize = 4;
+	static int menusize = 5;
 
 	static char MenuLines[6][21] = { 0 };
 
@@ -403,6 +413,7 @@ bool DoMenu()
 		doMenuIntEdit( MenuLines[2], "Max Nm", (selection==1), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals );
 		doMenuPedalEdit( MenuLines[3], "Accel", (selection==2), &inedit, &getEEPROMBlock(0)->PedalProfile );
 		doMenuBoolEdit( MenuLines[4], "LimpDisable", (selection==3), &inedit, &getEEPROMBlock(0)->LimpMode);
+		doMenuBoolEdit( MenuLines[5], "Fans", (selection==4), &inedit, &getEEPROMBlock(0)->Fans);
 
 //		sprintf(MenuLines[3], "%cAccel: %s", (selection==2) ? '>' :' ', GetPedalProfile(CarState.PedalProfile, false));
 
@@ -453,8 +464,8 @@ int CheckConfigurationRequest( void )
 		}
 		// TODO move to better place. setup default ADC lookup tables.
 		initialconfig = false; // call interpolation table setup once only.
-		CarState.Torque_Req_Max = 5;
-		CarState.Torque_Req_CurrentMax = 5;
+		CarState.Torque_Req_Max = 0;
+		CarState.Torque_Req_CurrentMax = 0;
 	}
 
 	if ( ReceiveInProgress && gettimer() > ECUConfigDataTime + 10000 )
@@ -494,7 +505,7 @@ int CheckConfigurationRequest( void )
 		DoMenu();
 	}
 
-	sprintf(str,"Conf: %dnm %s %c", CarState.Torque_Req_Max, GetPedalProfile(CarState.PedalProfile, true), (!CarState.LimpDisable)?'T':'F' );
+	sprintf(str,"Conf: %dnm %s %c %s", CarState.Torque_Req_Max, GetPedalProfile(CarState.PedalProfile, true), (!CarState.LimpDisable)?'T':'F', (CarState.FanPowered)?"Fan":""  );
 	lcd_send_stringline(3,str, 255);
 
 	// check for config change messages. - broken?

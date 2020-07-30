@@ -1,5 +1,5 @@
 /*
- * ecu.h
+ * canecu.h
  *
  *  Created on: 27 Apr 2019
  *      Author: Visa
@@ -8,7 +8,7 @@
 #ifndef CANECU_H_
 #define CANECU_H_
 
-//#include "ecumain.h"
+#include "ecumain.h"
 
 // definition of CAN ID's for nodes - Bus definitions not currently used
 
@@ -81,13 +81,12 @@
 	#define INV2_BUS				CANB0
 #endif
 
-#define InverterRL_COBID			0x7E // 126 // swap
-#define InverterRR_COBID			0x7F // 127 // swap
-
-#ifdef HPF20
-#define InverterFL_COBID			0x7C // 124 // swap
-#define InverterFR_COBID			0x7D // 125 // swap
-#endif
+#define COBERR_ID				(0x80)
+#define COBNMT_ID				(0x700)
+#define COBPDO1_ID				(0x180)
+#define COBPDO2_ID				(0x280)
+#define COBPDO3_ID				(0x380)
+#define COBPDO4_ID				(0x480)
 
 #define Inverter_BUS			hfdcan2
 
@@ -131,6 +130,7 @@ typedef volatile struct CanDataType {
 	TimeoutHandler doTimeout;
 	uint32_t timeout;
 	uint8_t  index;
+	bool	 CanOpen;
 	uint32_t time;
 	bool	 seen;
 	uint16_t error;
@@ -141,15 +141,6 @@ typedef volatile struct CanDataType {
 // CANBus
 
 volatile struct CanState {
-	volatile CANData InverterERR[MOTORCOUNT];
-
-//	volatile CanData InverterPDO1[MOTORCOUNT];
-	volatile CANData InverterPDO2[MOTORCOUNT];
-	volatile CANData InverterPDO3[MOTORCOUNT];
-	volatile CANData InverterPDO4[MOTORCOUNT];
-
-	volatile CANData InverterNMT;
-
 #ifndef HPF20
 	volatile struct CANData FLeftSpeedERR;
 	volatile struct CANData FRightSpeedERR;
@@ -160,22 +151,6 @@ volatile struct CanState {
 	volatile struct CANData FLeftSpeedNMT;
 	volatile struct CANData FRightSpeedNMT;
 #endif
-
-	volatile CANData Memorator;
-
-//	volatile CanData BMSVolt;
-//	volatile CanData BMSError;
-//	volatile CanData BMSOpMode;
-
-	volatile CANData ECU;
-//	volatile CanData ECUConfig;
-
-	/*
-	volatile CanData  AnalogNode15; // tyre temps FL
-	volatile CanData  AnalogNode16; // tyre temps FR
-	volatile CanData  AnalogNode17; // tyre temps RL
-	volatile CanData  AnalogNode18; // tyre temps RR
-	 */
 } CanState;
 
 //canbus
@@ -227,8 +202,12 @@ char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error );
 void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLength );
 int receivedCANData( CANData * datahandle );
 
+
+int RegisterCan1Message(CANData * CanMessage);
+int RegisterCan2Message(CANData * CanMessage);
+
 // initialisation
-void FDCAN1_start(void);
-void FDCAN2_start(void);
+
+int initCAN( void );
 
 #endif /* CANECU_H_ */

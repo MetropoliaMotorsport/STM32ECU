@@ -74,9 +74,9 @@ typedef struct eepromdatastruct {
 
 	//uint8_t CoolantSize
 	uint16_t CoolantInput[20];
-	int16_t CoolantOutput[20];  // 81 bytes.
+	int16_t CoolantOutput[20];  // 80 bytes.
 
-	uint16_t DrivingModeInput[8]; //  16 bytes
+	uint16_t DrivingModeInput[8]; //  16 bytes -- 506 bytes to here
 
 	// config data
 
@@ -84,21 +84,13 @@ typedef struct eepromdatastruct {
 	uint8_t PedalProfile;
 	bool LimpMode;
 	bool TorqueVectoring;
+	bool Fans;						// 511 bytes
 
-} eepromdata;
-
-//uint16_t DrivingModeOutput[] // not needed, static
+} eepromdata; // max 1600bytes=50*32byte blocks.
 
 // 503 - 16 blocks. allocate 50 blocks : 128 blocks total
 
-// create a simple EEPROM checksum.two blocks of 1.5k
-// two banks of 1.9k data.
-// 2016 bytes per bank.
-
-// use last 32bytes as emergency data.
-
-
-int initiliseEEPROM( void );
+int initEEPROM( void );
 
 bool checkversion(char * data);
 
@@ -115,6 +107,10 @@ int writeConfigEEPROM( void );
 int writeEEPROMCurConf( void );
 
 bool writeEEPROMDone( void );
+
+
+bool stopEEPROM( void );
+bool EEPROMBusy( void );
 
 #endif /* EEPROM_H_ */
 

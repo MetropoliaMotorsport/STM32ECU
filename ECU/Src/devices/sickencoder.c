@@ -163,5 +163,11 @@ int requestsick( int nodeid )
 	return 0; // this is operating with CANopen sync, no extra needed.
 }
 
+
+int initSick( void )
+{
+
+}
+
 #endif
 

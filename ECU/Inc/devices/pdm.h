@@ -13,6 +13,7 @@ extern CANData PDMCanData;
 int receivePDM( void );
 int errorPDM( void );
 int sendPDM( bool buzzer );
+void resetPDM( void );
 void initPDM( void );
 
 #endif /* PDM_H_ */

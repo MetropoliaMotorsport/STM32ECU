@@ -11,6 +11,13 @@
   #include "vhd44780.h"
 #endif
 
+
+
+//bool GetECUCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+
+CANData ECUCAN = { NULL, 21, 8, NULL, NULL, 0 };
+
+
 /** deal with endianness for canbus
  * function from https://stackoverflow.com/questions/39622332/reading-big-endian-files-in-little-endian-system
  * not actually being currently used
@@ -25,6 +32,26 @@ void swapByteOrder_int16(double *current, const int16_t *rawsignal, size_t lengt
     }
 }
 
+inline uint32_t getLEint32( uint8_t data[4] )
+{
+  return data[3]*16777216+data[2]*65536+data[1]*256+data[0];
+}
+
+inline uint16_t getLEint16( uint8_t data[2] )
+{
+  return data[1]*256+data[0];
+}
+
+inline uint32_t getBEint32( uint8_t data[4] )
+{
+  return data[0]*16777216+data[1]*65536+data[2]*256+data[3];
+}
+
+inline uint16_t getBEint16( uint8_t data[2] )
+{
+  return data[0]*256+data[1];
+}
+
 void RearSpeedCalculation( long leftdata, long rightdata )
 {
 /*	CarState.Wheel_Speed_Right_Calculated = Speed_Right_Inverter.data.longint * (1/4194304) * 60; // resolution 4194304 for one revolution
@@ -33,7 +60,7 @@ void RearSpeedCalculation( long leftdata, long rightdata )
 */
 }
 
-uint8_t getByte(uint32_t input, int8_t returnbyte)
+inline uint8_t getByte(uint32_t input, int8_t returnbyte)
 {
 	union {
 		uint32_t integer;
@@ -44,7 +71,7 @@ uint8_t getByte(uint32_t input, int8_t returnbyte)
 }
 
 
-void storeBEint32(uint32_t input, uint8_t Data[4])
+inline void storeBEint32(uint32_t input, uint8_t Data[4])
 {
 	Data[0] = getByte(input,3);
 	Data[1] = getByte(input,2);
@@ -53,14 +80,14 @@ void storeBEint32(uint32_t input, uint8_t Data[4])
 }
 
 
-void storeBEint16(uint16_t input, uint8_t Data[2])
+inline void storeBEint16(uint16_t input, uint8_t Data[2])
 {
 	Data[0] = getByte(input,1);
 	Data[1] = getByte(input,0);
 }
 
 
-void storeLEint32(uint32_t input, uint8_t Data[4])
+inline void storeLEint32(uint32_t input, uint8_t Data[4])
 {
 	Data[0] = getByte(input,0);
 	Data[1] = getByte(input,1);
@@ -69,8 +96,14 @@ void storeLEint32(uint32_t input, uint8_t Data[4])
 }
 
 
-void storeLEint16(uint16_t input, uint8_t Data[2])
+inline void storeLEint16(uint16_t input, uint8_t Data[2])
 {
 	Data[0] = getByte(input,0);
 	Data[1] = getByte(input,1);
+}
+
+int initECU( void )
+{
+	RegisterCan1Message(&ECUCAN);
+	return 0;
 }

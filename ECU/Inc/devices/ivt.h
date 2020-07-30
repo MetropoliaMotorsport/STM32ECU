@@ -14,7 +14,6 @@ int receiveIVT( void );
 
 int requestIVT( void );
 
-
 int initIVT( void );
 
 #endif /* IVT_H_ */

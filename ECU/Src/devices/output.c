@@ -273,7 +273,7 @@ void timeOutput(int output, int time) // max 30 seconds if timed.
 /**
  * @brief setup start state of LED's to off.
  */
-void setupLEDs( void )
+int initOutput( void )
 {
 	for ( int i = 0; i < OUTPUTCount; i++)
 	{
@@ -282,7 +282,8 @@ void setupLEDs( void )
 		LEDs[i].blinktime = 0; // set default state of LED's to off, no blinking
 	}
 
-	  blinkOutput(LED1_Output, LEDBLINK_ONE, LEDBLINKNONSTOP); // startup board activity blinker/power light.
+	blinkOutput(LED1_Output, LEDBLINK_ONE, LEDBLINKNONSTOP); // startup board activity blinker/power light.
+	return 0;
 }
 
 /**
@@ -292,9 +293,9 @@ void __setLEDs( void )
 {
 	// Check. 10 second delay for IMD led in simulink. IMD Light power off delay. missed earlier, significance?
 
-	setOutput(BMSLED_Output, CarState.BMS_relay_status);
-	setOutput(IMDLED_Output, CarState.IMD_relay_status);
-	setOutput(BSPDLED_Output, CarState.BSPD_relay_status);
+	setOutput(BMSLED_Output, CarState.Shutdown.BMS);
+	setOutput(IMDLED_Output, CarState.Shutdown.IMD);
+	setOutput(BSPDLED_Output, CarState.Shutdown.BSPDBefore);
 
 //	if ( CarState.TSALLeftInvLED == 1 && CarState.TSALRightInvLED == 1 )
 	{

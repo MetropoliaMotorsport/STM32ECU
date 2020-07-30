@@ -28,5 +28,7 @@ int receiveAnalogNodes( void );
 
 int receiveAnalogNodesCritical( void );
 
+int initAnalogNodes( void );
+
 #endif /* ANALOGNODE_H_ */
 

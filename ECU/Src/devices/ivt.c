@@ -41,8 +41,8 @@ CANData IVTCan[8] = {
 	{ &DeviceState.IVT, IVTBase_ID+1, 6, processIVTU1Data, NULL, 0 },
 	{ &DeviceState.IVT, IVTBase_ID+2, 6, processIVTU2Data, NULL, 0 },
 	{ &DeviceState.IVT, IVTBase_ID+3, 6, processIVTU3Data, NULL, 0 },
-	{ &DeviceState.IVT, IVTBase_ID+4, 6, processIVTTData, NULL, 0 },
-	{ &DeviceState.IVT, IVTBase_ID+5, 6, processIVTWData, NULL, 0 },
+	{ &DeviceState.IVT, IVTBase_ID+4, 6, processIVTTData,  NULL, 0 },
+	{ &DeviceState.IVT, IVTBase_ID+5, 6, processIVTWData,  NULL, 0 },
 	{ &DeviceState.IVT, IVTBase_ID+6, 6, processIVTAsData, NULL, 0 },
 	{ &DeviceState.IVT, IVTBase_ID+7, 6, processIVTWhData, NULL, 0 }
 };
@@ -326,7 +326,7 @@ int IVTstate( void ) // not currently being used, not properly functional
 }
 
 
-int initIVT( void )
+void resetIVT( void )
 {
 #ifdef IVTEnable
 	DeviceState.IVTEnabled = ENABLED;
@@ -337,6 +337,19 @@ int initIVT( void )
 	DeviceState.IVT = OFFLINE;
 	CarState.Power=0;
 	CarState.Current=0;
-	return 0;
 }
 
+int initIVT( void )
+{
+	RegisterResetCommand(resetIVT);
+
+	resetIVT();
+
+	for ( int i=0;i<8;i++)
+#if IVT_BUS == CANB1
+		RegisterCan1Message(&IVTCan[i]);
+#else
+		RegisterCan2Message(&IVTCan[i]);
+#endif
+	return 0;
+}

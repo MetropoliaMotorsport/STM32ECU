@@ -15,7 +15,6 @@ bool processNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 CANData NodeErr = { NULL, NodeErr_ID, 6, processNodeErrData, NULL, 0 };
 CANData NodeAck = { NULL, NodeAck_ID, 3, processNodeAckData, NULL, 0 };
 
-
 #define MAXPNODEERRORS		40
 
 
@@ -96,5 +95,16 @@ bool processNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 	if ( CANRxData[0] > 30) processPNodeAckData(CANRxData, DataLength, datahandle);
 
 	return true;
+}
+
+int initNodes( void )
+{
+	RegisterCan1Message(&NodeErr);
+	RegisterCan1Message(&NodeAck);
+
+	RegisterCan2Message(&NodeErr); // nodes on both CAN's
+	RegisterCan2Message(&NodeAck);
+
+	return 0;
 }
 

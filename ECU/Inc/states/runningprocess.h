@@ -12,6 +12,8 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime );
 
 uint16_t PedalTorqueRequest( void );
 
+uint16_t PrintRunning( void );
+
 #ifdef TORQUEVECTOR
 uint16_t TorqueVectorProcess( int torquerequest );
 #endif

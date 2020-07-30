@@ -25,7 +25,7 @@ typedef struct nodepowerreqstruct {
 } nodepowerreq;
 
 typedef struct devicepowerreqstruct {
-	DeviceId device; //
+	DevicePower device; //
 	uint8_t nodeid;
 	uint8_t output; // enable
 	uint8_t state; // request state
@@ -45,14 +45,18 @@ devicepowerreq DevicePowerList[] =
 		{ LeftPump, 35, 4 },
 		{ RightPump, 35, 5 },
 
-		{ IVT, 36, 1 },
-		{ Buzzer, 36, 0 },
+		{ Brake, 36, 1 },
+		{ Buzzer, 36, 2 },
+		{ IVT, 36, 3 },
+		{ Accu, 36, 4 },
+		{ AccuFan, 36, 5},
 
 		{ Current, 37, 4 },
 		{ TSAL, 37, 5 },
 
-		{ 0 }
+		{ None }
 };
+
 
 nodepowerreq PowerRequests[] =
 {		{ 33, 0, 0, {0} },
@@ -63,8 +67,6 @@ nodepowerreq PowerRequests[] =
 		{ 0 }
 };
 
-
-
 bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
@@ -72,20 +74,41 @@ bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
 
+void PNode33Timeout( uint16_t id );
+void PNode34Timeout( uint16_t id );
+
 //bool processPNodeTimeout(uint8_t CANRxData[8], uint32_t DataLength );
 
 
 bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle );
 bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
-CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, NULL, NODETIMEOUT }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
-CANData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, NULL, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
+CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, PNode33Timeout, NODETIMEOUT }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
+CANData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, PNode34Timeout, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
 CANData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
 CANData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, NULL, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
 CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 3, processPNode37Data, NULL, NODETIMEOUT }; // [?], Current, TSAL.
 
 
 int sendPowerNodeErrReset( uint8_t id, uint8_t channel );
+
+
+void PNode33Timeout( uint16_t id )
+{
+/*	CarState.Shutdown.BOTS = 0;
+	CarState.Shutdown.InertiaSwitch = 0;
+	CarState.Shutdown.BSPDAfter = 0;
+	CarState.Shutdown.BSPDBefore = 0;
+	*/
+}
+
+void PNode34Timeout( uint16_t id )
+{
+	CarState.Shutdown.CockpitButton = 0; // TODO set to right inputs.
+	CarState.Shutdown.LeftButton = 0;
+	CarState.Shutdown.RightButton = 0;
+}
+
 
 bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
@@ -96,10 +119,10 @@ bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 		&& ( CANRxData[2] >= 0 && CANRxData[2] < 255 )
 		)
 	{
-//		CarState.BOTS = (CANRxData[0] & (0x1 << 4) );
-//		CarState.InertiaSwitch = (CANRxData[0] & (0x1 << 0) );
-//		CarState.BSPDAfter = (CANRxData[0] & (0x1 << 2) );
-//		CarState.BSPDBefore = (CANRxData[0] & (0x1 << 3) );
+		CarState.Shutdown.BOTS = (CANRxData[0] & (0x1 << 4) );
+		CarState.Shutdown.InertiaSwitch = (CANRxData[0] & (0x1 << 0) );
+		CarState.Shutdown.BSPDAfter = (CANRxData[0] & (0x1 << 2) );
+		CarState.Shutdown.BSPDBefore = (CANRxData[0] & (0x1 << 3) );
 //		CarState.I_Telementry =  CANRxData[1];
 //		CarState.I_Front1 =  CANRxData[2];
 		return true;
@@ -120,7 +143,10 @@ bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 		&& CANRxData[3] < 255
 		)
 	{
-		CarState.ShutdownSwitchesClosed = CANRxData[0];
+//		CarState.ShutdownSwitchesClosed = CANRxData[0];
+		CarState.Shutdown.CockpitButton = (CANRxData[0] & (0x1 << 2) ); // TODO set to right inputs.
+		CarState.Shutdown.LeftButton = (CANRxData[0] & (0x1 << 3) );
+		CarState.Shutdown.RightButton = (CANRxData[0] & (0x1 << 4) );
 //		CarState.I_Inverters =  CANRxData[1];
 //		CarState.I_ECU =  CANRxData[2];
 //		CarState.I_Front2 =  CANRxData[3];
@@ -173,7 +199,21 @@ bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 		CarState.I_IVT = CANRxData[2];
 		CarState.I_AccuPCBs = CANRxData[3];
 		CarState.I_AccuFans = CANRxData[4];
-		CarState.Freq_IMD = CANRxData[5];
+		CarState.Freq_IMD = CANRxData[5]; // IMD Shutdown.
+
+		// normal operational status, else assume error.
+		if ( CarState.Freq_IMD >= 5 && CarState.Freq_IMD < 15 )
+			CarState.Shutdown.IMD = true;
+		else
+			CarState.Shutdown.IMD = false;
+
+//		should be 10 Hz in normal situation (I think duty cycle was based on measured resistance or something)
+//		and then 50 Hz for fault state (50% duty cycle),
+//		40 Hz is internal error,
+//		20 Hz we should never see, then not sure what 30 Hz is
+//		it also wasn't 10 Hz on power up,
+//		I dont' remember what it was on power up though, might have been 30 Hz
+
 		CarState.DC_IMD = CANRxData[6];
 
 		return true;
@@ -223,10 +263,7 @@ bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * da
 	return true;
 }
 
-
-
 // ERROR list from powernode main.h
-
 
 #define WARN_UNDERVOLT_U5				193
 #define WARN_OVERVOLT_U5				194
@@ -323,6 +360,7 @@ int receivePowerNodes( void )
 	if ( receivedCANData(&PowerNode35) ) nodesonline -= 4;
 	if ( receivedCANData(&PowerNode36) ) nodesonline -= 8;
 	if ( receivedCANData(&PowerNode37) ) nodesonline -= 16;
+
 	return nodesonline;
 }
 
@@ -338,11 +376,11 @@ int average(int count, ...)
 }
 
 
-int setDevicePower( DeviceId device, bool state )
+int setDevicePower( DevicePower device, bool state )
 {
 	int powerreqset = 1;
 
-	for ( int i=0;DevicePowerList[i].device != 0;i++)
+	for ( int i=0;DevicePowerList[i].device != None;i++)
 	{
 		if ( DevicePowerList[i].device == device )
 		{ // found the device in list, try to set request.
@@ -380,10 +418,10 @@ int sendPowerNodeErrReset( uint8_t id, uint8_t channel )
 	return 0;
 }
 
-bool powerErrorOccurred( DeviceId device )
+bool powerErrorOccurred( DevicePower device )
 {
 
-	for ( int i=0;DevicePowerList[i].device != 0;i++)
+	for ( int i=0;DevicePowerList[i].device != None;i++)
 	{
 		if ( DevicePowerList[i].device == device )
 		{ // found the device in list, try to set request.
@@ -425,4 +463,36 @@ int sendPowerNodeReq( void )
 
 	};
 	return senderror;
+}
+
+void resetPowerNodes( void )
+{
+	CarState.Shutdown.BOTS = false;
+	CarState.Shutdown.InertiaSwitch = false;
+	CarState.Shutdown.BSPDAfter = false;
+	CarState.Shutdown.BSPDBefore = false;
+	CarState.Shutdown.CockpitButton = false;
+	CarState.Shutdown.LeftButton = false;
+	CarState.Shutdown.RightButton = false;
+
+	CarState.Shutdown.BMS = false;
+	CarState.Shutdown.BMSReason = false;
+	CarState.Shutdown.IMD = false;
+	CarState.Shutdown.AIROpen = false;
+}
+
+int initPowerNodes( void )
+{
+
+	RegisterResetCommand(resetPowerNodes);
+
+	resetPowerNodes();
+
+	RegisterCan1Message(&PowerNode33);
+	RegisterCan1Message(&PowerNode34);
+	RegisterCan1Message(&PowerNode35);
+	RegisterCan1Message(&PowerNode36);
+	RegisterCan1Message(&PowerNode37);
+
+	return 0;
 }

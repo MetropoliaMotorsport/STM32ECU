@@ -10,16 +10,18 @@
 
 #include <stdbool.h>
 
-
 #define HPF20
 
-//#define HPF2019
+//#define HPF19
 
 #ifdef HPF20
 	#define EEPROMSTORAGE
 	#define SCREEN
 	#define POWERNODES
 	#define ANALOGNODES
+	#define MATLAB
+	#define USEIMU
+	#define PWMSTEERING
 #endif
 // Calibration settings for pedals.
 
@@ -186,9 +188,10 @@
 #else
 #define PDMTIMEOUT				4500 // 450ms to be rules compliant
 #define PROCESSLOOPTIME 		100   // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
-#define BMSTIMEOUT				50000 // 5 seconds
+#define BMSTIMEOUT				4500 // was 5 seconds as bodge
 #define IVTTIMEOUT				4500  // < 500ms for rules compliance on Power reading.
 #define IVTTIMEOUTWATTS			4500
+#define IMUTIMEOUT				300 // needs to be uptodate to be useful.
 #define INVERTERTIMEOUT			1000 // 10 cycles, 100ms.
 #define SICKTIMEOUT             200 // 2 cycles, then set speeds to zero.
 #define STMADC
@@ -339,17 +342,28 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	uint16_t COBID;
 } InverterState;  // define external into realmain?
 
+
+typedef struct {
+	bool BOTS;
+	bool InertiaSwitch;
+	bool BSPDAfter;
+	bool BSPDBefore;
+	bool CockpitButton;
+	bool LeftButton;
+	bool RightButton;
+
+	bool BMS;
+	uint8_t BMSReason;
+	bool IMD;
+	bool AIROpen;
+
+} ShutdownState;
+
 volatile struct CarState {
 	uint8_t brake_balance;
 
 	char HighVoltageReady;
 	uint8_t TestHV;
-
-	char BMS_relay_status;
-	char IMD_relay_status;
-	char BSPD_relay_status;
-	char AIROpen;
-	char ShutdownSwitchesClosed;
 
 	InverterState Inverters[MOTORCOUNT];
 	uint16_t COBID;
@@ -358,6 +372,7 @@ volatile struct CarState {
 	uint8_t  TorqueVectoring;
 #endif
 
+	int32_t Torque_Req;
 	uint8_t Torque_Req_Max;
     uint8_t Torque_Req_CurrentMax;
     uint32_t PowerLimit;
@@ -386,8 +401,6 @@ volatile struct CarState {
 //	int32_t Wheel_Speed_Rear_Average;
 //	int32_t Wheel_Speed_Average;
 
-//	uint8_t StopLED;
-
 	uint8_t I_BrakeLight;
 	uint8_t I_Buzzers;
 	uint8_t I_IVT;
@@ -396,28 +409,10 @@ volatile struct CarState {
 	uint8_t Freq_IMD;
 	uint8_t DC_IMD;
 
+	ShutdownState Shutdown;
+
 } CarState, LastCarState, ErrorCarState;  // define external into realmain?
 
-
-/*
-struct Device {
-uint8_t	State;
-uint8_t id_count;
- *CANid;
-		id_count
-		[can ids]
-			id
-			Timeout period Used to timeout operational state, if zero, don't timeout on this data.
-			id data handler func. ( return bool, data good or bad )
-			Errors.FLSpeedReceive++; ( data error )
-			LastReceived
-			timeouterrors.
-
-
-	};
-
-};
-*/
 
 typedef enum DeviceStatustype {
 	BOOTUP,
@@ -436,8 +431,10 @@ struct DeviceState {
 	bool BMSEnabled;
 	bool LoggingEnabled;
 	DeviceStatus ADC;
+	DeviceStatus PWM;
 	DeviceStatus Inverters[MOTORCOUNT];
 	DeviceStatus BMS;
+	DeviceStatus IMU;
 	DeviceStatus PDM;
 	DeviceStatus FLSpeed;
 	DeviceStatus FRSpeed;
@@ -513,7 +510,13 @@ void storeBEint16(uint16_t input, uint8_t Data[2]);
 void storeLEint32(uint32_t input, uint8_t Data[4]);
 void storeLEint16(uint16_t input, uint8_t Data[2]);
 
+uint32_t getLEint32( uint8_t data[4] );
+uint16_t getLEint16( uint8_t data[2] );
+uint32_t getBEint32( uint8_t data[4] );
+uint16_t getBEint16( uint8_t data[2] );
+
 uint8_t getByte(uint32_t input, int8_t returnbyte);
 
+int initECU( void );
 
 #endif /* ECU_H_ */

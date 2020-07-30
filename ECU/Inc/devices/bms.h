@@ -15,5 +15,7 @@ extern CANData BMSError;
 int receiveBMS( void );
 void sendBMS( void );
 
+int initBMS( void );
+
 #endif /* BMS_H_ */
 

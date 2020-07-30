@@ -8,7 +8,7 @@
 #include "ecumain.h"
 #include "interrupts.h"
 
-void setupInterrupts( void )
+void initInterrupts( void )
 {
 	InButtonpress = 1; // stops random button events triggering till interrupts are properly enabled.
 

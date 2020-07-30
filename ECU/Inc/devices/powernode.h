@@ -11,7 +11,8 @@
 #include "ecumain.h"
 
 
-typedef enum DeviceIDtype {
+typedef enum DevicePowertype {
+	None, // ensure 0 is not an actual device.
 	Buzzer,
 	Telemetry,
 	Front1,
@@ -24,9 +25,12 @@ typedef enum DeviceIDtype {
 	RightPump,
 	IVT,
 	Current,
-	TSAL
+	TSAL,
+	Brake,
+	Accu,
+	AccuFan
 
-} DeviceId;
+} DevicePower;
 
 extern CANData PowerNodeErr;
 extern CANData PowerNodeAck;
@@ -42,10 +46,12 @@ bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * da
 
 int receivePowerNodes( void );
 
-int setDevicePower( DeviceId device, bool state );
+int setDevicePower( DevicePower device, bool state );
 int sendPowerNodeReq( void );
 
-bool powerErrorOccurred( DeviceId device );
+bool powerErrorOccurred( DevicePower device );
+
+int initPowerNodes( void );
 
 #endif /* POWERNODE_H_ */
 

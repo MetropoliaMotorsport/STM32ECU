@@ -14,5 +14,7 @@
 extern CANData NodeErr; // [BOTS, inertia switch, BSPD.], Telemetry, front power
 extern CANData NodeAck;
 
+int initNodes( void );
+
 #endif /* NODE_H_ */
 

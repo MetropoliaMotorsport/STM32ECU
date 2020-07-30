@@ -18,7 +18,7 @@ int ReadyRequest( void )   // request data / invalidate existing data to ensure 
 
 //	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
 	CAN_NMTSyncRequest(); // anything working with cansync will respond with
-	sendHV( false );
+	setHV( false );
 
 	// request ready states from devices.
 

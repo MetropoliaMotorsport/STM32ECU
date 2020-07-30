@@ -11,10 +11,12 @@
 CANData ECUConfig;
 
 int CheckConfigurationRequest( void );
-void setDriveMode(void);
+void setCurConfig(void);
 
 
 void ConfigReset( void );
 bool checkConfigReset( void );
+
+int initConfig( void );
 
 #endif /* CONFIGURATION_H_ */

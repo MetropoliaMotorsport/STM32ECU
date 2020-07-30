@@ -162,6 +162,14 @@ HAL_StatusTypeDef stopADC( void );
 
 void minmaxADCReset(void);
 
+#ifdef HPF19
+void receiveCANInput( uint8_t * CANRxData );
+
+int initCANADC( void );
+#endif
+
 uint16_t CheckADCSanity( void );
+
+int initADC( void );
 
 #endif /* ADCECU_H_ */

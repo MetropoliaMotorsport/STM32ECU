@@ -165,8 +165,9 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	char RequestState = PreOperationalState; // initialise to PreOperationalState as default requested next state.
 
-	char str[80] = "PreStart    ";
-	strcat(str,getTimeStr());
+	char str[80] = "";
+
+	sprintf(str,"Boot   %8.8s %.3liv",getTimeStr(), CarState.VoltageBMS);
 
 	lcd_send_stringline(0,str, 255);
 
@@ -188,6 +189,8 @@ int PreOperationState( uint32_t OperationLoops  )
 			setDevicePower(Inverters, 1);
 			setDevicePower(Front2, 1);
 
+			initVectoring();
+
 	 //   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
 	    	// send to individual devices rather than reset everything if needed.
 	    }
@@ -202,7 +205,7 @@ int PreOperationState( uint32_t OperationLoops  )
     	if ( DeviceState.IVTEnabled && DeviceState.IVT == OFFLINE )
     	{
     		if ( !powerErrorOccurred( IVT ) )
-    			setDevicePower(IVT, 1);
+    			setDevicePower(IVT, true);
     		else
     		{
 				Errors.ErrorPlace = 0xAA;
@@ -285,6 +288,15 @@ int PreOperationState( uint32_t OperationLoops  )
 				if (preoperationstate & (0x1 << PedalADCReceived) ) { strcat(str, "ADC " ); }
 #endif
 
+				if (ReadyToStart & (0x1 << 3 ) ) {
+
+					strcat(str, "SDC(" );
+
+						strcat(str, ShutDownOpenStr());
+
+					strcat(str, ") " );
+				}
+
 #ifndef POWERNODES
 				if (! ( preoperationstate & (0x1 << PDMReceived) ) ) {
 				// only show as PDM error if pdm is on bus.
@@ -294,7 +306,6 @@ int PreOperationState( uint32_t OperationLoops  )
 				}
 #endif
 				if (ReadyToStart & (0x1 << 2 ) ) { strcat(str, "INV " );  }
-				if (ReadyToStart & (0x1 << 3 ) ) { strcat(str, "ShutdownSW " );  }
 
 				strpad(str,20);
 
@@ -321,7 +332,7 @@ int PreOperationState( uint32_t OperationLoops  )
 //	ResetCanReceived();
 
 	uint32_t loopstart = gettimer();
-	uint32_t looptimer = 0;
+//	uint32_t looptimer = 0;
 
 
 	// check if received configuration requests, or mode change -> testing state.
@@ -349,16 +360,19 @@ int PreOperationState( uint32_t OperationLoops  )
 	CAN_NMTSyncRequest();
 #endif
 
-	sendHV( 0 );
+	setHV( 0 );
 
 	// checks if we have heard from other necessary connected devices for operation.
-
-	while (  looptimer < PROCESSLOOPTIME-50 ) {
+/*
+while (  looptimer < PROCESSLOOPTIME-50 ) {
 		looptimer = gettimer() - loopstart;
 #ifdef WFI
 		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
 #endif
 	}; // check
+*/
+
+	DWT_Delay((PROCESSLOOPTIME-50-(gettimer()-loopstart))*100); // wait for 5ms
 
 	preoperationstate = DevicesOnline(preoperationstate);
 
@@ -372,10 +386,14 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	// set drive mode
 
-	setDriveMode();
+	setCurConfig();
 
 	// allow APPS checking before RTDM
 	int Torque_Req = PedalTorqueRequest();
+
+	vectoradjust adj;
+
+	doVectoring(Torque_Req, &adj);
 
 	for ( int i=0;i<MOTORCOUNT;i++){
 		CarState.Inverters[i].Torque_Req = Torque_Req;
@@ -404,7 +422,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	ReadyToStart = 0;
 
-	if ( !CarState.ShutdownSwitchesClosed )
+	if ( !CheckShutdown() )
 	{
 		blinkOutput(TSOFFLED_Output, LEDBLINK_FOUR, 1);
 #ifdef SHUTDOWNSWITCHCHECK
@@ -423,7 +441,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	}
 
 
-	if ( errorPDM() ) { ReadyToStart += 1; } // TODO replace errorPDM with generic error checker for non pdm.
+	if ( errorPower() ) { ReadyToStart += 1; }
 	if ( preoperationstate != 0 ) { ReadyToStart += 2; }
 	if ( !invonline ) { ReadyToStart += 4; }
 

@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : DEBUG.c
+  * File Name          : WWDG.c
   * Description        : This file provides code for the configuration
-  *                      of the DEBUG instances.
+  *                      of the WWDG instances.
   ******************************************************************************
   * @attention
   *
@@ -18,16 +18,45 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "debug.h"
+#include "wwdg.h"
 
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
 
-/* DEBUG init function */
-void MX_DEBUG_Init(void)
+WWDG_HandleTypeDef hwwdg1;
+
+/* WWDG1 init function */
+void MX_WWDG1_Init(void)
 {
 
+  hwwdg1.Instance = WWDG1;
+  hwwdg1.Init.Prescaler = WWDG_PRESCALER_1;
+  hwwdg1.Init.Window = 64;
+  hwwdg1.Init.Counter = 64;
+  hwwdg1.Init.EWIMode = WWDG_EWI_DISABLE;
+  if (HAL_WWDG_Init(&hwwdg1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+}
+
+void HAL_WWDG_MspInit(WWDG_HandleTypeDef* wwdgHandle)
+{
+
+  if(wwdgHandle->Instance==WWDG1)
+  {
+  /* USER CODE BEGIN WWDG1_MspInit 0 */
+
+  /* USER CODE END WWDG1_MspInit 0 */
+    /* WWDG1 clock enable */
+//    HAL_RCCEx_WWDGxSysResetConfig(RCC_WWDG1)();
+    __HAL_RCC_WWDG1_CLK_ENABLE();
+  /* USER CODE BEGIN WWDG1_MspInit 1 */
+
+  /* USER CODE END WWDG1_MspInit 1 */
+  }
 }
 
 /* USER CODE BEGIN 1 */

@@ -17,11 +17,13 @@ void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp) {
 // send lost power indicator to canbus.
 	CAN_SendStatus( 50, 100, 0xFFFF ); // TODO send loosing power error, choose message.
 	setOutput(LED7_Output,LEDON);
+
+
 }
 
 int initPowerLossHandling( void )
 {
-
+	  MX_COMP1_Init();
 	  HAL_COMP_Start_IT(&hcomp1);// need to reset interrupts before starting. triggers during startup.
 	  HAL_Delay(10);
 	  powerlost = false;

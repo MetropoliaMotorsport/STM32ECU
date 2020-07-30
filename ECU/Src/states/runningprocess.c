@@ -7,14 +7,6 @@
 
 #include "ecumain.h"
 
-//static int OperationLoops = 0;
-
-int ConvertNMToRequest( int NM )
-{
-	return NM*1000/65;
-}
-
-
 /*
  * APPS Check
  *
@@ -71,7 +63,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	//   -Torque-Brake Violation : Occurred and marked
 #ifdef APPSALLOWBRAKE
 	else if( difference<=10
-			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )
+			 && ( ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPSBrakeHard )
 			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime == 0 )
 	{
 		APPSTriggerTime = gettimer();
@@ -80,7 +72,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	}
 
 	else if( difference<=10
-			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )
+			 && ( ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPSBrakeHard )
 			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime < APPSBRAKETIME ) // 300ms brake allowance
 	{
 		Torque_drivers_request = 1;
@@ -89,7 +81,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 #endif
 
 	else if( difference<=10
-			 && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard )
+			 && ( ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPSBrakeHard )
 			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 )
 #ifdef APPSALLOW450MSBRAKE
 			 && APPSTriggerTime >= APPSBRAKETIME
@@ -121,6 +113,9 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 
 	else if ( difference<=10
 			  && ( ADCState.BrakeR < APPSBrakeRelease && ADCState.BrakeF < APPSBrakeRelease ) // 30
+#ifdef REGEN
+
+#endif
 			  && No_Torque_Until_Pedal_Released==1
 			  && TorqueRequestPercent < 5 )
 	{
@@ -130,7 +125,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	    CarState.APPSstatus=0; // torque ok. // 5
 	}
 	else if ( difference<=10
-			  && ( ADCState.BrakeR > APPSBrakeHard || ADCState.BrakeF > APPSBrakeHard ) // 30
+			  && ( ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPSBrakeHard ) // 30
 			  && No_Torque_Until_Pedal_Released==0
 			  && TorqueRequestPercent < 5 )
 	{ // brakes pressed without accelerator, don't allow torque.
@@ -148,8 +143,10 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	// calculate actual torque request
 	if ( Torque_drivers_request != 0)
 	{
-		int torquerequest =  ( ConvertNMToRequest(getTorqueReqCurve(ADCState.Torque_Req_R_Percent)/10*CarState.Torque_Req_CurrentMax*0.01));
-		return torquerequest;// Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
+
+		return getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax/65; //  *0.01/10*1000 unnecessary calculations, works out to 1, gets rid of floating point
+
+		// return torquerequest;// Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
 
 	}
 	  //	  return getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax*0.01)*1000/65)/10; // Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
@@ -224,10 +221,11 @@ int RunningRequest( void )
 	 * The vehicle must make a characteristic sound, continuously for at least one second and a maximum of three seconds when it enters ready-to-drive mode.
 	 */
 
-	sendHV( 1 ); // buzzer only sounds when value changes from 0 to 1
+	setHV( 1 ); // buzzer only sounds when value changes from 0 to 1
 
 #ifdef POWERNODES
 	setDevicePower(Buzzer, 1);
+	// FANS.
 #endif
 
 	for ( int i=0;i<MOTORCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
@@ -240,6 +238,19 @@ int RunningRequest( void )
 	}
 
 	// else inverter not in expected state.
+	return 0;
+}
+
+uint16_t PrintRunning( void )
+{
+	char str[255];
+	int Torque = ADCState.Torque_Req_R_Percent/10;
+	if ( Torque > 99 ) Torque = 99;
+
+	sprintf(str,"%.2linm(%.2d%%,%.2liact)", (CarState.Torque_Req*1000+15384-1)/15384, Torque, CarState.Torque_Req);
+	lcd_send_stringline(1,str, 255);
+	sprintf(str,"%.2liv", (CarState.VoltageBMS));
+	lcd_send_stringline(3,str, 255);
 	return 0;
 }
 
@@ -258,6 +269,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	{
 		 	 	 	 	 	 //12345678901234567890
 		lcd_setscrolltitle("RTDM:Throttle Active");
+		lcd_clearscroll();
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		setOutput(RTDMLED_Output,LEDON); // move to ActivateRTDM
 		blinkOutput(RTDMLED_Output,LEDON,0);
@@ -276,6 +288,8 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	{
 		CAN_SendStatus(1, RunningState, readystate );
 	}
+
+	PrintRunning();
 
 	RunningRequest();
 
@@ -346,7 +360,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 			CANSendInverter( InverterStateMachine( &CarState.Inverters[i] ), 0, i );
 		}
 
-		HAL_Delay(1); // make sure inverters had time to react before next cycle.
+//		HAL_Delay(1); // make sure inverters had time to react before next cycle.
 		return IdleState; // check if need to drop HV in a special order.
 	}
 
@@ -398,11 +412,16 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         // if allowed, process torque request, else request 0.
 
-        int Torque_Req = PedalTorqueRequest();  // calculate request from APPS
+        CarState.Torque_Req = PedalTorqueRequest();  // calculate request from APPS
+
+        if ( CarState.Torque_Req == 0 )
+        {
+        		// TODO check for regen request if torque request zero.  send negative torque?
+        }
 
     	for ( int i=0;i<MOTORCOUNT;i++)  // set all wheels to same torque request
     	{
-    		CarState.Inverters[i].Torque_Req = Torque_Req;
+    		CarState.Inverters[i].Torque_Req = CarState.Torque_Req;
     	} // if any inverter is not ready, readystate will not be 0.
 
 #ifdef SIMPLETORQUEVECTOR

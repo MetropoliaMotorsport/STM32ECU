@@ -6,7 +6,7 @@
     <WorkspacePath>/Users/visa/Code/motorsport/STM32ECU/ECU/</WorkspacePath>
     <underRoot>true</underRoot>
     <TrustZone>0</TrustZone>
-    <HAL_Driver>/Users/visa/STM32Cube/Repository//STM32Cube_FW_H7_V1.7.0</HAL_Driver>
+    <HAL_Driver>/Users/visa/STM32Cube/Repository//STM32Cube_FW_H7_V1.8.0</HAL_Driver>
     <CMSIS>Drivers/CMSIS</CMSIS>
     <Toolchain>STM32CubeIDE</Toolchain>
     <IocFile>ECU.ioc</IocFile>
@@ -34,7 +34,7 @@
             <memory access="xrw" name="ITCMRAM" size="64" start="0x00000000"/>
             <memory access="rx" name="FLASH" size="2048" start="0x8000000"/>
           </memories>
-          <startup>/Users/visa/STM32Cube/Repository//STM32Cube_FW_H7_V1.7.0/Drivers/CMSIS/Device\ST\STM32H7xx\Source\Templates\gcc\startup_stm32h743xx.s</startup>
+          <startup>/Users/visa/STM32Cube/Repository/STM32Cube_FW_H7_V1.8.0/Drivers/CMSIS/Device\ST\STM32H7xx\Source\Templates\gcc\startup_stm32h743xx.s</startup>
           <LinkSettings>
             <LinkAdditionalLibs/>
           </LinkSettings>

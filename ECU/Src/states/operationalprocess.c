@@ -15,7 +15,6 @@
   #include "vhd44780.h"
 #endif
 
-
 static int LastOperationalState = 0;
 static int NewOperationalState = 0;
 int OperationalState  = StartupState;
@@ -30,23 +29,33 @@ uint32_t totalloopcount = 0;
 
 // detect shutdown, move back to pre operation state
 
+
+ResetCommand * ResetCommands[64] = { NULL };
+
+uint32_t ResetCount = 0;
+
+int RegisterResetCommand( ResetCommand * Handler )
+{
+	if ( Handler != NULL )
+	{
+		ResetCommands[ResetCount] = Handler;
+		ResetCount++;
+		return 0;
+	} else return 1;
+}
+
 void ResetStateData( void ) // set default startup values for global state values.
 {
+	for ( int i=0;i<ResetCount;i++) (*ResetCommands[i])();
+
 	DeviceState.CAN1 = OPERATIONAL;
 	DeviceState.CAN2 = OPERATIONAL;
-
-	CarState.TestHV = 0;
 
 #ifdef FANCONTROL
 	CarState.FanPowered = 0;
 #else
 	CarState.FanPowered = 1;
 #endif
-
-	for ( int i=0;i<MOTORCOUNT;i++)
-	{
-		Errors.InvAllowReset[i] = 1;
-	}
 
 #ifdef FRONTSPEED
 	DeviceState.FrontSpeedSensors = ENABLED;
@@ -64,54 +73,9 @@ void ResetStateData( void ) // set default startup values for global state value
 	DeviceState.LoggingEnabled = DISABLED;
 #endif
 
-	initIVT();
-
-#ifdef BMSEnable
-	DeviceState.BMSEnabled = ENABLED;
-#else
-	DeviceState.BMSEnabled = DISABLED;
-#endif
-
 	DeviceState.ADC = OFFLINE;
 
-	for ( int i=0;i<MOTORCOUNT;i++){
-		DeviceState.Inverters[i] = OFFLINE;
-	}
-
-	DeviceState.BMS = OFFLINE;
-
-	initPDM();
-
-	CarState.brake_balance = 0;
-
 	usecanADC = 0;
-
-	CarState.HighVoltageReady = 0;
-
-	for ( int i=0;i<MOTORCOUNT; i++)
-	{
-		CarState.Inverters[i].InvState = 0xFF;
-		CarState.Inverters[i].InvStateCheck = 0xFF;
-		CarState.Inverters[i].InvStateCheck3 = 0xFF;
-		CarState.Inverters[i].InvBadStatus = 1;
-		CarState.Inverters[i].Torque_Req = 0;
-		CarState.Inverters[i].Speed = 0;
-		CarState.Inverters[i].HighVoltageAllowed = false;
-		CarState.Inverters[i].InverterNum = i;
-
-		CanState.InverterERR[i].time = 0;
-//		CanState.InverterPDO1[i].time = 0;
-		CanState.InverterPDO2[i].time = 0;
-		CanState.InverterPDO3[i].time = 0;
-	}
-
-	CarState.Inverters[0].COBID = InverterRL_COBID;
-	CarState.Inverters[1].COBID = InverterRR_COBID;
-
-#if MOTORCOUNT > 2
-	CarState.Inverters[2].COBID = InverterFL_COBID;
-	CarState.Inverters[3].COBID = InverterFR_COBID;
-#endif
 
 	CarState.Torque_Req_Max = 0;
 	CarState.Torque_Req_CurrentMax = 0;
@@ -121,14 +85,11 @@ void ResetStateData( void ) // set default startup values for global state value
     CarState.PedalProfile = 0;
     CarState.DrivingMode = 0;
 
-
-	Errors.InverterError = 0; // reset logged errors.
 	Errors.ErrorPlace = 0;
 	Errors.ErrorReason = 0;
 	Errors.CANSendError1 = 0;
 	Errors.CANSendError2 = 0;
 	Errors.ADCSent = false;
-
 }
 
 
@@ -233,14 +194,14 @@ int Startup( uint32_t OperationLoops  )
 uint16_t CheckErrors( void )
 {
 
-#ifdef COOLANTSHUTDOWN
+#ifdef COOLANTSHUTDOWN // coolant limp instead?
 	if ( ADCState.CoolantTempR > COOLANTMAXTEMP )
 	{
 		return 97;
 	}
 #endif
 
-	if ( errorPDM() )
+	if ( errorPower() )
 	{
 		return 98; // PDM error, stop operation.
 	}
@@ -278,7 +239,7 @@ int LimpProcess( uint32_t OperationLoops  )
 {
 	lcd_setscrolltitle("LimpProcess(NA)");
 	CAN_SendStatus(1, LimpState, 0 );
-	sendHV( false );
+	setHV( false );
 	return LimpState;
 }
 
@@ -286,7 +247,7 @@ int TestingProcess( uint32_t OperationLoops  )
 {
 	lcd_setscrolltitle("TestingProcess(NA)");
 	CAN_SendStatus(1, TestingState, 0 );
-	sendHV( false );
+	setHV( false );
 	return TestingState;
 }
 
@@ -371,7 +332,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	receivePDM();
 
-	if ( !CarState.ShutdownSwitchesClosed ) // indicate shutdown switch status with blinking rate.
+	if ( !CheckShutdown() ) // indicate shutdown switch status with blinking rate.
 	{
 		lcd_send_stringscroll("Shutdown switches");
 		blinkOutput(TSLED_Output,LEDBLINK_ONE,LEDBLINKNONSTOP);
@@ -421,7 +382,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 	}
 
 #ifdef SHUTDOWNSWITCHCHECK
-    if ( !CarState.ShutdownSwitchesClosed )
+    if ( !CheckShutdown() )
     {
     	allowreset +=8;  // only allow exiting error state if shutdown switches closed. - maybe move to only for auto
     	strcat(str, "SHT " );
@@ -447,8 +408,8 @@ int OperationalErrorHandler( uint32_t OperationLoops )
            )
 		)
 	{
-		setupButtons();
-		setupLEDs();
+//		setupButtons();
+//		setupLEDs();
 		//loopcount = 0;
 		return StartupState;
 		// try to perform a full reset back to startup state here on user request.
@@ -487,7 +448,11 @@ int OperationalProcess( void )
 
 		uint32_t currenttimer = gettimer();
 
-		if( looptimer + PROCESSLOOPTIME < currenttimer ) // once per 10ms second process state
+		//calculate right delay to wait for loop.
+
+		DWT_Delay((PROCESSLOOPTIME-(currenttimer-looptimer))*100);
+
+//		if( looptimer + PROCESSLOOPTIME < currenttimer ) // once per 10ms second process state
 		{
 			// check how much past 10ms timer is, if too far, soft error. Allow a few times, but not too many before entering an error state?
 			int lastlooplength = currenttimer-looptimer;

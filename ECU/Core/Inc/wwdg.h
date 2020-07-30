@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : DEBUG.h
+  * File Name          : WWDG.h
   * Description        : This file provides code for the configuration
-  *                      of the DEBUG instances.
+  *                      of the WWDG instances.
   ******************************************************************************
   * @attention
   *
@@ -17,8 +17,8 @@
   ******************************************************************************
   */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __debug_H
-#define __debug_H
+#ifndef __wwdg_H
+#define __wwdg_H
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -30,11 +30,13 @@
 
 /* USER CODE END Includes */
 
+extern WWDG_HandleTypeDef hwwdg1;
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
-void MX_DEBUG_Init(void);
+void MX_WWDG1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
@@ -43,7 +45,7 @@ void MX_DEBUG_Init(void);
 #ifdef __cplusplus
 }
 #endif
-#endif /*__ debug_H */
+#endif /*__ wwdg_H */
 
 /**
   * @}

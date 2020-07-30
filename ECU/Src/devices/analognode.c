@@ -25,11 +25,12 @@ bool processANode16Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 bool processANode17Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 bool processANode18Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
+void ANodeCritTimeout( uint16_t id );
 
-CANData  AnalogNode1 =  { &DeviceState.AnalogNode1, AnalogNode1_ID, 6, processANode1Data, NULL, NODETIMEOUT };
+CANData  AnalogNode1 =  { &DeviceState.AnalogNode1, AnalogNode1_ID, 6, processANode1Data, ANodeCritTimeout, NODETIMEOUT };
 CANData  AnalogNode9 =  { &DeviceState.AnalogNode9, AnalogNode9_ID, 6, processANode9Data, NULL, NODETIMEOUT };
 CANData  AnalogNode10 = { &DeviceState.AnalogNode10, AnalogNode10_ID, 6, processANode10Data, NULL, NODETIMEOUT };
-CANData  AnalogNode11=  { &DeviceState.AnalogNode11, AnalogNode11_ID, 6, processANode11Data, NULL, NODETIMEOUT };
+CANData  AnalogNode11=  { &DeviceState.AnalogNode11, AnalogNode11_ID, 6, processANode11Data, ANodeCritTimeout, NODETIMEOUT };
 CANData  AnalogNode12 = { &DeviceState.AnalogNode12, AnalogNode12_ID, 6, processANode12Data, NULL, NODETIMEOUT };
 CANData  AnalogNode13 = { &DeviceState.AnalogNode13, AnalogNode13_ID, 6, processANode13Data, NULL, NODETIMEOUT };
 CANData  AnalogNode14 = { &DeviceState.AnalogNode14, AnalogNode14_ID, 6, processANode14Data, NULL, NODETIMEOUT };
@@ -38,6 +39,15 @@ CANData  AnalogNode16 = { &DeviceState.AnalogNode16, AnalogNode16_ID, 6, process
 CANData  AnalogNode17 = { &DeviceState.AnalogNode17, AnalogNode17_ID, 6, processANode17Data, NULL, NODETIMEOUT };
 CANData  AnalogNode18 = { &DeviceState.AnalogNode18, AnalogNode18_ID, 6, processANode18Data, NULL, NODETIMEOUT };
 
+
+void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to safe defaults if not received.
+{
+	ADCState.Torque_Req_L_Percent=0;
+	ADCState.Torque_Req_R_Percent=0;
+	ADCState.Regen_Percent=0;
+    ADCState.BrakeF = APPSBrakeHard;
+    ADCState.BrakeR = APPSBrakeHard;
+}
 
 bool processANode1Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
@@ -89,7 +99,6 @@ bool processANode11Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
         ADCState.BrakeR = CANRxData[3];
         ADCState.Torque_Req_R_Percent = getTorqueReqPercR(AccelR*16);
 
-
 		return true;
 	} else // bad data.
 	{
@@ -135,7 +144,6 @@ bool processANode18Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 }
 
 
-
 int receiveAnalogNodes( void ) // any of these missing should just be a warning or note.
 {
 	uint16_t nodesonline = 0b111111111;
@@ -164,4 +172,41 @@ int receiveAnalogNodesCritical( void ) // 1 = APPS1 + regen. 11 = APPS2 + brakes
 	return nodesonline;
 }
 
+
+
+
+
+void resetAnalogNodes( void )
+{
+    ADCState.BrakeF = 0;
+    ADCState.BrakeR = 0;
+    ADCState.Torque_Req_R_Percent = 0;
+    ADCState.Torque_Req_L_Percent = 0;
+    ADCState.Regen_Percent = 0;
+
+	CarState.brake_balance = 0;
+
+}
+
+int initAnalogNodes( void )
+{
+
+	RegisterResetCommand(resetAnalogNodes);
+
+	resetAnalogNodes();
+
+	RegisterCan2Message(&AnalogNode1);
+	RegisterCan1Message(&AnalogNode9);
+	RegisterCan1Message(&AnalogNode10);
+	RegisterCan1Message(&AnalogNode11);
+	RegisterCan1Message(&AnalogNode12);
+	RegisterCan1Message(&AnalogNode13);
+	RegisterCan1Message(&AnalogNode14);
+	RegisterCan1Message(&AnalogNode15);
+	RegisterCan1Message(&AnalogNode16);
+	RegisterCan1Message(&AnalogNode17);
+	RegisterCan1Message(&AnalogNode18);
+
+	return 0;
+}
 

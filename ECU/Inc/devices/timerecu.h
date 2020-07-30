@@ -10,4 +10,6 @@
 
 uint32_t gettimer(void);
 
+int initTimer( void );
+
 #endif /* TIMERECU_H_ */

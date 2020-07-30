@@ -245,20 +245,26 @@ bool SetupADCInterpolationTables( eepromdata * data )
 		BrakeTravelInput[2] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
 		BrakeTravelInput[3] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
 
-		i = 0;
-		for (;data->pedalcurves[i].PedalCurveInput[1]!=0;i++) // first number could be 0, but second will be non zero.
+		if (data->pedalcurves[i].PedalCurveInput[1] != 0)
 		{
-			TorqueCurveCount++;
+			TorqueCurveCount = 0;
 
-			int j=0;
-			do {
-				TorqueInputs[i][j]=data->pedalcurves[i].PedalCurveInput[j];
-				TorqueOutputs[i][j]=data->pedalcurves[i].PedalCurveOutput[j];
-				j++;
+			i = 0;
 
-			} while ( data->pedalcurves[i].PedalCurveInput[j] != 0);
-			if ( j < 3 ) j = 0;
-			TorqueCurveSize[i] = j;
+			for (;data->pedalcurves[i].PedalCurveInput[1]!=0;i++) // first number could be 0, but second will be non zero.
+			{
+				TorqueCurveCount++;
+
+				int j=0;
+				do {
+					TorqueInputs[i][j]=data->pedalcurves[i].PedalCurveInput[j];
+					TorqueOutputs[i][j]=data->pedalcurves[i].PedalCurveOutput[j];
+					j++;
+
+				} while ( data->pedalcurves[i].PedalCurveInput[j] != 0);
+	//			if ( j < 3 ) j = 0;
+				TorqueCurveSize[i] = j;
+			}
 		}
 
 	#ifdef HPF19
@@ -605,7 +611,8 @@ int getTorqueReqCurve( uint16_t ADCInput )
 	return 0;
 #else
     struct ADCTable ADC = ADCInterpolationTables.TorqueCurve;
-	return linearInterpolate(ADC.Input, ADC.Output, ADC.Elements, ADCInput);
+	int returnval= linearInterpolate(ADC.Input, ADC.Output, ADC.Elements, ADCInput);
+	return returnval;
 #endif
 }
 
@@ -1091,4 +1098,78 @@ uint16_t CheckADCSanity( void )
 	}
 
 	return returnvalue;
+}
+
+#ifdef HPF19
+bool receiveCANADCEnable(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);  // debug ID to send arbitraty 'ADC' values for testing.
+bool receiveCANADCInput(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
+
+CANData ADCCANEnable = { 0, AdcSimInput_ID, 8, receiveCANInput, NULL, 0, 0 };
+CANData ADCCANInput = { 0, AdcSimInput_ID, 8, receiveCANInput, NULL, 0, 0 };
+
+bool receiveCANADCEnable(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle)
+{
+	if( CANRxData[0] == 1 && CANRxData[1]== 99 ) // if received value in ID is not 0 assume true and switch to fakeADC over CAN.
+	{
+//		stopADC(); //  disable ADC DMA interrupt to stop processing ADC input.
+		// crashing if breakpoint ADC interrupt after this, just check variable in interrupt handler for now.
+		usecanADC = 1; // set global state to use canbus ADC for feeding values.
+		CANADC.SteeringAngle = 0; // set ADC_Data for steering
+		CANADC.Torque_Req_L_Percent = 0; // set ADC_data for Left Throttle
+		CANADC.Torque_Req_R_Percent = 0; // set ADC_data for Right Throttle
+		CANADC.BrakeF = 0; // set ADC_data for Front Brake
+		CANADC.BrakeR = 0; // set ADC_data for Rear Brake
+		CANADC.DrivingMode = 5; // set ADC_Data for driving mode
+		CANADC.CoolantTempL = 20; // set ADC_data for First Coolant Temp
+		CANADC.CoolantTempR = 20; // set ADC_data for Second Coolant Temp
+	} else // value of 0 received, switch back to real ADC.
+	{
+		usecanADC = 0;
+	}
+	return true;
+}
+
+bool receiveCANADCInput(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle)
+{
+	CANADC.SteeringAngle = CANRxData[0]; // set ADC_Data for steering
+	CANADC.Torque_Req_L_Percent = CANRxData[1]; // set ADC_data for Left Throttle
+	CANADC.Torque_Req_R_Percent = CANRxData[2]; // set ADC_data for Right Throttle
+	CANADC.BrakeF = CANRxData[3]; // set ADC_data for Front Brake
+	CANADC.BrakeR = CANRxData[4]; // set ADC_data for Rear Brake
+	CANADC.DrivingMode = CANRxData[5]; // set ADC_Data for driving mode
+	CANADC.CoolantTempL = CANRxData[6]; // set ADC_data for First Coolant Temp
+	CANADC.CoolantTempR = CANRxData[7]; // set ADC_data for Second Coolant Temp
+	return true;
+}
+
+int initCANADC( void )
+{
+	RegisterCan1Message(ADCCANEnable);
+	RegisterCan1Message(ADCCANInput);
+}
+
+#endif
+
+void resetADC( void )
+{
+
+}
+
+int initADC( void )
+{
+#ifdef STMADC
+	MX_DMA_Init();
+
+	MX_ADC1_Init();
+	MX_ADC3_Init();
+
+	if ( DeviceState.LCD == ENABLED )
+		lcd_send_stringscroll("Start ADC");
+	if ( startADC() == 0 )  //  starts the ADC dma processing.
+	{
+		DeviceState.ADC = OPERATIONAL;
+	} else return 99;
+#endif
+
+	return 0;
 }

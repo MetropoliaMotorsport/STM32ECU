@@ -8,6 +8,6 @@
 #ifndef INTERRUPTS_H_
 #define INTERRUPTS_H_
 
-void setupInterrupts( void );
+void initInterrupts( void );
 
 #endif /* INTERRUPTS_H_ */

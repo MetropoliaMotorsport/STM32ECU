@@ -72,3 +72,18 @@ int initTime( void )
 	rtctime = 0;
 	return 0;
 }
+
+void resetMemorator( void )
+{
+	rtctime = 0;
+}
+
+int initMemorator( void )
+{
+	RegisterResetCommand(resetMemorator);
+
+	resetMemorator();
+
+	RegisterCan1Message(&Memorator);
+	return 0;
+}

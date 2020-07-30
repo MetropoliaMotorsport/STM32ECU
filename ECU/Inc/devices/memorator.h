@@ -14,5 +14,7 @@ extern CANData Memorator;
 
 char * getTimeStr( void );
 
-#endif /* PDM_H_ */
+int initMemorator( void );
+
+#endif /* MEMORATOR_H_ */
 

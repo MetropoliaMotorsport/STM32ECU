@@ -65,18 +65,20 @@ uint32_t HAL_GetTick(void)
   return stTick;
 }
 
+
 /**
  * @brief IRQ handler for timer3 used to keep timebase.
  */
 void TIM3_IRQHandler()
 {
-    HAL_TIM_IRQHandler(&htim3); // is this necessary for simple timer?
+    HAL_TIM_IRQHandler(&htim3);
 }
 
 void TIM6_IRQHandler()
 {
     HAL_TIM_IRQHandler(&htim6);
 }
+
 
 /**
  * @brief timer interrupt to keep a timebase and process button debouncing.
@@ -138,7 +140,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	} else if ( htim->Instance == TIM6 )
 	{
 
-	} else if ( htim->Instance == TIM16)
+	} else if ( htim->Instance == TIM16) // used for eeprom write in background.
 	{
 		commitEEPROM();
 	}
@@ -150,4 +152,26 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 #endif
 
+}
+
+
+
+int initTimer( void )
+{
+	MX_TIM3_Init(); // at this point LED status should work.
+
+	MX_TIM7_Init();
+
+	MX_TIM6_Init();
+
+#ifdef PWMSTEERING
+	MX_TIM8_Init(); // pwm
+#endif
+
+	MX_TIM16_Init();
+
+	if ( DeviceState.LCD == OPERATIONAL )
+		lcd_send_stringscroll("Enable Interrupts");
+	initInterrupts(); // start timers etc // move earlier to make display updating easier?
+	return 0;
 }

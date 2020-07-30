@@ -12,13 +12,13 @@
 // 0x9   byte 6-7 last two.
 
 bool processBMSVoltageData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processBMSOpMode(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processBMSError(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 void BMSTimeout( uint16_t id );
 
 CANData  BMSVoltage = { &DeviceState.BMS, BMSVOLT_ID, 3, processBMSVoltageData, BMSTimeout, 1000 };
-CANData  BMSOpMode = { &DeviceState.BMS, BMSVOLT_ID, 3, NULL, NULL, 1000 };
-CANData  BMSError = { &DeviceState.BMS, BMSVOLT_ID, 3, NULL, NULL, 1000 };
-
-
+CANData  BMSOpMode = { &DeviceState.BMS, BMSBASE_ID, 3, processBMSOpMode, NULL, 0 };
+CANData  BMSError = { &DeviceState.BMS, BMSBASE_ID+1, 3, processBMSError, NULL, 0 };
 
 bool processBMSVoltageData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
@@ -48,13 +48,13 @@ bool processBMSVoltageData(uint8_t CANRxData[8], uint32_t DataLength, CANData * 
 }
 
 
-bool processBMSOpMode(uint8_t CANRxData[8], uint32_t DataLength )
+bool processBMSOpMode(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 	if ( DeviceState.BMSEnabled )
 	{
 //		uint16_t voltage = CANRxData[2]*256+CANRxData[3];
 
-		if (  DataLength == FDCAN_DLC_BYTES_8
+		if ( true // no current validation on this message.
 /*				&& CANRxData[0] == 0
 				&& CANRxData[1] == 0
 				&& CANRxData[4] == 0
@@ -72,13 +72,13 @@ bool processBMSOpMode(uint8_t CANRxData[8], uint32_t DataLength )
 	} else return true;
 }
 
-bool processBMSError(uint8_t CANRxData[8], uint32_t DataLength )
+bool processBMSError(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
     if ( DeviceState.BMSEnabled )
     {
   //      uint16_t voltage = CANRxData[2]*256+CANRxData[3];
         
-        if (  DataLength == FDCAN_DLC_BYTES_8
+        if ( true // no current validation on this message.
         /*                && CANRxData[0] == 0
          && CANRxData[1] == 0
          && CANRxData[4] == 0
@@ -88,6 +88,31 @@ bool processBMSError(uint8_t CANRxData[8], uint32_t DataLength )
             //            && ( voltage > 480 && voltage < 600 )
             )
         {
+        	if ( CANRxData[0] != 0 ) // In Safestate.
+        	{
+        		CarState.Shutdown.BMS = false;
+        		CarState.Shutdown.BMSReason = CANRxData[1];
+                /*
+                      0 : str := 'undefined';
+                      1 : str := 'overvoltage';
+                      2 : str := 'undervoltage';
+                      3 : str := 'overtemperature';
+                      4 : str := 'undertemperature';
+                      5 : str := 'overcurrent';
+                      6 : str := 'overpower';
+                      7 : str := 'external';
+                      8 : str := 'pec_error';
+                      9 : str := 'Accumulator Undervoltage';
+                      10 : str := 'IVT MOD timeout';
+				*/
+
+        	} else
+        	{
+         		CarState.Shutdown.BMS = true;
+         		CarState.Shutdown.BMSReason = 0;
+        	}
+
+
             return true;
         } else // bad data.
         {
@@ -122,5 +147,29 @@ int receiveBMS( void )
 int requestBMS( int nodeid )
 {
 	return 0; // this is operating cyclically, no extra request needed.
+}
+
+void resetBMS( void )
+{
+#ifdef BMSEnable
+	DeviceState.BMSEnabled = ENABLED;
+#else
+	DeviceState.BMSEnabled = DISABLED;
+#endif
+
+	DeviceState.BMS = OFFLINE;
+	CarState.VoltageBMS=0;
+}
+
+int initBMS( void )
+{
+	RegisterResetCommand(resetBMS);
+
+	resetBMS();
+
+	RegisterCan1Message(&BMSVoltage);
+	RegisterCan1Message(&BMSOpMode);
+	RegisterCan1Message(&BMSError);
+	return 0;
 }
 

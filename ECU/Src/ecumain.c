@@ -63,9 +63,58 @@
 
 HAL_StatusTypeDef SystemClock_Config(void);
 
+
+int __io_putchar(int ch)
+{
+	ITM_SendChar(ch);
+	return ch;
+}
+
+
+void SWD_Init(void)
+{
+  *(__IO uint32_t*)(0x5C001004) |= 0x00700000; // DBGMCU_CR D3DBGCKEN D1DBGCKEN TRACECLKEN
+
+  //UNLOCK FUNNEL
+  *(__IO uint32_t*)(0x5C004FB0) = 0xC5ACCE55; // SWTF_LAR
+  *(__IO uint32_t*)(0x5C003FB0) = 0xC5ACCE55; // SWO_LAR
+
+  //SWO current output divisor register
+  //This divisor value (0x000000C7) corresponds to 400Mhz
+  //To change it, you can use the following rule
+  // value = (CPU Freq/sw speed )-1
+   *(__IO uint32_t*)(0x5C003010) = ((SystemCoreClock / 2000000) - 1); // SWO_CODR
+
+  //SWO selected pin protocol register
+   *(__IO uint32_t*)(0x5C0030F0) = 0x00000002; // SWO_SPPR
+
+  //Enable ITM input of SWO trace funnel
+   *(__IO uint32_t*)(0x5C004000) |= 0x00000001; // SWFT_CTRL
+
+  //RCC_AHB4ENR enable GPIOB clock
+   *(__IO uint32_t*)(0x580244E0) |= 0x00000002;
+
+  // Configure GPIOB pin 3 as AF
+   *(__IO uint32_t*)(0x58020400) = (*(__IO uint32_t*)(0x58020400) & 0xffffff3f) | 0x00000080;
+
+  // Configure GPIOB pin 3 Speed
+   *(__IO uint32_t*)(0x58020408) |= 0x00000080;
+
+  // Force AF0 for GPIOB pin 3
+   *(__IO uint32_t*)(0x58020420) &= 0xFFFF0FFF;
+}
 // Initialise the ECU's internal features.
 static int HardwareInit( void )
 {
+
+//	SWD_Init();
+
+	/* Enable I-Cache---------------------------------------------------------*/
+	SCB_EnableICache();
+
+	/* Enable D-Cache---------------------------------------------------------*/
+//	SCB_EnableDCache();
+
 	static int enteredcount = 0;
 	enteredcount++;
 	ErrorCode = 0;
@@ -95,160 +144,78 @@ static int HardwareInit( void )
 	/* Initialize all configured peripherals */
 
 	MX_GPIO_Init(); // no failure return value
+
 	// startup LCD first
 #ifdef HPF20
-#ifdef SCREEN
+	ShutdownCircuitSet( false ); // ensure shutdown circuit is closed at start
 
-	MX_I2C3_Init();
-	if ( !lcd_init(&hi2c3) ){
-		DeviceState.LCD = DISABLED;
-	} else
-	{
-		lcd_send_stringposDIR(0,0,"Startup...   ");
-		lcd_clearscroll();
-	}
+	initLCD();
+
+	initTimer();
+
+#ifdef PWMSTEERING
+	initPWM();
 #endif
-
-	MX_TIM3_Init(); // at this point LED status should work.
-
-	MX_TIM7_Init();
-
-	MX_TIM6_Init();
-
-	MX_TIM16_Init();
-
-	if ( DeviceState.LCD == OPERATIONAL )
-		lcd_send_stringscroll("Enable Interrupts");
-	setupInterrupts(); // start timers etc // move earlier to make display updating easier?
-
 
 #elif
 	DeviceState.LCD = DISABLED;
 #endif
 	if ( DeviceState.LCD == OPERATIONAL )
 		lcd_send_stringscroll("Start CANBUS");
-	MX_FDCAN1_Init();
-#ifndef ONECAN
-	MX_FDCAN2_Init();
+
+	initPower();
+    initInv();
+	initIMU();
+	initPDM();
+	initIVT();
+	initBMS();
+	initMemorator();
+	initInput();
+	initECU();
+
+#ifdef HPF19
+	initCANADC();
 #endif
 
-	FDCAN1_start(); // sets up can ID filters and starts can bus 1
-	FDCAN2_start(); // starts up can bus 2
-
-	CarState.HighVoltageReady = 0;
-	sendHV( false ); // send high voltage off request to PDM.
-
-	CAN_SendStatus(0,0,1); // earliest possible place to send can message signifying wakeup.
-
-#ifdef STMADC
-	MX_DMA_Init();
-
-	MX_ADC1_Init();
-	MX_ADC3_Init();
+#ifdef POWERNODES
+	initNodes();
+	initPowerNodes();
+#else
+	initPDM();
 #endif
+#ifdef ANALOGNODES
+	initAnalogNodes();
+#endif
+
+	initCAN();
+
+	initADC();
+
+
 
 #ifdef WATCHDOG
-	  /*##-1- Check if the system has resumed from WWDG reset ####################*/
-	  if (__HAL_RCC_GET_FLAG(RCC_FLAG_WWDG1RST) != RESET)
-	  {
-	    /* Insert 4s delay */
-	    HAL_Delay(4000);
-	  } else
-	  {
-		  // system has been reset by WWDG, do any special initialisation here.
-	  }
-
-	  /* Clear reset flags in any case */
-	  __HAL_RCC_CLEAR_RESET_FLAGS();
-
-	  /* Enable system wide reset */
-	  HAL_RCCEx_WWDGxSysResetConfig(RCC_WWDG1);
-
-//	MX_WWDG1_Init();
-
-	  hwwdg1.Instance = WWDG1;
-	  hwwdg1.Init.Prescaler = WWDG_PRESCALER_8; // 8-19ms window.
-	  hwwdg1.Init.Window = 102;
-	  hwwdg1.Init.Counter =127;
-	  hwwdg1.Init.EWIMode = WWDG_EWI_ENABLE;
- 	  if (HAL_WWDG_Init(&hwwdg1) != HAL_OK)
-	  {
-	    Error_Handler();
-	  }
-
-	 HAL_NVIC_EnableIRQ(WWDG_IRQn);
-
-/*	 while ( 1 )
-	 {
-	 uint32_t delay = TimeoutCalculation((hwwdg1.Init.Counter-hwwdg1.Init.Window) + 1); // start of window, 9ms.
-
-		HAL_Delay(19); // ensure that first trigger will be within window.
-		if (HAL_WWDG_Refresh(&hwwdg1) != HAL_OK)
-		{
-		  Error_Handler();
-		}
-	 } */
+	initWatchdog();
 #endif
+
 	if ( DeviceState.LCD == ENABLED ) // interrupts should not be running, so use regular update.
 		lcd_send_stringscroll("Enable LEDS");
-	 setupLEDs(); // set default led states and start life indicator LED blinking.
+    initOutput(); // set default led states and start life indicator LED blinking.
 
 #ifdef POWERLOSSDETECT
-	  MX_COMP1_Init();
+    initPowerLossHandling()
 #endif
 
 #ifdef EEPROMSTORAGE
-	if ( DeviceState.LCD == ENABLED )
-		lcd_send_stringscroll("Load EEPRom");
-	 MX_I2C2_Init();
-	 int eepromstatus = initiliseEEPROM();
-	 switch ( eepromstatus )
-	 {
-		 case 0 :
-				lcd_send_stringscroll("EEPRom Read");
-				DeviceState.EEPROM = ENABLED;
-				break;
-		 case 1 :
-				lcd_send_stringscroll("EEPRom Bad Data");
-				lcd_send_stringscroll("  Load New Data");
-				DeviceState.EEPROM = ERROR;
-				HAL_Delay(3000); // ensure message can be seen.
-				break;
-		 default :
-				lcd_send_stringscroll("EEPRom Read Fail");
-				DeviceState.EEPROM = DISABLED;
-				HAL_Delay(3000); // ensure message can be seen.
-	 };
+    initEEPROM();
 #endif
-
-/*	delay = TimeoutCalculation((hwwdg1.Init.Counter) + 1); // actual reset, 40ms.
-
-	HAL_Delay(delay);
-
-	delay = TimeoutCalculation((hwwdg1.Init.Counter)-64 + 1); // early warning, 20ms
-
-	HAL_Delay(delay); */
 
 	// after cubemx hardware inits, run our own initialisations to start up essential function.
 
 	// should also read in defaults for calibrations, power levels etc.
 
-#ifdef STMADC
-	if ( DeviceState.LCD == ENABLED )
-		lcd_send_stringscroll("Start ADC");
-	if ( startADC() == 0 )  //  starts the ADC dma processing.
-	{
-		DeviceState.ADC = 1;
-	} else returnval = 99;
-#endif
-	//  startupLEDs(); // run little startup LED animation to indicate powered on.
-	setupButtons(); // moved later, during startup sequence inputs were being triggered early
-
-	//send can state to show hardware initialized.
+// initButtons was here moved later, during startup sequence inputs were being triggered early
 
 //	  uint16_t volatile * const power = (uint16_t *) PWR_D3CR;
-
-
 
 #ifdef TEST
 	char str[20];
@@ -286,44 +253,6 @@ static int HardwareInit( void )
 	return returnval;
 }
 
-/* Captured Value */
-__IO uint32_t            uwIC2Value = 0;
-/* Duty Cycle Value */
-__IO uint32_t            uwDutyCycle = 0;
-/* Frequency Value */
-__IO uint32_t            uwFrequency = 0;
-
-
-/**
-  * @brief  Input Capture callback in non blocking mode
-  * @param  htim: TIM IC handle
-  * @retval None
-  */
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
-{
-  if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
-  {
-    /* Get the Input Capture value */
-    uwIC2Value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
-
-    if (uwIC2Value != 0)
-    {
-      /* Duty cycle computation */
-      uwDutyCycle = ((HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1)) * 100) / uwIC2Value;
-
-      /* uwFrequency computation
-      TIM4 counter clock = (RCC_Clocks.HCLK_Frequency) */
-      uwFrequency = (HAL_RCC_GetHCLKFreq()) / uwIC2Value;
-    }
-    else
-    {
-      uwDutyCycle = 0;
-      uwFrequency = 0;
-    }
-  }
-}
-
-
 /*
  * Primary operating function entered into after initialisation.
  */
@@ -334,32 +263,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
   */
 int realmain(void)
 {
-	ResetStateData(); // get values configured.
-
-#ifdef PWMSTEERINGTEST
-
-	MX_TIM8_Init(); // pwm
-
-	  if(HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_2) != HAL_OK)
-	  {
-	    /* Starting Error */
-	    Error_Handler();
-	  }
-
-	  /*##-5- Start the Input Capture in interrupt mode ##########################*/
-	  if(HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_1) != HAL_OK)
-	  {
-	    /* Starting Error */
-	    Error_Handler();
-	  }
-
-	  /* Infinite loop */
-	  while (1)
-	  {
-	  }
-#endif
-
-
   /* MCU Configuration--------------------------------------------------------*/
 
  int MainState = 0;
@@ -374,6 +277,7 @@ int realmain(void)
 			switch ( HardwareInit() ) // call initialisation function.
 			{
 				case 0 :  // init successful, move to operational state.
+					ResetStateData(); // set values configured.
 					MainState = 1;
 					break;
 /*					case 1 :  // init not successful in non fatal manner.
@@ -441,7 +345,7 @@ int testmain(void)
 //  MX_ADC3_Init();
   /* USER CODE BEGIN 2 */
 
-  setupInterrupts();
+  initInterrupts();
 
 //	FDCAN1_start(); // sets up can ID filters and starts can bus 1
 	// first point from which can messages can be sent.
@@ -449,7 +353,7 @@ int testmain(void)
 
 //  startADC();
   int i = 0;
-  setupButtons(); // clears any errant processed button presses.
+  initInput(); // clears any errant processed button presses.
 
   setOutput(LED2_Output,LEDOFF);
   setOutput(LED3_Output,LEDON);
@@ -466,6 +370,7 @@ int testmain(void)
 	  i++;
 //	  int adcstuff = aADCxConvertedDataADC3;
 
+#ifdef HPF19
 	  if ( Input[UserBtn].pressed )
 	  {
 		  Input[UserBtn].pressed = 0;
@@ -486,7 +391,7 @@ int testmain(void)
 //		  blinkOutput(9, LEDBLINK_FOUR, 1);
 //		  blinkOutput(10, LEDBLINK_FOUR, 1);
 	  }
-
+#endif
 
 //	  LEDs[10].blinkingrate=1;
 //	  LEDs[8].blinkingrate=LED_BLINK_ONE;

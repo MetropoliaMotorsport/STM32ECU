@@ -33,9 +33,9 @@ bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahan
 		&& ( CANRxData[6] == CANRxData[7] ) // all three last bytes are sending AIR status to help verification.
 		)
 	{
-		CarState.BMS_relay_status = CANRxData[0];
-		CarState.IMD_relay_status = CANRxData[1];
-		CarState.BSPD_relay_status = CANRxData[2];
+		CarState.Shutdown.BMS = CANRxData[0];
+		CarState.Shutdown.IMD = CANRxData[1];
+		CarState.Shutdown.BSPDBefore = CANRxData[2];
 		CarState.VoltageLV = (CANRxData[4] * 1216)/10;
 		CarState.CurrentLV = CANRxData[5];
 		CarState.ShutdownSwitchesClosed = CANRxData[6];
@@ -70,10 +70,10 @@ void PDMTimeout( uint16_t id )
 
      */
 
-    CarState.BMS_relay_status = 1;
-    CarState.IMD_relay_status = 1;
-    CarState.BSPD_relay_status = 1;
-    CarState.AIROpen = 0;
+    CarState.Shutdown.BMS = true;
+    CarState.Shutdown.IMD = true;
+    CarState.Shutdown.BSPDBefore = true;
+    CarState.Shutdown.AIROpen = false;
 }
 
 int receivePDM( void )
@@ -99,20 +99,20 @@ int errorPDM( void )
     }
 #endif
 
-	if ( CarState.BMS_relay_status == 1 )
+	if ( CarState.Shutdown.BMS )
 	{
 		returnval +=2;
         blinkOutput(BMSLED_Output,LEDON,0); // ensure potential limp mode blinking disabled.
 		setOutputNOW(BMSLED_Output,LEDON);
 	} else setOutput(BMSLED_Output,LEDOFF);
 
-	if ( CarState.IMD_relay_status == 1 )
+	if ( CarState.Shutdown.IMD )
 	{
 		returnval +=4;
 		setOutputNOW(IMDLED_Output,LEDON);
 	} else setOutput(IMDLED_Output,LEDOFF);
 
-	if ( CarState.BSPD_relay_status == 1 )
+	if ( CarState.Shutdown.BSPDBefore )
 	{
 		returnval +=8;
 		setOutputNOW(BSPDLED_Output,LEDON);
@@ -130,7 +130,7 @@ int errorPDM( void )
 
 #ifdef SHUTDOWNSWITCHSTATUS // use mid dash led for shutdown switch
 #ifndef TORQUEVECTOR
-	if ( CarState.ShutdownSwitchesClosed )
+	if ( CheckShutdown() )
 	{
 		setOutput(TSOFFLED_Output,LEDON);
 	} else
@@ -176,19 +176,25 @@ int sendPDM( bool buzzer )
 
 }
 
+void resetPDM ( void )
+{
+	PDMCanData.seen = false;
+	DeviceState.PDM = OFFLINE;
+
+	CarState.Shutdown.BMS = true; // these are latched
+	CarState.Shutdown.IMD = true;
+	CarState.Shutdown.BSPDBefore = true;
+
+	CarState.Shutdown.AIROpen = false;
+	CarState.Shutdown.CockpitButton = true;
+}
 
 void initPDM( void )
 {
 
-	PDMCanData.seen = false;
-	DeviceState.PDM = OFFLINE;
+	RegisterResetCommand(resetPDM);
+	resetPDM();
 
-	CarState.BMS_relay_status = 0; // these are latched
-	CarState.IMD_relay_status = 0;
-	CarState.BSPD_relay_status = 0;
-
-	CarState.AIROpen = 0;
-	CarState.ShutdownSwitchesClosed = 1;
-
+	RegisterCan1Message(&PDMCanData);
 }
 

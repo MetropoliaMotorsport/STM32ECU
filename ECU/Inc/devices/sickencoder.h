@@ -14,5 +14,7 @@ uint8_t processSickEncoder(uint8_t CANRxData[8], uint32_t DataLength, uint16_t e
 int receiveSick( uint8_t canid );
 int requestSick( int nodeid );
 
+int initSick( void );
+
 #endif /* SICKENCODER_H_ */
 

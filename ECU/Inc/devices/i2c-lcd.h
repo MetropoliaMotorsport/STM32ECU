@@ -45,4 +45,6 @@ void lcd_clear (void);
 
 void LCD_I2CError( void );
 
+int initLCD( void );
+
 #endif /* I2CLCD_H */
