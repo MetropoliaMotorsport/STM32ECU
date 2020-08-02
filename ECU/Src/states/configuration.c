@@ -40,6 +40,18 @@ static bool configReset = false;
 int initConfig( void )
 {
 	RegisterCan1Message(&ECUConfig);
+
+	ReceiveInProgress = false;
+	ReceiveType = 0;
+	TransferSize = 0;
+	SendInProgress = false;
+	SendLast = 0;
+	BufferPos = 0;
+
+	eepromwrite = false;
+	eepromwritetype = 0;
+	eepromwritestart = 0;
+
 	return 0;
 }
 
@@ -376,9 +388,9 @@ bool DoMenu()
 	static int8_t top = 0;
 	static bool inedit = false;
 
-	static int menusize = 5;
+#define menusize	(6)
 
-	static char MenuLines[6][21] = { 0 };
+	static char MenuLines[menusize+1][21] = { 0 };
 
 	const uint8_t torquevals[] = {0,5,10,25,65,0}; // zero terminate so function can find end.
 
@@ -414,6 +426,8 @@ bool DoMenu()
 		doMenuPedalEdit( MenuLines[3], "Accel", (selection==2), &inedit, &getEEPROMBlock(0)->PedalProfile );
 		doMenuBoolEdit( MenuLines[4], "LimpDisable", (selection==3), &inedit, &getEEPROMBlock(0)->LimpMode);
 		doMenuBoolEdit( MenuLines[5], "Fans", (selection==4), &inedit, &getEEPROMBlock(0)->Fans);
+
+		doMenuBoolEdit( MenuLines[6], "TestHV", (selection==5), &inedit, &CarState.TestHV);
 
 //		sprintf(MenuLines[3], "%cAccel: %s", (selection==2) ? '>' :' ', GetPedalProfile(CarState.PedalProfile, false));
 

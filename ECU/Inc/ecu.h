@@ -49,8 +49,8 @@
 // Enable workaround to use second ADC for one of the APPS pedals due to shield issue.
 #define USEADC3
 
-// Use only one canbus for all functions, for bench testing. Not fully working.
-#define ONECAN
+// Use only one canbus for all functions, for bench testing.
+//#define ONECAN
 
 // Both CAN's are connected to one bus for bench testing, not entirely working.
 //#define sharedCAN
@@ -363,7 +363,7 @@ volatile struct CarState {
 	uint8_t brake_balance;
 
 	char HighVoltageReady;
-	uint8_t TestHV;
+	bool TestHV;
 
 	InverterState Inverters[MOTORCOUNT];
 	uint16_t COBID;

@@ -7,6 +7,40 @@
 
 #include "ecumain.h"
 
+
+uint16_t PrintRunning( void )
+{
+	char str[255];
+	int Torque = ADCState.Torque_Req_R_Percent/10;
+	if ( Torque > 99 ) Torque = 99;
+
+	sprintf(str,"%.2linm(%.2d%%,%.2liact)", (CarState.Torque_Req*1000+15384-1)/15384, Torque, CarState.Torque_Req);
+	lcd_send_stringline(1,str, 255);
+	sprintf(str,"%.2liv", (CarState.VoltageBMS));
+	lcd_send_stringline(3,str, 255);
+	return 0;
+}
+
+uint16_t PrintBrakeBalance( void )
+{
+	char str[255];
+
+	if ( CarState.brake_balance < 255 )
+	{
+		sprintf(str,"Bal: %.3liF %.3liR (%.2d%%)", ADCState.BrakeF, ADCState.BrakeR, CarState.brake_balance );
+	} else
+	{
+		if ( DeviceState.ADC == OPERATIONAL )
+			sprintf(str, "Bal: Press Brakes");
+		else
+			sprintf(str, "Bal: No Data");
+	}
+
+	lcd_send_stringline(0,str, 255);
+	return 0;
+}
+
+
 /*
  * APPS Check
  *
@@ -238,19 +272,6 @@ int RunningRequest( void )
 	}
 
 	// else inverter not in expected state.
-	return 0;
-}
-
-uint16_t PrintRunning( void )
-{
-	char str[255];
-	int Torque = ADCState.Torque_Req_R_Percent/10;
-	if ( Torque > 99 ) Torque = 99;
-
-	sprintf(str,"%.2linm(%.2d%%,%.2liact)", (CarState.Torque_Req*1000+15384-1)/15384, Torque, CarState.Torque_Req);
-	lcd_send_stringline(1,str, 255);
-	sprintf(str,"%.2liv", (CarState.VoltageBMS));
-	lcd_send_stringline(3,str, 255);
 	return 0;
 }
 

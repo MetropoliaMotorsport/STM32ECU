@@ -32,6 +32,7 @@ void FDCAN1_start(void)
     Error_Handler();
   }
 #ifndef ONECAN
+   hfdcan2p = &hfdcan2;
   if (HAL_FDCAN_Init(hfdcan2p) != HAL_OK) // if can2 not initialised before filters set they are lost
   {
     // Initialization Error
@@ -185,27 +186,26 @@ void FDCAN1_start(void)
 
 void FDCAN2_start(void)
 {
+#ifdef CANFILTERS
+	  FDCAN_FilterTypeDef sFilterConfig2;
+#endif
+
 #ifdef ONECAN
   hfdcan2p = &hfdcan1;
 
-#else
-   hfdcan2p = &hfdcan2;
-
- /* if (HAL_FDCAN_Init(&hfdcan2) != HAL_OK) // initted already in fdcan1_start
-  {
-    // Initialization Error
-    Error_Handler();
-  } */
-#ifdef CANFILTERS
-  FDCAN_FilterTypeDef sFilterConfig2;
+  #ifdef CANFILTERS
   sFilterConfig2.FilterConfig = FDCAN_FILTER_TO_RXFIFO0; // set can2 to receive into fifo1
+  #endif
 
-  HAL_FDCAN_ConfigGlobalFilter(hfdcan2p, FDCAN_ACCEPT_IN_RX_FIFO1, FDCAN_ACCEPT_IN_RX_FIFO1, DISABLE, DISABLE);
 #else
-  HAL_FDCAN_ConfigGlobalFilter(hfdcan2p, FDCAN_REJ, FDCAN_REJECT, DISABLE, DISABLE);
-#endif
-  HAL_FDCAN_ConfigRxFifoOverwrite(hfdcan2p, FDCAN_RX_FIFO1, FDCAN_RX_FIFO_OVERWRITE);
+
+  #ifdef CANFILTERS
   sFilterConfig2.FilterConfig = FDCAN_FILTER_TO_RXFIFO1; // set can2 to receive into fifo1
+  HAL_FDCAN_ConfigGlobalFilter(hfdcan2p, FDCAN_REJECT, FDCAN_REJECT, DISABLE, DISABLE);
+  #else
+  HAL_FDCAN_ConfigGlobalFilter(hfdcan2p, FDCAN_ACCEPT_IN_RX_FIFO1, FDCAN_ACCEPT_IN_RX_FIFO1, DISABLE, DISABLE);
+  #endif
+  HAL_FDCAN_ConfigRxFifoOverwrite(hfdcan2p, FDCAN_RX_FIFO1, FDCAN_RX_FIFO_OVERWRITE);
 #endif
 
 #ifdef CANFILTERS
@@ -305,7 +305,7 @@ void FDCAN2_start(void)
 
 #else
   // Start the FDCAN module
-  if (HAL_FDCAN_Start(hfdcan2) != HAL_OK)
+  if (HAL_FDCAN_Start(hfdcan2p) != HAL_OK)
   {
     //  Start Error
     Error_Handler();
@@ -1133,6 +1133,9 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 		// process incoming packet
 
 		if ( !processCan1Message(&RxHeader, CANRxData) )
+#ifdef ONECAN
+//		if ( !processCan2Message(&RxHeader, CANRxData) )
+#endif
 		switch ( RxHeader.Identifier )
         {
 			default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.

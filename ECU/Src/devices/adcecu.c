@@ -474,6 +474,21 @@ int getSteeringAngle(uint16_t RawADCInput) // input is only 12bit
     return angle;
 }
 
+
+int getSteeringAnglePWM( void )
+{
+	volatile int angle = 0;
+
+	if ( receivePWM() )
+	{
+		angle = getPWMDuty();
+		angle = ( angle*360.0 );
+		angle = angle / 10000; // center around 180;
+		angle = angle - 180;
+	} else angle = 0xFFFF; // not read, return impossible angle for sanity check.
+	return angle;
+}
+
 /**
  * convert raw front brake reading into calibrated brake position
  */
@@ -792,9 +807,14 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 
 void ReadADC1(bool half)
 {
-	ADCloops++;
+#ifdef CACHE
+	// invalid the data cache before reading from it to ensure dma transfer readable
+	SCB_InvalidateDCache_by_Addr (aADCxConvertedData, sizeof(aADCxConvertedData) );
+#endif
 
+	ADCloops++;
 	ADC1read = true;
+
 
 	volatile int start = NumADCChan*SampleSize;
 	if ( half ) start = 0;
@@ -827,6 +847,10 @@ void ReadADC1(bool half)
 
 void ReadADC3(bool half)
 {
+#ifdef CACHE
+	// invalid the data cache before reading from it to ensure dma transfer readable
+	SCB_InvalidateDCache_by_Addr (aADCxConvertedDataADC3, sizeof(aADCxConvertedDataADC3) );
+#endif
 	ADC3loops++;
 	ADC3read = true;
 	volatile int start = NumADCChanADC3*SampleSize;
@@ -916,7 +940,8 @@ uint16_t CheckADCSanity( void )
 	uint16_t returnvalue=(0x1 << BrakeFErrorBit)+
 						(0x1 << BrakeRErrorBit)+
 						(0x1 << AccelRErrorBit)+
-						(0x1 << AccelLErrorBit)
+						(0x1 << AccelLErrorBit)+
+						(0x1 << SteeringAngleErrorBit)
 #ifdef HPF19
 					   +(0x1 << CoolantLErrorBit)+
 						(0x1 << CoolantRErrorBit)+
@@ -1026,6 +1051,17 @@ uint16_t CheckADCSanity( void )
 #else
         // check can data is uptodate.
 
+
+        ADCState.SteeringAngle = getSteeringAnglePWM();
+
+        if ( abs(ADCState.SteeringAngle) >= 181 ) // if impossible angle.
+        {
+            ADCState.SteeringAngle = 255;
+            returnvalue &= ~(0x1 << SteeringAngleErrorBit);
+         //   returnvalue |= 0x1 << SteeringAngleErrorBit;
+        }
+        else returnvalue &= ~(0x1 << SteeringAngleErrorBit);
+
     	if ( receiveAnalogNodesCritical() == 0 )
     	{
 
@@ -1069,13 +1105,17 @@ uint16_t CheckADCSanity( void )
 		}
 	}
 
-//	if ( returnvalue == 0 ) {
+	if ( ADCState.BrakeF > 5 && ADCState.BrakeR > 5
+		 && ADCState.BrakeF < 255 && ADCState.BrakeR < 255
+	) {
 		CarState.brake_balance = getBrakeBalance(ADCState.BrakeF, ADCState.BrakeR);
-//	} else CarState.brake_balance = -1;
+	} else CarState.brake_balance = -1;
 
 	if ( returnvalue ){ // if error in adc data check if it's yet to be treated as fatal.
 		Errors.ADCError++; // increase adc error counter
 		Errors.ADCErrorState=returnvalue; // store current error value for checking.
+		DeviceState.ADC = INERROR;
+
 		for (int i=0;i<NumADCChan+2;i++)
 		ADC_DataError[i] = ADC_Data[i];
 
@@ -1095,6 +1135,7 @@ uint16_t CheckADCSanity( void )
 	{
 		if ( Errors.ADCError > 0 )	Errors.ADCError--;
 		Errors.ADCErrorState=0;
+		DeviceState.ADC = OPERATIONAL;
 	}
 
 	return returnvalue;
@@ -1164,7 +1205,10 @@ int initADC( void )
 	MX_ADC3_Init();
 
 	if ( DeviceState.LCD == ENABLED )
+	{
 		lcd_send_stringscroll("Start ADC");
+		lcd_update();
+	}
 	if ( startADC() == 0 )  //  starts the ADC dma processing.
 	{
 		DeviceState.ADC = OPERATIONAL;

@@ -155,17 +155,19 @@ int Startup( uint32_t OperationLoops  )
 	uint32_t loopstart = gettimer();
 	uint32_t looptimer = 0;
 
-	do
+	DWT_Delay((PROCESSLOOPTIME-50-(gettimer()-loopstart))*100); // wait for 5ms
+
+/*	do
 	{
         // check for incoming data, break when all received.
 		looptimer = gettimer() - loopstart;
 	} while ( looptimer < PROCESSLOOPTIME-50 ); // check
-
+*/
 //	if ( readystate == 1 ) return StartupState;
 
 	uint8_t invertercount = 0;
 
-	for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
+	for ( int i=0;i<MOTORCOUNT;i++) // speed is received
 	{
 		receiveINVStatus(&CarState.Inverters[i]);
 		receiveINVSpeed(&CarState.Inverters[i]);
@@ -174,7 +176,7 @@ int Startup( uint32_t OperationLoops  )
 		if ( CarState.Inverters[i].InvState != 0xFF ) invertercount++;
 	}
 
-	if ( invertercount == MOTORCOUNT	) // we've received status from inverters, don't send reset.
+	if ( invertercount == MOTORCOUNT ) // we've received status from inverters, don't send reset.
 	{
 		return PreOperationalState;
 	} else if ( CAN_NMT( 0x81, 0x0 ) ) // sent NMT reset packet to can buses if not received inverter status.
@@ -676,6 +678,16 @@ int OperationalProcess( void )
 			loopcount++;
 			totalloopcount++;
 		}
+
+
+		static int lcdupdatecounter = 0;
+		// update LCD at end of loop rather than timer so that all possible updates have been done, and there won't be priority clashes on what to display.
+		if ( DeviceState.LCD == OPERATIONAL && ( lcdupdatecounter % 5 ) == 0 )
+		{
+			lcd_update();
+		}
+		lcdupdatecounter++;
+
 #ifdef WFI
 		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
 #endif

@@ -14,6 +14,8 @@ uint16_t PedalTorqueRequest( void );
 
 uint16_t PrintRunning( void );
 
+uint16_t PrintBrakeBalance( void );
+
 #ifdef TORQUEVECTOR
 uint16_t TorqueVectorProcess( int torquerequest );
 #endif

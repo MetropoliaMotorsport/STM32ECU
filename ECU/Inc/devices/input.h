@@ -64,12 +64,12 @@ DI7 pin 25 PF12 ok    input 8
 	#define TS_Input DI6 // input 4.
 	#define RTDM_Input DI4 // input 2
 	#define StartStop_Input DI7 //
-	#define Config_Input DI3 // same as center button
-	#define Center_Input DI3
-	#define Left_Input DI11
-	#define Right_Input DI14
+	#define Config_Input DI11 // same as center button
+	#define Center_Input DI11
+	#define Left_Input DI3
+	#define Right_Input DI2
 	#define Up_Input DI15
-	#define Down_Input DI2
+	#define Down_Input DI14
 #endif
 
 struct ButtonData {

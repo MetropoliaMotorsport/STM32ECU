@@ -87,12 +87,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if ( htim->Instance == TIM3 ){
 //		timerticks++; // increment global time counter
-
-		if ( DeviceState.LCD == OPERATIONAL )
-		{
-			lcd_update();
-		}
-
 		static uint8_t blinkcounter = 0;
 
 		for ( int i = 0; i<OUTPUTCount; i++)
@@ -163,10 +157,6 @@ int initTimer( void )
 	MX_TIM7_Init();
 
 	MX_TIM6_Init();
-
-#ifdef PWMSTEERING
-	MX_TIM8_Init(); // pwm
-#endif
 
 	MX_TIM16_Init();
 

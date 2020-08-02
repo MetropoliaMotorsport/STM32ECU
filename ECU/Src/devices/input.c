@@ -11,14 +11,16 @@
 // variables for button debounce interrupts, need to be global to be seen in timer interrupt
 static uint16_t ButtonpressPin;
 
+// PWM Pin needs capacitor taken off to deactivate low pass filter.
+
 #ifdef HPF20
 volatile struct ButtonData Input[NO_INPUTS] = {
-		{ DI2_GPIO_Port, DI2_Pin}, //0
-		{ DI3_GPIO_Port, DI3_Pin}, //1
-		{ DI4_GPIO_Port, DI4_Pin}, //2
-		{ DI5_GPIO_Port, DI5_Pin}, //3
-		{ DI6_GPIO_Port, DI6_Pin}, //4 Also potential PWM Pin.
-		{0,0},//{ DI7_GPIO_Port, DI7_Pin}, //5 being used for PWM.
+		{ DI2_GPIO_Port, DI2_Pin}, //0  pin 9
+		{ DI3_GPIO_Port, DI3_Pin}, //1  pin 17
+		{ DI4_GPIO_Port, DI4_Pin}, //2  pin 24
+		{ DI5_GPIO_Port, DI5_Pin}, //3  pin 25
+		{ DI6_GPIO_Port, DI6_Pin}, //4  pin 34 pin Also potential PWM Pin.
+		{0,0},//{ DI7_GPIO_Port, DI7_Pin}, //5 pin 33 being used for PWM.
 		{ DI8_GPIO_Port, DI8_Pin}, //6
 		{ DI10_GPIO_Port, DI10_Pin}, //7
 		{ DI11_GPIO_Port, DI11_Pin}, //8
@@ -42,6 +44,10 @@ volatile struct ButtonData Input[NO_INPUTS] = {
 };
 #endif
 
+bool receiveCANInput(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
+
+CANData CANButtonInput = { 0, AdcSimInput_ID+2, 8, receiveCANInput, NULL, 0, 0 };
+
 // PWM Code.
 
 /* Captured Value */
@@ -57,6 +63,11 @@ volatile uint32_t PWMtime;
 
 int initPWM( void )
 {
+
+#ifdef PWMSTEERING
+	MX_TIM8_Init(); // pwm
+#endif
+
 	if(HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_2) != HAL_OK)
 	{
 		Error_Handler();
@@ -79,7 +90,6 @@ int initPWM( void )
   */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-
   if ( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) // only get one update per loop?
   {
 	PWMtime = gettimer(); // use for timing out if interrupt not getting triggered.
@@ -337,22 +347,17 @@ void clearButtons(void)
 	}
 }
 
-
-bool receiveCANInput(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
-
-CANData CANButtonInput = { 0, AdcSimInput_ID+2, 8, receiveCANInput, NULL, 0, 0 };
-
 bool receiveCANInput(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle)
 {
-	if(CANRxData[0]){
+	if(CANRxData[0] == 1){
 		Input[StartStop_Input].pressed = 1;  // StartStop_Switch
 		Input[StartStop_Input].lastpressed = gettimer();
 	}
-	if(CANRxData[1]){
+	if(CANRxData[1] == 1){
 		Input[TS_Input].pressed = 1; // TS_Switch
 		Input[TS_Input].lastpressed = gettimer();
 	}
-	if(CANRxData[2]){
+	if(CANRxData[2] == 1){
 		Input[RTDM_Input].pressed = 1; // TS_Switch
 		Input[RTDM_Input].lastpressed = gettimer();
 	}
@@ -362,18 +367,23 @@ bool receiveCANInput(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 	case 1 :
 		Input[Center_Input].pressed = 1;
 		Input[Center_Input].lastpressed = gettimer();
+		break;
 	case 2 :
 		Input[Left_Input].pressed = 1;
 		Input[Left_Input].lastpressed = gettimer();
+		break;
 	case 4 :
 		Input[Right_Input].pressed = 1;
 		Input[Right_Input].lastpressed = gettimer();
+		break;
 	case 8 :
 		Input[Up_Input].pressed = 1;
 		Input[Up_Input].lastpressed = gettimer();
+		break;
 	case 16 :
 		Input[Down_Input].pressed = 1;
 		Input[Down_Input].lastpressed = gettimer();
+		break;
 	}
 
 #ifdef debug

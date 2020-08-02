@@ -51,8 +51,8 @@ void HAL_WWDG_MspInit(WWDG_HandleTypeDef* wwdgHandle)
 
   /* USER CODE END WWDG1_MspInit 0 */
     /* WWDG1 clock enable */
-//    HAL_RCCEx_WWDGxSysResetConfig(RCC_WWDG1)();
-    __HAL_RCC_WWDG1_CLK_ENABLE();
+  //  HAL_RCCEx_WWDGxSysResetConfig(RCC_WWDG1)();
+  //  __HAL_RCC_WWDG1_CLK_ENABLE();
   /* USER CODE BEGIN WWDG1_MspInit 1 */
 
   /* USER CODE END WWDG1_MspInit 1 */

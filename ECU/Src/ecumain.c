@@ -106,14 +106,19 @@ void SWD_Init(void)
 // Initialise the ECU's internal features.
 static int HardwareInit( void )
 {
-
 //	SWD_Init();
 
 	/* Enable I-Cache---------------------------------------------------------*/
+//	SCB_InvalidateICache();
 	SCB_EnableICache();
 
+#ifdef CACHE
 	/* Enable D-Cache---------------------------------------------------------*/
-//	SCB_EnableDCache();
+	SCB_EnableDCache();
+#endif
+	//  SCB_CleanInvalidateDCache_by_Addr	(	uint32_t * 	addr,
+	//int32_t 	dsize
+//	)	 DMA
 
 	static int enteredcount = 0;
 	enteredcount++;
@@ -161,9 +166,13 @@ static int HardwareInit( void )
 	DeviceState.LCD = DISABLED;
 #endif
 	if ( DeviceState.LCD == OPERATIONAL )
+	{
 		lcd_send_stringscroll("Start CANBUS");
+		lcd_update();
+	}
 
 	initPower();
+	initConfig();
     initInv();
 	initIMU();
 	initPDM();
@@ -198,7 +207,10 @@ static int HardwareInit( void )
 #endif
 
 	if ( DeviceState.LCD == ENABLED ) // interrupts should not be running, so use regular update.
+	{
 		lcd_send_stringscroll("Enable LEDS");
+		lcd_update();
+	}
     initOutput(); // set default led states and start life indicator LED blinking.
 
 #ifdef POWERLOSSDETECT
@@ -223,6 +235,7 @@ static int HardwareInit( void )
 	while ( 1 ) {
 		sprintf(str,"%.8d", i);
 		lcd_send_stringpos(0,0,str);
+		lcd_update();
 		i++;
 	}
 #endif
@@ -234,12 +247,14 @@ static int HardwareInit( void )
 		HAL_Delay(100);
 		sprintf(str,"%.8d", i);
 		lcd_send_stringscroll(str);
+		lcd_update();
 	}
 
 	while ( 1 )
 	{
 
 		lcd_processscroll(GetUpDownPressed());
+		lcd_update();
 		HAL_Delay(50);
 
 	}
@@ -249,7 +264,13 @@ static int HardwareInit( void )
 	{
 		lcd_send_stringscroll("Hardware init done.");
 		lcd_clearscroll();
+		lcd_update();
 	}
+
+	lcd_send_stringscroll("Shutdown closed.");
+	lcd_update();
+//	ShutdownCircuitSet( true );
+//	while ( 1 ){};
 	return returnval;
 }
 

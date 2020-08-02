@@ -353,6 +353,28 @@ int PreOperationState( uint32_t OperationLoops  )
 		case 0:
 		default:
 			RequestState = OperationalReadyState; // nothing happening in config, assume normal operation.
+			static bool showbrakebal = false;
+
+			static bool showadc = false;
+
+			switch ( GetLeftRightPressed() )
+			{
+				case -1 : showbrakebal = !showbrakebal; break;
+				case 1 : showadc = !showadc; break;
+			}
+
+			if ( showbrakebal ) PrintBrakeBalance( );
+
+			if ( showadc )
+			{
+
+				sprintf(str,"A1 %.5d %.5d %.5d", ADC_Data[0], ADC_Data[1], ADC_Data[2]);
+				lcd_send_stringline(1,str, 255);
+
+				sprintf(str,"A3 %.5d %.5d %.5d", ADC_Data[3], ADC_Data[4], ADC_Data[5]);
+				lcd_send_stringline(2,str, 255);
+			}
+
 			// do nothing
 	}
 
