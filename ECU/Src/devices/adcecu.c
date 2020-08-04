@@ -479,13 +479,16 @@ int getSteeringAnglePWM( void )
 {
 	volatile int angle = 0;
 
+
+	return 0;
+
 	if ( receivePWM() )
 	{
 		angle = getPWMDuty();
 		angle = ( angle*360.0 );
 		angle = angle / 10000; // center around 180;
 		angle = angle - 180;
-	} else angle = 0xFFFF; // not read, return impossible angle for sanity check.
+	} else angle = 0xFF; // not read, return impossible angle for sanity check.
 	return angle;
 }
 
@@ -809,7 +812,7 @@ void ReadADC1(bool half)
 {
 #ifdef CACHE
 	// invalid the data cache before reading from it to ensure dma transfer readable
-	SCB_InvalidateDCache_by_Addr (aADCxConvertedData, sizeof(aADCxConvertedData) );
+	SCB_InvalidateDCache_by_Addr (aADCxConvertedData, sizeof(aADCxConvertedData)+32 );
 #endif
 
 	ADCloops++;
@@ -849,7 +852,7 @@ void ReadADC3(bool half)
 {
 #ifdef CACHE
 	// invalid the data cache before reading from it to ensure dma transfer readable
-	SCB_InvalidateDCache_by_Addr (aADCxConvertedDataADC3, sizeof(aADCxConvertedDataADC3) );
+	SCB_InvalidateDCache_by_Addr (aADCxConvertedDataADC3, sizeof(aADCxConvertedDataADC3)+32 );
 #endif
 	ADC3loops++;
 	ADC3read = true;

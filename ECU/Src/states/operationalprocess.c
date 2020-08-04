@@ -153,7 +153,7 @@ int Startup( uint32_t OperationLoops  )
 	}
 
 	uint32_t loopstart = gettimer();
-	uint32_t looptimer = 0;
+//	uint32_t looptimer = 0;
 
 	DWT_Delay((PROCESSLOOPTIME-50-(gettimer()-loopstart))*100); // wait for 5ms
 
