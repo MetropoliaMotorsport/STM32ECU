@@ -394,7 +394,11 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 	}; // check
 */
 
-	DWT_Delay((PROCESSLOOPTIME-50-(gettimer()-loopstart))*100); // wait for 5ms
+#ifndef RTOS
+	DWT_Delay((PROCESSLOOPTIME-MS1*5-(gettimer()-loopstart))*1000); // wait for 5ms
+#else
+	vTaskDelay(5);
+#endif
 
 	preoperationstate = DevicesOnline(preoperationstate);
 

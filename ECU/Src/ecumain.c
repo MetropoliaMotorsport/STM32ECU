@@ -52,7 +52,12 @@
 #include <stdlib.h>
 
 /* Private includes ----------------------------------------------------------*/
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "event_groups.h"
 
+#include "cmsis_os.h"
 #include "operationalprocess.h"
 #include "ecumain.h"
 #include "ecu.h"
@@ -61,7 +66,10 @@
 
 #include "dwt_delay.h"
 
+
+
 HAL_StatusTypeDef SystemClock_Config(void);
+static int HardwareInit( void );
 
 
 int __io_putchar(int ch)
@@ -103,6 +111,202 @@ void SWD_Init(void)
   // Force AF0 for GPIOB pin 3
    *(__IO uint32_t*)(0x58020420) &= 0xFFFF0FFF;
 }
+
+
+/* Private function prototypes -----------------------------------------------*/
+/* USER CODE BEGIN FunctionPrototypes */
+
+/* USER CODE END FunctionPrototypes */
+
+void StartDefaultTask(void *argument);
+
+void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
+osThreadId_t LCDTaskHandle;
+const osThreadAttr_t LCDTask_attributes = {
+  .name = "LCDTask",
+  .priority = (osPriority_t) osPriorityLow,
+  .stack_size = 128 * 50
+};
+
+osThreadId_t MainTaskHandle;
+const osThreadAttr_t MainTask_attributes = {
+  .name = "MainTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 50
+};
+
+
+
+enum lcd_msg_type { LCD_Title, LCD_Line, LCD_Scroll, LCD_Cmd };
+
+enum lcd_cmd_type { Clear, ScrollUp, ScrollDown };
+
+struct lcd_message {
+
+  enum lcd_msg_type type;
+
+  union {
+
+
+    char stringptr[41];
+
+    enum lcd_cmd_type cmd;
+
+    uint32_t count;
+
+  } data;
+
+  uint8_t line;
+
+  uint8_t priority;
+
+};
+
+/* The queue is to be created to hold a maximum of 10 uint64_t
+variables. */
+#define QUEUE_LENGTH    10
+#define ITEM_SIZE       sizeof( struct lcd_message )
+
+/* The variable used to hold the queue's data structure. */
+static StaticQueue_t xStaticQueue;
+
+
+/* The array to use as the queue's storage area.  This must be at least
+uxQueueLength * uxItemSize bytes. */
+uint8_t ucQueueStorageArea[ QUEUE_LENGTH * ITEM_SIZE ];
+
+QueueHandle_t xQueue;
+
+void LCDTask(void *argument)
+{
+
+	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
+	configASSERT( xQueue );
+
+	initLCD();
+
+	vTaskDelay(5);
+
+	TickType_t xLastWakeTime;
+    const TickType_t xFrequency = 20;
+
+	// Initialise the xLastWakeTime variable with the current time.
+	xLastWakeTime = xTaskGetTickCount();
+
+
+//	unsigned long counter;
+
+	struct lcd_message msg;
+
+	for(;;)
+	{
+
+		while ( uxQueueMessagesWaiting( xQueue ) )
+		{
+        // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
+			xQueueReceive(xQueue,&msg,0);
+
+
+			char str[LCDCOLUMNS+1] = "";
+
+			sprintf(str,"Count: %.10u", msg.data.count );
+
+			lcd_send_stringline(3,str, 0);
+	//		vTaskYield();
+
+		} // portMAX_DELAY
+
+		lcd_updatedisplay();
+
+		vTaskDelay(xFrequency);
+
+	//	vTaskDelayUntil( &xLastWakeTime, xFrequency );
+	}
+
+
+
+	osThreadTerminate(NULL);
+}
+
+
+/* USER CODE BEGIN 1 */
+/* Functions needed when configGENERATE_RUN_TIME_STATS is on */
+void configureTimerForRunTimeStats(void)
+{
+
+}
+
+unsigned long getRunTimeCounterValue(void)
+{
+	return DWT->CYCCNT;
+}
+
+void MainTask(void *argument)
+{
+	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
+	configASSERT( xQueue );
+
+	HardwareInit();
+
+    ResetStateData();
+
+	vTaskDelay(500);
+
+	TickType_t xLastWakeTime;
+
+    const TickType_t xFrequency = 10;
+
+	// Initialise the xLastWakeTime variable with the current time.
+	xLastWakeTime = xTaskGetTickCount();
+
+//	struct AMessage *pxMessage;
+
+	struct lcd_message msg;
+
+	uint32_t counter = 0;
+
+	lcd_setscrolltitle("Starting Main Loop");
+
+	for(;;)
+	{
+		OperationalProcess();
+		counter++;
+		msg.type = LCD_Cmd;
+		msg.data.count = counter;
+
+		xQueueSend( xQueue, ( void * ) &msg, ( TickType_t ) 0 );
+		vTaskDelayUntil( &xLastWakeTime, xFrequency );
+	}
+
+	osThreadTerminate(NULL);
+}
+
+
+void HAL_Delay(  volatile uint32_t millis )
+{
+/* replace HAL library blocking delay function
+* with FreeRTOS thread aware equivalent */
+	vTaskDelay(millis);
+}
+
+//In addition, I call the HAL_IncTick() function from the FreeRTOS TickHook:
+
+void vApplicationTickHook( void )
+{
+	HAL_IncTick();
+}
+
+/* Private function prototypes -----------------------------------------------*/
+/* USER CODE BEGIN FunctionPrototypes */
+
+/* USER CODE END FunctionPrototypes */
+
+void StartDefaultTask(void *argument);
+
+void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
+
 // Initialise the ECU's internal features.
 static int HardwareInit( void )
 {
@@ -127,7 +331,7 @@ static int HardwareInit( void )
 	int returnval = 0;
 
 	// run through  the cubemx generated init functions.
-
+#ifndef RTOS
 	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	if ( HAL_Init() != HAL_OK )
 	{
@@ -142,9 +346,11 @@ static int HardwareInit( void )
 		  	  	  	  	  //should possibly hang here, nothing yet initialised to communicate status.
 	}
 
+#endif
+
 	DWT_Init();
 
-	HAL_Delay(500); // delay to allow debugger to hopefully latch. // have some input pin act as a boot stopper.
+	HAL_Delay(50); // delay to allow debugger to hopefully latch. // have some input pin act as a boot stopper.
 
 	/* Initialize all configured peripherals */
 
@@ -154,7 +360,13 @@ static int HardwareInit( void )
 #ifdef HPF20
 	ShutdownCircuitSet( false ); // ensure shutdown circuit is closed at start
 
-	initLCD();
+#ifdef RTOS
+	 LCDTaskHandle = osThreadNew(LCDTask, NULL, &LCDTask_attributes);
+
+	 vTaskDelay(10);
+#else
+	 initLCD();
+#endif
 
 	initTimer();
 
@@ -165,11 +377,8 @@ static int HardwareInit( void )
 #elif
 	DeviceState.LCD = DISABLED;
 #endif
-	if ( DeviceState.LCD == OPERATIONAL )
-	{
-		lcd_send_stringscroll("Start CANBUS");
-		lcd_update();
-	}
+	lcd_send_stringscroll("Start CANBUS");
+	lcd_update();
 
 	initPower();
 	initConfig();
@@ -200,17 +409,12 @@ static int HardwareInit( void )
 
 	initADC();
 
-
-
 #ifdef WATCHDOG
 	initWatchdog();
 #endif
 
-	if ( DeviceState.LCD == ENABLED ) // interrupts should not be running, so use regular update.
-	{
-		lcd_send_stringscroll("Enable LEDS");
-		lcd_update();
-	}
+	lcd_send_stringscroll("Enable LEDS");
+	lcd_update();
     initOutput(); // set default led states and start life indicator LED blinking.
 
 #ifdef POWERLOSSDETECT
@@ -260,12 +464,9 @@ static int HardwareInit( void )
 	}
 #endif
 
-	if ( DeviceState.LCD == ENABLED )
-	{
-		lcd_send_stringscroll("Hardware init done.");
-		lcd_clearscroll();
-		lcd_update();
-	}
+	lcd_send_stringscroll("Hardware init done.");
+	lcd_clearscroll();
+	lcd_update();
 
 	lcd_send_stringscroll("Shutdown closed.");
 	lcd_update();
@@ -273,6 +474,8 @@ static int HardwareInit( void )
 //	while ( 1 ){};
 	return returnval;
 }
+
+
 
 /*
  * Primary operating function entered into after initialisation.
@@ -287,6 +490,65 @@ int realmain(void)
   /* MCU Configuration--------------------------------------------------------*/
 
  int MainState = 0;
+
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
+
+	/* Configure the system clock */
+	SystemClock_Config();
+
+	/*
+	initLCD();
+
+	HAL_Delay(20);
+
+//	unsigned long counter;
+
+	struct lcd_message msg;
+
+	uint32_t counter = 0;
+
+	for(;;)
+	{
+		char str[LCDCOLUMNS+1] = "";
+
+		sprintf(str,"Count: %.10u", counter );
+		counter++;
+
+		lcd_send_stringline(3,str, 255);
+//		printf("value received on queue: %lu \n",counter);
+
+		lcd_updatedisplay();
+		HAL_Delay(20);
+	}
+*/
+
+ // HAL_NVIC_SetPriorityGroup(HAL_NVIC_PriorityGrouping);
+
+ /* Init scheduler */
+ osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
+
+ xQueue = xQueueCreateStatic( QUEUE_LENGTH,
+						  ITEM_SIZE,
+						  ucQueueStorageArea,
+						  &xStaticQueue );
+
+ vQueueAddToRegistry(xQueue, "LCD Queue" );
+
+
+ MainTaskHandle = osThreadNew(MainTask, NULL, &MainTask_attributes);
+
+// MX_FREERTOS_Init();
+
+ /* Start scheduler */
+ osKernelStart();
+
+ while ( 1 )
+ {};
+
+
+ // should never get here.
+
 
  // uint8_t CANTxData[8];
   while (1) // primary state loop.

@@ -482,14 +482,14 @@ int CheckConfigurationRequest( void )
 		CarState.Torque_Req_CurrentMax = 0;
 	}
 
-	if ( ReceiveInProgress && gettimer() > ECUConfigDataTime + 10000 )
+	if ( ReceiveInProgress && gettimer() > ECUConfigDataTime + MS1000 )
 	{ // don't get stuck in receiving data for more than 1 second if data flow stopped.
 		ReceiveInProgress = false;
 		lcd_send_stringline(3,"Receive Timeout", 1);
 		// TODO send timeout error
 	}
 
-	if ( SendInProgress && gettimer() > SendLast + 10000 )
+	if ( SendInProgress && gettimer() > SendLast + MS1000 )
 	{
 		resetSend();
 		lcd_send_stringline(3,"Send timeout", 1);
@@ -504,7 +504,7 @@ int CheckConfigurationRequest( void )
 			lcd_send_stringline(3,"EEPROM Write done", 1);
 			eepromwrite=false;
 			eepromwritetype=0;
-		} else if ( gettimer() > eepromwritestart + 100000 )
+		} else if ( gettimer() > eepromwritestart + MS1000 )
 		{
 			lcd_send_stringline(3,"EEPROM Write timeout", 1);
 			eepromwrite=false;

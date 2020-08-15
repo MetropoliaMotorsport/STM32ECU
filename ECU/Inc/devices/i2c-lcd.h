@@ -17,6 +17,7 @@
 
 
 int lcd_update( void );
+int lcd_updatedisplay( void );
 
 void strpad(char * str, int len);
 

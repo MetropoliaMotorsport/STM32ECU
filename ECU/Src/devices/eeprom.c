@@ -248,7 +248,7 @@ int readEEPROMAddr( uint16_t address, uint16_t size )
 	{
 		//__WFI();
 		HAL_Delay(10);
-		if ( gettimer() > startread + 40000 ) // TODO check right way round.
+		if ( gettimer() > startread + MS1000*4 ) // TODO check right way round.
 		{
 			return 1;
 		}

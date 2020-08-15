@@ -125,7 +125,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 bool receivePWM( void )
 {
-	return (PWMtime > gettimer()-100 )? true : false;
+	return (PWMtime > gettimer()-MS1*10 )? true : false;
 }
 
 

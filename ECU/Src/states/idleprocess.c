@@ -127,8 +127,11 @@ char OperationalReceiveLoop( void )
 
 	// loop for upto 5ms before end process loop time waiting for data or all data received.
 	// allows time to process incoming data, should be ~5ms.
-
-	DWT_Delay((PROCESSLOOPTIME-50-(gettimer()-loopstart))*100); // wait for 5ms
+#ifndef RTOS
+	DWT_Delay((PROCESSLOOPTIME-MS1*5-(gettimer()-loopstart))*1000); // wait for 5ms
+#else
+	vTaskDelay(5);
+#endif
 //	do
 //	{
 		// check for resanityceived data and set states
@@ -279,7 +282,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	}
 
 	if ( TSRequested == 1
-		&& HVEnableTimer+9000 < gettimer()
+		&& HVEnableTimer+MS1000*9 < gettimer()
 		&& !InvHVPresent // make this optional so IVT can be disabled.
 		)
 	{

@@ -15,6 +15,7 @@
 //#define HPF19
 
 #ifdef HPF20
+    #define RTOS
 	#define EEPROMSTORAGE
 	#define SCREEN
 	#define POWERNODES
@@ -145,7 +146,7 @@
 // Allow a 450ms window of brake + apps before throttle is cut.
 #define APPSALLOWBRAKE
 
-#define APPSBRAKETIME	3000 //300ms brake allowance for apps before trigger cut power.
+#define APPSBRAKETIME	300 //300ms brake allowance for apps before trigger cut power.
 
 // Allow limp mode to be exited on request.
 #define ALLOWLIMPCANCEL
@@ -176,32 +177,36 @@
 
 // Timeout Values, for bench testing with App if SIM defined and real car if not.
 
+
+#define MS1000					(1000)
+#define MS1						(1)
+
 //#define SIM
 #ifdef SIM
-#define PDMTIMEOUT				5000
-#define BMSTIMEOUT				5000
-#define IVTTIMEOUT				5000
-#define IVTTIMEOUTLONG			5000
-#define IVTTIMEOUTWATTS			5000
-#define PROCESSLOOPTIME 		2000
-#define INVERTERTIMEOUT			5000
+#define PDMTIMEOUT				500
+#define BMSTIMEOUT				500
+#define IVTTIMEOUT				500
+#define IVTTIMEOUTLONG			500
+#define IVTTIMEOUTWATTS			500
+#define PROCESSLOOPTIME 		200
+#define INVERTERTIMEOUT			500
 #else
-#define PDMTIMEOUT				4500 // 450ms to be rules compliant
-#define PROCESSLOOPTIME 		100   // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
-#define BMSTIMEOUT				4500 // was 5 seconds as bodge
-#define IVTTIMEOUT				4500  // < 500ms for rules compliance on Power reading.
-#define IVTTIMEOUTWATTS			4500
-#define IMUTIMEOUT				300 // needs to be uptodate to be useful.
-#define INVERTERTIMEOUT			1000 // 10 cycles, 100ms.
-#define SICKTIMEOUT             200 // 2 cycles, then set speeds to zero.
+#define PDMTIMEOUT				450 // 450ms to be rules compliant
+#define PROCESSLOOPTIME 		10   // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
+#define BMSTIMEOUT				450 // was 5 seconds as bodge
+#define IVTTIMEOUT				450  // < 500ms for rules compliance on Power reading.
+#define IVTTIMEOUTWATTS			450
+#define IMUTIMEOUT				30 // needs to be uptodate to be useful.
+#define INVERTERTIMEOUT			100 // 10 cycles, 100ms.
+#define SICKTIMEOUT             20 // 2 cycles, then set speeds to zero.
 #define STMADC
 #endif
 #ifdef MEMORATOR
-#define MEMORATORTIMEOUT		20000 // 2 seconds, should be sending one message a second.
+#define MEMORATORTIMEOUT		2000 // 2 seconds, should be sending one message a second.
 #endif
 
 #ifdef HPF20
-#define NODETIMEOUT				10000
+#define NODETIMEOUT				1000
 #endif
 
 #define DEBUGMCU 0x5C001000
@@ -378,11 +383,11 @@ volatile struct CarState {
     uint32_t PowerLimit;
     uint8_t DrivingMode;
     uint8_t PedalProfile;
-    
+
     uint8_t FanPowered;
 
 	uint8_t APPSstatus;
-    
+
     uint8_t LimpRequest;
     bool LimpActive;
     bool LimpDisable;

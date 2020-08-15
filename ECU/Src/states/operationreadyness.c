@@ -198,7 +198,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 #ifdef WFI
 		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
 #endif
-	} while ( received != 0 && looptimer < PROCESSLOOPTIME-50 ); // check
+	} while ( received != 0 && looptimer < PROCESSLOOPTIME-MS1*5 ); // check
 
 	// process data.
 

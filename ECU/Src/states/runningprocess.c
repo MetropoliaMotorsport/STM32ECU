@@ -106,8 +106,8 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	}
 
 	else if( difference<=10
-			 && ( ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPSBrakeHard )
-			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime < APPSBRAKETIME ) // 300ms brake allowance
+			 && ( ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPSBrakeHard ) // Hopefully fixed likely bug with 300ms
+			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && gettimer()-APPSTriggerTime < APPSBRAKETIME ) // 300ms brake allowance
 	{
 		Torque_drivers_request = 1;
 		CarState.APPSstatus = 3;
@@ -118,7 +118,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 			 && ( ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPSBrakeHard )
 			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 )
 #ifdef APPSALLOW450MSBRAKE
-			 && APPSTriggerTime >= APPSBRAKETIME
+			 && gettimer()-APPSTriggerTime >= APPSBRAKETIME
 #endif
 			)
 	{
@@ -393,19 +393,19 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	if ( invertersStateCheck(INVERTEROPERATING) ) // returns true if all inverters match state == 0 ) // only start to request torque when inverters ready, which is signified by state of 0
 	{
         // check if limp mode allowed ( don't want for acceleration test ), and if so, if BMS has requested.
-        
+
         if ( ( CarState.LimpRequest && !CarState.LimpDisable ) || ADCState.CoolantTempR > COOLANTLIMPTEMP )
         {
             CarState.LimpActive = 1;
         }
-        
+
         if ( CarState.LimpActive && CarState.Torque_Req_CurrentMax > LIMPNM )
         {
             limpcounter++;
             if ( ( limpcounter % 10 ) == 0 ) // every 100ms decrease nm request
             	CarState.Torque_Req_CurrentMax--;
         }
-    
+
 #ifdef ALLOWLIMPCANCEL
         // don't allow immiediete exit from limp mode if it was already triggered
         if ( CarState.LimpActive && OperationLoops > 200 && CheckRTDMActivationRequest() && ADCState.CoolantTempR < COOLANTLIMPTEMP)
@@ -419,7 +419,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
             CarState.LimpDisable = 1;
             CarState.LimpActive = 0;
         }
-        
+
         if ( CarState.LimpDisable && CarState.Torque_Req_CurrentMax < CarState.Torque_Req_Max )
         {
             limpcounter++;

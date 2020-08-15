@@ -6,11 +6,13 @@
  */
 
 #include "ecumain.h"
+#ifdef WATCHDOG
 #include "wwdg.h"
-
+#endif
 
 int initWatchdog( void )
 {
+#ifdef WATCHDOG
 	/*##-1- Check if the system has resumed from WWDG reset ####################*/
 	if (__HAL_RCC_GET_FLAG(RCC_FLAG_WWDG1RST) != RESET)
 	{
@@ -52,5 +54,6 @@ int initWatchdog( void )
 		  Error_Handler();
 		}
 	 } */
+#endif
 	return 0;
 }

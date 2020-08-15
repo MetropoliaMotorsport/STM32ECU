@@ -62,6 +62,17 @@ extern CANData ECUCAN;
 #include "imu.h"
 #include "torquecontrol.h"
 
+#ifdef RTOS
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "event_groups.h"
+#endif
+
 int realmain(void);
+
+void configureTimerForRunTimeStats(void);
+
+unsigned long getRunTimeCounterValue(void);
 
 #endif /* ECUMAIN_H_ */

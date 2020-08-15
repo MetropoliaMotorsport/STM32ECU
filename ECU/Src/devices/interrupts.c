@@ -13,7 +13,7 @@ void initInterrupts( void )
 	InButtonpress = 1; // stops random button events triggering till interrupts are properly enabled.
 
 	// enable and start LED timer interrupt
-	HAL_NVIC_SetPriority(TIM3_IRQn, 0, 5);
+	HAL_NVIC_SetPriority(TIM3_IRQn, 6, 5);
 	HAL_NVIC_EnableIRQ(TIM3_IRQn);
 
 #ifdef HPF19

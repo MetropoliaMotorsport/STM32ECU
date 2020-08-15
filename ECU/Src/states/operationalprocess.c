@@ -155,8 +155,11 @@ int Startup( uint32_t OperationLoops  )
 	uint32_t loopstart = gettimer();
 //	uint32_t looptimer = 0;
 
-	DWT_Delay((PROCESSLOOPTIME-50-(gettimer()-loopstart))*100); // wait for 5ms
-
+#ifndef RTOS
+	DWT_Delay((PROCESSLOOPTIME-MS1*5-(gettimer()-loopstart))*1000); // wait for 5ms
+#else
+	vTaskDelay(5);
+#endif
 /*	do
 	{
         // check for incoming data, break when all received.
@@ -296,7 +299,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
         sendPDM( 0 ); //disable high voltage on error state;
 
         CAN_SendTimeBase();
-        
+
 		errorstate = CheckErrors();
 
 		sprintf(str,"Errorstate: %.4X", errorstate);
@@ -312,7 +315,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		case 0xF2 : 	sprintf(str,"CANBUS2 Offline"); break;
 		}
 		lcd_send_stringscroll(str);
-        
+
 //		CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
 		blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
 		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
@@ -364,7 +367,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	char str[80] = "ERROR: ";
 
-	if ( errorstatetime + 20000 > gettimer() ) // ensure error state is seen for at least 2 seconds.
+	if ( errorstatetime + MS1000*2 > gettimer() ) // ensure error state is seen for at least 2 seconds.
 	{
 		allowreset += 1;
 		strcat(str, "" );
@@ -425,19 +428,29 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 int OperationalProcess( void )
 {
+#ifndef RTOS
 	lcd_setscrolltitle("Starting Main Loop");
-
+#endif
 	// initialise loop timer variable.
 	uint32_t looptimer = gettimer(); // was volatile, doesn't need to be
 
 	static uint16_t loopoverrun = 0;
+
+
+//	TickType_t xLastCycleTime;
+    const TickType_t xFrequency = 20;
+
+	// Initialise the xLastWakeTime variable with the current time.
+//    xLastCycleTime = xTaskGetTickCount();
 
 	cancount = 0;
 
 	OperationalState = StartupState; // start with setup/waiting for devices state.
 
 	// if( ADCState.newdata )
+#ifndef RTOS
 	while( 1 ) // start main process loop, exit by return statement from error or request only.
+#endif
 	{
 		if ( NewOperationalState != OperationalState ) // state has changed.
 		{
@@ -451,8 +464,11 @@ int OperationalProcess( void )
 		uint32_t currenttimer = gettimer();
 
 		//calculate right delay to wait for loop.
-
-		DWT_Delay((PROCESSLOOPTIME-(currenttimer-looptimer))*100);
+#ifndef RTOS
+		DWT_Delay((PROCESSLOOPTIME-(currenttimer-looptimer))*1000);
+#else
+//		vTaskDelayUntil( &xLastCycleTime, MS1*10 );
+#endif
 
 //		if( looptimer + PROCESSLOOPTIME < currenttimer ) // once per 10ms second process state
 		{

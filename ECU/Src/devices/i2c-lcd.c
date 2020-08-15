@@ -52,6 +52,11 @@ static uint32_t LinePriorityTime[4] = {0};
 volatile static bool inerror = false;
 
 volatile static bool readytosend = true;
+
+volatile static uint32_t sendtime = 0;
+
+volatile static uint32_t lcderrorcount = 0;
+
 uint32_t lcderrortime = 0;
 
 
@@ -68,10 +73,10 @@ void strpad(char * str, int len){
 
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-
 	if ( hi2c->Instance == I2C3 ){
+		sendtime = gettimer();
 		readytosend = true;
-		sendbufferpos=0;
+		sendbufferpos = 0;
 		inerror = false;
 	}
 }
@@ -79,15 +84,63 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 void LCD_I2CError( void )
 {
+	volatile uint32_t err = HAL_I2C_ERROR_NONE;
+	// check error in i2c handle HAL_I2C_ERROR_AF
+
+	lcderrorcount++;
+	lcderrortime = gettimer();
 	readytosend = false;
 	inerror = true;
-	lcderrortime = gettimer();
 
+//	if ( lcdi2c->ErrorCode & ( 1 << HAL_I2C_ERROR_BERR )
+
+/*	if ( lcdi2c->ErrorCode == 4 )
+	{
+		readytosend = false;
+		inerror = true;
+
+		//== not connected);
+	} else
+	{
+		readytosend = true;
+		inerror = false;
+	}
+*/
+	switch ( lcdi2c->ErrorCode )
+	{
+		case HAL_I2C_ERROR_NONE : break;
+		case HAL_I2C_ERROR_BERR  : err = 1; break; // busy
+		case HAL_I2C_ERROR_ARLO : err = 2; break; // arbitration
+		case HAL_I2C_ERROR_AF  : err = 3; break; // ack fail
+		case HAL_I2C_ERROR_OVR  : err = 4; break;
+		case HAL_I2C_ERROR_DMA : err = 5; break;
+		case HAL_I2C_ERROR_TIMEOUT : err = 6; break;
+		case HAL_I2C_ERROR_SIZE : err = 7; break;
+		case HAL_I2C_ERROR_DMA_PARAM : err = 8; break;
+		default :
+			err = 9;
+		break;
+	}
 }
 
-int lcd_update( void ) // batch send buffered LCD commands
+int lcd_update( void )
+{
+  return 0;
+}
+
+int lcd_send( void )
+{
+  return 0;
+}
+
+int lcd_updatedisplay( void ) // batch send buffered LCD commands
 {
 //	static lastcall;
+
+	if (HAL_I2C_GetState(lcdi2c) != HAL_I2C_STATE_READY)
+	{
+		return 1;
+	}
 
 //	lastcall = gettimer();
 #ifdef LCDBUFFER
@@ -102,21 +155,30 @@ int lcd_update( void ) // batch send buffered LCD commands
 
 	if ( sendbufferpos != 0 && readytosend ) // used for initialisation, and any other special commands. send blocking to ensure works.
 	{
+		if ( sendtime+10 < gettimer() ) HAL_Delay(5);
+
 		if ( lcdi2c->State == HAL_I2C_STATE_READY  )
 		{
-			if ( HAL_I2C_Master_Transmit(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, sendbufferpos, 10) != HAL_OK ){
+
+			if ( HAL_I2C_Master_Transmit_IT(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, sendbufferpos) != HAL_OK ){
+//			if ( HAL_I2C_Master_Transmit(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, sendbufferpos, 10) != HAL_OK ){
 					sendbufferpos=0;
+					inerror = true;
+					readytosend = false;
 					return 1;
 			}
-		} else
-		{
-//			volatile int i = 0;
+			inerror = false;
+			readytosend = false;
+			sendbufferpos=0;
+			return 0;
 		}
-		sendbufferpos=0;
-		readytosend = true;
-		return 0;
+//		sendbufferpos=0;
+//		readytosend = true;
+		return 1;
 	} else if ( readytosend )
 	{
+		if ( sendtime+10 < gettimer() ) HAL_Delay(5);
+
 		readytosend = false;
 		sendbufferpos = 0;
 
@@ -144,19 +206,24 @@ int lcd_update( void ) // batch send buffered LCD commands
 */
 		// send whole screen buffer.
 #ifdef SCREEN
+
 		if ( HAL_I2C_Master_Transmit_IT(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, 83) != HAL_OK ){
 				sendbufferpos=0;
+				inerror = true;
 				return 1;
 		}
 #endif
 	#endif
 		sendbufferpos=0;
-	} else if ( inerror && gettimer() > lcderrortime+10000 )
+	} else if ( inerror && gettimer() > lcderrortime+100 )
 		// been one second since lcd error, try again.
 	{	// avoid i2c constantly failing if lcd dropped off, but try to recover.
-//		lcd_init(lcdi2c); // TODO, lots of i2c lcd errors suddenly. can't figure out why, use probe later.
-		inerror = false;
-		readytosend = true;
+		if ( lcd_init(lcdi2c) ) // TODO, lots of i2c lcd errors suddenly. can't figure out why, use probe later.
+		{
+			inerror = false;
+			readytosend = true;
+		} else lcderrortime = gettimer();
+
 	}
 	return 0;
 
@@ -326,7 +393,7 @@ void lcd_put_cur(int row, int col)
 }
 
 
- int lcd_init (I2C_HandleTypeDef *i2chandle)
+int lcd_init (I2C_HandleTypeDef *i2chandle)
 {
 	lcdi2c = i2chandle;
 
@@ -356,15 +423,21 @@ void lcd_put_cur(int row, int col)
 
 #endif
 
+	 HAL_I2C_DeInit(lcdi2c);
+
+	 MX_I2C3_Init();
+
+	  if ( HAL_I2C_IsDeviceReady(lcdi2c, (uint16_t)(SLAVE_ADDRESS_LCD<<1), 2, 1) != HAL_OK) // HAL_ERROR or HAL_BUSY or HAL_TIMEOUT
+	  {
+
+	          return 1; // No ACK received at that address
+
+	  }
+
+	  HAL_Delay(1);
+
 	sendbufferpos = 0; // reset send buffer for init.
 	readytosend = true;
-
-	for ( int i=0;i<LCDBUFSIZE;i++){ 	// clear display buffer.
-		LCDBuffer[i] = 32;
-	}
-
-	for ( int i=0;i<LCDROWS;i++)
-		LinePriority[i] = 255;
 
 	if ( lcd_send_cmd(0x2A) ){	 //function set (extended command set)
 		return 1;
@@ -400,15 +473,15 @@ void lcd_put_cur(int row, int col)
 	lcd_send_cmd(0x01); //clear display
 	lcd_send_cmd(0x80); //set DDRAM address to 0x00
 	lcd_send_cmd(0x0C); //display ON
-	if ( lcd_update() != 0 ) // don't wait for timer update.
+
+
+	// wait for ready? 	if ( lcdi2c->State == HAL_I2C_STATE_READY  )
+
+	if ( lcd_updatedisplay() != 0 ) // don't wait for timer update.
 	{
 		DeviceState.LCD = OFFLINE;
 		return 0;
 	}
-
-	// manually send update.
-
-	HAL_Delay(50);
 
 	DeviceState.LCD = OPERATIONAL;
 
@@ -699,6 +772,14 @@ int initLCD( void )
 {
 #ifdef SCREEN
 	MX_I2C3_Init();
+
+	for ( int i=0;i<LCDBUFSIZE;i++){ 	// clear display buffer.
+		LCDBuffer[i] = 32;
+	}
+
+	for ( int i=0;i<LCDROWS;i++)
+		LinePriority[i] = 255;
+
 	if ( !lcd_init(&hi2c3) ){
 		DeviceState.LCD = DISABLED;
 	} else

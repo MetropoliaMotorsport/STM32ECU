@@ -22,6 +22,7 @@ uint32_t gettimer(void)
 	return timerticks;
 }
 
+#ifndef RTOS
 HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 {
 
@@ -49,11 +50,13 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   /* Return function status */
   return HAL_OK;
 }
+#endif
 
 void HAL_IncTick(void)
 {
-  timerticks++; // 10khz timer base.
-  if ( timerticks % 10 == 0)
+
+//  timerticks++; // 10khz timer base.
+//  if ( timerticks % 10 == 0)
   {
 	  stTick++;
 	  if ( stTick % 1000 == 0 && rtctime != 0 ) rtctime++;
@@ -83,8 +86,17 @@ void TIM6_IRQHandler()
 /**
  * @brief timer interrupt to keep a timebase and process button debouncing.
  */
+#ifdef RTOS
+void TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+#else
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+#endif
 {
+#ifdef RTOS
+	if (htim->Instance == TIM17) {
+	HAL_IncTick();
+	} else
+#endif
 	if ( htim->Instance == TIM3 ){
 //		timerticks++; // increment global time counter
 		static uint8_t blinkcounter = 0;
