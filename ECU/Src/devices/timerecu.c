@@ -19,7 +19,12 @@ static volatile uint32_t stTick, timerticks;
  */
 uint32_t gettimer(void)
 {
+#ifndef RTOS
 	return timerticks;
+#else
+	return stTick;
+#endif
+
 }
 
 #ifndef RTOS
@@ -54,7 +59,6 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 
 void HAL_IncTick(void)
 {
-
 //  timerticks++; // 10khz timer base.
 //  if ( timerticks % 10 == 0)
   {
@@ -97,6 +101,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	HAL_IncTick();
 	} else
 #endif
+#ifndef RTOS
 	if ( htim->Instance == TIM3 ){
 //		timerticks++; // increment global time counter
 		static uint8_t blinkcounter = 0;
@@ -140,7 +145,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		}
 
 		blinkcounter++;
-	} else if ( htim->Instance == TIM7 )
+	} else
+#endif
+		if ( htim->Instance == TIM7 )
 	{
 		InputTimerCallback();
 	} else if ( htim->Instance == TIM6 )
@@ -164,8 +171,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 int initTimer( void )
 {
+#ifndef RTOS
 	MX_TIM3_Init(); // at this point LED status should work.
-
+#endif
 	MX_TIM7_Init();
 
 	MX_TIM6_Init();

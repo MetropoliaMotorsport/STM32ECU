@@ -59,6 +59,76 @@ volatile static uint32_t lcderrorcount = 0;
 
 uint32_t lcderrortime = 0;
 
+osThreadId_t LCDTaskHandle;
+const osThreadAttr_t LCDTask_attributes = {
+  .name = "LCDTask",
+  .priority = (osPriority_t) osPriorityLow,
+  .stack_size = 128 * 8
+};
+
+/* The queue is to be created to hold a maximum of 10 uint64_t
+variables. */
+#define LCDQUEUE_LENGTH    10
+#define LCDITEMSIZE		sizeof( struct lcd_msg )
+
+/* The variable used to hold the queue's data structure. */
+static StaticQueue_t LCDStaticQueue;
+
+
+/* The array to use as the queue's storage area.  This must be at least
+uxQueueLength * uxItemSize bytes. */
+uint8_t LCDQueueStorageArea[ LCDQUEUE_LENGTH * LCDITEMSIZE ];
+
+QueueHandle_t LCDQueue;
+
+void LCDTask(void *argument)
+{
+	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
+	configASSERT( LCDQueue );
+
+	vTaskDelay(5);
+
+	TickType_t xLastWakeTime;
+    const TickType_t xFrequency = 20;
+
+	// Initialise the xLastWakeTime variable with the current time.
+	xLastWakeTime = xTaskGetTickCount();
+
+//	unsigned long counter;
+
+	struct lcd_msg msg;
+
+	for(;;)
+	{
+
+		while ( uxQueueMessagesWaiting( LCDQueue ) )
+		{
+        // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
+			xQueueReceive(LCDQueue,&msg,0);
+
+
+			char str[LCDCOLUMNS+1] = "";
+
+			sprintf(str,"Count: %.10u", msg.data.count );
+
+			lcd_send_stringline(3,str, 0);
+	//		vTaskYield();
+
+		} // portMAX_DELAY
+
+		lcd_updatedisplay();
+
+		vTaskDelay(xFrequency);
+
+	//	vTaskDelayUntil( &xLastWakeTime, xFrequency );
+	}
+
+
+
+	osThreadTerminate(NULL);
+}
+
+
 
 void strpad(char * str, int len){
 	int strlength = strlen(str);
@@ -164,6 +234,7 @@ int lcd_updatedisplay( void ) // batch send buffered LCD commands
 //			if ( HAL_I2C_Master_Transmit(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, sendbufferpos, 10) != HAL_OK ){
 					sendbufferpos=0;
 					inerror = true;
+					lcderrortime = gettimer();
 					readytosend = false;
 					return 1;
 			}
@@ -210,6 +281,7 @@ int lcd_updatedisplay( void ) // batch send buffered LCD commands
 		if ( HAL_I2C_Master_Transmit_IT(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, 83) != HAL_OK ){
 				sendbufferpos=0;
 				inerror = true;
+				lcderrortime = gettimer();
 				return 1;
 		}
 #endif
@@ -755,6 +827,7 @@ void lcd_errormsg(char *str)
 		lcd_send_stringposDIR( 0, 0,  str );
 
 		inerror = true;
+		lcderrortime = gettimer();
 	}
 
 	lcd_update();
@@ -766,7 +839,6 @@ int lcd_clearerror( void )
 	inerror = false;
 	return 0;
 }
-
 
 int initLCD( void )
 {
@@ -787,5 +859,17 @@ int initLCD( void )
 		lcd_send_stringposDIR(0,0,"Startup...   ");
 		lcd_clearscroll();
 	}
+
+#ifdef RTOS
+	LCDQueue = xQueueCreateStatic( LCDQUEUE_LENGTH,
+							  LCDITEMSIZE,
+							  LCDQueueStorageArea,
+							  &LCDStaticQueue );
+
+	vQueueAddToRegistry(LCDQueue, "LCDQueue" );
+
+	LCDTaskHandle = osThreadNew(LCDTask, NULL, &LCDTask_attributes);
+#endif
+
 #endif
 }

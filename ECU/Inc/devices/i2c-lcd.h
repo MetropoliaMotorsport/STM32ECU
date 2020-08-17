@@ -13,6 +13,34 @@
 #define LCDCOLUMNS (20)
 #define LCDROWS 	(4)
 
+enum lcd_msg_type { LCD_Title, LCD_Line, LCD_Scroll, LCD_Cmd };
+
+enum lcd_cmd_type { Clear, ScrollUp, ScrollDown };
+
+
+struct lcd_msg {
+
+  enum lcd_msg_type type;
+
+  union {
+
+
+    char stringptr[41];
+
+    enum lcd_cmd_type cmd;
+
+    uint32_t count;
+
+  } data;
+
+  uint8_t line;
+
+  uint8_t priority;
+
+};
+
+extern QueueHandle_t LCDQueue;
+
 #define LCDBUFSIZE (LCDCOLUMNS*LCDROWS)
 
 

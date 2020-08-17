@@ -132,7 +132,7 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 
 
   /* Turn LED3 on: Transfer error in reception/transmission process */
-	  toggleOutput(LED7_Output);
+	  toggleOutput(LED7);
 }
 
  int startupReadEEPROM( void )
@@ -284,7 +284,7 @@ void commitEEPROM( void ) // progress EEPROM writing by sending next block over 
 
 	static int errorcount = 0;
 
-	toggleOutputMetal(LED7_Output);
+	toggleOutputMetal(LED7);
 	if ( eepromwritinginprogress )
 	{
 		if ( Remaining_Bytes == 0 )

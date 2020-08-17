@@ -228,12 +228,12 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 
 		// show error state but allow to continue in some state if non critical sensor fails sanity.
 
-	//	setOutput(TSLED_Output,0);
-	//	blinkOutput(TSLED_Output,LEDBLINK_TWO,0);
+	//	setOutput(TSLED,0);
+	//	blinkOutput(TSLED,LEDBLINK_TWO,0);
 #ifdef movetoerrorstate
 		if ( AllowLimp() )
 		{
-		//	blinkOutput(STOPLED_Output,LEDBLINK_TWO,0); //indicate that limp mode is allowable.
+		//	blinkOutput(STOPLED,LEDBLINK_TWO,0); //indicate that limp mode is allowable.
 			if ( CheckLimpActivationRequest() ) // check if limp mode requested if possible.
 			{
 				return LimpState; // enter limp mode?, or set variable to toggle limp mode elsewhere.
@@ -242,8 +242,8 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 		else
 #endif
 		{
-			blinkOutput(TSLED_Output,LEDBLINK_FOUR,1); // indicate TS was requested before system ready.
-	//		blinkOutput(STOPLED_Output,LEDOFF,0); // disable limp mode alert
+			blinkOutput(TSLED,LEDBLINK_FOUR,1); // indicate TS was requested before system ready.
+	//		blinkOutput(STOPLED,LEDOFF,0); // disable limp mode alert
 			return OperationalReadyState; // maintain current state.
 		}
 	}

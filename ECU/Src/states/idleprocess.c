@@ -197,8 +197,8 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		CarState.HighVoltageReady = 0;
 		HVEnableTimer = 0;
 		TSRequested = 0;
-		setOutput(RTDMLED_Output, LEDOFF);
-		blinkOutput(RTDMLED_Output, LEDOFF, LEDOFF);
+		setOutput(RTDMLED, Off);
+		blinkOutput(RTDMLED, Off, 0);
 	}
 	readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 #ifndef everyloop
@@ -248,7 +248,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	{
 		readystate = 0;
 		 if ( !TSRequested )
-			 blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP); // start blinking to indicate ready.
+			 blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP); // start blinking to indicate ready.
 	}
 
 #ifdef SETDRIVEMODEINIDLE

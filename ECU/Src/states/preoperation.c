@@ -430,7 +430,7 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 		TorqueVectorProcess( Torque_Req );
 #endif
 
-	if ( CarState.APPSstatus ) setOutput(RTDMLED_Output,LEDON); else setOutput(RTDMLED_Output,LEDOFF);
+	if ( CarState.APPSstatus ) setOutput(RTDMLED,On); else setOutput(RTDMLED,Off);
 
 #ifdef FANCONTROL
 		FanControl();
@@ -450,14 +450,14 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 
 	if ( !CheckShutdown() )
 	{
-		blinkOutput(TSOFFLED_Output, LEDBLINK_FOUR, 1);
+		blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
 #ifdef SHUTDOWNSWITCHCHECK
 	    ReadyToStart += 8;
 #endif
 	}  else
 	{
-		blinkOutput(TSOFFLED_Output, LEDON, 0);
-		setOutput(TSOFFLED_Output,LEDON);
+		blinkOutput(TSOFFLED, On, 0);
+		setOutput(TSOFFLED,On);
 	}
 
 	bool invonline = true;
@@ -489,7 +489,7 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 
 	if ( ReadyToStart == 0 )
 	{
-		blinkOutput(TSLED_Output, LEDBLINK_ONE, 1);
+		blinkOutput(TSLED, LEDBLINK_ONE, 1);
 			// devices are ready and in pre operation state.
 			// check for request to move to active state.
 
@@ -508,7 +508,7 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 					CarState.Inverters[i].Torque_Req = 0;
 				}
 
-				setOutput(RTDMLED_Output,LEDOFF);
+				setOutput(RTDMLED,Off);
 				return OperationalReadyState; // normal operational state on request
 
 			}
@@ -529,7 +529,7 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 			if ( 1 ) // calculate this to max time for expecting everything online
 			{
 				// user pressed requesting startup sequence before devices ready
-				blinkOutput(TSLED_Output, LEDBLINK_FOUR, 1);
+				blinkOutput(TSLED, LEDBLINK_FOUR, 1);
 				CAN_SendStatus(1,PowerOnRequestBeforeReady,0);
 
 				// send NMT.
@@ -538,7 +538,7 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 				OperationLoops = 0;
 
 				CAN_SendStatus(1,PowerOnRequestTimeout,0);
-				blinkOutput(TSLED_Output, LEDBLINK_FOUR, 1);
+				blinkOutput(TSLED, LEDBLINK_FOUR, 1);
 
 				if ( ( RequestState == TestingState ) )
 				{   // should allow testing mode regardless of all hardware being initialised

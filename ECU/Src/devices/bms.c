@@ -38,7 +38,7 @@ bool processBMSVoltageData(uint8_t CANRxData[8], uint32_t DataLength, CANData * 
 			CarState.VoltageBMS = voltage;
 			CarState.LimpRequest = CANRxData[4];
 			if ( CarState.LimpRequest )
-				blinkOutput(BMSLED_Output,LEDBLINK_TWO,LEDBLINKNONSTOP); // start BMS led blinking to indicate limp mode.
+				blinkOutput(BMSLED,LEDBLINK_TWO,LEDBLINKNONSTOP); // start BMS led blinking to indicate limp mode.
 			return true;
 		} else // bad data.
 		{
@@ -77,7 +77,7 @@ bool processBMSError(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
     if ( DeviceState.BMSEnabled )
     {
   //      uint16_t voltage = CANRxData[2]*256+CANRxData[3];
-        
+
         if ( true // no current validation on this message.
         /*                && CANRxData[0] == 0
          && CANRxData[1] == 0

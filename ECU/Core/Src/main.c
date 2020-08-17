@@ -25,6 +25,7 @@
 #include "dma.h"
 #include "fdcan.h"
 #include "i2c.h"
+#include "rng.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -126,6 +127,7 @@ int main(void)
   MX_TIM6_Init();
   MX_TIM8_Init();
   MX_WWDG1_Init();
+  MX_RNG_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -172,10 +174,12 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI
+                              |RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
   RCC_OscInitStruct.HSIState = RCC_HSI_DIV1;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 1;
@@ -209,10 +213,10 @@ void SystemClock_Config(void)
   }
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_FDCAN
                               |RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_UART5
-                              |RCC_PERIPHCLK_SPI4|RCC_PERIPHCLK_SPI3
-                              |RCC_PERIPHCLK_SPI1|RCC_PERIPHCLK_I2C2
-                              |RCC_PERIPHCLK_I2C3|RCC_PERIPHCLK_ADC
-                              |RCC_PERIPHCLK_I2C4;
+                              |RCC_PERIPHCLK_RNG|RCC_PERIPHCLK_SPI4
+                              |RCC_PERIPHCLK_SPI3|RCC_PERIPHCLK_SPI1
+                              |RCC_PERIPHCLK_I2C2|RCC_PERIPHCLK_I2C3
+                              |RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_I2C4;
   PeriphClkInitStruct.PLL2.PLL2M = 1;
   PeriphClkInitStruct.PLL2.PLL2N = 9;
   PeriphClkInitStruct.PLL2.PLL2P = 1;
@@ -226,6 +230,7 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.FdcanClockSelection = RCC_FDCANCLKSOURCE_HSE;
   PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_D2PCLK1;
   PeriphClkInitStruct.Usart16ClockSelection = RCC_USART16CLKSOURCE_D2PCLK2;
+  PeriphClkInitStruct.RngClockSelection = RCC_RNGCLKSOURCE_HSI48;
   PeriphClkInitStruct.I2c123ClockSelection = RCC_I2C123CLKSOURCE_D2PCLK1;
   PeriphClkInitStruct.I2c4ClockSelection = RCC_I2C4CLKSOURCE_D3PCLK1;
   PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL2;
@@ -272,18 +277,18 @@ void Error_Handler(void)
 
 	ErrorCode = 1;
 
-	blinkOutput(RTDMLED_Output,LEDBLINK_FOUR, 255);
-	blinkOutput(TSLED_Output,LEDBLINK_FOUR, 255);
-	blinkOutput(TSOFFLED_Output,LEDBLINK_FOUR, 255);
+	blinkOutput(RTDMLED,LEDBLINK_FOUR, 255);
+	blinkOutput(TSLED,LEDBLINK_FOUR, 255);
+	blinkOutput(TSOFFLED,LEDBLINK_FOUR, 255);
 
 	// set all LED's blinking
-	blinkOutput(BMSLED_Output,LEDBLINK_FOUR, 255);
-	blinkOutput(BSPDLED_Output,LEDBLINK_FOUR, 255);
-	blinkOutput(IMDLED_Output,LEDBLINK_FOUR, 255);
+	blinkOutput(BMSLED,LEDBLINK_FOUR, 255);
+	blinkOutput(BSPDLED,LEDBLINK_FOUR, 255);
+	blinkOutput(IMDLED,LEDBLINK_FOUR, 255);
 
-	setOutputNOW(LED1_Output,LEDON);
-	setOutputNOW(LED2_Output,LEDON);
-	setOutputNOW(LED3_Output,LEDON);
+	setOutputNOW(LED1,On);
+	setOutputNOW(LED2,On);
+	setOutputNOW(LED3,On);
 
 #ifdef PDM
 	CANSendPDM(0,0); // send high voltage off request to PDM.

@@ -59,11 +59,11 @@ int TSActiveProcess( uint32_t OperationLoops )
 		lcd_clearscroll();
 		prechargetimer = gettimer();
 		CarState.HighVoltageReady = 1; // only enable if reading high enough voltage.
-		setOutput(TSLED_Output,LEDON);
-		blinkOutput(TSLED_Output,LEDON,0);
-		setOutput(RTDMLED_Output,LEDOFF);
-		blinkOutput(RTDMLED_Output,LEDOFF,0);
-//		setOutput(TSOFFLED_Output,LEDOFF);
+		setOutput(TSLED,On);
+		blinkOutput(TSLED,On,0);
+		setOutput(RTDMLED,Off);
+		blinkOutput(RTDMLED,Off,0);
+//		setOutput(TSOFFLED,LEDOFF);
 	}
 
 	readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
@@ -104,10 +104,10 @@ int TSActiveProcess( uint32_t OperationLoops )
 		&& !ReceiveNonCriticalError && prechargedone ) // ensure can't enter RTDM till given time for precharge to take place.
 	{
 	  readystate = 0;
-	  blinkOutput(RTDMLED_Output,LEDBLINK_THREE,LEDBLINKNONSTOP); // start blinking RTDM to indicate ready to enable.
+	  blinkOutput(RTDMLED,LEDBLINK_THREE,LEDBLINKNONSTOP); // start blinking RTDM to indicate ready to enable.
 	} else
 	{
-	  setOutput(RTDMLED_Output,LEDOFF);
+	  setOutput(RTDMLED,Off);
 	}
 
 	uint16_t errors = CheckErrors();

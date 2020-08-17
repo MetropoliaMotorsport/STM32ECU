@@ -292,8 +292,8 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		lcd_setscrolltitle("RTDM:Throttle Active");
 		lcd_clearscroll();
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
-		setOutput(RTDMLED_Output,LEDON); // move to ActivateRTDM
-		blinkOutput(RTDMLED_Output,LEDON,0);
+		setOutput(RTDMLED,On); // move to ActivateRTDM
+		blinkOutput(RTDMLED,On,0);
 		allowstop = 0;
 		standstill = 0;
         limpcounter = 0;
@@ -464,7 +464,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         TorqueVectorProcess( Torque_Req );
 #endif
-		if ( CarState.APPSstatus ) setOutput(TSLED_Output,LEDON); else setOutput(TSLED_Output,LEDOFF);
+		if ( CarState.APPSstatus ) setOutput(TSLED,On); else setOutput(TSLED,Off);
 
 		// Call any additional processing here to alter final request.
 

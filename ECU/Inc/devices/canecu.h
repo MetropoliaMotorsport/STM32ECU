@@ -15,7 +15,6 @@
 #define CANBUS0 				hfdcan2
 #define	CANBUS1					hfdcan1
 
-
 #define BMSBASE_ID				0x8
 #define BMSVOLT_ID				BMSBASE_ID+3 // 0xB is voltage.
 #define FLSpeed_COBID			0x71 // 112 // 0x70 orig
@@ -36,9 +35,9 @@
 #define PDM_ID					0x520
 #define MEMORATOR_ID			0x7B
 
-#define NodeErr_ID         0x600
-#define NodeCmd_ID			0x602
-#define NodeAck_ID			0x601
+#define NodeErr_ID        		0x600
+#define NodeCmd_ID				0x602
+#define NodeAck_ID				0x601
 
 #define AdcSimInput_ID			0x608
 
@@ -108,13 +107,21 @@
 #define ERROR					0xFF
 */
 
-
-
 #define ENABLED					(true)
 #define DISABLED				(false)
 
+enum canbus { bus0, bus1, bus2 = 0 };
 
-int cancount;
+struct cantx_msg {
+	enum canbus bus;
+	uint16_t id;
+	uint8_t dlc;
+	uint8_t data[8];
+};
+
+extern QueueHandle_t CanTxQueue;
+
+extern int cancount;
 
 typedef volatile struct CanDataType CANData;
 

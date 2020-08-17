@@ -21,6 +21,54 @@ FDCAN_HandleTypeDef * hfdcan2p = NULL;
 
 //variables that need to be accessible in ISR's
 
+int cancount;
+
+
+osThreadId_t CANTxTaskHandle;
+const osThreadAttr_t CANTxTask_attributes = {
+  .name = "CANTxTask",
+  .priority = (osPriority_t) osPriorityHigh,
+  .stack_size = 128 * 4
+};
+
+/* The queue is to be created to hold a maximum of 10 uint64_t
+variables. */
+#define CANTxQUEUE_LENGTH    32
+#define CANRxQUEUE_LENGTH    32
+#define CANITEMSIZE			sizeof( struct cantx_msg )
+
+#define CANTxITEMSIZE		CANITEMSIZE
+
+/* The variable used to hold the queue's data structure. */
+static StaticQueue_t CANTxStaticQueue;
+
+/* The array to use as the queue's storage area.  This must be at least
+uxQueueLength * uxItemSize bytes. */
+uint8_t CANTxQueueStorageArea[ CANTxQUEUE_LENGTH * CANITEMSIZE ];
+
+QueueHandle_t CANTxQueue;
+
+void CANTxTask(void *argument)
+{
+
+	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
+	configASSERT( CANTxQueue );
+
+	struct cantx_msg msg;
+
+	for(;;)
+	{
+        // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
+		xQueueReceive(CANTxQueue,&msg,portMAX_DELAY);
+
+		vTaskDelay(0);
+	}
+
+	osThreadTerminate(NULL);
+}
+
+
+
 /**
  * @brief set filter states and start CAN module and it's interrupt for CANBUS1
  */
@@ -613,6 +661,7 @@ char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode )
 
 char CAN_SendLED( void )
 {
+#ifndef RTOS
     uint8_t CANTxData[8] = { 10, LEDs[TSLED_Output].state, LEDs[RTDMLED_Output].state, LEDs[TSOFFLED_Output].state,
 							LEDs[IMDLED_Output].state, LEDs[BMSLED_Output].state, LEDs[BSPDLED_Output].state, ShutdownCircuitState()};
 
@@ -634,6 +683,9 @@ char CAN_SendLED( void )
 	CAN2Send( ECU_CAN_ID+2, 8, CANTxData );
 #endif
 	return CAN1Send( ECU_CAN_ID+2, 8, CANTxData );
+#else
+	return 0;
+#endif
 }
 
 
@@ -1100,12 +1152,39 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	uint8_t *CANRxData;
 
 	if(hfdcan->Instance == FDCAN1){
-		toggleOutput(LED3_Output);
+		toggleOutput(LED3);
 		Errors.CANCount1++;
 	} else if(hfdcan->Instance == FDCAN2) {
-		toggleOutput(LED2_Output);
+		toggleOutput(LED2);
 		 Errors.CANCount2++;
 	}
+
+
+#ifdef RTOStest
+	char cIn;
+	BaseType_t xHigherPriorityTaskWoken;
+
+	    /* We have not woken a task at the start of the ISR. */
+	    xHigherPriorityTaskWoken = pdFALSE;
+
+	    /* Loop until the buffer is empty. */
+	    do
+	    {
+	        /* Obtain a byte from the buffer. */
+	        cIn = portINPUT_BYTE( RX_REGISTER_ADDRESS );
+
+	        /* Post the byte. */
+	        xQueueSendFromISR( xRxQueue, &cIn, &xHigherPriorityTaskWoken );
+
+	    } while( portINPUT_BYTE( BUFFER_COUNT ) );
+
+	    /* Now the buffer is empty we can switch context if necessary. */
+	    if( xHigherPriorityTaskWoken )
+	    {
+	        /* Actual macro used here is port specific. */
+	        taskYIELD_FROM_ISR ();
+	    }
+#endif
 
 	if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET)
 	{
@@ -1140,7 +1219,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
         {
 			default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
 #ifdef HPF20
-				toggleOutput(LED7_Output);
+				toggleOutput(LED7);
 #endif
 				break;
 		}
@@ -1165,10 +1244,10 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 	FDCAN_RxHeaderTypeDef RxHeader;
 	uint8_t CANRxData[8];
 	if(hfdcan->Instance == FDCAN1){
-		toggleOutput(LED3_Output);
+		toggleOutput(LED3);
 		Errors.CANCount1++;
 	} else if(hfdcan->Instance == FDCAN2) {
-		toggleOutput(LED2_Output);
+		toggleOutput(LED2);
 		 Errors.CANCount2++;
 	}
 
@@ -1208,10 +1287,10 @@ void HAL_FDCAN_ErrorCallback(FDCAN_HandleTypeDef *canp) {
 // Re-enable receive interrupts
 
 // (The error handling code in HAL_CAN_IRQHandler() disables this for some reason)
- setOutput(LED3_Output,LEDON);
- setOutput(LED2_Output,LEDON);
- setOutput(LED1_Output,LEDON);
- setOutputNOW(IMDLED_Output,LEDON);
+ setOutput(LED3,On);
+ setOutput(LED2,On);
+ setOutput(LED1,On);
+ setOutputNOW(IMDLED,On);
  while ( 1 ){
 
  }
@@ -1241,7 +1320,19 @@ int initCAN( void )
 	FDCAN1_start(); // sets up can ID filters and starts can bus 1
 	FDCAN2_start(); // starts up can bus 2
 
+#ifdef RTOS
+	CANTxQueue = xQueueCreateStatic( CANTxQUEUE_LENGTH,
+								CANTxITEMSIZE,
+								CANTxQueueStorageArea,
+								&CANTxStaticQueue );
+
+	vQueueAddToRegistry(OutputQueue, "CANTxQueue" );
+
+	CANTxTaskHandle = osThreadNew(CANTxTask, NULL, &CANTxTask_attributes);
+
 	CAN_SendStatus(0,0,1); // earliest possible place to send can message signifying wakeup.
+#endif
+
 
 	return 0;
 }

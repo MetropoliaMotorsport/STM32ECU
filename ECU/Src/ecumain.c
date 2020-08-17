@@ -20,8 +20,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-//#ifdef NOHARDWARE
-
 #include <operationalprocess.h>
 #include "main.h"
 #include "adc.h"
@@ -36,6 +34,7 @@
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
+#include "rng.h"
 #include "gpio.h"
 #include "canecu.h"
 #include "interrupts.h"
@@ -46,12 +45,8 @@
 	#include <stdio.h>
 #endif
 
-
-//#endif
-
 #include <stdlib.h>
 
-/* Private includes ----------------------------------------------------------*/
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
@@ -122,12 +117,7 @@ void StartDefaultTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
-osThreadId_t LCDTaskHandle;
-const osThreadAttr_t LCDTask_attributes = {
-  .name = "LCDTask",
-  .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 128 * 50
-};
+
 
 osThreadId_t MainTaskHandle;
 const osThreadAttr_t MainTask_attributes = {
@@ -138,96 +128,6 @@ const osThreadAttr_t MainTask_attributes = {
 
 
 
-enum lcd_msg_type { LCD_Title, LCD_Line, LCD_Scroll, LCD_Cmd };
-
-enum lcd_cmd_type { Clear, ScrollUp, ScrollDown };
-
-struct lcd_message {
-
-  enum lcd_msg_type type;
-
-  union {
-
-
-    char stringptr[41];
-
-    enum lcd_cmd_type cmd;
-
-    uint32_t count;
-
-  } data;
-
-  uint8_t line;
-
-  uint8_t priority;
-
-};
-
-/* The queue is to be created to hold a maximum of 10 uint64_t
-variables. */
-#define QUEUE_LENGTH    10
-#define ITEM_SIZE       sizeof( struct lcd_message )
-
-/* The variable used to hold the queue's data structure. */
-static StaticQueue_t xStaticQueue;
-
-
-/* The array to use as the queue's storage area.  This must be at least
-uxQueueLength * uxItemSize bytes. */
-uint8_t ucQueueStorageArea[ QUEUE_LENGTH * ITEM_SIZE ];
-
-QueueHandle_t xQueue;
-
-void LCDTask(void *argument)
-{
-
-	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
-	configASSERT( xQueue );
-
-	initLCD();
-
-	vTaskDelay(5);
-
-	TickType_t xLastWakeTime;
-    const TickType_t xFrequency = 20;
-
-	// Initialise the xLastWakeTime variable with the current time.
-	xLastWakeTime = xTaskGetTickCount();
-
-
-//	unsigned long counter;
-
-	struct lcd_message msg;
-
-	for(;;)
-	{
-
-		while ( uxQueueMessagesWaiting( xQueue ) )
-		{
-        // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
-			xQueueReceive(xQueue,&msg,0);
-
-
-			char str[LCDCOLUMNS+1] = "";
-
-			sprintf(str,"Count: %.10u", msg.data.count );
-
-			lcd_send_stringline(3,str, 0);
-	//		vTaskYield();
-
-		} // portMAX_DELAY
-
-		lcd_updatedisplay();
-
-		vTaskDelay(xFrequency);
-
-	//	vTaskDelayUntil( &xLastWakeTime, xFrequency );
-	}
-
-
-
-	osThreadTerminate(NULL);
-}
 
 
 /* USER CODE BEGIN 1 */
@@ -245,8 +145,6 @@ unsigned long getRunTimeCounterValue(void)
 void MainTask(void *argument)
 {
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
-	configASSERT( xQueue );
-
 	HardwareInit();
 
     ResetStateData();
@@ -262,11 +160,24 @@ void MainTask(void *argument)
 
 //	struct AMessage *pxMessage;
 
-	struct lcd_message msg;
+	struct lcd_msg msg;
 
 	uint32_t counter = 0;
 
 	lcd_setscrolltitle("Starting Main Loop");
+
+	OperationalState = StartupState;
+
+	setOutput(LED4, On);
+
+	vTaskDelay(1000);
+	blinkOutput(LED4, BlinkMed, 1);
+
+
+	setOutput(LED5, Off);
+	blinkOutput(LED5, Timed, 800);
+
+	blinkOutput(LED7, BlinkFast, 1500);
 
 	for(;;)
 	{
@@ -275,7 +186,17 @@ void MainTask(void *argument)
 		msg.type = LCD_Cmd;
 		msg.data.count = counter;
 
-		xQueueSend( xQueue, ( void * ) &msg, ( TickType_t ) 0 );
+		xQueueSend( LCDQueue, ( void * ) &msg, ( TickType_t ) 0 );
+
+		blinkOutput(LED7, BlinkVeryFast, 1);
+
+		uint32_t random;
+
+		HAL_RNG_GenerateRandomNumber(&hrng, &random);
+
+		if ( random % 100 == 0 )
+			blinkOutput(LED6, BlinkVeryFast, 10);
+
 		vTaskDelayUntil( &xLastWakeTime, xFrequency );
 	}
 
@@ -355,18 +276,13 @@ static int HardwareInit( void )
 	/* Initialize all configured peripherals */
 
 	MX_GPIO_Init(); // no failure return value
+	MX_RNG_Init();
 
 	// startup LCD first
 #ifdef HPF20
 	ShutdownCircuitSet( false ); // ensure shutdown circuit is closed at start
 
-#ifdef RTOS
-	 LCDTaskHandle = osThreadNew(LCDTask, NULL, &LCDTask_attributes);
-
-	 vTaskDelay(10);
-#else
-	 initLCD();
-#endif
+	initLCD();
 
 	initTimer();
 
@@ -523,18 +439,8 @@ int realmain(void)
 	}
 */
 
- // HAL_NVIC_SetPriorityGroup(HAL_NVIC_PriorityGrouping);
-
  /* Init scheduler */
  osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
-
- xQueue = xQueueCreateStatic( QUEUE_LENGTH,
-						  ITEM_SIZE,
-						  ucQueueStorageArea,
-						  &xStaticQueue );
-
- vQueueAddToRegistry(xQueue, "LCD Queue" );
-
 
  MainTaskHandle = osThreadNew(MainTask, NULL, &MainTask_attributes);
 
@@ -589,7 +495,7 @@ int realmain(void)
 			receivePDM();
 
 
-			setOutputNOW(LED1_Output,LEDON);
+			setOutputNOW(LED1,On);
 
 			while( 1 ) // enter do nothing loop of failure.
 			{
@@ -638,11 +544,11 @@ int testmain(void)
   int i = 0;
   initInput(); // clears any errant processed button presses.
 
-  setOutput(LED2_Output,LEDOFF);
-  setOutput(LED3_Output,LEDON);
-  blinkOutput(LED1_Output, LEDON, 5);
-  blinkOutput(LED2_Output, LEDON, 4);
-  blinkOutput(LED3_Output, LEDBLINK_TWO, 255);
+  setOutput(LED2,Off);
+  setOutput(LED3,On);
+  blinkOutput(LED1, On, 5);
+  blinkOutput(LED2, On, 4);
+  blinkOutput(LED3, LEDBLINK_TWO, 255);
 
   while (1)
   {

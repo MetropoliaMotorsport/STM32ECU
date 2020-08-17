@@ -102,21 +102,21 @@ int errorPDM( void )
 	if ( CarState.Shutdown.BMS )
 	{
 		returnval +=2;
-        blinkOutput(BMSLED_Output,LEDON,0); // ensure potential limp mode blinking disabled.
-		setOutputNOW(BMSLED_Output,LEDON);
-	} else setOutput(BMSLED_Output,LEDOFF);
+        blinkOutput(BMSLED,On,0); // ensure potential limp mode blinking disabled.
+		setOutputNOW(BMSLED,On);
+	} else setOutput(BMSLED,Off);
 
 	if ( CarState.Shutdown.IMD )
 	{
 		returnval +=4;
-		setOutputNOW(IMDLED_Output,LEDON);
-	} else setOutput(IMDLED_Output,LEDOFF);
+		setOutputNOW(IMDLED,On);
+	} else setOutput(IMDLED,Off);
 
 	if ( CarState.Shutdown.BSPDBefore )
 	{
 		returnval +=8;
-		setOutputNOW(BSPDLED_Output,LEDON);
-	} else setOutput(BSPDLED_Output,LEDOFF);
+		setOutputNOW(BSPDLED,On);
+	} else setOutput(BSPDLED,Off);
 
 	/* EV 4.10.3
 	 * The TS is deactivated when ALL of the following conditions are true:
@@ -132,10 +132,10 @@ int errorPDM( void )
 #ifndef TORQUEVECTOR
 	if ( CheckShutdown() )
 	{
-		setOutput(TSOFFLED_Output,LEDON);
+		setOutput(TSOFFLED,On);
 	} else
 	{
-		setOutput(TSOFFLED_Output,LEDOFF);
+		setOutput(TSOFFLED,Off);
 	}
 #endif
 #else // use mid dash led for TSOFF status.
@@ -147,8 +147,8 @@ int errorPDM( void )
 		CarState.AIROpen == 0 || DeviceState.IVT == OFFLINE ) // doesn't effect error state, just updates as other PDM derived LED's updated here. SCS Signal, move to PDM ideally.
         // currently will default to showing HV if timeout, which should make correct.
 	{
-		 setOutput(TSOFFLED_Output,LEDOFF);
-	} else setOutput(TSOFFLED_Output,LEDON);
+		 setOutput(TSOFFLED,Off);
+	} else setOutput(TSOFFLED,On);
 #endif
 	return returnval;
 }

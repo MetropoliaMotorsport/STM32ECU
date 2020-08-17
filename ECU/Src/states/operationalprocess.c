@@ -116,23 +116,23 @@ int Startup( uint32_t OperationLoops  )
 
 //		ResetCanReceived(); // clear any previously received candata, incase we're doing a complete new startup.
 
-		setOutput(RTDMLED_Output,LEDOFF);
-		setOutput(TSLED_Output,LEDOFF);
-		setOutput(TSOFFLED_Output,LEDON);
-		blinkOutput(RTDMLED_Output,LEDOFF,0);
-		blinkOutput(TSOFFLED_Output,LEDOFF,0);
-		blinkOutput(TSLED_Output,LEDOFF,0);
+		setOutput(RTDMLED,Off);
+		setOutput(TSLED,Off);
+		setOutput(TSOFFLED,On);
+		blinkOutput(RTDMLED,Off,0); // ensure nothing blinking.
+		blinkOutput(TSOFFLED,Off,0);
+		blinkOutput(TSLED,Off,0);
 
 		// set relay output LED's off
-		setOutput(BMSLED_Output,LEDOFF);
-		setOutput(IMDLED_Output,LEDOFF);
-		setOutput(BSPDLED_Output,LEDOFF);
+		setOutput(BMSLED,Off);
+		setOutput(IMDLED,Off);
+		setOutput(BSPDLED,Off);
 
 		// Show status LED's for 2 seconds for rules compliance.
 
-		blinkOutput(BMSLED_Output,LEDON,2);
-		blinkOutput(IMDLED_Output,LEDON,2);
-		blinkOutput(BSPDLED_Output,LEDON,2);
+		blinkOutput(BMSLED,On,2);
+		blinkOutput(IMDLED,On,2);
+		blinkOutput(BSPDLED,On,2);
 
 		CAN_NMT(0x81,FLSpeed_COBID);
 		CAN_NMT(0x81,FRSpeed_COBID);
@@ -316,9 +316,14 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		}
 		lcd_send_stringscroll(str);
 
+		if ( !CheckShutdown() ) // indicate shutdown switch status with blinking rate.
+		{
+			lcd_send_stringscroll("Shutdown switches");
+		}
+
 //		CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
-		blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
-		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+		blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+		blinkOutput(RTDMLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
 		errorstatetime = gettimer();
 	}
 
@@ -339,13 +344,12 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	if ( !CheckShutdown() ) // indicate shutdown switch status with blinking rate.
 	{
-		lcd_send_stringscroll("Shutdown switches");
-		blinkOutput(TSLED_Output,LEDBLINK_ONE,LEDBLINKNONSTOP);
-		blinkOutput(RTDMLED_Output,LEDBLINK_ONE,LEDBLINKNONSTOP);
+		blinkOutput(TSLED,LEDBLINK_ONE,LEDBLINKNONSTOP);
+		blinkOutput(RTDMLED,LEDBLINK_ONE,LEDBLINKNONSTOP);
 	} else
 	{
-		blinkOutput(TSLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
-		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+		blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+		blinkOutput(RTDMLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
 	}
 
 #ifdef AUTORESET
@@ -436,16 +440,10 @@ int OperationalProcess( void )
 
 	static uint16_t loopoverrun = 0;
 
-
-//	TickType_t xLastCycleTime;
-    const TickType_t xFrequency = 20;
-
-	// Initialise the xLastWakeTime variable with the current time.
-//    xLastCycleTime = xTaskGetTickCount();
-
 	cancount = 0;
-
+#ifndef RTOS
 	OperationalState = StartupState; // start with setup/waiting for devices state.
+#endif
 
 	// if( ADCState.newdata )
 #ifndef RTOS
@@ -587,7 +585,7 @@ int OperationalProcess( void )
 			if ( CAN1Status.BusOff) // detect passive error instead and try to stay off bus till clears?
 			{
 			//	Errors.ErrorPlace = 0xAA;
-				  blinkOutput(TSOFFLED_Output, LEDBLINK_FOUR, 1);
+				  blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
 				  HAL_FDCAN_Stop(&hfdcan1);
 				  CAN_SendStatus(255,0,0);
 
@@ -631,7 +629,7 @@ int OperationalProcess( void )
 			if ( CAN2Status.BusOff) // detect passive error instead and try to stay off bus till clears?
 			{
 			//	Errors.ErrorPlace = 0xAA;
-				  blinkOutput(BMSLED_Output, LEDBLINK_FOUR, 1);
+				  blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
 				  HAL_FDCAN_Stop(&hfdcan2);
 				  CAN_SendStatus(255,0,0);
 				  DeviceState.CAN2 = OFFLINE;

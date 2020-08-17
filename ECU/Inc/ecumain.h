@@ -25,7 +25,16 @@
 #include "adc.h"
 #include "comp.h"
 
+
 #include "ecu.h"
+
+#ifdef RTOS
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "event_groups.h"
+#include "cmsis_os.h"
+#endif
 
 #include "canecu.h"
 
@@ -62,12 +71,6 @@ extern CANData ECUCAN;
 #include "imu.h"
 #include "torquecontrol.h"
 
-#ifdef RTOS
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-#include "event_groups.h"
-#endif
 
 int realmain(void);
 
