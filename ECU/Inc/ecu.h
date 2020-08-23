@@ -505,8 +505,8 @@ struct ErrorCount {
 	uint16_t INVReceiveSpd[MOTORCOUNT];
 	uint16_t INVReceiveTorque[MOTORCOUNT];
 
-	uint16_t CANSendError1;
-	uint16_t CANSendError2;
+	uint32_t CANSendError1;
+	uint32_t CANSendError2;
 } volatile Errors;
 
 // helpers

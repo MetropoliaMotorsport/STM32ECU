@@ -479,7 +479,6 @@ int getSteeringAnglePWM( void )
 {
 	volatile int angle = 0;
 
-
 	return 0;
 
 	if ( receivePWM() )

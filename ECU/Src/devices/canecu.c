@@ -36,7 +36,7 @@ osThreadId_t CANRxTaskHandle;
 const osThreadAttr_t CANRxTask_attributes = {
   .name = "CANRxTask",
   .priority = (osPriority_t) osPriorityHigh,
-  .stack_size = 128 * 4
+  .stack_size = 128 * 16
 };
 
 
@@ -69,16 +69,57 @@ void CANTxTask(void *argument)
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT( CANTxQueue );
 
-	struct can_msg msg;
+	FDCAN_TxHeaderTypeDef TxHeader = {
+		.Identifier = 0, // decide on an ECU ID/
+		.IdType = FDCAN_STANDARD_ID,
+		.TxFrameType = FDCAN_DATA_FRAME,
+		.DataLength = 0, // only two bytes defined in send protocol, check this
+		.ErrorStateIndicator = FDCAN_ESI_ACTIVE,
+		.BitRateSwitch = FDCAN_BRS_OFF,
+		.FDFormat = FDCAN_CLASSIC_CAN,
+		.TxEventFifoControl = FDCAN_NO_TX_EVENTS,
+		.MessageMarker = 0
+	};
+
+	FDCAN_HandleTypeDef * hfdcanp = &hfdcan1;;
+
+	volatile uint32_t * pCANSendError = &Errors.CANSendError1;
+
+	can_msg msg;
 
 	for(;;)
 	{
         // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
 		if ( xQueueReceive(CANTxQueue,&msg,portMAX_DELAY) )
 		{
+			if ( msg.bus == bus1)
+			{
+				hfdcanp = &hfdcan1;
+				pCANSendError = &Errors.CANSendError1;
+			}
+			else if ( msg.bus == bus0)
+			{
+				hfdcanp = hfdcan2p;
+				pCANSendError = &Errors.CANSendError2;
+			}
 
+			TxHeader.Identifier = msg.id; // decide on an ECU ID/
+			TxHeader.DataLength = msg.dlc << 16; // only two bytes defined in send protocol, check this
+
+			if ( HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) < 1 )
+			{
+				// return error, can fifo full.
+			//	Error_Handler();
+			} else
+			if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcanp, &TxHeader, msg.data) != HAL_OK)
+			{
+
+				if ( pCANSendError != NULL )
+					(*pCANSendError)++;
+		//		return 1;
+			//	Error_Handler();
+			}
 		}
-
 	}
 
 	osThreadTerminate(NULL);
@@ -126,9 +167,6 @@ void CANRxTask(void *argument)
 				}
 
 			}
-
-
-
 		}
 	}
 
@@ -494,8 +532,23 @@ void ResetCanData(volatile CANData *data )
 
 char CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 {
+#ifdef RTOS
+	can_msg msg;
 
-	FDCAN_TxHeaderTypeDef TxHeader = {
+	msg.id = id;
+	msg.dlc = dlc;
+	msg.bus = bus1;
+	taskENTER_CRITICAL();
+	memcpy(msg.data, pTxData, 8);
+	taskEXIT_CRITICAL();
+
+	if ( xPortIsInsideInterrupt() )
+		xQueueSendFromISR( CANTxQueue, ( void * ) &msg, NULL );
+	else
+		xQueueSend( CANTxQueue, ( void * ) &msg, ( TickType_t ) 0 );
+
+#else
+ softly	FDCAN_TxHeaderTypeDef TxHeader = {
 	.Identifier = id, // decide on an ECU ID/
 	.IdType = FDCAN_STANDARD_ID,
 	.TxFrameType = FDCAN_DATA_FRAME,
@@ -542,13 +595,26 @@ char CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 	{
 //		Errors.CANSendError1++;
 	}
-
-	return returnval;
+#endif
+	return 0;
 }
 
 
 char CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 {
+#ifdef RTOS
+	can_msg msg;
+	msg.id = id;
+	msg.dlc = dlc;
+	msg.bus = bus0;
+	taskENTER_CRITICAL();
+	memcpy(msg.data,pTxData, 8);
+	taskEXIT_CRITICAL();
+	if ( xPortIsInsideInterrupt() )
+		xQueueSendFromISR( CANTxQueue, ( void * ) &msg, NULL );
+	else
+		xQueueSend( CANTxQueue, ( void * ) &msg, ( TickType_t ) 0 );
+#else
 	FDCAN_TxHeaderTypeDef TxHeader = {
 	.Identifier = id, // decide on an ECU ID/
 	.IdType = FDCAN_STANDARD_ID,
@@ -579,6 +645,7 @@ char CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 //		Error_Handler();
 
 	}
+#endif
 
 	return 0;
 }
@@ -692,7 +759,7 @@ char CAN_SendStatus( char state, char substate, uint32_t errorcode )
 	 stateless = state;
 	} else stateless = state;
 
-	uint8_t CANTxData[8] = { stateless, substate, getByte(errorcode, 0), getByte(errorcode, 1), getByte(errorcode, 2), getByte(errorcode, 3),HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1),HAL_FDCAN_GetRxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)};
+	uint8_t CANTxData[8] = { stateless, substate, getByte(errorcode, 0), getByte(errorcode, 1), getByte(errorcode, 2), getByte(errorcode, 3),HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1),HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2)}; // HAL_FDCAN_GetxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)
 #ifdef CAN2ERRORSTATUS
 	CAN2Send( ECU_CAN_ID, 8, CANTxData );
 #endif
@@ -1050,7 +1117,6 @@ char CANLogDataFast( void )
 #endif
 	CAN1Send( 0x7CC, 8, CANTxData );
 
-
 	CAN_SendTimeBase();
 
 	return 0;
@@ -1100,9 +1166,6 @@ void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLeng
 	}
 	else
 	{
-		if( datahandle->id == 1537 ) {
-		    volatile int i = 0;
-		}
 		if ( datahandle->getData(CANRxData, DataLength, datahandle))
 		{
 			datahandle->receiveerr = 0;
