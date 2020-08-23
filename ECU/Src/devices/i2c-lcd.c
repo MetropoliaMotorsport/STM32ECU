@@ -88,11 +88,7 @@ void LCDTask(void *argument)
 
 	vTaskDelay(5);
 
-	TickType_t xLastWakeTime;
     const TickType_t xFrequency = 20;
-
-	// Initialise the xLastWakeTime variable with the current time.
-	xLastWakeTime = xTaskGetTickCount();
 
 //	unsigned long counter;
 
@@ -109,7 +105,7 @@ void LCDTask(void *argument)
 
 			char str[LCDCOLUMNS+1] = "";
 
-			sprintf(str,"Count: %.10u", msg.data.count );
+			sprintf(str,"Count: %.10lu", msg.data.count );
 
 			lcd_send_stringline(3,str, 0);
 	//		vTaskYield();
@@ -138,6 +134,7 @@ void strpad(char * str, int len){
 	} else
 	{ // pad string out to clear rest of line if shorter.
 		for (int i=strlength;i<20;i++) str[i] = 32;
+		str[20] = 0;
 	};
 }
 
@@ -154,7 +151,7 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 void LCD_I2CError( void )
 {
-	volatile uint32_t err = HAL_I2C_ERROR_NONE;
+//	volatile uint32_t err = HAL_I2C_ERROR_NONE;
 	// check error in i2c handle HAL_I2C_ERROR_AF
 
 	lcderrorcount++;
@@ -176,21 +173,6 @@ void LCD_I2CError( void )
 		inerror = false;
 	}
 */
-	switch ( lcdi2c->ErrorCode )
-	{
-		case HAL_I2C_ERROR_NONE : break;
-		case HAL_I2C_ERROR_BERR  : err = 1; break; // busy
-		case HAL_I2C_ERROR_ARLO : err = 2; break; // arbitration
-		case HAL_I2C_ERROR_AF  : err = 3; break; // ack fail
-		case HAL_I2C_ERROR_OVR  : err = 4; break;
-		case HAL_I2C_ERROR_DMA : err = 5; break;
-		case HAL_I2C_ERROR_TIMEOUT : err = 6; break;
-		case HAL_I2C_ERROR_SIZE : err = 7; break;
-		case HAL_I2C_ERROR_DMA_PARAM : err = 8; break;
-		default :
-			err = 9;
-		break;
-	}
 }
 
 int lcd_update( void )
@@ -606,8 +588,6 @@ int lcd_send_stringline( int row, char *str, uint8_t priority )
 		LinePriority[row]=priority;
 		return 0;
 	} else return 1; // no update allowed.
-
-
 }
 
 
@@ -872,4 +852,5 @@ int initLCD( void )
 #endif
 
 #endif
+	return 0;
 }

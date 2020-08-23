@@ -10,9 +10,9 @@
 
 void initInterrupts( void )
 {
+#ifndef RTOS
 	InButtonpress = 1; // stops random button events triggering till interrupts are properly enabled.
 
-#ifndef RTOS
 	// enable and start LED timer interrupt
 	HAL_NVIC_SetPriority(TIM3_IRQn, 6, 5);
 	HAL_NVIC_EnableIRQ(TIM3_IRQn);
@@ -47,13 +47,16 @@ void initInterrupts( void )
 	if ( HAL_TIM_Base_Start_IT(&htim3) != HAL_OK){
 		  Error_Handler();
 	}
-#endif
 	InButtonpress = 0;
 
 	// start LCD update Timer.
 	if ( HAL_TIM_Base_Start_IT(&htim6) != HAL_OK){
 		Error_Handler();
 	}
+
+#endif
+
+
 
 #ifdef PARALLELLCD
 	  HAL_NVIC_SetPriority(TIM17_IRQn, 0, 0);

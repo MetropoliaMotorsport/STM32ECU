@@ -8,19 +8,36 @@
 #include "ecumain.h"
 #include "input.h"
 
+#ifndef RTOS
 // variables for button debounce interrupts, need to be global to be seen in timer interrupt
 static uint16_t ButtonpressPin;
+#endif
 
 // PWM Pin needs capacitor taken off to deactivate low pass filter.
 
+typedef struct ButtonData {
+	GPIO_TypeDef * port;
+	uint16_t pin;
+	bool logic; // 0 for press on low, 1 for press on high, allow either pull low or high buttons to work. default is pull to ground.
+	bool state; // current state
+	uint32_t statecount; // how long this state has maintained.
+	uint32_t lastpressed; // time stamp of last time state was determined to be an actual button press
+	uint32_t lastreleased; // when was button last let go.
+	uint32_t count; // how many times has it been pressed.
+	bool pressed; // has button been pressed since last check.
+	bool held; // is button being held down currently, for e.g. scrolling.
+	// define the hardware button for passing button data including reading it
+} ButtonData;
+
+
 #ifdef HPF20
-volatile struct ButtonData Input[NO_INPUTS] = {
+static volatile ButtonData Input[NO_INPUTS] = {
 		{ DI2_GPIO_Port, DI2_Pin}, //0  pin 9
 		{ DI3_GPIO_Port, DI3_Pin}, //1  pin 17
 		{ DI4_GPIO_Port, DI4_Pin}, //2  pin 24
 		{ DI5_GPIO_Port, DI5_Pin}, //3  pin 25
 		{ DI6_GPIO_Port, DI6_Pin}, //4  pin 34 pin Also potential PWM Pin.
-		{0,0},//{ DI7_GPIO_Port, DI7_Pin}, //5 pin 33 being used for PWM.
+		{ NULL,0},//{ DI7_GPIO_Port, DI7_Pin}, //5 pin 33 being used for PWM.
 		{ DI8_GPIO_Port, DI8_Pin}, //6
 		{ DI10_GPIO_Port, DI10_Pin}, //7
 		{ DI11_GPIO_Port, DI11_Pin}, //8
@@ -31,7 +48,7 @@ volatile struct ButtonData Input[NO_INPUTS] = {
 #endif
 
 #ifdef HPF19
-volatile struct ButtonData Input[NO_INPUTS] = {
+volatile ButtonData Input[NO_INPUTS] = {
 	{ USER_Btn_GPIO_Port, USER_Btn_Pin},
 	{ Input1_GPIO_Port, Input1_Pin},
 	{ Input2_GPIO_Port, Input2_Pin},
@@ -43,6 +60,24 @@ volatile struct ButtonData Input[NO_INPUTS] = {
 	{ Input8_GPIO_Port, Input8_Pin}
 };
 #endif
+
+//volatile ButtonData Input[NO_INPUTS];
+#ifndef RTOS
+volatile static char InButtonpress;
+#endif
+
+#define InputQUEUE_LENGTH    20
+#define InputITEMSIZE		sizeof( struct input_msg )
+
+/* The variable used to hold the queue's data structure. */
+static StaticQueue_t InputStaticQueue;
+
+/* The array to use as the queue's storage area.  This must be at least
+uxQueueLength * uxItemSize bytes. */
+uint8_t InputQueueStorageArea[ InputQUEUE_LENGTH * InputITEMSIZE ];
+
+QueueHandle_t InputQueue;
+
 
 bool receiveCANInput(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
 
@@ -59,6 +94,73 @@ volatile uint32_t            uwFrequency = 0;
 
 volatile uint32_t reading;
 volatile uint32_t PWMtime;
+
+osThreadId_t InputTaskHandle;
+const osThreadAttr_t InputTask_attributes = {
+  .name = "InputTask",
+  .priority = (osPriority_t) osPriorityLow,
+  .stack_size = 128*2
+};
+
+void InputTask(void *argument)
+{
+	TickType_t xLastWakeTime;
+    const TickType_t xFrequency = 10;
+
+	// Initialise the xLastWakeTime variable with the current time.
+	xLastWakeTime = xTaskGetTickCount();
+
+	while( 1 )
+	{
+		for ( int i = 0;i<NO_INPUTS;i++)
+		{
+			if ( Input[i].port == NULL) continue; // don't bother processing an input being used for PWM
+
+			bool curstate = HAL_GPIO_ReadPin(Input[i].port, Input[i].pin );
+
+#ifndef BUTTONPULLUP
+			curstate = !curstate;
+#else
+
+#endif
+			if ( curstate != Input[i].state) // current state of button has changed reset duration count.
+			{
+				Input[i].statecount = 0;
+				Input[i].held = false;
+				Input[i].state = curstate;
+			}
+
+			Input[i].statecount++;
+
+			if ( Input[i].statecount == 0 ) Input[i].statecount = 0xFFFFFFFF; // don't allow wrap;
+			else if ( Input[i].statecount == 3 ) // button held for long enough to count as a change of state, register it.
+			{
+				if ( curstate )
+				{
+					Input[i].pressed = true;
+					Input[i].lastpressed=gettimer();
+					Input[i].count++;
+					// add button press to queue here.
+
+				} else
+				{
+					Input[i].lastreleased=gettimer();
+				}
+			} else if ( Input[i].statecount > 3 )
+			{
+				if ( curstate )
+				{
+					Input[i].held = true;
+				}
+			}
+
+		}
+
+		vTaskDelayUntil( &xLastWakeTime, xFrequency );
+	}
+
+	osThreadTerminate(NULL);
+}
 
 
 int initPWM( void )
@@ -178,7 +280,7 @@ int CheckBrakeBalRequest( void ) // this should be a push-hold, so not a single 
 
 int CheckButtonPressed( uint8_t In )
 {
-	if(Input[In].pressed != 0){
+	if ( Input[In].pressed != 0 ){
 			Input[In].pressed = 0;
 			return 1;
 	}
@@ -187,14 +289,27 @@ int CheckButtonPressed( uint8_t In )
 
 int GetUpDownPressed( void )
 {
-	if(Input[Up_Input].pressed != 0){
+	if ( Input[Up_Input].pressed != 0 ){
 			Input[Up_Input].pressed = 0;
 			return -1;
-	} else if(Input[Down_Input].pressed != 0)
+	} else if ( Input[Down_Input].pressed != 0)
 	{
 		Input[Down_Input].pressed = 0;
 		return 1;
-	} else
+	} else 	if ( Input[Up_Input].held != 0 ){
+		if (gettimer() - Input[Up_Input].lastpressed > REPEATRATE )
+		{
+			Input[Up_Input].lastpressed = gettimer();
+			return -1;
+		}
+	} else 	if ( Input[Down_Input].held != 0 ){
+		if (gettimer() - Input[Down_Input].lastpressed > REPEATRATE )
+		{
+			Input[Down_Input].lastpressed = gettimer();
+			return 1;
+		}
+	}
+
 	return 0;
 }
 
@@ -296,7 +411,7 @@ int CheckRTDMActivationRequest( void )
 	else return 0;
 }
 
-
+#ifndef RTOS
 /**
  * @brief only process button input if input registered
  */
@@ -327,6 +442,7 @@ void debouncebutton( volatile struct ButtonData *button )
 				}
 		}
 }
+#endif
 
 /**
  * @brief set status of a button to not activated
@@ -334,8 +450,10 @@ void debouncebutton( volatile struct ButtonData *button )
 void resetButton( uint8_t i )
 {
 	Input[i].lastpressed = 0;
+	Input[i].lastreleased = 0;
 	Input[i].count = 0;
-	Input[i].pressed = 0;
+	Input[i].pressed = false;
+	Input[i].held = false;
 }
 
 
@@ -397,6 +515,8 @@ bool receiveCANInput(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 #endif
 	return true;
 }
+
+#ifndef RTOS
 
 /**
  * @brief Interrupt handler fired when a button input line is triggered
@@ -500,8 +620,8 @@ void InputTimerCallback( void )
 		HAL_TIM_Base_Stop_IT(&htim7);
 		InButtonpress = 0;  // reset status of button processing after timer elapsed,
 		// to indicate not processing input to allow triggering new timer.
-
 }
+#endif
 
 /**
  * startup routine to ensure all buttons are initialised to unset state.
@@ -518,11 +638,22 @@ void resetInput( void )
 
 int initInput( void )
 {
+	OutputQueue = xQueueCreateStatic( InputQUEUE_LENGTH,
+							  InputITEMSIZE,
+							  InputQueueStorageArea,
+							  &InputStaticQueue );
+
+	vQueueAddToRegistry(OutputQueue, "OutputQueue" );
+
+	// make sure queue registered before the functions that could call it are used.
+
 	RegisterResetCommand(resetInput);
 
 	resetInput();
 
 	RegisterCan1Message(&CANButtonInput);
+
+	InputTaskHandle = osThreadNew(InputTask, NULL, &InputTask_attributes);
 
 	return 0;
 }

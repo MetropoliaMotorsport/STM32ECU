@@ -21,6 +21,14 @@
 
 #define EEPROMVERSIONSTR		("MMECUV0.1")
 
+typedef enum EEPROM_cmd{ send, receive, read, write } EEPROM_cmd;
+
+typedef struct EEPROM_msg {
+	EEPROM_cmd cmd;
+} EEPROM_msg;
+
+bool GetEEPROMCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+
 /*
  *
  block 0: data version 0 if doesn't match, don't load use read eeprom.
@@ -108,9 +116,12 @@ int writeEEPROMCurConf( void );
 
 bool writeEEPROMDone( void );
 
+int EEPROMSend( void );
 
 bool stopEEPROM( void );
 bool EEPROMBusy( void );
+
+int DoEEPROM( void );
 
 #endif /* EEPROM_H_ */
 

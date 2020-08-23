@@ -160,6 +160,5 @@ int TSActiveProcess( uint32_t OperationLoops )
 		} else return IdleState;  // if requested disable TS drop state
 	}
 
-
 	return TSActiveState;
 }

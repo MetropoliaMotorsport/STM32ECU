@@ -331,7 +331,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 //	ResetCanReceived();
 
-	uint32_t loopstart = gettimer();
+//	uint32_t loopstart = gettimer();
 //	uint32_t looptimer = 0;
 
 
@@ -368,10 +368,10 @@ int PreOperationState( uint32_t OperationLoops  )
 			if ( showadc )
 			{
 
-				sprintf(str,"A1 %.5d %.5d %.5d", ADC_Data[0], ADC_Data[1], ADC_Data[2]);
+				sprintf(str,"A1 %.5lu %.5lu %.5lu", ADC_Data[0], ADC_Data[1], ADC_Data[2]);
 				lcd_send_stringline(1,str, 255);
 
-				sprintf(str,"A3 %.5d %.5d %.5d", ADC_Data[3], ADC_Data[4], ADC_Data[5]);
+				sprintf(str,"A3 %.5lu %.5lu %.5lu", ADC_Data[3], ADC_Data[4], ADC_Data[5]);
 				lcd_send_stringline(2,str, 255);
 			}
 
@@ -450,7 +450,7 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 
 	if ( !CheckShutdown() )
 	{
-		blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
+		blinkOutput(TSOFFLED, BlinkMed, 1);
 #ifdef SHUTDOWNSWITCHCHECK
 	    ReadyToStart += 8;
 #endif

@@ -24,7 +24,7 @@ D7 - pin 17 PE14  output8 BMS ( CH8 )
 typedef enum output_state { Off, On, BlinkVerySlow, BlinkSlow, BlinkMed, BlinkFast, BlinkVeryFast, Toggle, Timed, Nochange } output_state;
 
 typedef struct output_msg {
-	uint8_t output;
+	uint32_t output;
 	enum output_state state;
 	uint32_t time;
 } output_msg;
@@ -55,7 +55,7 @@ typedef enum output {
 	IMDLED=5,
 	BSPDLED=3,
 	TSLED=1,
-	TSOFFLED=0,
+	TSOFFLED=17, // 0
 	RTDMLED=6,
 	LED1=12,
 	LED2=13,
@@ -84,6 +84,8 @@ typedef enum output {
 	Output17=17,
 	Output18=18
 } output;
+
+#define Once					(1)
 
 #ifndef RTOS
 	#define BMSLED_Output 		(7)

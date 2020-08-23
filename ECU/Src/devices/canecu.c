@@ -31,22 +31,37 @@ const osThreadAttr_t CANTxTask_attributes = {
   .stack_size = 128 * 4
 };
 
+
+osThreadId_t CANRxTaskHandle;
+const osThreadAttr_t CANRxTask_attributes = {
+  .name = "CANRxTask",
+  .priority = (osPriority_t) osPriorityHigh,
+  .stack_size = 128 * 4
+};
+
+
 /* The queue is to be created to hold a maximum of 10 uint64_t
 variables. */
 #define CANTxQUEUE_LENGTH    32
 #define CANRxQUEUE_LENGTH    32
-#define CANITEMSIZE			sizeof( struct cantx_msg )
+#define CANITEMSIZE			sizeof( struct can_msg )
 
 #define CANTxITEMSIZE		CANITEMSIZE
+#define CANRxITEMSIZE		CANITEMSIZE
 
 /* The variable used to hold the queue's data structure. */
-static StaticQueue_t CANTxStaticQueue;
+static StaticQueue_t CANTxStaticQueue, CANRxStaticQueue;
 
 /* The array to use as the queue's storage area.  This must be at least
 uxQueueLength * uxItemSize bytes. */
 uint8_t CANTxQueueStorageArea[ CANTxQUEUE_LENGTH * CANITEMSIZE ];
+uint8_t CANRxQueueStorageArea[ CANTxQUEUE_LENGTH * CANITEMSIZE ];
 
-QueueHandle_t CANTxQueue;
+QueueHandle_t CANTxQueue, CANRxQueue;
+
+
+bool processCan1Message( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
+bool processCan2Message( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
 
 void CANTxTask(void *argument)
 {
@@ -54,14 +69,67 @@ void CANTxTask(void *argument)
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT( CANTxQueue );
 
-	struct cantx_msg msg;
+	struct can_msg msg;
 
 	for(;;)
 	{
         // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
-		xQueueReceive(CANTxQueue,&msg,portMAX_DELAY);
+		if ( xQueueReceive(CANTxQueue,&msg,portMAX_DELAY) )
+		{
 
-		vTaskDelay(0);
+		}
+
+	}
+
+	osThreadTerminate(NULL);
+}
+
+
+void CANRxTask(void *argument)
+{
+
+	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
+	configASSERT( CANRxQueue );
+
+	can_msg msg;
+
+	for(;;)
+	{
+        // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
+		if( xQueueReceive(CANRxQueue,&msg,portMAX_DELAY) )
+		{
+			FDCAN_RxHeaderTypeDef RxHeader;
+			RxHeader.Identifier = msg.id;
+			RxHeader.DataLength = msg.dlc;
+
+			if ( msg.bus == bus1)
+			{
+				if ( !processCan1Message(&RxHeader, msg.data) )
+				switch ( msg.id )
+				{
+					default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
+		#ifdef HPF20
+						blinkOutput(LED7, BlinkVeryFast, 1);
+		#endif
+						break;
+				}
+			} else
+			{
+				if ( !processCan2Message(&RxHeader, msg.data) )
+				switch ( msg.id )
+				{
+					default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
+		#ifdef HPF20
+						blinkOutput(LED7, BlinkVeryFast, 1);
+		#endif
+						break;
+				}
+
+			}
+
+
+
+		}
 	}
 
 	osThreadTerminate(NULL);
@@ -1023,11 +1091,26 @@ void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLeng
 		return;
 	}
 
-	if ( datahandle->getData(CANRxData, DataLength, datahandle))
+	bool baddlc = false;
+	bool baddata = false;
+
+	if ( datahandle->dlcsize != DataLength >> 16)
 	{
-		datahandle->receiveerr = 0;
-		*datahandle->devicestate = OPERATIONAL;
-	} else // bad data.
+		baddlc = true;
+	}
+	else
+	{
+		if( datahandle->id == 1537 ) {
+		    volatile int i = 0;
+		}
+		if ( datahandle->getData(CANRxData, DataLength, datahandle))
+		{
+			datahandle->receiveerr = 0;
+			*datahandle->devicestate = OPERATIONAL;
+		} else baddata = true;
+	}
+
+	if ( baddata || baddlc ) // bad data.
 	{
 		Errors.CANError++;
 		datahandle->receiveerr++;
@@ -1136,12 +1219,15 @@ bool processCan2Message( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8])
 
 // TODO Investigate new potential memory corruption. Workaround attemped using circular buffer.
 
+
+#ifndef RTOS
 struct {
 		FDCAN_RxHeaderTypeDef RxHeader;
 		uint8_t CANRxData[8];
 } CanRX[8];
 
 volatile uint8_t CanRXPos = 0;
+#endif
 
 /**
  * interrupt rx callback for canbus messages
@@ -1149,57 +1235,79 @@ volatile uint8_t CanRXPos = 0;
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
 	FDCAN_RxHeaderTypeDef RxHeader;
-	uint8_t *CANRxData;
 
 	if(hfdcan->Instance == FDCAN1){
+#ifdef RTOS
+		blinkOutput(LED3, BlinkVeryFast, Once);
+#else
 		toggleOutput(LED3);
+#endif
 		Errors.CANCount1++;
 	} else if(hfdcan->Instance == FDCAN2) {
+#ifdef RTOS
+		blinkOutput(LED2, BlinkVeryFast, Once);
+#else
 		toggleOutput(LED2);
+#endif
 		 Errors.CANCount2++;
 	}
 
-
-#ifdef RTOStest
-	char cIn;
-	BaseType_t xHigherPriorityTaskWoken;
-
-	    /* We have not woken a task at the start of the ISR. */
-	    xHigherPriorityTaskWoken = pdFALSE;
-
-	    /* Loop until the buffer is empty. */
-	    do
-	    {
-	        /* Obtain a byte from the buffer. */
-	        cIn = portINPUT_BYTE( RX_REGISTER_ADDRESS );
-
-	        /* Post the byte. */
-	        xQueueSendFromISR( xRxQueue, &cIn, &xHigherPriorityTaskWoken );
-
-	    } while( portINPUT_BYTE( BUFFER_COUNT ) );
-
-	    /* Now the buffer is empty we can switch context if necessary. */
-	    if( xHigherPriorityTaskWoken )
-	    {
-	        /* Actual macro used here is port specific. */
-	        taskYIELD_FROM_ISR ();
-	    }
-#endif
-
 	if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET)
 	{
-		uint8_t curpos = CanRXPos;
+#ifndef RTOS
+		uint8_t *CANRxData;
 
-		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &CanRX[curpos].RxHeader, CanRX[curpos].CANRxData) != HAL_OK)
+		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &CanRX[curpos].RxHeader, &CANRxData) != HAL_OK)
 		{
 			// Reception Error
 			Error_Handler();
 		}
+
 		CanRXPos++;
 		if ( CanRXPos > 7 ) CanRXPos = 0;
 
 		RxHeader = CanRX[curpos].RxHeader;
 		CANRxData = CanRX[curpos].CANRxData;
+
+		if ( !processCan1Message(&RxHeader, CANRxData) )
+		switch ( RxHeader.Identifier )
+		{
+			default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
+#ifdef HPF20
+				toggleOutput(LED7);
+#endif
+				break;
+		}
+
+#else
+		BaseType_t xHigherPriorityTaskWoken;
+
+		/* We have not woken a task at the start of the ISR. */
+		xHigherPriorityTaskWoken = pdFALSE;
+
+		can_msg msg;
+
+		uint8_t CANRxData[8];
+
+		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, CANRxData) != HAL_OK)
+		{
+			// Reception Error
+			Error_Handler();
+		}
+
+		msg.id = RxHeader.Identifier;
+		msg.bus = bus1;
+		msg.dlc = RxHeader.DataLength;
+		memcpy(msg.data, CANRxData, 8);
+
+		xQueueSendFromISR( CANRxQueue, &msg, &xHigherPriorityTaskWoken );
+
+	    if( xHigherPriorityTaskWoken )
+	    {
+	        /* Actual macro used here is port specific. */
+	        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+	    }
+#endif
 
 		volatile uint8_t bufferlevel = HAL_FDCAN_GetRxFifoFillLevel(hfdcan,FDCAN_RX_FIFO0);
 		if (bufferlevel > 25 ) // buffer shouldn't fill up under normal use, not sending >30 messages per cycle.
@@ -1210,19 +1318,6 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 		}
 
 		// process incoming packet
-
-		if ( !processCan1Message(&RxHeader, CANRxData) )
-#ifdef ONECAN
-//		if ( !processCan2Message(&RxHeader, CANRxData) )
-#endif
-		switch ( RxHeader.Identifier )
-        {
-			default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
-#ifdef HPF20
-				toggleOutput(LED7);
-#endif
-				break;
-		}
 
 		RxHeader.Identifier = 0; // workaround: rx header does not seem to get reset properly?
 								 // receiving e.g. 15 after 1314 seems to result in 1315
@@ -1243,17 +1338,26 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 {
 	FDCAN_RxHeaderTypeDef RxHeader;
 	uint8_t CANRxData[8];
+
 	if(hfdcan->Instance == FDCAN1){
+#ifdef RTOS
+		blinkOutput(LED3, BlinkVeryFast, Once);
+#else
 		toggleOutput(LED3);
+#endif
 		Errors.CANCount1++;
 	} else if(hfdcan->Instance == FDCAN2) {
+#ifdef RTOS
+		blinkOutput(LED2, BlinkVeryFast, Once);
+#else
 		toggleOutput(LED2);
+#endif
 		 Errors.CANCount2++;
 	}
 
 	if((RxFifo1ITs & FDCAN_IT_RX_FIFO1_NEW_MESSAGE) != RESET) // if there is a message waiting process it
 	{
-		//timercount = __HAL_TIM_GetCounter(&htim3);
+#ifndef RTOS
 		/* Retrieve Rx message from RX FIFO1 */
 		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO1, &RxHeader, CANRxData) != HAL_OK)
 		{
@@ -1261,22 +1365,50 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 			Error_Handler();
 		}
 
-		uint8_t bufferlevel = HAL_FDCAN_GetRxFifoFillLevel(hfdcan,FDCAN_RX_FIFO1);
+		processCan2Message(&RxHeader, CANRxData);
+#else
+		BaseType_t xHigherPriorityTaskWoken;
+
+		/* We have not woken a task at the start of the ISR. */
+		xHigherPriorityTaskWoken = pdFALSE;
+
+		can_msg msg;
+
+		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO1, &RxHeader, CANRxData) != HAL_OK)
+		{
+			// Reception Error
+			Error_Handler();
+		}
+
+		msg.id = RxHeader.Identifier;
+		msg.bus = bus0;
+		msg.dlc = RxHeader.DataLength;
+		memcpy(msg.data, CANRxData, 8);
+
+		xQueueSendFromISR( CANRxQueue, &msg, &xHigherPriorityTaskWoken );
+
+	    if( xHigherPriorityTaskWoken )
+	    {
+	        /* Actual macro used here is port specific. */
+	        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+	    }
+#endif
+
+		volatile uint8_t bufferlevel = HAL_FDCAN_GetRxFifoFillLevel(hfdcan,FDCAN_RX_FIFO1);
 		if (bufferlevel > 25 ) // buffer shouldn't fill up under normal use, not sending >30 messages per cycle.
 		{
 			// return error, can fifo full.
+//			CAN_SendErrorStatus( 111, 0, bufferlevel );
 			bufferlevel++;
 		}
 
-		processCan2Message(&RxHeader, CANRxData);
+		// process incoming packet
 
 		RxHeader.Identifier = 0; // workaround: rx header does not seem to get reset properly?
 								 // receiving e.g. 15 after 1314 seems to result in 1315
 
-		// send notification that can message has been read
 		if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0) != HAL_OK)
 		{
-			/* Notification Error */
 			Error_Handler();
 		}
 	}
@@ -1328,7 +1460,15 @@ int initCAN( void )
 
 	vQueueAddToRegistry(OutputQueue, "CANTxQueue" );
 
+	CANRxQueue = xQueueCreateStatic( CANRxQUEUE_LENGTH,
+								CANRxITEMSIZE,
+								CANRxQueueStorageArea,
+								&CANRxStaticQueue );
+
+	vQueueAddToRegistry(OutputQueue, "CANRxQueue" );
+
 	CANTxTaskHandle = osThreadNew(CANTxTask, NULL, &CANTxTask_attributes);
+	CANRxTaskHandle = osThreadNew(CANRxTask, NULL, &CANRxTask_attributes);
 
 	CAN_SendStatus(0,0,1); // earliest possible place to send can message signifying wakeup.
 #endif

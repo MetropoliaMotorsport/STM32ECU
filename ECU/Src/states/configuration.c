@@ -8,31 +8,13 @@
 #include "main.h"
 #include "ecumain.h"
 
-#define BUFSIZE (4096)
-
-static uint8_t Buffer[BUFSIZE];
-
-static char datatype[20] = "";
-
-static bool ReceiveInProgress = false;
-static uint8_t ReceiveType = 0;
-static uint32_t TransferSize = 0;
-static bool SendInProgress = false;
-static uint32_t SendLast = 0;
-static uint32_t BufferPos = 0;
-
-static bool eepromwrite = false;
-static uint8_t eepromwritetype = 0;
-static uint32_t eepromwritestart = 0;
-
-
 static uint8_t ECUConfigdata[8] = {0};
 static bool	   ECUConfignewdata = false;
 static uint32_t ECUConfigDataTime = 0;
 
 bool GetConfigCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
-CANData ECUConfig = { NULL, 21, 8, GetConfigCmd, NULL, 0 };
+CANData ECUConfig = { NULL, 0x21, 8, GetConfigCmd, NULL, 0 };
 
 static bool configReset = false;
 
@@ -40,18 +22,6 @@ static bool configReset = false;
 int initConfig( void )
 {
 	RegisterCan1Message(&ECUConfig);
-
-	ReceiveInProgress = false;
-	ReceiveType = 0;
-	TransferSize = 0;
-	SendInProgress = false;
-	SendLast = 0;
-	BufferPos = 0;
-
-	eepromwrite = false;
-	eepromwritetype = 0;
-	eepromwritestart = 0;
-
 	return 0;
 }
 
@@ -79,7 +49,10 @@ void ConfigReset( void )
 
 bool GetConfigCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
-	if ( ECUConfignewdata )
+	if ( ( CANRxData[0] >= 8 && CANRxData[0] <= 11 ) || ( CANRxData[0] == 30 ) ) // eeprom command.
+	{
+		return GetEEPROMCmd( CANRxData, DataLength, datahandle );
+	} else if ( ECUConfignewdata )
 	{
 // TODO received data before processing old, send error?
 	} else
@@ -90,7 +63,6 @@ bool GetConfigCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandl
 	}
 	return true;
 }
-
 
 void setCurConfig(void)
 {
@@ -192,46 +164,6 @@ void setCurConfig(void)
 #endif
 
 	CarState.Torque_Req_CurrentMax = CarState.Torque_Req_Max;
-
-}
-
-
-
-void resetReceive()
-{
-	BufferPos = 0;
-	TransferSize = 0;
-	datatype[0] = 0;
-	ReceiveInProgress = false;
-
-	ReceiveType = 0;
-	for ( int i=0; i<BUFSIZE; i++ ) Buffer[i] = 0;
-}
-
-void resetSend()
-{
-	BufferPos = 0;
-	datatype[0] = 0;
-	TransferSize = 0;
-	SendInProgress = false;
-	for ( int i=0; i<BUFSIZE; i++ ) Buffer[i] = 0;
-}
-
-
-void SetDataType( char * str, uint8_t datatype )
-{
-	switch ( datatype )
-	{
-		case 0 : // Full EEPROM
-			strcpy(str, "FullEEPROM");
-			break;
-		case 1 : // Full EEPROM
-			strcpy(str, "EEBank1");
-			break;
-		case 2 : // Full EEPROM
-			strcpy(str, "EEBank2");
-			break;
-	}
 }
 
 char * GetPedalProfile( uint8_t profile , bool shortform )
@@ -400,13 +332,14 @@ bool DoMenu()
 		{
 			inmenu = false;
 			inedit = false;
+#ifndef RTOS
 			if (writeEEPROMDone() ) // try to commit config changes. How to deal with fail?
+#endif
 			{
-				writeEEPROMCurConf();
+				writeEEPROMCurConf(); // write the data to eeprom. if in RTOS, this will enqueue it
 			}
 			return false;
 		}
-
 
 		if ( !inedit )
 		{
@@ -450,7 +383,6 @@ bool DoMenu()
 		}
 	}
 
-
 	return false;
 
 }
@@ -471,7 +403,6 @@ int CheckConfigurationRequest( void )
 
 	if ( initialconfig )
 	{
-
 		if ( !SetupADCInterpolationTables(getEEPROMBlock(0)) )
 		{
 				// bad config.
@@ -482,39 +413,11 @@ int CheckConfigurationRequest( void )
 		CarState.Torque_Req_CurrentMax = 0;
 	}
 
-	if ( ReceiveInProgress && gettimer() > ECUConfigDataTime + MS1000 )
-	{ // don't get stuck in receiving data for more than 1 second if data flow stopped.
-		ReceiveInProgress = false;
-		lcd_send_stringline(3,"Receive Timeout", 1);
-		// TODO send timeout error
-	}
+#ifndef RTOS
+	DoEEPROM(); // run eeprom processing from loop.
+#endif
 
-	if ( SendInProgress && gettimer() > SendLast + MS1000 )
-	{
-		resetSend();
-		lcd_send_stringline(3,"Send timeout", 1);
-	}
-
-
-	if ( eepromwrite )
-	{
-
-		if ( writeEEPROMDone() )
-		{
-			lcd_send_stringline(3,"EEPROM Write done", 1);
-			eepromwrite=false;
-			eepromwritetype=0;
-		} else if ( gettimer() > eepromwritestart + MS1000 )
-		{
-			lcd_send_stringline(3,"EEPROM Write timeout", 1);
-			eepromwrite=false;
-			eepromwritetype=0;
-		} else
-			lcd_send_stringline(3,"EEPROM Write", 1);
-	}
-
-
-	if ( ! ( SendInProgress || ReceiveInProgress ) )
+	if ( !EEPROMBusy() )
 	{
 		DoMenu();
 	}
@@ -530,149 +433,6 @@ int CheckConfigurationRequest( void )
 	{
 		ECUConfignewdata = false;
 
-		if ( SendInProgress && ECUConfigdata[0] == 30 ) 			// send processing.
-		{
-			// ack received.
-
-			 if ( ECUConfigdata[1] == 1 ) // ack
-			 {
-				 if ( BufferPos < TransferSize )
-				 {
-					 uint8_t SendSize = 4;
-					 if ( BufferPos+SendSize > TransferSize ) SendSize = TransferSize-BufferPos;
-
-					 uint8_t CANTxData[8] = { 9, BufferPos>>8,BufferPos, SendSize, 0, 0, 0, 0};
-
-					 for ( int i=0;i<SendSize;i++)
-					 {
-						 CANTxData[4+i] = Buffer[BufferPos+i];
-					 }
-
-					 sprintf(str,"Send: %s %.4lu ", datatype, BufferPos );
-
-					 lcd_send_stringline(3,str, 1);
-
-					 CAN1Send(0x21, 8, CANTxData);
-					 BufferPos += SendSize;
-					 SendLast = gettimer();
-
-				 } else
-				 {
-				    BufferPos = TransferSize;
-					uint8_t CANTxData[8] = { 9, BufferPos>>8,BufferPos, 0, 0, 0, 0, 0};
-
-					CAN1Send(0x21, 8, CANTxData);
-					SendInProgress = false;
-
- 					lcd_send_stringline(3,"Send Done", 1);
-				 }
-
-			 } else if ( ECUConfigdata[1] == 99 )
-			 { // error.
-				 SendInProgress = false;
-				 lcd_send_stringline(3,"Send Error Rec", 1);
-				 resetSend();
-			 }
-
-		} else
-		if ( ReceiveInProgress )
-		{ // in middle of receiving a data block, ignore anything else.
-			int receivepos = (ECUConfigdata[1]*256+ECUConfigdata[2]);
-			// check receive buffer address matches sending position
-			if ( receivepos != BufferPos )
-			{
-				// unexpected data sequence, reset receive status;
-
-				resetReceive();
-				lcd_send_stringline(3,"Get OutSeq", 1);
-				CAN_SendStatus(ReceivingData,ReceiveErr,0);
-
-				// TODO receive error
-
-			} else // position good, continue.
-			{
-
-				if (BufferPos+ECUConfigdata[3]<=TransferSize)
-				{
-
-					sprintf(str,"Get: %s %.4d", datatype, receivepos );
-
-					strpad(str, 20);
-
-					lcd_send_stringline(3,str, 1);
-
-					memcpy(&Buffer[BufferPos],(uint8_t*)&ECUConfigdata[4],ECUConfigdata[3]);
-
-					if (ECUConfigdata[3] <  4) // data received ok, but wasn't full block. end of data.
-					{
-
-						ReceiveInProgress = false;
-
-
-
-						BufferPos+=ECUConfigdata[3];
-
-						if ( checkversion((char *)Buffer) ) // received data has valid header.
-						{
-
-							switch ( ReceiveType )
-							{
-								case 0 : // Full EEPROM
-									eepromwritetype=0;
-									memcpy(getEEPROMBuffer(), Buffer,  TransferSize);
-									break;
-
-								case 1 : // Block 1
-									eepromwritetype=1;
-									TransferSize = sizeof(eepromdata);
-									// copy block to both memory areas.
-									memcpy(getEEPROMBlock(1), Buffer, TransferSize);
-									memcpy(getEEPROMBlock(2), Buffer, TransferSize);
-									break;
-//								case 2 : // Block 2
-									TransferSize = sizeof(eepromdata);
-									memcpy(getEEPROMBlock(2), Buffer, TransferSize);
-									break;
-							}
-
-							initialconfig = true; // rerun adc config etc for new data in memory.
-							lcd_send_stringline(3,"Get Done", 1);
-						} else
-						{
-							lcd_send_stringline(3,"Get Bad Header", 1);
-						}
-
-						// don't commit to eeprom unless get write request.
-
-						// TODO verify eeprom, move to eeprom.c
-					//	memcpy(getEEPROMBuffer(), Buffer, 4096); // copy received data into local eeprom buffer before write.
-
-						// what to do with received data depends on what data was. Flag complete.
-
-//						lcd_send_stringpos(3,0,"Writing To EEPROM.  ");
-
-//						writeFullEEPROM();
-
-						// call a callback to process the fully received data?
-
-					} else
-					{
-						BufferPos+=4; // wait for next block.
-						returnvalue =  ReceivingData;
-					}
-					CAN_SendStatus(ReceivingData,ReceiveAck,0);
-
-				} else
-				{
-					// TODO tried to receive too much data! error.
-					resetReceive();
-					lcd_send_stringline(3,"Receive Error", 1);
-					CAN_SendStatus(ReceivingData, ReceiveErr,0);
-				}
-			}
-
-			// if ( data size < 5 then end receiving )
-		} else
 		if ( ECUConfigdata[0] != 0)
 		{
 
@@ -699,112 +459,10 @@ int CheckConfigurationRequest( void )
 						testingactive = 1;
 						CAN_ConfigRequest( 3, 1 );
 					}
-
-					break;
-
-				case 8 : // start receiving data packet. bytes 2 & 3 define how much data being sent.
-
-
-					TransferSize = ECUConfigdata[1]*256+ECUConfigdata[2];
-
-					if ( TransferSize <= BUFSIZE )
-					{
-						resetReceive();
-						ReceiveType = ECUConfigdata[3];
-						SetDataType( datatype, ReceiveType );
-						TransferSize = ECUConfigdata[1]*256+ECUConfigdata[2];
-						ReceiveInProgress = true;
-						returnvalue = ReceivingData;
-
-						sprintf(str,"DataGet: %s %.4lu", datatype, TransferSize);
-
-						strpad(str, 20);
-
-						CAN_SendStatus(ReceivingData,ReceiveAck,0); // TODO move ack to receive loop with timer to see message?
-
-						lcd_send_stringline(3,str, 1);
-					} else
-					{
-						// TODO error, invalid receive size.
-					}
-
-					break;// receive config data.
-
-
-				case 9 : // receive data
-					lcd_send_stringline(3,"Unexpected Data", 1);
-					CAN_SendStatus(ReceivingData,ReceiveErr,0);
-					break;
-
-				case 10 : // send data
-					resetSend();
-
-					SetDataType(datatype, ECUConfigdata[1] );
-
-					switch ( ECUConfigdata[1] )
-					{
-						case 0 : // Full EEPROM
-							TransferSize = 4096;
-							memcpy(Buffer, getEEPROMBuffer(), TransferSize);
-							break;
-
-						case 1 : // EEPROM Block
-							TransferSize = sizeof(eepromdata);
-							memcpy(Buffer, getEEPROMBlock(1), TransferSize);
-							break;
-						case 2 :
-							TransferSize = sizeof(eepromdata);
-							memcpy(Buffer, getEEPROMBlock(2), TransferSize);
-							break;
-					}
-
-
-					SendInProgress = true; // initiate transfer.
-					SendLast = gettimer();
-
-				    BufferPos = 0;
-
-					if ( TransferSize > 0 ){
-						uint8_t CANTxData[8] = { 8, TransferSize>>8,TransferSize, ECUConfigdata[1], 0, 0, 0, 0};
-						CAN1Send(0x21, 8, CANTxData);
-
-						char str[20] = "Send: ";
-
-						strncpy(str, datatype, 20);
-						strpad(str, 20);
-						lcd_send_stringline(3,str, 1);
-					} else lcd_send_stringline(3,"Bad EEPROM Send Req", 1);
-
-					break;
-
-				case 11 : // test eeprom writing.
-					eepromwrite=true;
-
-					eepromwritestart = gettimer();
-
-					switch ( eepromwritetype )
-					{
-						case 0 :
-							lcd_send_stringline(3,"Full EEPROM Write", 1);
-							writeFullEEPROM();
-							break;
-						case 1 :
-							lcd_send_stringline(3,"Config EEPROM Write", 1);
-							writeConfigEEPROM();
-							break;
-					}
-
-					if ( eepromwritetype == 2 )
-					break;
-
-				case 30 :
-				/*	lcd_send_stringpos(3,0,"Unexpected Ack. ");
-					CAN_SendStatus(ReceivingData,ReceiveErr,0); */
 					break;
 
 				default : // unknown request.
 					break;
-
 			}
 		} else
 		{

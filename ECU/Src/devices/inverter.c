@@ -38,11 +38,11 @@ CANData InverterCANNMT[MOTORCOUNT] = {
 
 
 CANData InverterCANPDO1[MOTORCOUNT] = { // status
-		{ &DeviceState.Inverters[0], InverterRL_COBID+COBPDO1_ID, 2, processINVStatus, NULL, 0, 0 },
-		{ &DeviceState.Inverters[1], InverterRR_COBID+COBPDO1_ID, 2, processINVStatus, NULL, 0, 1 },
+		{ &DeviceState.Inverters[0], InverterRL_COBID+COBPDO1_ID, 4, processINVStatus, NULL, 0, 0 },
+		{ &DeviceState.Inverters[1], InverterRR_COBID+COBPDO1_ID, 4, processINVStatus, NULL, 0, 1 },
 #if MOTORCOUNT > 2
-		{ &DeviceState.Inverters[2], InverterFL_COBID+COBPDO1_ID, 2, processINVStatus, NULL, 0, 2 },
-		{ &DeviceState.Inverters[3], InverterFR_COBID+COBPDO1_ID, 2, processINVStatus, NULL, 0, 3 }
+		{ &DeviceState.Inverters[2], InverterFL_COBID+COBPDO1_ID, 4, processINVStatus, NULL, 0, 2 },
+		{ &DeviceState.Inverters[3], InverterFR_COBID+COBPDO1_ID, 4, processINVStatus, NULL, 0, 3 }
 #endif
 };
 

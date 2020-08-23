@@ -147,10 +147,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		blinkcounter++;
 	} else
 #endif
+#ifndef RTOS
 		if ( htim->Instance == TIM7 )
 	{
 		InputTimerCallback();
-	} else if ( htim->Instance == TIM6 )
+	} else
+#endif
+		if ( htim->Instance == TIM6 )
 	{
 
 	} else if ( htim->Instance == TIM16) // used for eeprom write in background.

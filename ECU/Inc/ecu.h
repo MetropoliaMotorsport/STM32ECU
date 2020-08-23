@@ -232,19 +232,20 @@
 // Do not process Drive mode selector ADC
 //#define NODRIVINGMODE
 
-#define StartupState			0
-#define PreOperationalState		1
-#define OperationalReadyState	2
-#define IdleState				3
-#define TSActiveState			4
-#define RunningState			5
-#define ReceivingData			30
-#define ReceiveAck				1
-#define ReceiveErr				99
-#define TestingState			10
-#define LimpState				20
-#define OperationalErrorState   50
-#define ReceiveTimeout			200
+#define StartupState			(0)
+#define PreOperationalState		(1)
+#define OperationalReadyState	(2)
+#define IdleState				(3)
+#define TSActiveState			(4)
+#define RunningState			(5)
+#define ReceivingData			(30)
+#define InitialConfig			(31)
+#define ReceiveAck				(1)
+#define ReceiveErr				(99)
+#define TestingState			(10)
+#define LimpState				(20)
+#define OperationalErrorState   (50)
+#define ReceiveTimeout			(200)
 
 #define FatalErrorState			99
 

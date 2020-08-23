@@ -37,6 +37,471 @@ union { // EEPROMU
 
 volatile bool eepromwritinginprogress = false;
 volatile bool eepromreceivedone = false;
+static uint32_t EEPROMConfigDataTime = 0;
+static uint8_t EEPROMConfigdata[8] = {0};
+static bool	   EEPROMConfignewdata = false;
+
+int EEPROMReceive( void );
+int EEPROMSend( void );
+void DoEEPROMTimeouts( void );
+void resetReceive( void );
+void resetSend( void );
+void SetDataType( char * str, uint8_t datatype );
+
+#define BUFSIZE (4096)
+
+static uint8_t Buffer[BUFSIZE];
+
+static char datatype[20] = "";
+
+osThreadId_t EEPROMTaskHandle;
+const osThreadAttr_t EEPROMTask_attributes = {
+  .name = "EEPROMTask",
+  .priority = (osPriority_t) osPriorityLow,
+  .stack_size = 128*2
+};
+
+#define EEPROMQUEUE_LENGTH    20
+#define EEPROMITEMSIZE		sizeof( struct output_msg )
+
+/* The variable used to hold the queue's data structure. */
+static StaticQueue_t EEPROMStaticQueue;
+
+/* The array to use as the queue's storage area.  This must be at least
+uxQueueLength * uxItemSize bytes. */
+uint8_t EEPROMQueueStorageArea[ EEPROMQUEUE_LENGTH * EEPROMITEMSIZE ];
+
+QueueHandle_t EEPROMQueue;
+
+static bool ReceiveInProgress = false;
+static uint8_t ReceiveType = 0;
+static uint32_t TransferSize = 0;
+static bool SendInProgress = false;
+static uint32_t SendLast = 0;
+static uint32_t BufferPos = 0;
+
+static bool eepromwrite = false;
+static uint8_t eepromwritetype = 0;
+static uint32_t eepromwritestart = 0;
+
+void EEPROMTask(void *argument)
+{
+
+	ReceiveInProgress = false;
+	ReceiveType = 0;
+	TransferSize = 0;
+	SendInProgress = false;
+	SendLast = 0;
+	BufferPos = 0;
+
+	eepromwrite = false;
+	eepromwritetype = 0;
+	eepromwritestart = 0;
+
+	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
+	configASSERT( EEPROMQueue );
+
+	EEPROM_msg msg;
+
+	while( 1 )
+	{
+//		xQueueReceive(EEPROMQueue,&msg,portMAX_DELAY);
+
+  //      raiseflag(busy);
+
+  //      process_queue_item(theOperation);
+
+    //    lower_flag(busy);
+
+		DoEEPROMTimeouts();
+
+		vTaskDelay( 10 );
+	}
+
+	osThreadTerminate(NULL);
+}
+
+
+bool GetEEPROMCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+{
+	EEPROMConfigDataTime= gettimer();
+	memcpy(EEPROMConfigdata, CANRxData, 8);
+	EEPROMConfignewdata = true; // moved to end to ensure data is not read before updated.
+#ifdef RTOS
+	DoEEPROM();
+#endif
+	return true;
+}
+
+bool EEPROMBusy( void )
+{
+	return ( SendInProgress || ReceiveInProgress || eepromwritinginprogress );
+}
+
+
+void DoEEPROMTimeouts( void )
+{
+	if ( ReceiveInProgress && gettimer() > EEPROMConfigDataTime + MS1000 )
+	{ // don't get stuck in receiving data for more than 1 second if data flow stopped.
+		ReceiveInProgress = false;
+		lcd_send_stringline(3,"Receive Timeout", 1);
+		// TODO send timeout error
+	}
+
+	if ( SendInProgress && gettimer() > SendLast + MS1000 )
+	{
+		resetSend();
+		lcd_send_stringline(3,"Send timeout", 1);
+	}
+
+	if ( eepromwrite )
+	{
+		if ( writeEEPROMDone() )
+		{
+			lcd_send_stringline(3,"EEPROM Write done", 1);
+			eepromwrite=false;
+			eepromwritetype=0;
+		} else if ( gettimer() > eepromwritestart + MS1000 )
+		{
+			lcd_send_stringline(3,"EEPROM Write timeout", 1);
+			eepromwrite=false;
+			eepromwritetype=0;
+		} else
+			lcd_send_stringline(3,"EEPROM Write", 1);
+	}
+}
+
+int DoEEPROM( void )
+{
+	int returnval = 0;
+
+	char str[40] = "";
+
+	DoEEPROMTimeouts();
+
+	if ( EEPROMConfignewdata )
+	{
+		EEPROMConfignewdata = false;
+
+		if ( SendInProgress && EEPROMConfigdata[0] == 30 ) 			// send processing.
+		{
+			// ack received.
+
+			 if ( EEPROMConfigdata[1] == 1 ) // ack
+			 {
+				 if ( BufferPos < TransferSize )
+				 {
+					 uint8_t SendSize = 4;
+					 if ( BufferPos+SendSize > TransferSize ) SendSize = TransferSize-BufferPos;
+
+					 uint8_t CANTxData[8] = { 9, BufferPos>>8,BufferPos, SendSize, 0, 0, 0, 0};
+
+					 for ( int i=0;i<SendSize;i++)
+					 {
+						 CANTxData[4+i] = Buffer[BufferPos+i];
+					 }
+
+					 sprintf(str,"Send: %s %.4lu ", datatype, BufferPos );
+
+					 lcd_send_stringline(3,str, 1);
+
+					 CAN1Send(0x21, 8, CANTxData);
+					 BufferPos += SendSize;
+					 SendLast = gettimer();
+
+				 } else
+				 {
+					BufferPos = TransferSize;
+					uint8_t CANTxData[8] = { 9, BufferPos>>8,BufferPos, 0, 0, 0, 0, 0};
+
+					CAN1Send(0x21, 8, CANTxData);
+					SendInProgress = false;
+
+						lcd_send_stringline(3,"Send Done", 1);
+				 }
+
+			 } else if ( EEPROMConfigdata[1] == 99 )
+			 { // error.
+				 SendInProgress = false;
+				 lcd_send_stringline(3,"Send Error Rec", 1);
+				 resetSend();
+			 }
+
+		} else
+		if ( ReceiveInProgress )
+		{ // in middle of receiving a data block, ignore anything else.
+			int receivepos = (EEPROMConfigdata[1]*256+EEPROMConfigdata[2]);
+			// check receive buffer address matches sending position
+			if ( receivepos != BufferPos )
+			{
+				// unexpected data sequence, reset receive status;
+
+				resetReceive();
+				lcd_send_stringline(3,"Get OutSeq", 1);
+				CAN_SendStatus(ReceivingData,ReceiveErr,0);
+
+				// TODO receive error
+
+			} else // position good, continue.
+			{
+
+				if (BufferPos+EEPROMConfigdata[3]<=TransferSize)
+				{
+
+					sprintf(str,"Get: %s %.4d", datatype, receivepos );
+
+					strpad(str, 20);
+
+					lcd_send_stringline(3,str, 1);
+
+					memcpy(&Buffer[BufferPos],(uint8_t*)&EEPROMConfigdata[4],EEPROMConfigdata[3]);
+
+					if (EEPROMConfigdata[3] <  4) // data received ok, but wasn't full block. end of data.
+					{
+
+						ReceiveInProgress = false;
+
+
+
+						BufferPos+=EEPROMConfigdata[3];
+
+						if ( checkversion((char *)Buffer) ) // received data has valid header.
+						{
+
+							switch ( ReceiveType )
+							{
+								case 0 : // Full EEPROM
+									eepromwritetype=0;
+									memcpy(getEEPROMBuffer(), Buffer,  TransferSize);
+									break;
+
+								case 1 : // Block 1
+									eepromwritetype=1;
+									TransferSize = sizeof(eepromdata);
+									// copy block to both memory areas.
+									memcpy(getEEPROMBlock(1), Buffer, TransferSize);
+									memcpy(getEEPROMBlock(2), Buffer, TransferSize);
+									break;
+	//								case 2 : // Block 2
+									TransferSize = sizeof(eepromdata);
+									memcpy(getEEPROMBlock(2), Buffer, TransferSize);
+									break;
+							}
+
+							returnval = InitialConfig; // initialconfig = true; // rerun adc config etc for new data in memory.
+							lcd_send_stringline(3,"Get Done", 1);
+						} else
+						{
+							lcd_send_stringline(3,"Get Bad Header", 1);
+						}
+
+						// don't commit to eeprom unless get write request.
+
+						// TODO verify eeprom, move to eeprom.c
+					//	memcpy(getEEPROMBuffer(), Buffer, 4096); // copy received data into local eeprom buffer before write.
+
+						// what to do with received data depends on what data was. Flag complete.
+
+	//						lcd_send_stringpos(3,0,"Writing To EEPROM.  ");
+
+	//						writeFullEEPROM();
+
+						// call a callback to process the fully received data?
+
+					} else
+					{
+						BufferPos+=4; // wait for next block.
+						returnval = ReceivingData;
+					}
+					CAN_SendStatus(ReceivingData,ReceiveAck,0);
+
+				} else
+				{
+					// TODO tried to receive too much data! error.
+					resetReceive();
+					lcd_send_stringline(3,"Receive Error", 1);
+					CAN_SendStatus(ReceivingData, ReceiveErr,0);
+				}
+			}
+
+			// if ( data size < 5 then end receiving )
+		} else
+			if ( EEPROMConfigdata[0] != 0)
+			{
+		//		returnvalue = ReceivingConfig;
+				switch ( EEPROMConfigdata[0] )
+				{
+					case 8 : // start receiving data packet. bytes 2 & 3 define how much data being sent.
+						returnval = EEPROMReceive();
+						break;// receive config data.
+
+					case 9 : // receive data
+						lcd_send_stringline(3,"Unexpected Data", 1);
+						CAN_SendStatus(ReceivingData,ReceiveErr,0);
+						break;
+
+					case 10 : // send data
+	#ifdef __RTOS
+						EEPROM_msg msg;
+
+						msg.cmd = send;
+	#else
+						EEPROMSend();
+	#endif
+						break;
+
+					case 11 : // test eeprom writing.
+						eepromwrite=true;
+
+						eepromwritestart = gettimer();
+
+						switch ( eepromwritetype )
+						{
+							case 0 :
+								lcd_send_stringline(3,"Full EEPROM Write", 1);
+								writeFullEEPROM();
+								break;
+							case 1 :
+								lcd_send_stringline(3,"Config EEPROM Write", 1);
+								writeConfigEEPROM();
+								break;
+						}
+
+						if ( eepromwritetype == 2 )
+						break;
+
+					case 30 :
+					/*	lcd_send_stringpos(3,0,"Unexpected Ack. ");
+						CAN_SendStatus(ReceivingData,ReceiveErr,0); */
+						break;
+
+					default : // unknown request.
+						break;
+
+				}
+			} else
+			{
+	// deal with local data.
+			}
+	}
+return returnval;
+}
+
+void SetDataType( char * str, uint8_t datatype )
+{
+	switch ( datatype )
+	{
+		case 0 : // Full EEPROM
+			strcpy(str, "FullEEPROM");
+			break;
+		case 1 : // Full EEPROM
+			strcpy(str, "EEBank1");
+			break;
+		case 2 : // Full EEPROM
+			strcpy(str, "EEBank2");
+			break;
+	}
+}
+
+void resetReceive( void )
+{
+	BufferPos = 0;
+	TransferSize = 0;
+	datatype[0] = 0;
+	ReceiveInProgress = false;
+
+	ReceiveType = 0;
+	for ( int i=0; i<BUFSIZE; i++ ) Buffer[i] = 0;
+}
+
+void resetSend( void )
+{
+	BufferPos = 0;
+	datatype[0] = 0;
+	TransferSize = 0;
+	SendInProgress = false;
+	for ( int i=0; i<BUFSIZE; i++ ) Buffer[i] = 0;
+}
+
+// initialise data receive session.
+int EEPROMReceive( void )
+{
+	int returnvalue = 0;
+	char str[40] = "";
+
+	TransferSize = EEPROMConfigdata[1]*256+EEPROMConfigdata[2];
+
+	if ( TransferSize <= BUFSIZE )
+	{
+		resetReceive();
+		ReceiveType = EEPROMConfigdata[3];
+		SetDataType( datatype, ReceiveType );
+		TransferSize = EEPROMConfigdata[1]*256+EEPROMConfigdata[2];
+		ReceiveInProgress = true;
+		returnvalue = ReceivingData;
+
+		sprintf(str,"DataGet: %s %.4lu", datatype, TransferSize);
+
+		strpad(str, 20);
+
+		CAN_SendStatus(ReceivingData,ReceiveAck,0); // TODO move ack to receive loop with timer to see message?
+
+		lcd_send_stringline(3,str, 1);
+	} else
+	{
+		// TODO error, invalid receive size.
+	}
+	return returnvalue;
+}
+
+
+// initialise data send session.
+int EEPROMSend( void )
+{
+	resetSend();
+
+	SetDataType(datatype, EEPROMConfigdata[1] );
+
+	switch ( EEPROMConfigdata[1] )
+	{
+		case 0 : // Full EEPROM
+			TransferSize = 4096;
+			memcpy(Buffer, getEEPROMBuffer(), TransferSize);
+			break;
+
+		case 1 : // EEPROM Block
+			TransferSize = sizeof(eepromdata);
+			memcpy(Buffer, getEEPROMBlock(1), TransferSize);
+			break;
+		case 2 :
+			TransferSize = sizeof(eepromdata);
+			memcpy(Buffer, getEEPROMBlock(2), TransferSize);
+			break;
+	}
+
+
+	SendInProgress = true; // initiate transfer.
+	SendLast = gettimer();
+
+    BufferPos = 0;
+
+	if ( TransferSize > 0 ){
+		uint8_t CANTxData[8] = { 8, TransferSize>>8,TransferSize, EEPROMConfigdata[1], 0, 0, 0, 0};
+		CAN1Send(0x21, 8, CANTxData); // inform client that about to send data with data send packet.
+
+		char str[40];
+
+//		strncpy(str, datatype, 20);
+
+		sprintf(str,"Send: %s %.4lu", datatype, TransferSize);
+
+		strpad(str, 20);
+
+		lcd_send_stringline(3,str, 1);
+	} else lcd_send_stringline(3,"Bad EEPROM Send Req", 1);
+	return 0;
+}
+
 
 bool checkversion(char * data)
 {
@@ -204,11 +669,9 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 
 int initEEPROM( void )
 {
-	if ( DeviceState.LCD == ENABLED )
-	{
-		lcd_send_stringscroll("Load EEPRom");
-		lcd_update();
-	}
+	lcd_send_stringscroll("Load EEPRom");
+	lcd_update();
+
 	 MX_I2C2_Init();
 	 int eepromstatus = startupReadEEPROM();
 	 switch ( eepromstatus )
@@ -231,6 +694,32 @@ int initEEPROM( void )
 				DeviceState.EEPROM = DISABLED;
 				HAL_Delay(3000); // ensure message can be seen.
 	 };
+
+#ifndef RTOS
+	ReceiveInProgress = false;
+	ReceiveType = 0;
+	TransferSize = 0;
+	SendInProgress = false;
+	SendLast = 0;
+	BufferPos = 0;
+
+
+
+	eepromwrite = false;
+	eepromwritetype = 0;
+	eepromwritestart = 0;
+#else
+	EEPROMQueue = xQueueCreateStatic( EEPROMQUEUE_LENGTH,
+							  EEPROMITEMSIZE,
+							  EEPROMQueueStorageArea,
+							  &EEPROMStaticQueue );
+
+	vQueueAddToRegistry(EEPROMQueue, "EEPROMQueue" );
+
+	EEPROMTaskHandle = osThreadNew(EEPROMTask, NULL, &EEPROMTask_attributes);
+
+#endif
+
 	 return 0;
 }
 
@@ -429,8 +918,6 @@ int writeEEPROMCurConf( void )  //write one of the two config banks to EEPROM
 
 }
 
-
-
 int writeEEPROMEmergency( void )   // write emergency packet to end of EEPROM.
 {
 	return 0;
@@ -449,7 +936,3 @@ bool stopEEPROM( void )
 	return false;
 }
 
-bool EEPROMBusy( void )
-{
-	return eepromwritinginprogress;
-}

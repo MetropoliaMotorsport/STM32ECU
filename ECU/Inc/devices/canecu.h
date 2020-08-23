@@ -112,12 +112,12 @@
 
 enum canbus { bus0, bus1, bus2 = 0 };
 
-struct cantx_msg {
+typedef struct can_msg {
 	enum canbus bus;
 	uint16_t id;
-	uint8_t dlc;
+	uint32_t dlc;
 	uint8_t data[8];
-};
+} can_msg;
 
 extern QueueHandle_t CanTxQueue;
 

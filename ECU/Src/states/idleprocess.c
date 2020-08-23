@@ -118,8 +118,8 @@ char OperationalReceive( uint16_t returnvalue )
 char OperationalReceiveLoop( void )
 {
 	LastCarState = CarState;
-	uint32_t loopstart = gettimer();
-	uint32_t looptimer = 0;
+//	uint32_t loopstart = gettimer();
+//	uint32_t looptimer = 0;
 	uint8_t received = 0xFF;
 
 	static int errorcount = 0; // keep count of how many consecutive errors had.

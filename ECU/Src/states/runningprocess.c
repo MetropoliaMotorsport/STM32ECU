@@ -27,7 +27,7 @@ uint16_t PrintBrakeBalance( void )
 
 	if ( CarState.brake_balance < 255 )
 	{
-		sprintf(str,"Bal: %.3liF %.3liR (%.2d%%)", ADCState.BrakeF, ADCState.BrakeR, CarState.brake_balance );
+		sprintf(str,"Bal: %.3dF %.3dR (%.2d%%)", ADCState.BrakeF, ADCState.BrakeR, CarState.brake_balance );
 	} else
 	{
 		if ( DeviceState.ADC == OPERATIONAL )

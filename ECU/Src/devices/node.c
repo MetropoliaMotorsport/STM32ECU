@@ -13,7 +13,7 @@ bool processNodeErrData(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 bool processNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
 CANData NodeErr = { NULL, NodeErr_ID, 6, processNodeErrData, NULL, 0 };
-CANData NodeAck = { NULL, NodeAck_ID, 3, processNodeAckData, NULL, 0 };
+CANData NodeAck = { NULL, NodeAck_ID, 8, processNodeAckData, NULL, 0 };
 
 #define MAXPNODEERRORS		40
 

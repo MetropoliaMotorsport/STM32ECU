@@ -261,7 +261,7 @@ void resetIMU( void )
 {
 //	IMUData temp = {0};
 //	volatile size= sizeof( IMUData );
-	memset( &IMUReceived, 0, sizeof( IMUData ) );
+	memset( (void *) &IMUReceived, 0, sizeof( IMUData ) );
 }
 
 int initIMU( void )

@@ -7,10 +7,6 @@
 
 #include "ecumain.h"
 
-/**
- * returns gpio port for given output number.
- */
-
 osThreadId_t OutputTaskHandle;
 const osThreadAttr_t OutputTask_attributes = {
   .name = "OutputTask",
@@ -18,14 +14,11 @@ const osThreadAttr_t OutputTask_attributes = {
   .stack_size = 128*2
 };
 
-/* The queue is to be created to hold a maximum of 10 uint64_t
-variables. */
 #define OutputQUEUE_LENGTH    20
 #define OutputITEMSIZE		sizeof( struct output_msg )
 
 /* The variable used to hold the queue's data structure. */
 static StaticQueue_t OutputStaticQueue;
-
 
 /* The array to use as the queue's storage area.  This must be at least
 uxQueueLength * uxItemSize bytes. */
@@ -34,18 +27,59 @@ uint8_t OutputQueueStorageArea[ OutputQUEUE_LENGTH * OutputITEMSIZE ];
 QueueHandle_t OutputQueue;
 
 
-typedef volatile struct BlinkParam
+typedef volatile struct OutputType
 {
-    output output;
+	GPIO_TypeDef * port;
+	uint16_t pin;
+    output output; // this is only really here to make seeing which led using in debugger.
     output_state state;
     uint16_t ontime;
     uint16_t offtime;
     uint32_t start;
     uint32_t duration;
-} BlinkParam;
+} OutputType;
 
+#ifdef HPF20
+OutputType Output[OUTPUTCount] = {
+		 { DO1_GPIO_Port, DO1_Pin},
+		 { DO2_GPIO_Port, DO2_Pin},
+		 { DO3_GPIO_Port, DO3_Pin},
+		 { DO4_GPIO_Port, DO4_Pin},
+		 { DO5_GPIO_Port, DO5_Pin},
+		 { DO6_GPIO_Port, DO6_Pin},
+		 { DO7_GPIO_Port, DO7_Pin},
+		 { DO11_GPIO_Port, DO11_Pin},
+		 { DO12_GPIO_Port, DO12_Pin},
+		 { DO13_GPIO_Port, DO13_Pin},
+		 { DO14_GPIO_Port, DO14_Pin},
+		 { DO15_GPIO_Port, DO15_Pin},
+		 { LD7_GPIO_Port, LD7_Pin},
+		 { LD8_GPIO_Port, LD8_Pin},
+		 { LD9_GPIO_Port, LD9_Pin},
+		 { LD0_GPIO_Port, LD0_Pin},
+		 { LD1_GPIO_Port, LD1_Pin},
+		 { LD3_GPIO_Port, LD3_Pin},
+		 { LD4_GPIO_Port, LD4_Pin}
+};
+#endif
 
-BlinkParam BlinkParams[OUTPUTCount] = { 0 };
+#ifdef HPF19
+
+OutputType Output[OUTPUTCount] = {
+		 { Output1_GPIO_Port, Output1_Pin},
+		 { Output2_GPIO_Port, Output2_Pin},
+		 { Output3_GPIO_Port, Output3_Pin},
+		 { Output4_GPIO_Port, Output4_Pin},
+		 { Output5_GPIO_Port, Output5_Pin},
+		 { Output6_GPIO_Port, Output6_Pin},
+		 { Output7_GPIO_Port, Output7_Pin},
+		 { Output8_GPIO_Port, Output8_Pin},
+		 { LD1_GPIO_Port, LD1_Pin},
+		 { LD2_GPIO_Port, LD2_Pin},
+		 { LD3_GPIO_Port, LD3_Pin}
+
+};
+#endif
 
 #define BLINKSTACK_SIZE 32
 
@@ -59,43 +93,49 @@ StackType_t xStack[OUTPUTCount][ BLINKSTACK_SIZE ];
 
 void BlinkTask( void * pvParameters )
 {
-	BlinkParam * params = (BlinkParam *) pvParameters;
+	OutputType * params = &Output[ (uint32_t) pvParameters ]; // parameter is int indicating which output this thread controls.
 
 	while ( 1 )
     {
-		bool terminate = false;
+		bool Suspend = false;
 		if ( params->duration > 0 )
 		{
-			HAL_GPIO_WritePin(getGpioPort(params->output), getGpioPin(params->output), On);
+			HAL_GPIO_WritePin(params->port, params->pin, On);
 			vTaskDelay(params->ontime);
 			if ( params->offtime > 0 )
 			{
-				HAL_GPIO_WritePin(getGpioPort(params->output), getGpioPin(params->output), Off);
+				HAL_GPIO_WritePin(params->port, params->pin, Off);
 				vTaskDelay(params->offtime);
 			}
 			if ( params->duration == 1 ) // if duration set to 1, only do blink cycle once.
 			{
-				terminate = true;
-			}
+				Suspend = true;
+			} else
 			if ( params->duration != 0xFFFF )
 			{
 				if ( gettimer() - params->start > params->duration )
 				{
-					terminate = true;
+					Suspend = true;
 				}
 			}
 		} else
-			HAL_GPIO_WritePin(getGpioPort(params->output), getGpioPin(params->output), params->state);
-
-		if ( terminate )
 		{
-			HAL_GPIO_WritePin(getGpioPort(params->output), getGpioPin(params->output), params->state);
+			HAL_GPIO_WritePin(params->port, params->pin, params->state);
+			Suspend = true;
+		}
+
+		// if determined this is the last blink cycle then suspend the task to wait for next blink.
+		if ( Suspend )
+		{
+			HAL_GPIO_WritePin(params->port, params->pin, params->state);
 			params->duration = 0;
-			osThreadTerminate(NULL);
+			//osThreadTerminate(NULL); // bug? apparently this does nothing in heap model 1.
+			vTaskSuspend(NULL);
 		}
     }
 
-	osThreadTerminate(NULL);
+	//osThreadTerminate(NULL);
+	vTaskDelete(NULL);
 }
 
 void OutputTask(void *argument)
@@ -124,11 +164,12 @@ void OutputTask(void *argument)
 			{
 				if ( msg.state == Toggle )
 				{
+					Output[msg.output].state = !Output[msg.output].state;
 					toggleOutputMetal(msg.output);
 				} else if ( msg.state > On )
 				{
 
-					BlinkParams[msg.output].output = msg.output;
+					Output[msg.output].output = msg.output;
 
 					int ontime = 0;
 					int offtime = 0;
@@ -138,16 +179,16 @@ void OutputTask(void *argument)
 						case BlinkVerySlow : ontime = 1000; offtime = 1000; break;
 						case BlinkSlow : ontime = 500; offtime = 500; break;
 						case BlinkMed : ontime = 200; offtime = 200; break;
-						case BlinkFast : ontime = 50; offtime = 50; break;
+						case BlinkFast : ontime = 50; offtime = 100; break;
 						case BlinkVeryFast : ontime = 10; offtime = 10; break;
 						case Timed : ontime = 10; offtime = 0; break;
 						default :
 						ontime = 500; offtime = 500;
 					}
 
-					BlinkParams[msg.output].ontime = ontime;
-					BlinkParams[msg.output].offtime = offtime;
-					BlinkParams[msg.output].start = gettimer();
+					Output[msg.output].ontime = ontime;
+					Output[msg.output].offtime = offtime;
+					Output[msg.output].start = gettimer();
 
 					if ( msg.time != 1)
 					{
@@ -155,36 +196,44 @@ void OutputTask(void *argument)
 							msg.time = ontime+offtime;
 					}
 
-					BlinkParams[msg.output].duration = msg.time;
+					Output[msg.output].duration = msg.time;
 
 					// only create blink task when it's actually needed for first time
 
 					// should keep task list a little cleaner if only led's called to blink actually get populated.
 
-					if ( xBlinkHandle[msg.output] == NULL && msg.time > 0 )
+					// only actually create task first time LED is requested to be blinking.
+					if ( ( xBlinkHandle[msg.output] == NULL	|| eTaskGetState(xBlinkHandle[msg.output]) == eDeleted )
+							&& msg.time > 0 )
 					{
 						xBlinkHandle[msg.output]  = xTaskCreateStatic(
 									  BlinkTask,       /* Function that implements the task. */
 									  "BlinkTask",     /* Text name for the task. */
 									  BLINKSTACK_SIZE,      /* Number of indexes in the xStack array. */
-									  ( void * ) &BlinkParams[msg.output],    /* Parameter passed into the task. */
-									  tskIDLE_PRIORITY,/* Priority at which the task is created. */
+									  ( void * ) msg.output,    /* Parameter passed into the task. */
+									  osPriorityLow,/* Priority at which the task is created. */
 									  xStack[msg.output],          /* Array to use as the task's stack. */
 									  &xBlinkTaskBuffer[msg.output] );  /* Variable to hold the task's data structure. */
+					} else if ( msg.time > 0 && eTaskGetState(xBlinkHandle[msg.output]) == eSuspended )
+					{
+						vTaskResume(xBlinkHandle[msg.output]);
 					}
+
 				} else if ( msg.state == On )
 				{
 					HAL_GPIO_WritePin(getGpioPort(msg.output), getGpioPin(msg.output), On);
-					BlinkParams[msg.output].state = On;
+					Output[msg.output].state = On;
 				} else
 				{
 					HAL_GPIO_WritePin(getGpioPort(msg.output), getGpioPin(msg.output), Off);
-					BlinkParams[msg.output].ontime = Off;
+					Output[msg.output].ontime = Off;
 //					if ( xBlinkHandle[msg.output] != NULL )
 //						vTaskSuspend( xBlinkHandle[msg.output] );
 				}
 			}
 		}
+
+		// input polling here?
 
 		vTaskDelayUntil( &xLastWakeTime, xFrequency );
 	}
@@ -192,35 +241,26 @@ void OutputTask(void *argument)
 	osThreadTerminate(NULL);
 }
 
-#ifdef HPF19
+typedef struct ButtonData {
+	GPIO_TypeDef * port;
+	uint16_t pin;
+	bool logic; // 0 for press on low, 1 for press on high, allow either pull low or high buttons to work. default is pull to ground.
+	bool state; // current state
+	uint32_t statecount; // how long this state has maintained.
+	uint32_t lastpressed; // time stamp of last time state was determined to be an actual button press
+	uint32_t lastreleased; // when was button last let go.
+	uint32_t count; // how many times has it been pressed.
+	bool pressed; // has button been pressed since last check.
+	bool held; // is button being held down currently, for e.g. scrolling.
+	// define the hardware button for passing button data including reading it
+} ButtonData;
+
+/**
+ * returns gpio port for given output number.
+ */
 GPIO_TypeDef* getGpioPort(output output)
 {
-	switch ( output ) { // set gpio values for requested port
-		case 0 :
-			return Output1_GPIO_Port;
-		case 1 :
-			return Output2_GPIO_Port;
-		case 2 :
-			return Output3_GPIO_Port;
-		case 3 :
-			return Output4_GPIO_Port;
-		case 4 :
-			return Output5_GPIO_Port;
-		case 5 :
-			return Output6_GPIO_Port;
-		case 6 :
-			return Output7_GPIO_Port;
-		case 7 :
-			return Output8_GPIO_Port;
-		case 8 :
-			return LD1_GPIO_Port;
-		case 9 :
-			return LD2_GPIO_Port;
-		case 10 :
-			return LD3_GPIO_Port;
-		default :
-			return 0;
-	}
+	return Output[output].port;
 }
 
 /**
@@ -229,136 +269,8 @@ GPIO_TypeDef* getGpioPort(output output)
 
 int getGpioPin(output output)
 {
-	switch ( output )
-	{ // set gpio values for requested port
-		case 0 :
-			return Output1_Pin;
-		case 1 :
-			return Output2_Pin;
-		case 2 :
-			return Output3_Pin;
-		case 3 :
-			return Output4_Pin;
-		case 4 :
-			return Output5_Pin;
-		case 5 :
-			return Output6_Pin;
-		case 6 :
-			return Output7_Pin;
-		case 7 :
-			return Output8_Pin;
-		case 8 :
-			return LD1_Pin;
-		case 9 :
-			return LD2_Pin;
-		case 10 :
-			return LD3_Pin;
-		default :
-			return 0;
-	}
+	return Output[output].pin;
 }
-#endif
-
-#ifdef HPF20
-GPIO_TypeDef* getGpioPort(output output)
-{
-
-	switch ( output ) { // set gpio values for requested port
-		case 0 :
-			return DO1_GPIO_Port;
-		case 1 :
-			return DO2_GPIO_Port;
-		case 2 :
-			return DO3_GPIO_Port;
-		case 3 :
-			return DO4_GPIO_Port;
-		case 4 :
-			return DO5_GPIO_Port;
-		case 5 :
-			return DO6_GPIO_Port;
-		case 6 :
-			return DO7_GPIO_Port;
-		case 7 :
-			return DO11_GPIO_Port;
-		case 8 :
-			return DO12_GPIO_Port;
-		case 9 :
-			return DO13_GPIO_Port;
-		case 10 :
-			return DO14_GPIO_Port;
-		case 11 :
-			return DO15_GPIO_Port;
-
-		case 12 :
-			return LD7_GPIO_Port;
-		case 13 :
-			return LD8_GPIO_Port;
-		case 14 :
-			return LD9_GPIO_Port;
-		case 15 :
-			return LD0_GPIO_Port;
-		case 16 :
-			return LD1_GPIO_Port;
-		case 17 :
-			return LD3_GPIO_Port;
-		case 18 :
-			return LD4_GPIO_Port;
-
-		default :
-			return 0;
-	}
-}
-
-/**
- * returns GPIO pin for given output number.
- */
-
-int getGpioPin(output output)
-{
-	switch ( output ) { // set gpio values for requested port
-		case 0 :
-			return DO1_Pin;
-		case 1 :
-			return DO2_Pin;
-		case 2 :
-			return DO3_Pin;
-		case 3 :
-			return DO4_Pin;
-		case 4 :
-			return DO5_Pin;
-		case 5 :
-			return DO6_Pin;
-		case 6 :
-			return DO7_Pin;
-		case 7 :
-			return DO11_Pin;
-		case 8 :
-			return DO12_Pin;
-		case 9 :
-			return DO13_Pin;
-		case 10 :
-			return DO14_Pin;
-		case 11 :
-			return DO15_Pin;
-		case 12 :
-			return LD7_Pin;
-		case 13 :
-			return LD8_Pin;
-		case 14 :
-			return LD9_Pin;
-		case 15 :
-			return LD0_Pin;
-		case 16 :
-			return LD1_Pin;
-		case 17 :
-			return LD3_Pin;
-		case 18 :
-			return LD4_Pin;
-		default :
-			return 0;
-	}
-}
-#endif
 
 
 /**

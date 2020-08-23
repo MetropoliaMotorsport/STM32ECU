@@ -164,10 +164,14 @@ void MainTask(void *argument)
 
 	uint32_t counter = 0;
 
+	BaseType_t xHigherPriorityTaskWoken = false;
+	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+
 	lcd_setscrolltitle("Starting Main Loop");
 
 	OperationalState = StartupState;
 
+#ifdef LEDTEST
 	setOutput(LED4, On);
 
 	vTaskDelay(1000);
@@ -178,7 +182,7 @@ void MainTask(void *argument)
 	blinkOutput(LED5, Timed, 800);
 
 	blinkOutput(LED7, BlinkFast, 1500);
-
+#endif
 	for(;;)
 	{
 		OperationalProcess();
@@ -186,9 +190,9 @@ void MainTask(void *argument)
 		msg.type = LCD_Cmd;
 		msg.data.count = counter;
 
-		xQueueSend( LCDQueue, ( void * ) &msg, ( TickType_t ) 0 );
+//		xQueueSend( LCDQueue, ( void * ) &msg, ( TickType_t ) 0 );
 
-		blinkOutput(LED7, BlinkVeryFast, 1);
+//		blinkOutput(LED7, BlinkVeryFast, 1);
 
 		uint32_t random;
 
@@ -514,7 +518,7 @@ int testmain(void)
   HAL_Init();
   SystemClock_Config();
 
-  InButtonpress = 1; // prevent any button presses registering until setup.
+//  InButtonpress = 1; // prevent any button presses registering until setup.
 
   MX_GPIO_Init();
   MX_DMA_Init();
