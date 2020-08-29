@@ -63,11 +63,10 @@ extern CANData ECUCAN;
 #include "i2c-lcd.h"
 #include "eeprom.h"
 #include "memorator.h"
+#include "power.h"
 #include "analognode.h"
 #include "powernode.h"
 #include "node.h"
-#include "shutdown.h"
-#include "power.h"
 #include "imu.h"
 #include "torquecontrol.h"
 

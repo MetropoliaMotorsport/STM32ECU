@@ -351,15 +351,57 @@ bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle )
 }
 
 
+char PNodeStr[10] = "";
+
+char * getPNodeStr( void )
+{
+	if ( PNodeStr[0] == 0) return NULL;
+	else return PNodeStr;
+}
+
 int receivePowerNodes( void )
 {
 	uint8_t nodesonline = 0b00011111;
 
+	PNodeStr[0] = 0;
+
+	uint8_t pos = 0;
+
 	if ( receivedCANData(&PowerNode33) ) nodesonline -= 1;
+	else
+	{
+		PNodeStr[pos] = '3';
+		PNodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&PowerNode34) ) nodesonline -= 2;
+	else
+	{
+		PNodeStr[pos] = '4';
+		PNodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&PowerNode35) ) nodesonline -= 4;
+	else
+	{
+		PNodeStr[pos] = '5';
+		PNodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&PowerNode36) ) nodesonline -= 8;
+	else
+	{
+		PNodeStr[pos] = '6';
+		PNodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&PowerNode37) ) nodesonline -= 16;
+	else
+	{
+		PNodeStr[pos] = '7';
+		PNodeStr[pos+1] = '\0';
+		pos++;
+	}
 
 	return nodesonline;
 }
@@ -376,7 +418,7 @@ int average(int count, ...)
 }
 
 
-int setDevicePower( DevicePower device, bool state )
+int setNodeDevicePower( DevicePower device, bool state )
 {
 	int powerreqset = 1;
 

@@ -95,9 +95,10 @@ int TSActiveProcess( uint32_t OperationLoops )
 	uint32_t curtime = gettimer();
 
 	uint8_t prechargedone = 0;
-	if ( prechargetimer+60000 < curtime )
+	if ( prechargetimer+MS1000*6 < curtime )
 	{
 		prechargedone = 1;
+		lcd_send_stringline(1,"Precharge Done.", 255);
 	}
 
 	if ( invertersStateCheck(INVERTERON)
@@ -156,7 +157,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	{
 		if ( !prechargedone )
 		{
-		 lcd_send_stringline(1,"Wait for Precharge", 255);
+			lcd_send_stringline(1,"Wait for Precharge", 255);
 		} else return IdleState;  // if requested disable TS drop state
 	}
 

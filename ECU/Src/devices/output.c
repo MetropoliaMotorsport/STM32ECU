@@ -26,7 +26,6 @@ uint8_t OutputQueueStorageArea[ OutputQUEUE_LENGTH * OutputITEMSIZE ];
 
 QueueHandle_t OutputQueue;
 
-
 typedef volatile struct OutputType
 {
 	GPIO_TypeDef * port;

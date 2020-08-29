@@ -139,7 +139,13 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 #endif
 
 #ifdef STMADC
+
+#ifdef RTOS
+    if ( DeviceState.ADCSanity == 0 ) returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
+#else
     if ( CheckADCSanity() == 0 ) returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
+#endif
+
 #else
 	if ( DeviceState.ADC == Operational )
 	{

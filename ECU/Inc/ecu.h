@@ -437,6 +437,7 @@ struct DeviceState {
 	bool BMSEnabled;
 	bool LoggingEnabled;
 	DeviceStatus ADC;
+	uint16_t ADCSanity;
 	DeviceStatus PWM;
 	DeviceStatus Inverters[MOTORCOUNT];
 	DeviceStatus BMS;
@@ -463,7 +464,7 @@ struct DeviceState {
 	DeviceStatus AnalogNode17; // tyre temps RL
 	DeviceStatus AnalogNode18; // tyre temps RR
 
-
+	DeviceStatus PowerNodes;
 	DeviceStatus PowerNode33; // [BOTS, inertia switch, BSPD.], Telemetry, front power
 	DeviceStatus PowerNode34; // [shutdown switches.], inverters, ECU, Front,
 	DeviceStatus PowerNode35; // Cooling ( fans, pumps )

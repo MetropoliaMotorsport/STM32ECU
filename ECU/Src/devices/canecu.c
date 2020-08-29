@@ -759,7 +759,7 @@ char CAN_SendStatus( char state, char substate, uint32_t errorcode )
 	 stateless = state;
 	} else stateless = state;
 
-	uint8_t CANTxData[8] = { stateless, substate, getByte(errorcode, 0), getByte(errorcode, 1), getByte(errorcode, 2), getByte(errorcode, 3),HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1),HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2)}; // HAL_FDCAN_GetxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)
+	uint8_t CANTxData[8] = { stateless, substate, getByte(errorcode, 0), getByte(errorcode, 1), getByte(errorcode, 2), getByte(errorcode, 3),HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1), ( ShutdownCircuitState() << 7 )+ HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2)}; // HAL_FDCAN_GetxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)
 #ifdef CAN2ERRORSTATUS
 	CAN2Send( ECU_CAN_ID, 8, CANTxData );
 #endif
@@ -796,7 +796,7 @@ char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode )
 
 char CAN_SendLED( void )
 {
-#ifndef RTOS
+#ifdef __RTOS
     uint8_t CANTxData[8] = { 10, LEDs[TSLED_Output].state, LEDs[RTDMLED_Output].state, LEDs[TSOFFLED_Output].state,
 							LEDs[IMDLED_Output].state, LEDs[BMSLED_Output].state, LEDs[BSPDLED_Output].state, ShutdownCircuitState()};
 
@@ -1343,10 +1343,8 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 		}
 
 #else
-		BaseType_t xHigherPriorityTaskWoken;
-
 		/* We have not woken a task at the start of the ISR. */
-		xHigherPriorityTaskWoken = pdFALSE;
+		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 		can_msg msg;
 

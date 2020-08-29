@@ -21,7 +21,7 @@
 
 #define EEPROMVERSIONSTR		("MMECUV0.1")
 
-typedef enum EEPROM_cmd{ send, receive, read, write } EEPROM_cmd;
+typedef enum EEPROM_cmd { send, receive, read, write } EEPROM_cmd;
 
 typedef struct EEPROM_msg {
 	EEPROM_cmd cmd;

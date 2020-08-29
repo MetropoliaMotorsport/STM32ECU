@@ -144,21 +144,95 @@ bool processANode18Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 }
 
 
+char ANodeCritStr[10] = "";
+char ANodeStr[15] = "";
+
 int receiveAnalogNodes( void ) // any of these missing should just be a warning or note.
 {
 	uint16_t nodesonline = 0b111111111;
 
+	ANodeStr[0] = 0;
+
+	uint8_t pos = 0;
+
 	if ( receivedCANData(&AnalogNode9) ) nodesonline -= 1;
+	else
+	{
+		ANodeStr[pos] = '9';
+		ANodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&AnalogNode10) ) nodesonline -= 2;
+	else
+	{
+		ANodeStr[pos] = '0';
+		ANodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&AnalogNode12) ) nodesonline -= 4;
+	else
+	{
+		ANodeStr[pos] = '2';
+		ANodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&AnalogNode13) ) nodesonline -= 8;
+	else
+	{
+		ANodeStr[pos] = '3';
+		ANodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&AnalogNode14) ) nodesonline -= 16;
+	else
+	{
+		ANodeStr[pos] = '4';
+		ANodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&AnalogNode15) ) nodesonline -= 32;
+	else
+	{
+		ANodeStr[pos] = '5';
+		ANodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&AnalogNode16) ) nodesonline -= 64;
+	else
+	{
+		ANodeStr[pos] = '6';
+		ANodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&AnalogNode17) ) nodesonline -= 128;
+	else
+	{
+		ANodeStr[pos] = '7';
+		ANodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&AnalogNode18) ) nodesonline -= 256;
+	else
+	{
+		ANodeStr[pos] = '8';
+		ANodeStr[pos+1] = '\0';
+		pos++;
+	}
 
 	return nodesonline;
+}
+
+
+char * getAnalogNodesCriticalStr( void )
+{
+	if ( ANodeCritStr[0] == 0) return NULL;
+	return ANodeCritStr;
+}
+
+char * getAnalogNodesStr( void )
+{
+	if ( ANodeStr[0] == 0) return NULL;
+	return ANodeStr;
 }
 
 
@@ -166,14 +240,26 @@ int receiveAnalogNodesCritical( void ) // 1 = APPS1 + regen. 11 = APPS2 + brakes
 {
 	uint16_t nodesonline = 0b11;
 
+	ANodeCritStr[0] = 0;
+
+	uint8_t pos = 0;
+
 	if ( receivedCANData(&AnalogNode1) ) nodesonline -= 1;
+	else
+	{
+		ANodeCritStr[pos] = '1';
+		ANodeCritStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( receivedCANData(&AnalogNode11) ) nodesonline -= 2;
+	{
+		ANodeCritStr[pos] = 'A';
+		ANodeCritStr[pos+1] = '\0';
+		pos++;
+	}
 
 	return nodesonline;
 }
-
-
-
 
 
 void resetAnalogNodes( void )

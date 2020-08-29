@@ -110,7 +110,11 @@ char OperationalReceive( uint16_t returnvalue )
 		returnvalue &= ~(0x1 << IVTReceived); // assume IVT is present, don't go to error state if missing.
 
 		// need new function to check for ADC input, so that more workable with a CAN node.
+#ifdef RTOS
+    if ( DeviceState.ADCSanity == 0 ) returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
+#else
     if ( CheckADCSanity() == 0 ) returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
+#endif
 
     return returnvalue;
 }

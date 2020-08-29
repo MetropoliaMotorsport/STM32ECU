@@ -51,8 +51,12 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 						  (0x1 << IVTReceived);
 	}
 
-#ifdef STMADC
-#endif
+#ifdef RTOS
+	if ( DeviceState.ADCSanity == 0 )
+	   returnvalue &= ~(0x1 << PedalADCReceived);
+	else
+	   returnvalue |= 0x1 << PedalADCReceived;
+#else
 	if ( DeviceState.ADC == OFFLINE )
 	{
 		DeviceState.ADC = OPERATIONAL;
@@ -64,6 +68,9 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 		else
 		   returnvalue |= 0x1 << PedalADCReceived;
 	}
+
+#endif
+
 
 #ifdef HPF19
 	if ( DeviceState.FrontSpeedSensors == DISABLED ) // if we've decided to operate without speed sensors, don't process them
@@ -217,9 +224,9 @@ int PreOperationState( uint32_t OperationLoops  )
 // pumps on 35
 
 
-
+#ifndef RTOS
 		if ( ( OperationLoops % 10 ) == 0 ) { sendPowerNodeReq(); }
-
+#endif
 		// generate device waiting string.
 
 		if ( preoperationstate != 0 || ReadyToStart != 0 ){
@@ -230,32 +237,27 @@ int PreOperationState( uint32_t OperationLoops  )
 			strcpy(str, "Wait:");
 
 #ifdef POWERNODES
+#ifndef RTOS
+			receivePowerNodes(); // will need more fixing, but expect to be removing non RTOS mode shortly.
+#endif
 
-			uint8_t powernodeson = receivePowerNodes();
-			if ( powernodeson != 0 )
+			if ( getPNodeWait() != NULL )
 			{
-				sprintf(&str[strlen(str)],"P%s%s%s%s%s ",
-					    (powernodeson & (0x1 << 0) ? "3" : ""),
-						(powernodeson & (0x1 << 1) ? "4" : ""),
-						(powernodeson & (0x1 << 2) ? "5" : ""),
-						(powernodeson & (0x1 << 3) ? "6" : ""),
-						(powernodeson & (0x1 << 4) ? "7" : "")
-				);
+				sprintf(&str[strlen(str)],"P%s ", getPNodeWait() );
 			}
 #endif
 
 #ifdef ANALOGNODES
+#ifdef RTOS
 
-			uint8_t analognodeson = receiveAnalogNodesCritical();
-			if ( powernodeson != 0 )
+#else
+			uint8_t analognodesoncrit = receiveAnalogNodesCritical();
+			uint16_t analognodeson = receiveAnalogNodes();
+#endif
+			if ( getADCWait() != NULL )
 			{
-				sprintf(&str[strlen(str)],"A%s%s ",
-					    (analognodeson & (0x1 << 0) ? "1" : ""),
-						(analognodeson & (0x1 << 1) ? "A" : "")
-
-				);
+				sprintf(&str[strlen(str)],"A%s ", getADCWait() );
 			}
-
 #endif
 
 #ifdef HPF19

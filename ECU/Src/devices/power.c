@@ -7,6 +7,91 @@
 
 #include "ecumain.h"
 
+osThreadId_t PowerTaskHandle;
+const osThreadAttr_t PowerTask_attributes = {
+  .name = "PowerTask",
+  .priority = (osPriority_t) osPriorityLow,
+  .stack_size = 128*2
+};
+
+#define PowerQUEUE_LENGTH    20
+#define PowerITEMSIZE		sizeof( Power_msg )
+
+/* The variable used to hold the queue's data structure. */
+static StaticQueue_t PowerStaticQueue;
+
+/* The array to use as the queue's storage area.  This must be at least
+uxQueueLength * uxItemSize bytes. */
+uint8_t PowerQueueStorageArea[ PowerQUEUE_LENGTH * PowerITEMSIZE ];
+
+QueueHandle_t PowerQueue;
+
+
+// task shall take power hangling request, and forward them to nodes.
+// ensure contact is kept with brake light board as brake light is SCS.
+
+// how to ensure power always enabled?
+
+char PNodeWaitStr[20] = "";
+
+char * getPNodeWait( void)
+{
+	if ( PNodeWaitStr[0] == 0 ) return NULL;
+	else return PNodeWaitStr;
+}
+
+void PowerTask(void *argument)
+{
+	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
+	configASSERT( PowerQueue );
+
+	Power_msg msg;
+
+	TickType_t xLastWakeTime;
+
+    const TickType_t xFrequency = 10;
+
+	// Initialise the xLastWakeTime variable with the current time.
+	xLastWakeTime = xTaskGetTickCount();
+
+	while( 1 )
+	{
+		if ( xQueueReceive(PowerQueue,&msg,0) )
+		{
+#ifdef POWERNODES
+			int result = setNodeDevicePower( msg.power, msg.state );
+#else
+ // on PDM only fans and HV are controlled.
+			if ( device == hv )
+			{
+
+			}
+
+#endif
+		}
+
+
+		uint8_t powernodeson = receivePowerNodes();
+
+		if ( powernodeson > 0 )
+		{
+			DeviceState.PowerNodes = INERROR; // haven't seen all needed.
+			strcpy(PNodeWaitStr, getPNodeStr());
+		} else
+		{
+			DeviceState.PowerNodes = OPERATIONAL;
+			PNodeWaitStr[0] = 0;
+		}
+
+		sendPowerNodeReq(); // process pending power requests.
+
+		vTaskDelayUntil( &xLastWakeTime, xFrequency );
+
+	}
+
+	osThreadTerminate(NULL);
+}
+
 int setHV( bool buzzer )
 {
 #ifdef PDM
@@ -89,6 +174,38 @@ char * ShutDownOpenStr( void )
 	return str;
 }
 
+
+void ShutdownCircuitSet( bool state )
+{
+	HAL_GPIO_WritePin( Shutdown_GPIO_Port, Shutdown_Pin, state);
+}
+
+int ShutdownCircuitCurrent( void )
+{
+	// check if ADC ok
+	return ADC_Data[2] * 1.22; // ~780 count ~= 0.95A ~820=1A   1.22 multiplication factor for approx mA calibrated.
+}
+
+int ShutdownCircuitState( void )
+{
+	return HAL_GPIO_ReadPin(Shutdown_GPIO_Port, Shutdown_Pin);
+}
+
+
+int setDevicePower( DevicePower device, bool state )
+{
+#ifdef ROS
+	Power_msg msg;
+
+	msg.power = device;
+	msg.state = state;
+	xQueueSend(PowerQueue, msg, 0);
+	return 0;
+#else
+	return setNodeDevicePower( device, state );
+#endif
+}
+
 int errorPower( void )
 {
 #ifdef HPF19
@@ -110,6 +227,17 @@ int initPower( void )
 	RegisterResetCommand(resetPower);
 
 	resetPower();
+
+#ifdef RTOS
+	PowerQueue = xQueueCreateStatic( PowerQUEUE_LENGTH,
+							  PowerITEMSIZE,
+							  PowerQueueStorageArea,
+							  &PowerStaticQueue );
+
+	vQueueAddToRegistry(PowerQueue, "PowerQueue" );
+
+	PowerTaskHandle = osThreadNew(PowerTask, NULL, &PowerTask_attributes);
+#endif
 
 	return 0;
 }

@@ -383,7 +383,11 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		strcat(str, "PDM " );
 	}
 
-	if ( ! ( CheckADCSanity() == 0 ))
+#ifdef RTOS
+	if ( ! ( DeviceState.ADCSanity == 0 ))
+#else
+    if ( ! CheckADCSanity() == 0 )
+#endif
 	{
 		allowreset +=4;
 		strcat(str, "PDL " );

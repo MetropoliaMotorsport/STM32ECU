@@ -164,8 +164,8 @@ void MainTask(void *argument)
 
 	uint32_t counter = 0;
 
-	BaseType_t xHigherPriorityTaskWoken = false;
-	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+//	BaseType_t xHigherPriorityTaskWoken = false;
+//	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 
 	lcd_setscrolltitle("Starting Main Loop");
 

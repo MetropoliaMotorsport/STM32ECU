@@ -64,6 +64,13 @@ volatile char usecanADC;
 volatile char minmaxADC;
 // ADC
 
+typedef enum ADC_cmd{ adc1, adc3 } ADC_cmd;
+
+typedef struct ADC_msg {
+	uint32_t cmd;
+} ADC_msg;
+
+
 // averaged ADC data
 volatile uint32_t ADC_Data[NumADCChan+NumADCChanADC3];
 volatile uint32_t ADC_DataError[NumADCChan+NumADCChanADC3];
@@ -169,6 +176,8 @@ int initCANADC( void );
 #endif
 
 uint16_t CheckADCSanity( void );
+
+char * getADCWait( void);
 
 int initADC( void );
 

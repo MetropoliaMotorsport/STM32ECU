@@ -7,6 +7,7 @@
 
 #include "ecumain.h"
 #include "i2c-lcd.h"
+#include "semphr.h"
 
 #define UINTOFFSET	360
 
@@ -82,7 +83,6 @@ uint16_t BrakeTravelInput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] =  {
 int16_t BrakeTravelOutput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] = { -1,      0,      0,   1000,   1000,   1001 };
 
 uint8_t BrakeTravelSize = 6; //sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
-
 
 
 // TODO verify initialiser zeros out.
@@ -161,6 +161,106 @@ uint16_t DrivingModeInput[] = { 0 , 1022, 1023, 1024,4500, 13500, 23500, 33000, 
 int16_t DrivingModeOutput[] = { 1 , 1,    0,     1,   1,    2,    3,      4,     5,     6,    7,      8,     0 };
 uint8_t DriveModeSize = sizeof(DrivingModeInput)/sizeof(DrivingModeInput[0]);
 #endif
+
+
+void ReadADC1(bool half);
+void ReadADC3(bool half);
+
+osThreadId_t ADCTaskHandle;
+const osThreadAttr_t ADCTask_attributes = {
+  .name = "ADCTask",
+  .priority = (osPriority_t) osPriorityHigh,
+  .stack_size = 128*2
+};
+
+//quick and dirty hack till rework adc back to one shot dma
+
+SemaphoreHandle_t xADC1 = NULL;
+SemaphoreHandle_t xADC3 = NULL;
+
+char ADCWaitStr[20] = "";
+
+char * getADCWait( void)
+{
+	if ( ADCWaitStr[0] == 0 ) return NULL;
+	else return ADCWaitStr;
+}
+
+// Task shall monitor analogue node timeouts, and read data from local ADC/PWM to get all analogue values ready for main loop.
+void ADCTask(void *argument)
+{
+	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
+
+	xADC1 = xSemaphoreCreateBinary();
+	xADC3 = xSemaphoreCreateBinary();
+
+	TickType_t xLastWakeTime;
+
+    const TickType_t xFrequency = 10;
+
+	// Initialise the xLastWakeTime variable with the current time.
+	xLastWakeTime = xTaskGetTickCount();
+
+	DeviceState.ADC = OPERATIONAL;
+
+	while( 1 )
+	{
+#ifdef PROFILE
+		volatile startime = DWT->CYCCNT;
+#endif
+		// start the adc reads and then wait on their incoming queues.
+		if ( HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t *)aADCxConvertedData, ADC_CONVERTED_DATA_BUFFER_SIZE)  != HAL_OK)
+		{
+			DeviceState.ADC = INERROR;
+		}
+
+		// start ADC conversion
+		//  return HAL_ADC_Start_DMA(&hadc1,(uint32_t *)aADCxConvertedData,ADC_CONVERTED_DATA_BUFFER_SIZE);
+		if ( HAL_ADC_Start_DMA(&hadc3,(uint32_t *)aADCxConvertedDataADC3,ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3) != HAL_OK)
+		{
+			DeviceState.ADC = INERROR;
+		}
+
+	//	if( == pdTRUE )
+		xSemaphoreTake( xADC1, portMAX_DELAY );
+		xSemaphoreTake( xADC3, portMAX_DELAY );
+#ifdef PROFILE
+		volatile totaltime = DWT->CYCCNT-starttime; // approx 72k cycles to here for adc read.
+#endif
+
+		ReadADC1(false);
+		ReadADC3(false);
+
+		receiveAnalogNodes();
+
+		ADCWaitStr[0] = 0;
+
+		// check to see what actually received;
+		if (  receiveAnalogNodesCritical() != 0)
+		{
+			strcpy(ADCWaitStr, getAnalogNodesCriticalStr());
+			strcat(ADCWaitStr, getAnalogNodesStr());
+
+			DeviceState.ADC = OPERATIONAL;
+		} else
+			DeviceState.ADC = INERROR;
+
+		//get adc readings, then check them.
+
+		DeviceState.ADCSanity = CheckADCSanity();
+
+		if ( DeviceState.ADCSanity != 0 )
+			DeviceState.ADC = INERROR;
+
+		// if readings ok, then pass them to main loop?
+
+//		if ( DeviceState.ADC == INERROR )
+
+		vTaskDelayUntil( &xLastWakeTime, xFrequency ); // use task sync instead?
+	}
+
+	osThreadTerminate(NULL);
+}
 
 
 bool SetupADCInterpolationTables( eepromdata * data )
@@ -762,23 +862,29 @@ HAL_StatusTypeDef startADC(void)
 		Error_Handler();
 	}
 
+
 	if ( HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
 	{
 		Error_Handler();
 	}
 
+#ifndef RTOS
 	if ( HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t *)aADCxConvertedData, ADC_CONVERTED_DATA_BUFFER_SIZE)  != HAL_OK)
 	{
 		Error_Handler();
 	}
-	DeviceState.ADC = OPERATIONAL;
+
 	// start ADC conversion
 	//  return HAL_ADC_Start_DMA(&hadc1,(uint32_t *)aADCxConvertedData,ADC_CONVERTED_DATA_BUFFER_SIZE);
 	if ( HAL_ADC_Start_DMA(&hadc3,(uint32_t *)aADCxConvertedDataADC3,ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3) != HAL_OK)
 	{
 		Error_Handler();
 	}
+#endif
 
+	// in RTOS mode ADC poll is requested per cycle.
+
+	DeviceState.ADC = OPERATIONAL;
 #endif
 
 	return 0;
@@ -787,8 +893,6 @@ HAL_StatusTypeDef startADC(void)
 
 HAL_StatusTypeDef stopADC( void )
 {
-
-
 #ifdef STMADC
 	  return (HAL_ADC_Stop_DMA(&hadc1) != HAL_OK); // this was causing a hang shortly after calling before.
 #endif
@@ -817,7 +921,6 @@ void ReadADC1(bool half)
 	ADCloops++;
 	ADC1read = true;
 
-
 	volatile int start = NumADCChan*SampleSize;
 	if ( half ) start = 0;
 
@@ -844,7 +947,6 @@ void ReadADC1(bool half)
 		ADC1read=false;
 		ADCState.lastread=gettimer();
 	}
-
 }
 
 void ReadADC3(bool half)
@@ -885,6 +987,7 @@ void ReadADC3(bool half)
 	}
 }
 
+#ifndef RTOS // RTOS we just want the complete read per cycle.
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 {
 // nothing yet
@@ -901,21 +1004,35 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 		}
 	}
 }
-
+#endif
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-	if(!usecanADC) // don't process ADC values if ECU has been setup to use dummy values
+//	ADC_msg msg;
+#ifdef RTOS
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+#endif
+
+	if(!usecanADC ) // don't process ADC values if ECU has been setup to use dummy values
 	{
 		if ( hadc->Instance == ADC1 )
 		{
+#ifndef RTOS
 			ReadADC1(false);
+#else
+			blinkOutput(LED2, BlinkVeryFast, 1);
+		    xSemaphoreGiveFromISR( xADC1, &xHigherPriorityTaskWoken );
+#endif
 		}
 		else
 		if ( hadc->Instance == ADC3 ) // TODO update for variable amount of ADC channels
 		{
+#ifdef RTOS
+			blinkOutput(LED3, BlinkVeryFast, 1);
+		    xSemaphoreGiveFromISR( xADC3, &xHigherPriorityTaskWoken );
+#else
 			ReadADC3(false);
-#ifdef HPF19
+	#ifdef HPF19
 			ADC_Data[8] =  aADCxConvertedDataADC3[2];
 			ADC_Data[9] =  aADCxConvertedDataADC3[3];
 
@@ -927,10 +1044,16 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 					if ( ADC_Data[i] > ADC_DataMax[i] ) ADC_DataMax[i] = ADC_Data[i];
 				}
 			}
+	#endif
 #endif
-
-
 		}
+
+#ifdef RTOS
+	    if( xHigherPriorityTaskWoken )
+	    {
+	        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+	    }
+#endif
 	}
 }
 #endif
@@ -1064,7 +1187,7 @@ uint16_t CheckADCSanity( void )
         }
         else returnvalue &= ~(0x1 << SteeringAngleErrorBit);
 
-    	if ( receiveAnalogNodesCritical() == 0 )
+    	if ( getAnalogNodesCriticalStr() == NULL ) // string will be empty if everything expected received.
     	{
 
 			if ( ADCState.BrakeF < 0 || ADCState.BrakeF >= 240 )
@@ -1095,8 +1218,6 @@ uint16_t CheckADCSanity( void )
             ADCState.Torque_Req_L_Percent = 0;
     	}
 #endif
-
-
 
 	} else // set all ADC to error bit if not online.
 	{
@@ -1206,15 +1327,20 @@ int initADC( void )
 	MX_ADC1_Init();
 	MX_ADC3_Init();
 
-	if ( DeviceState.LCD == ENABLED )
-	{
-		lcd_send_stringscroll("Start ADC");
-		lcd_update();
-	}
+	lcd_send_stringscroll("Start ADC");
+	lcd_update();
+
 	if ( startADC() == 0 )  //  starts the ADC dma processing.
 	{
 		DeviceState.ADC = OPERATIONAL;
 	} else return 99;
+#endif
+
+#ifndef RTOS
+
+
+#else
+	ADCTaskHandle = osThreadNew(ADCTask, NULL, &ADCTask_attributes);
 #endif
 
 	return 0;

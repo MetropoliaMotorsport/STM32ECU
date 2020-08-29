@@ -102,7 +102,6 @@ void LCDTask(void *argument)
         // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
 			xQueueReceive(LCDQueue,&msg,0);
 
-
 			char str[LCDCOLUMNS+1] = "";
 
 			sprintf(str,"Count: %.10lu", msg.data.count );
@@ -123,8 +122,6 @@ void LCDTask(void *argument)
 
 	osThreadTerminate(NULL);
 }
-
-
 
 void strpad(char * str, int len){
 	int strlength = strlen(str);
@@ -147,7 +144,6 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 		inerror = false;
 	}
 }
-
 
 void LCD_I2CError( void )
 {

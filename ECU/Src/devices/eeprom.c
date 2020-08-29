@@ -62,7 +62,7 @@ const osThreadAttr_t EEPROMTask_attributes = {
 };
 
 #define EEPROMQUEUE_LENGTH    20
-#define EEPROMITEMSIZE		sizeof( struct output_msg )
+#define EEPROMITEMSIZE		sizeof( EEPROM_msg )
 
 /* The variable used to hold the queue's data structure. */
 static StaticQueue_t EEPROMStaticQueue;
@@ -113,7 +113,7 @@ void EEPROMTask(void *argument)
 
     //    lower_flag(busy);
 
-		DoEEPROMTimeouts();
+		DoEEPROMTimeouts(); // right now, eeprom functionality is mostly defined by can receive handler
 
 		vTaskDelay( 10 );
 	}
@@ -253,9 +253,7 @@ int DoEEPROM( void )
 					strpad(str, 20);
 
 					lcd_send_stringline(3,str, 1);
-
 					memcpy(&Buffer[BufferPos],(uint8_t*)&EEPROMConfigdata[4],EEPROMConfigdata[3]);
-
 					if (EEPROMConfigdata[3] <  4) // data received ok, but wasn't full block. end of data.
 					{
 
@@ -267,7 +265,6 @@ int DoEEPROM( void )
 
 						if ( checkversion((char *)Buffer) ) // received data has valid header.
 						{
-
 							switch ( ReceiveType )
 							{
 								case 0 : // Full EEPROM
@@ -479,7 +476,6 @@ int EEPROMSend( void )
 			break;
 	}
 
-
 	SendInProgress = true; // initiate transfer.
 	SendLast = gettimer();
 
@@ -595,13 +591,17 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 
 	 }
 
-
   /* Turn LED3 on: Transfer error in reception/transmission process */
+#ifdef RTOS
+	  blinkOutput(LED7, BlinkVeryFast, 1);
+#else
 	  toggleOutput(LED7);
+#endif
 }
 
- int startupReadEEPROM( void )
- {
+
+int startupReadEEPROM( void )
+{
 	// TODO could be optimised to only read necessary block.
 
 	HAL_Delay(100); // Allow time for EEPROM chip to initialise itself before start trying to access.
@@ -667,6 +667,7 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 #endif
 }
 
+
 int initEEPROM( void )
 {
 	lcd_send_stringscroll("Load EEPRom");
@@ -723,6 +724,7 @@ int initEEPROM( void )
 	 return 0;
 }
 
+
 int readEEPROMAddr( uint16_t address, uint16_t size )
 {
 	uint32_t startread = gettimer();
@@ -750,6 +752,7 @@ int readEEPROMAddr( uint16_t address, uint16_t size )
 	return 0;
 }
 
+
 int readEEPROM( void ){
   eepromreceivedone = false;
   if(HAL_I2C_Mem_Read_IT(&hi2c2 , (uint16_t)EEPROM_ADDRESS, 0, I2C_MEMADD_SIZE_16BIT, (uint8_t*)EEPROMdata.buffer, sizeof(EEPROMdata)+1)!= HAL_OK)
@@ -759,7 +762,6 @@ int readEEPROM( void ){
   }
   return 0;
 }
-
 
 
 //	static bool eepromerror = false;
@@ -810,8 +812,8 @@ void commitEEPROM( void ) // progress EEPROM writing by sending next block over 
 			}
 		}
 	}
-
 }
+
 
 int writeFullEEPROM( void )
 {
@@ -865,10 +867,6 @@ int writeConfigEEPROM( void )
 }
 
 
-
-
-
-
 int writeEEPROM( int bank )  //write one of the two config banks to EEPROM
 {
 	if ( ! eepromwritinginprogress){
@@ -889,8 +887,8 @@ int writeEEPROM( int bank )  //write one of the two config banks to EEPROM
 		return 1;
 
 	} else return 0;
-
 }
+
 
 int writeEEPROMCurConf( void )  //write one of the two config banks to EEPROM
 {
@@ -915,8 +913,8 @@ int writeEEPROMCurConf( void )  //write one of the two config banks to EEPROM
 		return 1;
 
 	} else return 0;
-
 }
+
 
 int writeEEPROMEmergency( void )   // write emergency packet to end of EEPROM.
 {
@@ -930,6 +928,7 @@ bool writeEEPROMDone( void )
 
 	// handle switchin active block in here.
 }
+
 
 bool stopEEPROM( void )
 {
