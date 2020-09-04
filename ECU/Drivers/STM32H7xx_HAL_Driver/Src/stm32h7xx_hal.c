@@ -131,7 +131,7 @@ HAL_StatusTypeDef HAL_Init(void)
   /* Update the SystemCoreClock global variable */
   SystemCoreClock = HAL_RCC_GetSysClockFreq() >> ((D1CorePrescTable[(RCC->D1CFGR & RCC_D1CFGR_D1CPRE)>> RCC_D1CFGR_D1CPRE_Pos]) & 0x1FU);
 
-  /* Update the SystemD2Clock global variable */  
+  /* Update the SystemD2Clock global variable */
   SystemD2Clock = (SystemCoreClock >> ((D1CorePrescTable[(RCC->D1CFGR & RCC_D1CFGR_HPRE)>> RCC_D1CFGR_HPRE_Pos]) & 0x1FU));
 
   /* Use systick as time base source and configure 1ms tick (default clock after Reset is HSI) */
@@ -256,7 +256,7 @@ __weak HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   }
 #else
   /* Configure the SysTick to have interrupt in 1ms time basis*/
-  if (HAL_SYSTICK_Config(SystemCoreClock / (1000UL / (uint32_t)uwTickFreq)) > 0U)
+  if (HAL_SYSTICK_Config(SystemCoreClock / (10000UL / (uint32_t)uwTickFreq)) > 0U)
   {
     return HAL_ERROR;
   }

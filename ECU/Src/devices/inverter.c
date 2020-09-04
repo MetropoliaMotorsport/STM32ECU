@@ -256,9 +256,9 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
 	if ( CANRxData[0] == 0 && CANRxData[1] == 0x10 && CANRxData[2] == 0x81 && CANRxData[6] == 0x00 && CANRxData[7] == 0 )
 	{
         uint16_t ErrorCode = CANRxData[4]*256+CANRxData[3];
-        
+
         uint8_t AllowReset = 0;
-        
+
         switch ( ErrorCode ) // 29954
         {
         	case 30003 : // DC Underlink Voltage. HV dropped or dipped, allow reset attempt. //  33 117 hex
@@ -269,7 +269,7 @@ uint8_t processINVError(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
             default : // other unknown errors, don't allow auto reset attempt.
                 AllowReset = 0;
         }
-        
+
 		switch ( Inverter )
 		{
 			case LeftInverter :
@@ -633,10 +633,10 @@ uint8_t processINVSpeed(uint8_t CANRxData[8], uint32_t DataLength, uint8_t Inver
 					DeviceState.InverterL = OPERATIONAL;
 					DeviceState.InverterL = GetInverterState(CarState.LeftInvState ); // correct state if wrong.
 				} // this will mark as online if offline.
-	/*			else if ( CarState.LeftInvState != CarState.LeftInvStateCheck )
+				else if ( CarState.LeftInvState != CarState.LeftInvStateCheck )
 				{
 					CarState.LeftInvState = status;
-				} */
+				}
 
 				break;
 

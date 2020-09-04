@@ -28,7 +28,7 @@ int ReadyRequest( void )   // request data / invalidate existing data to ensure 
 		CANSendInverter( command, 0, LeftInverter );
 	}
 
-	if (( CarState.LeftInvState != 0xFF && GetInverterState( CarState.RightInvState ) != INVERTERREADY ) || InverterSent == 0 )
+	if (( CarState.RightInvState != 0xFF && GetInverterState( CarState.RightInvState ) != INVERTERREADY ) || InverterSent == 0 )
 	{
 		command = InverterStateMachine( RightInverter ); //  request right inv state machine to pre operation readyness if not already
 		CANSendInverter( command, 0, RightInverter );
@@ -133,7 +133,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 // 1.	Testing the functionality/readings from the different sensors
 // 2.	Checking that all expected CAN bus messages were received within specified time-interval
 //      (Both Inverters, both encoders, both accelerator pedal sensors, brake pressure sensor/s, BMS
-//      IVT-MOD, steering angle sensor, acceleration/yaw sensor….)
+//      IVT-MOD, steering angle sensor, acceleration/yaw sensorï¿½.)
 // 3.	Checking that the HV and LV batteries voltages and temperatures are within defined limits
 
 int OperationReadyness( uint32_t OperationLoops ) // process function for operation readyness state

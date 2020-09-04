@@ -26,13 +26,17 @@
 
 void setDriveMode(void)
 {
+// moved, not sure why the heck was ever inside switch.
+
+	SetupNormalTorque();
+
+	CarState.LimpDisable = 0;
+	CarState.TorqueVectoringMode = 0;
+	CarState.TorqueVectoring = 0;
+	CarState.DrivingMode = ADCState.DrivingMode;
 	switch ( ADCState.DrivingMode )
 	{
 
-		SetupNormalTorque();
-
-		CarState.LimpDisable = 0;
-		CarState.DrivingMode = ADCState.DrivingMode;
 
 		case 1: // 5nm  5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    64,    65,   0
 			CarState.Torque_Req_Max = 5;
@@ -42,46 +46,44 @@ void setDriveMode(void)
 			break;
 		case 2: // 10nm
 			CarState.Torque_Req_Max = 25;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
-#endif
 			break;
 		case 3: // 15nm
+			CarState.Torque_Req_Max = 35;
+
+			break;
+		case 4: // 20nm
+			CarState.Torque_Req_Max = 65;
+			SetupLargeLowRangeTorque();
+			break;
+		case 5: // 25nm
+			CarState.Torque_Req_Max = 65;
+			CarState.LimpDisable = 1;
+			SetupLowTravelTorque();
+			break;
+		case 6: // 30nm
 			CarState.Torque_Req_Max = 25;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 1;
+			CarState.TorqueVectoringMode = 1;
 #endif
-			break;
-		case 4: // 20nm
-			CarState.Torque_Req_Max = 35;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
-#endif
-			break;
-		case 5: // 25nm
-			CarState.Torque_Req_Max = 35;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 1;
-#endif
-			break;
-		case 6: // 30nm
-			CarState.Torque_Req_Max = 65;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
-#endif
-			SetupLargeLowRangeTorque();
+
 			break;
 		case 7: // 65nm Track
-			CarState.Torque_Req_Max = 65;
+			CarState.Torque_Req_Max = 25;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 1;
+			CarState.TorqueVectoringMode = 2;
+
 #endif
 			SetupLargeLowRangeTorque();
 			break;
 		case 8: // 65nm Accel
-			CarState.Torque_Req_Max = 65;
-			CarState.LimpDisable = 1;
-			SetupLowTravelTorque();
+			CarState.Torque_Req_Max = 25;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 1;
+			CarState.TorqueVectoringMode = 3;
+
+#endif
 			break;
 
 	}
@@ -209,6 +211,9 @@ int PreOperation( uint32_t OperationLoops  )
 	 //   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
 	    	// send to individual devices rather than reset everything if needed.
 	    }
+
+    initVectoring();
+
 #ifndef everyloop
 	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
 #endif

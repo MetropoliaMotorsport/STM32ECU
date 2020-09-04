@@ -33,7 +33,8 @@ void FDCAN1_start(void)
     Error_Handler();
   }
 
-  HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, DISABLE, DISABLE);
+  HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_ACCEPT_IN_RX_FIFO0, FDCAN_ACCEPT_IN_RX_FIFO0, DISABLE, DISABLE);
+//  HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, DISABLE, DISABLE);
 
   HAL_FDCAN_ConfigRxFifoOverwrite(&hfdcan1, FDCAN_RX_FIFO0, FDCAN_RX_FIFO_OVERWRITE);
 
@@ -94,6 +95,16 @@ void FDCAN1_start(void)
   sFilterConfig1.FilterIndex++; // filter for fake button presses id's + induce hang.
   sFilterConfig1.FilterID1 = 0x610;
   sFilterConfig1.FilterID2 = 0x614;
+
+  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
+  {
+    // Filter configuration Error
+    Error_Handler();
+  }
+
+  sFilterConfig1.FilterIndex++; // filter for fake button presses id's + induce hang.
+  sFilterConfig1.FilterID1 = 0x102;
+  sFilterConfig1.FilterID2 = 0x220;
 
   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
   {
@@ -1334,7 +1345,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 			case 0x380 + InverterL_COBID :
                 processINVTorque(CANRxData, RxHeader.DataLength, LeftInverter );
 				break;
-                
+
 			case 0x480 + InverterL_COBID :  // not used
 				break;
 
@@ -1345,7 +1356,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 			case 0x380 + InverterR_COBID :
 			    processINVTorque(CANRxData, RxHeader.DataLength, RightInverter );
 				break;
-                
+
 			case 0x480 + InverterR_COBID : // not used
 				break;
 
@@ -1353,6 +1364,54 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 			    processINVNMT(CANRxData, RxHeader.DataLength, LeftInverter );
 				/* Actual_Torque_Right_Inverter_Raw.data.longint = CANRxData[2]*256+CANRxData[1];? looks like wrong ID */
 				break;
+
+case IMUBase_ID :
+	processIMUStatus(CANRxData, RxHeader.DataLength, NULL );
+	break;
+
+case IMUUTC_ID :
+	processIMUUTC(CANRxData, RxHeader.DataLength, NULL );
+	break;
+
+case IMUInfo_ID :
+	processIMUInfo(CANRxData, RxHeader.DataLength, NULL );
+	break;
+
+case IMUAccel_ID :
+	processIMUAccel(CANRxData, RxHeader.DataLength, NULL );
+	break;
+
+case IMUGyro_ID :
+	processIMUGyro(CANRxData, RxHeader.DataLength, NULL );
+	break;
+
+case IMUDeltaV_ID :
+	processIMUDeltaV(CANRxData, RxHeader.DataLength, NULL );
+	break;
+
+case IMUDeltaA_ID :
+	processIMUDeltaA(CANRxData, RxHeader.DataLength, NULL );
+	break;
+
+case IMUEuler_ID :
+	processIMUEuler(CANRxData, RxHeader.DataLength, NULL );
+	break;
+
+case IMUVel_ID :
+	processIMUVel(CANRxData, RxHeader.DataLength, NULL );
+	break;
+
+case IMUVelAcc_ID :
+//	processIMUVelAcc(CANRxData, RxHeader.DataLength, NULL );
+	break;
+
+case IMUGPS_ID :
+	processIMUGPS(CANRxData, RxHeader.DataLength, NULL );
+	break;
+
+case IMUAUTO_ID :
+	processIMUAUTO(CANRxData, RxHeader.DataLength, NULL );
+	break;
 
 			default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
 				break;

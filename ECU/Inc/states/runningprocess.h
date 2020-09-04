@@ -16,6 +16,8 @@ uint16_t PedalTorqueRequest( void );
 uint16_t TorqueVectorProcess( int torquerequest );
 #endif
 
+int ConvertNMToRequest( int NM );
+
 void FanControl( void );
 
 #endif /* RUNNINGPROCESS_H_ */

@@ -45,6 +45,7 @@
 .mxproject
 TrueSTUDIO/
 /Debug/
+/ECU/Debug/
 __history/
 __recovery/
 *.stat
@@ -53,3 +54,4 @@ __recovery/
 Inc/version.h
 *.dprod.local
 *.identcache
+

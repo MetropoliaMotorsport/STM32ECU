@@ -30,7 +30,7 @@ int16_t TorqueVectOutput3[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTOR
 #endif
 
 // 19500 ~ -90  // 13300 full lock, 45000 ~ 90 deg right. 50000 full lock right. ~120
-uint16_t SteeringInput[] = { 6539, 13300, 20000, 33500, 63019 };
+uint16_t SteeringInput[] = { 6539, 13300, 22000, 35500, 63019 };
 int16_t SteeringOutput[] = { -210,  -120,  -90,   0,    210 };
 
 // -1 needs to be at minimum

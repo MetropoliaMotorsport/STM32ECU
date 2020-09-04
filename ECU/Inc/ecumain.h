@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "main.h"
+#include <stdbool.h>
 
 #include "wwdg.h"
 #include "fdcan.h"
@@ -39,6 +40,8 @@
 #include "inverter.h"
 #include "bms.h"
 #include "adcecu.h"
+#include "imu.h"
+#include "torquecontrol.h"
 
 
 int realmain(void);

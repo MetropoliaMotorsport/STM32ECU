@@ -8,6 +8,9 @@
 #ifndef ECU_H_
 #define ECU_H_
 
+
+#define MATLAB
+
 // Calibration settings for pedals.
 
 #define ACCELERATORLZERO 4200
@@ -287,17 +290,18 @@ volatile struct CarState {
 	uint16_t RightInvTorque;
 #ifdef TORQUEVECTOR
 	uint8_t  TorqueVectoring;
+	uint8_t  TorqueVectoringMode;
 #endif
 
 	uint8_t Torque_Req_Max;
     uint8_t Torque_Req_CurrentMax;
     uint32_t PowerLimit;
     uint8_t DrivingMode;
-    
+
     uint8_t FanPowered;
 
 	uint8_t APPSstatus;
-    
+
     uint8_t LimpRequest;
     uint8_t LimpActive;
     uint8_t LimpDisable;
@@ -320,7 +324,7 @@ volatile struct CarState {
 //	int32_t Wheel_Speed_Average;
 
 //	uint8_t StopLED;
-} volatile CarState, LastCarState, ErrorCarState;
+} CarState, LastCarState, ErrorCarState;
 
 
 struct DeviceState {

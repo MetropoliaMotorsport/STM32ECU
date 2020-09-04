@@ -148,8 +148,11 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	// calculate actual torque request
 	if ( Torque_drivers_request != 0)
 	{
-		int torquerequest =  ( ConvertNMToRequest(getTorqueReqCurve(ADCState.Torque_Req_R_Percent)/10*CarState.Torque_Req_CurrentMax*0.01));
-		return torquerequest;// Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
+//		int torquerequest =  ( ConvertNMToRequest(getTorqueReqCurve(ADCState.Torque_Req_R_Percent)/10*CarState.Torque_Req_CurrentMax*0.01));
+
+		return getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax/65;
+
+//		return torquerequest;// Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
 
 	}
 	  //	  return getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax*0.01)*1000/65)/10; // Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
@@ -168,13 +171,19 @@ uint16_t TorqueVectorProcess( int torquerequest )
  * torque vectoring should activate at >40/<-40 degrees of steering wheel angle.
  * Full(=10Nm) torque change should be reached linearily at >90/<-90 of steering angle.
  */
+	vectoradjust adj;
 
-	int TorqueVectorAddition;
+	doVectoring( torquerequest, &adj );
 
 	// ensure torque request altering only happens when a torque request actually exists.
 
-	if ( CarState.TorqueVectoring && torquerequest > 0 && ADCState.Torque_Req_R_Percent > 0 && ADCState.Torque_Req_L_Percent > 0 && abs(ADCState.SteeringAngle) > 40 )
+	if ( CarState.TorqueVectoring && torquerequest > 0 && ADCState.Torque_Req_R_Percent > 0 && ADCState.Torque_Req_L_Percent > 0 && abs(ADCState.SteeringAngle) > 10 )
 	{
+
+#ifdef OLDTORQUE
+
+		int TorqueVectorAddition;
+
 		TorqueVectorAddition = ConvertNMToRequest(getTorqueVector(ADCState.SteeringAngle))/10; // returns 10x NM request.
 
 		if  ( abs(TorqueVectorAddition) > torquerequest ){
@@ -193,6 +202,14 @@ uint16_t TorqueVectorProcess( int torquerequest )
 
 		CarState.Torque_Req_L = Right;  // wheels wrong way round? , swapped for now, was + left before.
 		CarState.Torque_Req_R = Left; // check and fix properly if inverters configured wrong way round.
+
+#endif
+
+
+
+		CarState.Torque_Req_L = adj.RL;
+		CarState.Torque_Req_R = adj.RR;
+
 		return 1; // we modified.
 	}
 	else
@@ -319,7 +336,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		Errors.ErrorPlace = 0xED;
 		return OperationalErrorState;
 	}
-    
+
     #define RTDMStopTime    3 // 3 seconds.ww
 
 	if ( CarState.SpeedRL < 100  && CarState.SpeedRR < 100 ) // untested
@@ -375,19 +392,19 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	if ( readystate == 0 ) // only start to request torque when inverters ready.
 	{
         // check if limp mode allowed ( don't want for acceleration test ), and if so, if BMS has requested.
-        
+
         if ( ( CarState.LimpRequest && !CarState.LimpDisable ) || ADCState.CoolantTempR > COOLANTLIMPTEMP )
         {
             CarState.LimpActive = 1;
         }
-        
+
         if ( CarState.LimpActive && CarState.Torque_Req_CurrentMax > LIMPNM )
         {
             limpcounter++;
             if ( ( limpcounter % 10 ) == 0 ) // every 100ms decrease nm request
             	CarState.Torque_Req_CurrentMax--;
         }
-    
+
 #ifdef ALLOWLIMPCANCEL
         // don't allow immiediete exit from limp mode if it was already triggered
         if ( CarState.LimpActive && OperationLoops > 200 && CheckRTDMActivationRequest() && ADCState.CoolantTempR < COOLANTLIMPTEMP)
@@ -401,7 +418,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
             CarState.LimpDisable = 1;
             CarState.LimpActive = 0;
         }
-        
+
         if ( CarState.LimpDisable && CarState.Torque_Req_CurrentMax < CarState.Torque_Req_Max )
         {
             limpcounter++;
