@@ -175,7 +175,9 @@ uint16_t TorqueVectorProcess( int torquerequest )
 
 	doVectoring( torquerequest, &adj );
 
-	// ensure torque request altering only happens when a torque request actually exists.
+	// ensure torque request altering only happens when a torque request actually exists
+
+	CAN_SendTorq( adj.RL, adj.RR, torquerequest, CarState.TorqueVectoringMode );
 
 	if ( CarState.TorqueVectoring && torquerequest > 0 && ADCState.Torque_Req_R_Percent > 0 && ADCState.Torque_Req_L_Percent > 0 && abs(ADCState.SteeringAngle) > 10 )
 	{
@@ -205,10 +207,16 @@ uint16_t TorqueVectorProcess( int torquerequest )
 
 #endif
 
-
-
-		CarState.Torque_Req_L = adj.RL;
-		CarState.Torque_Req_R = adj.RR;
+		if ( CarState.TorqueVectoringMode == 2 )
+		{
+			CarState.Torque_Req_L = adj.RL;
+			CarState.Torque_Req_R = adj.RR;
+		} else
+		{
+//CANSend
+			CarState.Torque_Req_L = torquerequest;
+			CarState.Torque_Req_R = torquerequest;
+		}
 
 		return 1; // we modified.
 	}
