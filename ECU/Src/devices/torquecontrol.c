@@ -33,22 +33,31 @@ void doVectoring(int16_t Torque_Req, vectoradjust * adj)
 	 rtU.Yawrate =  IMUReceived.GyroZ*0.001;
 	 rtU.velocity =  IMUReceived.VelBodyX*0.01;
 
+	 // run the matlab code.
 	 Controller_design_step();
+
 	 int maxreq = 0;
 
-	 if ( CarState.Torque_Req_CurrentMax < 55 )
-		 maxreq=(1000*(CarState.Torque_Req_CurrentMax+10)/65);
-	 else
-	     maxreq=(1000*CarState.Torque_Req_CurrentMax/65);
+	 //maxreq=Torque_Req*3; //(1000*(CarState.Torque_Req_CurrentMax*3)/65);
 
-	 adj->RL = Torque_Req+rtY.tql*1000/65;
-	 adj->RR = Torque_Req-rtY.tqr*1000/65;
+	 // limit max actual possible request per wheel depending on current max power request
+	 if ( CarState.Torque_Req_CurrentMax > 0 && CarState.Torque_Req_CurrentMax <=20 )
+	     maxreq=Torque_Req*3;
+
+	 if ( CarState.Torque_Req_CurrentMax > 20 && CarState.Torque_Req_CurrentMax <= 40 )
+	     maxreq=(1000*45/65);
+
+	 if ( CarState.Torque_Req_CurrentMax > 40  )
+	     maxreq=1000;
+
+	 adj->RL = Torque_Req+(rtY.tql*1000/65); // take requested adjustment in nm and convert it to to actual request format.
+	 if ( adj->RL > ( Torque_Req * 3 ) ) adj->RL = Torque_Req*3; // limit adjustment to max 3x original request.
+
+	 adj->RR = Torque_Req-(rtY.tqr*1000/65);
+	 if ( adj->RR > ( Torque_Req * 3 ) ) adj->RR = Torque_Req*3;
 
 	 if ( adj->RL < 0 ) adj->RL = 0;
 	 if ( adj->RR < 0 ) adj->RR = 0;
-
-	 if ( adj->RL > Torque_Req * 2 ) adj->RL = Torque_Req*2;
-	 if ( adj->RR > Torque_Req * 2 ) adj->RR = Torque_Req*2;
 
 	 if	( adj->RL > maxreq ) adj->RL = maxreq;
 	 if ( adj->RR > maxreq ) adj->RR = maxreq;

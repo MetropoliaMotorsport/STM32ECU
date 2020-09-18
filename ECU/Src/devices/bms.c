@@ -26,8 +26,8 @@ uint8_t processBMSVoltage(uint8_t CANRxData[8], uint32_t DataLength )
 				&& CANRxData[1] == 0
 				&& CANRxData[4] < 2 // limp byte
 				&& CANRxData[5] == 0
-				&& CANRxData[6] == 0//0xAB
-				&& CANRxData[7] == 0//0xCD
+				&& CANRxData[6] == 0xAB
+				&& CANRxData[7] == 0xCD
 				&& ( voltage > 480 && voltage < 600 ) )
 		{
 			receiveerror=0;

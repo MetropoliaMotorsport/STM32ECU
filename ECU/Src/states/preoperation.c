@@ -103,13 +103,13 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 //	PedalsADC = 1;
 if ( returnvalue == 0xFFFF ) // first loop, set what devices expecting.
 {
-	 returnvalue = (0x1 << FLeftSpeedReceived) + // initialise return value to all devices in error state ( bit set )
-					  (0x1 << FRightSpeedReceived) +
-					  (0x1 << InverterReceived)+
-					  (0x1 << BMSReceived)+
-					  (0x1 << PDMReceived)+
-					  (0x1 << PedalADCReceived)+
-					  (0x1 << IVTReceived);
+	 returnvalue =   (0x1 << PDMReceived)+
+			 	 	 (0x1 << BMSReceived)+
+					 (0x1 << InverterReceived)+
+					 (0x1 << FLeftSpeedReceived) + // initialise return value to all devices in error state ( bit set )
+					 (0x1 << FRightSpeedReceived) +
+					 (0x1 << PedalADCReceived)+
+					 (0x1 << IVTReceived);
 }
 
 #ifdef STMADC

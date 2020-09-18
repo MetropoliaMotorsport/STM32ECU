@@ -352,7 +352,7 @@ void Controller_design_step(void)
    *  Inport: '<Root>/Steering'
    *  MATLAB Function: '<S4>/Yaw rate reference calculation '
    */
-  Yawupperbound = fmin(fmax(1.2 * rtU.Steering + 0.7 * Yawupperbound, -1760.0),
+  Yawupperbound = fmin(fmax(10.0 * rtU.Steering + 0.7 * Yawupperbound, -1760.0),
                        1760.0);
 
   /* MATLAB Function: '<S5>/Torque allocation to wheels ' incorporates:
