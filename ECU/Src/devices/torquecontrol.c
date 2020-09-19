@@ -36,6 +36,8 @@ void doVectoring(int16_t Torque_Req, vectoradjust * adj)
 	 // run the matlab code.
 	 Controller_design_step();
 
+	 CAN_SendTorq2( rtY.val1, rtY.val2, rtY.val3 );
+
 	 int maxreq = 0;
 
 	 //maxreq=Torque_Req*3; //(1000*(CarState.Torque_Req_CurrentMax*3)/65);

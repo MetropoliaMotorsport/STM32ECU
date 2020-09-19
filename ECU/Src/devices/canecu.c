@@ -603,6 +603,18 @@ char CAN_SendTorq( uint16_t trl, uint16_t trr, uint16_t tro, uint8_t mode )
 	return CAN1Send( &TxHeader1, CANTxData );
 }
 
+char CAN_SendTorq2( uint16_t val1, uint16_t val2, uint16_t val3 )
+{
+	TxHeader1.Identifier = 0x7CE; // decide on an ECU ID/
+	TxHeader1.DataLength = FDCAN_DLC_BYTES_6; // only two bytes defined in send protocol, check this
+	TxHeader1.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	TxHeader1.MessageMarker = 0;
+
+	uint8_t CANTxData[8] = { getByte(val1, 0), getByte(val1, 1), getByte(val2, 0), getByte(val2, 1), getByte(val3, 0), getByte(val3, 1)};
+	return CAN1Send( &TxHeader1, CANTxData );
+}
+
+
 char CAN_SendStatus( char state, char substate, uint32_t errorcode )
 {
 	TxHeader1.Identifier = ECU_CAN_ID; // decide on an ECU ID/

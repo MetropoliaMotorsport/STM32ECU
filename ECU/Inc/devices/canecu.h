@@ -140,6 +140,7 @@ uint8_t CANSendPDMFAN( void );
 #endif
 
 char CAN_SendTorq( uint16_t trl, uint16_t trr, uint16_t tro, uint8_t mode );
+char CAN_SendTorq2( uint16_t val1, uint16_t val2, uint16_t val3 );
 
 char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode );
 char CAN_SendStatus( char state, char substate, uint32_t errorcode );

@@ -326,6 +326,8 @@ void Controller_design_step(void)
     Yawupperbound *= Yawdesired;
   }
 
+  rtY.val1 = Yawupperbound;
+
   /* Product: '<S42>/PProd Out' incorporates:
    *  Gain: '<S4>/Gain'
    *  Inport: '<Root>/Yaw rate'
@@ -336,6 +338,8 @@ void Controller_design_step(void)
   Yawdesired = (Yawupperbound - 57.2957795 * rtU.Yawrate) * look1_binlx
     (rtU.velocity, rtConstP.uDLookupTable_bp01Data,
      rtConstP.uDLookupTable_tableData, 12U);
+
+  rtY.val2 = Yawdesired;
 
   /* Saturate: '<S44>/Saturation' */
   if (Yawdesired > 1760.0) {
@@ -354,6 +358,8 @@ void Controller_design_step(void)
    */
   Yawupperbound = fmin(fmax(10.0 * rtU.Steering + 0.7 * Yawupperbound, -1760.0),
                        1760.0);
+
+  rtY.val3 = Yawupperbound;
 
   /* MATLAB Function: '<S5>/Torque allocation to wheels ' incorporates:
    *  Inport: '<Root>/Mode selection'

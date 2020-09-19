@@ -65,6 +65,9 @@ typedef struct {
 typedef struct {
   real_T tql;                          /* '<Root>/tql' */
   real_T tqr;                          /* '<Root>/tqr' */
+  real_T val1;
+  real_T val2;
+  real_T val3;
 } ExtY;
 
 /* Real-time Model Data Structure */
