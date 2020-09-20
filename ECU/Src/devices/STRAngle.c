@@ -24,7 +24,7 @@ void processSTR(uint8_t CANRxData[8], uint32_t DataLength )
 	{
 		receiveerror=0;
 
-		CarState.STRAngle = CANRxData[0]*256+CANRxData[1];
+		CarState.STRAngle = CANRxData[1]*256+CANRxData[0]-180;
 
 		DeviceState.STRAngle = OPERATIONAL;
 
