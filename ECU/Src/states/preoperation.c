@@ -40,31 +40,31 @@ void setDriveMode(void)
 			CarState.TorqueVectoring = 0;
 #endif
 			break;
-		case 2: // 10nm
+		case 2: // 25nm
 			CarState.Torque_Req_Max = 25;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 0;
 #endif
 			break;
-		case 3: // 15nm
+		case 3: // 25nm
 			CarState.Torque_Req_Max = 25;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 1;
 #endif
 			break;
-		case 4: // 20nm
+		case 4: // 35nm
 			CarState.Torque_Req_Max = 35;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 0;
 #endif
 			break;
-		case 5: // 25nm
+		case 5: // 35nm
 			CarState.Torque_Req_Max = 35;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 1;
 #endif
 			break;
-		case 6: // 30nm
+		case 6: // 65nm
 			CarState.Torque_Req_Max = 65;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 0;

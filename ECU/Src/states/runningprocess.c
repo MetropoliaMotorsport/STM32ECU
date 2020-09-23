@@ -165,7 +165,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 uint16_t TorqueVectorProcess( int torquerequest )
 {
 /*
- * torque vectoring should activate at >40/<-40 degrees of steering wheel angle.
+ * torque vectoring should activate at >10/<-10 degrees of steering wheel angle.
  * Full(=10Nm) torque change should be reached linearily at >90/<-90 of steering angle.
  */
 
@@ -173,7 +173,7 @@ uint16_t TorqueVectorProcess( int torquerequest )
 
 	// ensure torque request altering only happens when a torque request actually exists.
 
-	if ( CarState.TorqueVectoring && torquerequest > 0 && ADCState.Torque_Req_R_Percent > 0 && ADCState.Torque_Req_L_Percent > 0 && abs(CarState.STRAngle) > 40 )
+	if ( CarState.TorqueVectoring && torquerequest > 0 && ADCState.Torque_Req_R_Percent > 0 && ADCState.Torque_Req_L_Percent > 0 && abs(CarState.STRAngle) > 10 )
 	{
 		TorqueVectorAddition = ConvertNMToRequest(getTorqueVector(CarState.STRAngle))/10; // returns 10x NM request.
 

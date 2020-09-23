@@ -49,9 +49,9 @@
 
 // Use basic torquevectoring
 #define TORQUEVECTOR
-#define TORQUEVECTORSTARTANGLE 20  //40
+#define TORQUEVECTORSTARTANGLE 10  //40
 #define TORQUEVECTORSTOPANGLE  70  //90
-#define TORQUEVECTORMAXNM	   8   // Can have x2 difference between L&R
+#define TORQUEVECTORMAXNM	   16   // Can have x2 difference between L&R
 
 // Use green dash LED to indicate shutdownswitch status.
 //#define SHUTDOWNSWITCHSTATUS

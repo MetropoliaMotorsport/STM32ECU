@@ -29,7 +29,7 @@ uint16_t TorqueVectInput3[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTOR
 int16_t TorqueVectOutput3[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
 #endif
 
-// 19500 ~ -90  // 13300 full lock, 45000 ~ 90 deg right. 50000 full lock right. ~120
+// 19500 ~ -90  // 13300 full lock, 45000 ~ 90 deg right. 50000 full lock right. ~120. Not in use for HPF017!!!
 uint16_t SteeringInput[] = { 6539, 13300, 20000, 33500, 63019 };
 int16_t SteeringOutput[] = { -210,  -120,  -90,   0,    210 };
 
