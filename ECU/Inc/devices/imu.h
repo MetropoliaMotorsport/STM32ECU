@@ -124,6 +124,7 @@ bool processIMUDeltaA(uint8_t CANRxData[8], uint32_t DataLength, CANData * datah
 bool processIMUEuler(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 bool processIMUVel(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 //bool processIMUVelAcc(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processIMUVelBody(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 bool processIMUGPS(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 bool processIMUAUTO(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 

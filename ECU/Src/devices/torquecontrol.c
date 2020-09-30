@@ -36,7 +36,7 @@ void doVectoring(int16_t Torque_Req, vectoradjust * adj)
 	 // run the matlab code.
 	 Controller_design_step();
 
-	 CAN_SendTorq2( rtY.val1, rtY.val2, rtY.val3 );
+	 CAN_SendTorq2( /*rtY.val1*/ IMUReceived.GyroZ, rtY.val2, rtY.val3, IMUReceived.VelBodyX);
 
 	 int maxreq = 0;
 

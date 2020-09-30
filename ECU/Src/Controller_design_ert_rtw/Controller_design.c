@@ -307,8 +307,12 @@ void Controller_design_step(void)
    *  Inport: '<Root>/Steering'
    *  Inport: '<Root>/velocity'
    */
-  Yawdesired = rtU.Steering / 5.4 * rtU.velocity / (rtU.velocity * rtU.velocity *
-    0.0 + 1.59);
+  Yawdesired = rtU.Steering / 5.4 * rtU.velocity / 1.59;
+
+  Yawupperbound = Yawdesired;
+
+
+  /*
   Yawupperbound = 14.17545 / rtU.velocity * 57.29577;
   if (Yawdesired <= Yawupperbound) {
     Yawupperbound = Yawdesired;
@@ -325,6 +329,8 @@ void Controller_design_step(void)
 
     Yawupperbound *= Yawdesired;
   }
+
+*/
 
   rtY.val1 = Yawupperbound;
 
@@ -364,6 +370,7 @@ void Controller_design_step(void)
   /* MATLAB Function: '<S5>/Torque allocation to wheels ' incorporates:
    *  Inport: '<Root>/Mode selection'
    */
+
   if (rtU.Modeselection == 1.0) {
     Yawdesired = Yawdesired * 0.202 / 5.4719999999999995;
 
