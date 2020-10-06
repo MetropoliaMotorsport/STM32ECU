@@ -33,6 +33,8 @@ void doVectoring(int16_t Torque_Req, vectoradjust * adj)
 	 rtU.Yawrate =  IMUReceived.GyroZ*0.001;
 	 rtU.velocity =  IMUReceived.VelBodyX*0.01;
 
+	 if ( rtU.velocity < 2.7 ) rtU.velocity = 0;
+
 	 // run the matlab code.
 	 Controller_design_step();
 

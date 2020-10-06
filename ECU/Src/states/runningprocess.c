@@ -207,7 +207,7 @@ uint16_t TorqueVectorProcess( int torquerequest )
 
 #endif
 
-		if ( CarState.TorqueVectoringMode == 2 )
+		if ( CarState.TorqueVectoringMode > 0  )
 		{
 			CarState.Torque_Req_L = adj.RL;
 			CarState.Torque_Req_R = adj.RR;
