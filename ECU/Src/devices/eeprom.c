@@ -115,7 +115,7 @@ void EEPROMTask(void *argument)
 
 		DoEEPROMTimeouts(); // right now, eeprom functionality is mostly defined by can receive handler
 
-		vTaskDelay( 10 );
+		vTaskDelay( CYCLETIME );
 	}
 
 	osThreadTerminate(NULL);

@@ -11,7 +11,7 @@
 /* Private includes ----------------------------------------------------------*/
 
 #include "ecumain.h"
-
+#ifndef RTOS
 int TSActiveINVRequest( volatile InverterState *Inverter )
 {
 	uint16_t command;
@@ -26,25 +26,29 @@ int TSActiveINVRequest( volatile InverterState *Inverter )
 	} // else inverter not in expected state.
 	return 0;
 }
+#endif
 
 int TSActiveRequest( void )
 {
 //	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
 	CAN_NMTSyncRequest();
 
-	setHV( 0 ); // will enable HV if inverters in ready status and HV enabled flag set.
+	setHV( true, false ); // will enable HV if inverters in ready status and HV enabled flag set.
 
 #ifdef POWERNODES
 	setDevicePower(IVT, 1);
 #endif
+#ifndef RTOS
 	for ( int i=0;i<MOTORCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
 	{
 		 TSActiveINVRequest( &CarState.Inverters[i] );
 	}
+#else
+	invRequestState(PREOPERATIONAL);
+#endif
 
 	return 0;
 }
-
 
 int TSActiveProcess( uint32_t OperationLoops )
 {
@@ -90,8 +94,6 @@ int TSActiveProcess( uint32_t OperationLoops )
 			return OperationalErrorState;
 	}
 
-
-
 	uint32_t curtime = gettimer();
 
 	uint8_t prechargedone = 0;
@@ -101,7 +103,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 		lcd_send_stringline(1,"Precharge Done.", 255);
 	}
 
-	if ( invertersStateCheck(INVERTERON)
+	if ( invertersStateCheck(PREOPERATIONAL)
 		&& !ReceiveNonCriticalError && prechargedone ) // ensure can't enter RTDM till given time for precharge to take place.
 	{
 	  readystate = 0;

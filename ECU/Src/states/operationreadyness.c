@@ -7,21 +7,22 @@
 
 #include "ecumain.h"
 
-static uint8_t InverterSent;
+//static uint8_t InverterSent;
 
 int ReadyRequest( void )   // request data / invalidate existing data to ensure we have fresh data from this cycle.
 {
-	uint16_t command;
 	int error = 0;
 
 	// Inverter Pre Operation preparedness.
 
 //	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
 	CAN_NMTSyncRequest(); // anything working with cansync will respond with
-	setHV( false );
+	setHV( false, false );
+
+#ifndef RTOS
+	uint16_t command;
 
 	// request ready states from devices.
-
 	for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
 	{
 		// send request to enter operational mode
@@ -31,8 +32,11 @@ int ReadyRequest( void )   // request data / invalidate existing data to ensure 
 			CANSendInverter( command, 0, i );
 		}
 	}
+#else
+	invRequestState(STOPPED);
+#endif
 
-	InverterSent = 0; // invertersent not being set to 1, means always sending command? should only be sent once to request change, unless state is still wrong.
+//	InverterSent = 0; // invertersent not being set to 1, means always sending command? should only be sent once to request change, unless state is still wrong.
 
 #ifdef HPF19
 	if (DeviceState.FrontSpeedSensors == ENABLED )
@@ -72,10 +76,12 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 					(0x1 << PedalADCReceived);//
 
 #ifdef HPF20
+#ifndef RTOS
 		for ( int i=0;i<MOTORCOUNT;i++)
 		{
 			returnvalue += (0x1 << (InverterReceived+i));
 		}
+#endif
 #endif
 
 
@@ -83,6 +89,9 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 	}
 
 	// change order, get status from pdo3, and then compare against pdo2?, 2 should be more current being higher priority
+
+#ifndef RTOS
+	if ( DeviceState.Inverter == OFFLINE )
 
 	for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
 	{
@@ -93,6 +102,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 
 		receiveINVTorque(&CarState.Inverters[i]);
 	}
+#endif
 
 #ifdef HPF19
 	if ( DeviceState.FrontSpeedSensors == ENABLED)
@@ -173,7 +183,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 		lcd_clearscroll();
 //		sanitystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		received = 0xFFFF;
-		InverterSent = 0;
+//		InverterSent = 0;
 		CarState.HighVoltageReady = 0; // no high voltage allowed in this state.
 	}
 #ifndef everyloop
@@ -222,12 +232,17 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 
 
 	bool invready = true;
+
+	if ( DeviceState.Inverter != STOPPED ) invready = false;
+
+#ifndef RTOS
 	for ( int i=0;i<MOTORCOUNT;i++)
 	{
 		if ( GetInverterState(CarState.Inverters[i].InvState) != INVERTERREADY ) invready = false;
 		// if any inverter has yet to be put in ready status, we are not ready.
 		//  || ( GetInverterState(CarState.Inverters[i].InvState) == INVERTERONLINE
 	}
+#endif
 
 	if (received != 0 )
 	{ // activation requested but not everything is in satisfactory condition to continue

@@ -36,7 +36,7 @@ typedef struct Power_msg {
 	bool		state;
 } Power_msg;
 
-int setHV( bool buzzer );
+int setHV( bool HV, bool buzzer );
 int errorPower( void );
 bool CheckShutdown( void );
 char * ShutDownOpenStr( void );

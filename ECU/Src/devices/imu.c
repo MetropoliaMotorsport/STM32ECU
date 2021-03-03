@@ -41,6 +41,7 @@ CANData IMUVel = { &DeviceState.IMU, IMUVel_ID, 6, processIMUVel, IMUTimeout, IM
 //CANData IMUVelAcc = { &DeviceState.IMU, IMUVelAcc_ID, 6, processIMUVelAcc, IMUTimeout, IMUTIMEOUT };
 CANData IMUGPS = { &DeviceState.IMU, IMUGPS_ID, 8, processIMUGPS, IMUTimeout, IMUTIMEOUT };
 // gps retursn all FF when no lock.
+//CANData IMUAUTO = { &DeviceState.IMU, IMUAUTO_ID, 8, processIMUAUTO, IMUTimeout, IMUTIMEOUT };
 
 enum { COUNTER_BASE = __COUNTER__ };
 
@@ -217,6 +218,24 @@ bool processIMUVelAcc(uint8_t CANRxData[8], uint32_t DataLength, CANData * datah
 #endif
 
 bool processIMUGPS(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+{
+  if ( true // verify data format.
+  )
+  {
+		//0x177
+	  IMUReceived.Lat_Accur = getLEint16(&CANRxData[0]); // *10^-2 m
+	  IMUReceived.LONG_Accur = getLEint16(&CANRxData[2]); // *10^-2
+	  IMUReceived.ALT_Accur = getLEint16(&CANRxData[4]); // *10^-2
+//		uint16_t BASE_STATION_ID;
+
+	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  return true;
+  }
+  else
+	return false;
+}
+
+bool processIMUAUTO(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
   if ( true // verify data format.
   )

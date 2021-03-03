@@ -88,8 +88,13 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	}
 #endif
 
-
-	if ( receiveINVNMT(&CarState.Inverters[Inverter1])) // TODO check this for two inverters.
+#ifdef RTOS
+	if ( DeviceState.Inverter != OFFLINE && DeviceState.Inverter != INERROR )
+		   returnvalue &= ~(0x1 << Inverter1Received);
+		else
+		   returnvalue |= 0x1 << Inverter1Received;
+#else
+	if ( receiveINVNMT(&CarState.Inverter[Inverter1])) // TODO check this for two inverters.
 	{
 		// only checks for inverters being present, both motors don't have to report present.
 	//		if ( ( CarState.LeftInvState != 0xFF || CarState.RightInvState != 0xFF ) )
@@ -99,6 +104,7 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 			} else returnvalue |= 0x1 << Inverter1Received;
 
 	} else returnvalue |= 0x1 << Inverter1Received; // TODO check if this works on HPF19
+#endif
 
 #ifdef TWOINVERTERMODULES
 	if ( receiveINVNMT(CarState.Inverters[Inverter2]))
@@ -384,7 +390,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	CAN_NMTSyncRequest();
 #endif
 
-	setHV( 0 );
+	setHV( false, false );
 
 	// checks if we have heard from other necessary connected devices for operation.
 /*
@@ -438,6 +444,7 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 		FanControl();
 #endif
 
+#ifndef RTOS
 	if ( !CarState.TestHV )
 	{
 		for ( int i=0;i<MOTORCOUNT;i++)
@@ -447,6 +454,7 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 			receiveINVTorque(&CarState.Inverters[i]);
 		}
 	}
+#endif
 
 	ReadyToStart = 0;
 
@@ -463,10 +471,15 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 	}
 
 	bool invonline = true;
+
+#ifndef RTOS
 	for ( int i=0;i<MOTORCOUNT;i++)
 	{
 		if ( CarState.Inverters[i].InvState == 0xFF ) invonline = false; // if any inverter has yet to be put in a status, all inverters are not ready.
 	}
+#else
+	if ( DeviceState.Inverter < BOOTUP ) invonline = false;
+#endif
 
 
 	if ( errorPower() ) { ReadyToStart += 1; }

@@ -1212,7 +1212,7 @@ int receivedCANData( CANData * datahandle )
 			return 1;
 		} else
 		{
-			if ( *datahandle->devicestate == OPERATIONAL )
+			if ( *datahandle->devicestate != OFFLINE )
 			{
 				if ( datahandle->doTimeout != NULL ) datahandle->doTimeout(datahandle->id);
 

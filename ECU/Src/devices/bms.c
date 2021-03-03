@@ -33,7 +33,7 @@ bool processBMSVoltageData(uint8_t CANRxData[8], uint32_t DataLength, CANData * 
 				&& CANRxData[5] == 0
 				&& CANRxData[6] == 0xAB
 				&& CANRxData[7] == 0xCD
-				&& ( voltage > 480 && voltage < 600 ) )
+				&& ( voltage > 480 && voltage < 620 ) ) // increased max voltage, so it can be reported better as error if it goes over.
 		{
 			CarState.VoltageBMS = voltage;
 			CarState.LimpRequest = CANRxData[4];

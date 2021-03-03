@@ -149,18 +149,16 @@ void MainTask(void *argument)
 
     ResetStateData();
 
-	vTaskDelay(500);
+//	vTaskDelay(500);
 
 	TickType_t xLastWakeTime;
-
-    const TickType_t xFrequency = 10;
 
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTime = xTaskGetTickCount();
 
 //	struct AMessage *pxMessage;
 
-	struct lcd_msg msg;
+//	struct lcd_msg msg;
 
 	uint32_t counter = 0;
 
@@ -187,8 +185,8 @@ void MainTask(void *argument)
 	{
 		OperationalProcess();
 		counter++;
-		msg.type = LCD_Cmd;
-		msg.data.count = counter;
+//		msg.type = LCD_Cmd;
+//		msg.data.count = counter;
 
 //		xQueueSend( LCDQueue, ( void * ) &msg, ( TickType_t ) 0 );
 
@@ -201,9 +199,9 @@ void MainTask(void *argument)
 		if ( random % 100 == 0 )
 			blinkOutput(LED6, BlinkVeryFast, 10);
 
-		vTaskDelayUntil( &xLastWakeTime, xFrequency );
+		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 	}
-
+	// shouldn't get here, but terminate thread gracefully if do somehow.
 	osThreadTerminate(NULL);
 }
 
@@ -443,6 +441,8 @@ int realmain(void)
 	}
 */
 
+#ifdef RTOS
+
  /* Init scheduler */
  osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
 
@@ -456,9 +456,9 @@ int realmain(void)
  while ( 1 )
  {};
 
-
  // should never get here.
 
+#else
 
  // uint8_t CANTxData[8];
   while (1) // primary state loop.
@@ -508,6 +508,7 @@ int realmain(void)
 	}
 
   }
+#endif
 }
 
 

@@ -144,7 +144,6 @@ void OutputTask(void *argument)
 	configASSERT( OutputQueue );
 
 	TickType_t xLastWakeTime;
-    const TickType_t xFrequency = 10;
 
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTime = xTaskGetTickCount();
@@ -234,7 +233,7 @@ void OutputTask(void *argument)
 
 		// input polling here?
 
-		vTaskDelayUntil( &xLastWakeTime, xFrequency );
+		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 	}
 
 	osThreadTerminate(NULL);

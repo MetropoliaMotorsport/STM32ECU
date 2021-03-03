@@ -196,8 +196,6 @@ void ADCTask(void *argument)
 
 	TickType_t xLastWakeTime;
 
-    const TickType_t xFrequency = 10;
-
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTime = xTaskGetTickCount();
 
@@ -256,7 +254,7 @@ void ADCTask(void *argument)
 
 //		if ( DeviceState.ADC == INERROR )
 
-		vTaskDelayUntil( &xLastWakeTime, xFrequency ); // use task sync instead?
+		vTaskDelayUntil( &xLastWakeTime, CYCLETIME ); // use task sync instead?
 	}
 
 	osThreadTerminate(NULL);

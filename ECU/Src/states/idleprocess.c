@@ -9,9 +9,10 @@
 #include "main.h"
 #include "ecumain.h"
 
+bool CheckHV = false;
+
 char IdleRequest( void )   // request data / invalidate existing data to ensure we have fresh data from this cycle.
 {
-	uint16_t command;
 	// Inverter Pre Operation preparedness.
 
 	// reset can data before operation to ensure we aren't checking old data from previous cycle.
@@ -19,11 +20,14 @@ char IdleRequest( void )   // request data / invalidate existing data to ensure 
 //	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
 	CAN_NMTSyncRequest();
 
-	setHV( false );
+	setHV( CheckHV, false );
+
 	//setDevicePower( Brake, buzzer );
 
 	// request ready states from devices.
 
+#ifndef RTOS
+	uint16_t command;
 	for ( int i=0;i<MOTORCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
 	{
 		if ( GetInverterState( CarState.Inverters[i].InvState ) != INVERTERREADY ) // should be in ready state, if not, send state request.
@@ -32,21 +36,16 @@ char IdleRequest( void )   // request data / invalidate existing data to ensure 
 			CANSendInverter( command, 0, i );
 		}
 
+		// run the state machine to check whether it's allowing high voltage now if wasn't already.
 		if (  !CarState.Inverters[i].HighVoltageAllowed && GetInverterState( CarState.Inverters[i].InvState ) == INVERTERREADY )
 		{
 			InverterStateMachine( &CarState.Inverters[i] );
 		}
-
 	}
+#else
+	invRequestState( PREOPERATIONAL ); // request to go into ready for HV
+#endif
 
-//	CarState.RearLeftInvCommand = InverterStateMachine( LeftInverter );
-
-	// if ( DeviceState.FLeftSpeed == OPERATIONAL ) should eventually respond by sync.
-
-	// send FLeftSpeed, currently no sync request, just sending data.
-	// send BMS - currently no sync request, just sending data
-
-	// send PDM - currently no sync request, just sending data.
 	return 0;
 }
 
@@ -62,11 +61,16 @@ char OperationalReceive( uint16_t returnvalue )
 #ifndef POWERNODES
 				  (0x1 << PDMReceived)+
 #endif
+#ifdef RTOS
+				  (0x1 << InverterReceived)+
+#endif
 				  (0x1 << PedalADCReceived);
 #ifdef HPF20
+#ifndef RTOS
 		for ( int i=0;i<MOTORCOUNT;i++){
 			returnvalue+=InverterReceived+i;
 		}
+#endif
 //				  (0x1 << InverterLReceived)+
 //				  (0x1 << InverterRReceived);
 #endif
@@ -74,6 +78,9 @@ char OperationalReceive( uint16_t returnvalue )
 
 	// change order, get status from pdo3, and then compare against pdo2?, 2 should be more current being higher priority
 
+
+
+#ifndef RTOS
 //	if ( OperationalState == RunningState )
 	{
 		for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
@@ -86,6 +93,10 @@ char OperationalReceive( uint16_t returnvalue )
 			receiveINVTorque(&CarState.Inverters[i]);
 		}
 	}
+#else
+	if ( DeviceState.Inverter > OFFLINE )
+		returnvalue &= ~(0x1 << (InverterReceived));
+#endif
 
 #ifdef HPF19
 	if (DeviceState.FrontSpeedSensors == ENABLED )
@@ -198,7 +209,8 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 							 //12345678901234567890
 		lcd_setscrolltitle("Ready to activate TS");
 		lcd_clearscroll();
-		CarState.HighVoltageReady = 0;
+		CarState.HighVoltageReady = false;
+		CheckHV = false;
 		HVEnableTimer = 0;
 		TSRequested = 0;
 		setOutput(RTDMLED, Off);
@@ -237,7 +249,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	// at this state, everything is ready to be powered up.
 
 	if ( // !CheckErrors() && // this is done in receive loop already.
-	  invertersStateCheck(INVERTERREADY) // returns true if all inverters match state
+	  invertersStateCheck(STOPPED) // returns true if all inverters match state
 	  && !ReceiveNonCriticalError
 	  && CarState.VoltageBMS > MINHV
 #ifdef IVTEnable
@@ -291,7 +303,8 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		)
 	{
         // error enabling high voltage, stop trying and alert.
-		CarState.HighVoltageReady = 0;
+		CheckHV = false;
+//		CarState.HighVoltageReady = 0;
 //		blinkOutput(TSLED_Output,LEDBLINK_FOUR,1);
 		TSRequested = 0;
 
@@ -308,7 +321,11 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	{
 		TSRequested = 1;
 		HVEnableTimer = gettimer();
-		CarState.HighVoltageReady = 1; // start timer, go to error state after 1am
+		CheckHV=true;
+//		CarState.HighVoltageReady = 1; // start timer, go to error state after 1am
+	} else
+	{
+
 	}
 
 	return IdleState;

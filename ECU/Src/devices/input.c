@@ -105,7 +105,6 @@ const osThreadAttr_t InputTask_attributes = {
 void InputTask(void *argument)
 {
 	TickType_t xLastWakeTime;
-    const TickType_t xFrequency = 10;
 
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTime = xTaskGetTickCount();
@@ -156,7 +155,7 @@ void InputTask(void *argument)
 
 		}
 
-		vTaskDelayUntil( &xLastWakeTime, xFrequency );
+		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 	}
 
 	osThreadTerminate(NULL);

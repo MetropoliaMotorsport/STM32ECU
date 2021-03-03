@@ -246,8 +246,6 @@ void FanControl( void )
 
 int RunningRequest( void )
 {
-	uint16_t command;
-
 //	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
 	CAN_NMTSyncRequest(); // send NMT sync request.
 
@@ -255,12 +253,15 @@ int RunningRequest( void )
 	 * The vehicle must make a characteristic sound, continuously for at least one second and a maximum of three seconds when it enters ready-to-drive mode.
 	 */
 
-	setHV( 1 ); // buzzer only sounds when value changes from 0 to 1
+	setHV( true, true ); // buzzer only sounds when value changes from 0 to 1
 
 #ifdef POWERNODES
 	setDevicePower(Buzzer, 1);
 	// FANS.
 #endif
+
+#ifndef RTOS
+	uint16_t command;
 
 	for ( int i=0;i<MOTORCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
 	{
@@ -270,6 +271,9 @@ int RunningRequest( void )
 			CANSendInverter( command, 0, i );
 		}
 	}
+#else
+	invRequestState( OPERATIONAL );
+#endif
 
 	// else inverter not in expected state.
 	return 0;
@@ -328,7 +332,9 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	// check data validity, // any critical errors, drop state.
 
-	for ( int i=0;i<MOTORCOUNT;i++){
+#ifndef RTOS
+	for ( int i=0;i<MOTORCOUNT;i++)
+	{
 		if  ( !( GetInverterState( CarState.Inverters[i].InvState ) == INVERTEROPERATING
 			  || GetInverterState( CarState.Inverters[i].InvState ) == INVERTERON ) )
 		{
@@ -342,6 +348,20 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 			return OperationalErrorState;
 		}
 	}
+#else
+	if  ( !( DeviceState.Inverter == OPERATIONAL
+		  || DeviceState.Inverter == PREOPERATIONAL ) )
+	{
+		Errors.ErrorPlace = 0xE0;
+		return OperationalErrorState;
+	}
+
+	if ( readystate == 0 && DeviceState.Inverter != OPERATIONAL )
+	{  // an inverter has changed state from operating after reaching it unexpectedly, fault status of some sort.
+		Errors.ErrorPlace = 0xE5;
+		return OperationalErrorState;
+	}
+#endif
 
 	bool moving = false;
 
@@ -376,12 +396,13 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 		// drop inverter state before switching main state.
 
+#ifndef RTOS
 		for ( int i=0;i<MOTORCOUNT;i++)
 		{
 			CANSendInverter( InverterStateMachine( &CarState.Inverters[i] ), 0, i );
 		}
+#endif
 
-//		HAL_Delay(1); // make sure inverters had time to react before next cycle.
 		return IdleState; // check if need to drop HV in a special order.
 	}
 
@@ -390,7 +411,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		CarState.Inverters[i].Torque_Req = 0; // APPS
 	}
 
-	if ( invertersStateCheck(INVERTEROPERATING) ) // returns true if all inverters match state == 0 ) // only start to request torque when inverters ready, which is signified by state of 0
+	if ( invertersStateCheck(OPERATIONAL) ) // returns true if all inverters match state == 0 ) // only start to request torque when inverters ready, which is signified by state of 0
 	{
         // check if limp mode allowed ( don't want for acceleration test ), and if so, if BMS has requested.
 

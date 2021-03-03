@@ -172,10 +172,11 @@ int Startup( uint32_t OperationLoops  )
 
 	for ( int i=0;i<MOTORCOUNT;i++) // speed is received
 	{
+#ifndef RTOS
 		receiveINVStatus(&CarState.Inverters[i]);
 		receiveINVSpeed(&CarState.Inverters[i]);
 		receiveINVTorque(&CarState.Inverters[i]);
-
+#endif
 		if ( CarState.Inverters[i].InvState != 0xFF ) invertercount++;
 	}
 
@@ -214,7 +215,7 @@ uint16_t CheckErrors( void )
 	for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
 	{
 		// send request to enter operational mode
-		if ( !CarState.TestHV && CarState.Inverters[i].InvState == INVERTERERROR )
+		if ( !CarState.TestHV && CarState.Inverters[i].InvState == INERROR )
 		{
 			return 99; // serious error, no operation allowed. -- inverter
 		}
@@ -244,7 +245,7 @@ int LimpProcess( uint32_t OperationLoops  )
 {
 	lcd_setscrolltitle("LimpProcess(NA)");
 	CAN_SendStatus(1, LimpState, 0 );
-	setHV( false );
+	setHV( true, false );
 	return LimpState;
 }
 
@@ -252,7 +253,7 @@ int TestingProcess( uint32_t OperationLoops  )
 {
 	lcd_setscrolltitle("TestingProcess(NA)");
 	CAN_SendStatus(1, TestingState, 0 );
-	setHV( false );
+	setHV( true, false );
 	return TestingState;
 }
 
@@ -356,16 +357,18 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 	bool allowautoreset = true;
 	bool invertererror = false;
 
-	for ( int i=0;i<MOTORCOUNT;i++)
-	{
-		if ( DeviceState.Inverters[i] == INERROR ) invertererror = true;
-		if ( !Errors.InvAllowReset[i] ) allowautoreset = false;
-	}
-
-	// ( DeviceState.InverterRL == INERROR || DeviceState.InverterRR == INERROR )
-	// ( Errors.LeftInvAllowReset && Errors.RightInvAllowReset )
+#ifdef RTOS
+	if ( DeviceState.Inverter == INERROR ) invertererror = true;
 #endif
 
+	for ( int i=0;i<MOTORCOUNT;i++)
+	{
+#ifndef RTOS
+		if ( DeviceState.Inverters[i] == INERROR ) invertererror = true;
+#endif
+		if ( !Errors.InvAllowReset[i] ) allowautoreset = false;
+	}
+#endif
 
 	int allowreset = 0; // allow reset if this is still 0 after checks.
 

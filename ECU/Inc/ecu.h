@@ -181,6 +181,10 @@
 #define MS1000					(1000)
 #define MS1						(1)
 
+#define CYCLETIME				(10)
+
+// const TickType_t CYCLETIME = 10;
+
 //#define SIM
 #ifdef SIM
 #define PDMTIMEOUT				500
@@ -315,13 +319,13 @@ uint16_t ErrorCode; // global error code.
 #define FrontRightInverter		3
 #endif
 
-
-#define INVERTERDISABLED		1
-#define INVERTERREADY			2 // preoperation, ready for TS.
-#define INVERTERON				3 // operating but not on, TS enabled.
-#define INVERTEROPERATING		4 // output enabled ( RTDM only )
-#define INVERTERERROR			-99
-
+/*
+#define INVERTERDISABLED		BOOTUP//1
+#define INVERTERREADY			STOPPED//2 // preoperation, ready for TS.
+#define INVERTERON				PREOPERATIONAL//3 // operating but not on, TS enabled.
+#define INVERTEROPERATING		OPERATIONAL//4 // output enabled ( RTDM only )
+#define INVERTERERROR			INERROR//-99
+*/
 
 #ifdef HPF20
 #define MOTORCOUNT				(4)
@@ -421,12 +425,12 @@ volatile struct CarState {
 
 
 typedef enum DeviceStatustype {
+	INERROR,
+	OFFLINE,
 	BOOTUP,
 	STOPPED,
 	PREOPERATIONAL,
 	OPERATIONAL,
-	OFFLINE,
-	INERROR
 } DeviceStatus;
 
 struct DeviceState {
@@ -439,6 +443,7 @@ struct DeviceState {
 	DeviceStatus ADC;
 	uint16_t ADCSanity;
 	DeviceStatus PWM;
+	DeviceStatus Inverter;
 	DeviceStatus Inverters[MOTORCOUNT];
 	DeviceStatus BMS;
 	DeviceStatus IMU;

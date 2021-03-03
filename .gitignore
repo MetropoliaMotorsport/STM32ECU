@@ -54,3 +54,7 @@ __recovery/
 Inc/version.h
 *.dprod.local
 *.identcache
+
+#macOS
+.DS_Store
+

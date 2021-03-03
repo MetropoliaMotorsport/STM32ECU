@@ -59,7 +59,8 @@ void PowerTask(void *argument)
 		if ( xQueueReceive(PowerQueue,&msg,0) )
 		{
 #ifdef POWERNODES
-			int result = setNodeDevicePower( msg.power, msg.state );
+		//	int result =
+					setNodeDevicePower( msg.power, msg.state );
 #else
  // on PDM only fans and HV are controlled.
 			if ( device == hv )
@@ -92,18 +93,24 @@ void PowerTask(void *argument)
 	osThreadTerminate(NULL);
 }
 
-int setHV( bool buzzer )
+int setHV( bool HV, bool buzzer )
 {
 #ifdef PDM
 	return sendPDM( int buzzer );
 #else
 	bool HVR = true;
+
+#ifdef RTOS
+	if ( DeviceState.Inverter < STOPPED ) HVR = false;
+	// TODO dobule check this is good enough to
+#else
 	for ( int i = 0;i<MOTORCOUNT;i++)
 	{
 		if ( ! CarState.Inverters[i].HighVoltageAllowed) HVR = false;
 	} // HVR will be false if any of the inverters are not in true state.
+#endif
 
-	if ( ( HVR && CarState.HighVoltageReady ) || CarState.TestHV )
+	if ( ( HVR && HV ) || CarState.TestHV )
 	{
 // request HV on.
 		ShutdownCircuitSet( true );
@@ -218,7 +225,7 @@ int errorPower( void )
 void resetPower( void )
 {
 	CarState.HighVoltageReady = 0;
-	setHV( false ); // send high voltage off request to PDM.
+	setHV( false, false ); // send high voltage off request to PDM.
 }
 
 

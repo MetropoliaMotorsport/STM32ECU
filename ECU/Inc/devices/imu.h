@@ -78,6 +78,13 @@ typedef volatile struct IMUDataType {
 	uint16_t BASE_STATION_ID;
 
 	//0x220
+	int16_t Angle_Track; // *10^-4 rad
+	int16_t Angle_Slip; // *10^-4 rad
+	uint16_t Curvature_Radius; //10^-2 m
+	uint8_t Auto_Status;
+	// bit 0 SBG_ECOM_AUTO_TRACK_VALID Set to 1 if the track angle is valid
+	// bit 1 SBG_ECOM_AUTO_SLIP_VALID Set to 1 if the slip angle is valid
+	// bit 2 SBG_ECOM_AUTO_CURVATURE_VALID Set to 1 if the curvature radius is valid
 
 } IMUData;
 
@@ -95,6 +102,7 @@ extern IMUData IMUReceived;
 #define IMUVel_ID				(0x137)
 #define IMUVelAcc_ID			(0x138)
 #define IMUGPS_ID				(0x177)
+#define IMUAUTO_ID				(0x220)
 
 // System
 extern CANData IMUStatus;//	0x00000102
@@ -112,6 +120,7 @@ extern CANData IMUDeltaA;	//0x00000124
 extern CANData IMUVel;	   //0x00000137
 extern CANData IMUVelAcc;  //0x00000138
 extern CANData IMUGPS;	   //0x00000177
+extern CANData IMUAuto;    //0x00000220
 
 int receiveIMU( void );
 

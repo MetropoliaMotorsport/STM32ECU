@@ -252,6 +252,7 @@ int receiveAnalogNodesCritical( void ) // 1 = APPS1 + regen. 11 = APPS2 + brakes
 		pos++;
 	}
 	if ( receivedCANData(&AnalogNode11) ) nodesonline -= 2;
+	else
 	{
 		ANodeCritStr[pos] = 'A';
 		ANodeCritStr[pos+1] = '\0';
