@@ -2,16 +2,11 @@
  * input.c
  *
  *  Created on: 14 Apr 2019
- *      Author: drago
+ *      Author: Visa
  */
 
 #include "ecumain.h"
 #include "input.h"
-
-#ifndef RTOS
-// variables for button debounce interrupts, need to be global to be seen in timer interrupt
-static uint16_t ButtonpressPin;
-#endif
 
 // PWM Pin needs capacitor taken off to deactivate low pass filter.
 
@@ -61,10 +56,6 @@ volatile ButtonData Input[NO_INPUTS] = {
 };
 #endif
 
-//volatile ButtonData Input[NO_INPUTS];
-#ifndef RTOS
-volatile static char InButtonpress;
-#endif
 
 #define InputQUEUE_LENGTH    20
 #define InputITEMSIZE		sizeof( struct input_msg )
@@ -410,39 +401,6 @@ int CheckRTDMActivationRequest( void )
 	else return 0;
 }
 
-#ifndef RTOS
-/**
- * @brief only process button input if input registered
- */
-void debouncebutton( volatile struct ButtonData *button )
-{
-		if( !button -> pressed )
-		{ // only process new button press if last not read
-#ifndef BUTTONPULLUP
-				if(!HAL_GPIO_ReadPin(button -> port, button -> pin ) ) // switch to inverted for pull down buttons.
-#else
-				if(HAL_GPIO_ReadPin(button -> port, button -> pin ) )
-#endif
-				{ // only process as input if button down
-
-					button -> pressed = 1;
-					button -> lastpressed=gettimer();
-					button -> count++;
-				} else
-				{
-#ifdef HPF19 // no user button on HPF20 board.
-					if (button->pin == Input[0].pin) // user button pressed, exception, this presses on high.
-					{
-						button -> pressed = 1;
-						button -> lastpressed=gettimer();
-						button -> count++;
-					}
-#endif
-				}
-		}
-}
-#endif
-
 /**
  * @brief set status of a button to not activated
  */
@@ -515,6 +473,8 @@ bool receiveCANInput(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 	return true;
 }
 
+
+// TODO make stop button interrupt trigger to make more robust?
 #ifndef RTOS
 
 /**

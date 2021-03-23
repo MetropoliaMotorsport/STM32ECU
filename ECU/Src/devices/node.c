@@ -1,5 +1,5 @@
 /*
- * powernode.c
+ * node.c
  *
  *  Created on: 15 Jun 2020
  *      Author: Visa

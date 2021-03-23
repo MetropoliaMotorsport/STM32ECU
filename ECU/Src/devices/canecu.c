@@ -1,5 +1,5 @@
 /*
- * ecu.c
+ * canecu.c
  *
  *  Created on: 30 Dec 2018
  *      Author: Visa
@@ -532,7 +532,6 @@ void ResetCanData(volatile CANData *data )
 
 char CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 {
-#ifdef RTOS
 	can_msg msg;
 
 	msg.id = id;
@@ -547,62 +546,12 @@ char CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 	else
 		xQueueSend( CANTxQueue, ( void * ) &msg, ( TickType_t ) 0 );
 
-#else
- softly	FDCAN_TxHeaderTypeDef TxHeader = {
-	.Identifier = id, // decide on an ECU ID/
-	.IdType = FDCAN_STANDARD_ID,
-	.TxFrameType = FDCAN_DATA_FRAME,
-	.DataLength = dlc << 16, // only two bytes defined in send protocol, check this
-	.ErrorStateIndicator = FDCAN_ESI_ACTIVE,
-	.BitRateSwitch = FDCAN_BRS_OFF,
-	.FDFormat = FDCAN_CLASSIC_CAN,
-	.TxEventFifoControl = FDCAN_NO_TX_EVENTS,
-	.MessageMarker = 0
-	};
-
-
-	if ( DeviceState.CAN1 == OFFLINE )
-	{
-		return 3;
-	}
-
-	// loop till free slot if none, rather than give up as currently set. Let watchdog catch if gets into loop unable to send?
-	// perhaps have two send routines, critical and non critical.
-
-	char returnval = 0;
-	uint8_t bufferlevel = HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1);
-	if (bufferlevel <1 ) // buffer shouldn't fill up under normal use, not sending >30 messages per cycle.
-	{
-		// return error, can fifo full.
-//		CAN_SendStatus( 110, 0, bufferlevel ); // of course this was erroring. need to send specific message, not use a function that calls back to here, recursion.
-		return 2;
-	}
-
-//	char CAN_SendStatus( char state, char substate, uint32_t errorcode )
-
-//	if ( !HAL_FDCAN_IsRestrictedOperationMode(&hfdcan1) )
-	{
-		if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, pTxData) != HAL_OK)
-		{
-				  // Transmission request Error
-			//     HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin, 1);
-			Errors.CANSendError1++;
-			return 1;
-			//Error_Handler();
-
-		}
-	}// else
-	{
-//		Errors.CANSendError1++;
-	}
-#endif
 	return 0;
 }
 
 
 char CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 {
-#ifdef RTOS
 	can_msg msg;
 	msg.id = id;
 	msg.dlc = dlc;
@@ -614,42 +563,9 @@ char CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 		xQueueSendFromISR( CANTxQueue, ( void * ) &msg, NULL );
 	else
 		xQueueSend( CANTxQueue, ( void * ) &msg, ( TickType_t ) 0 );
-#else
-	FDCAN_TxHeaderTypeDef TxHeader = {
-	.Identifier = id, // decide on an ECU ID/
-	.IdType = FDCAN_STANDARD_ID,
-	.TxFrameType = FDCAN_DATA_FRAME,
-	.DataLength = dlc << 16, // only two bytes defined in send protocol, check this
-	.ErrorStateIndicator = FDCAN_ESI_ACTIVE,
-	.BitRateSwitch = FDCAN_BRS_OFF,
-	.FDFormat = FDCAN_CLASSIC_CAN,
-	.TxEventFifoControl = FDCAN_NO_TX_EVENTS,
-	.MessageMarker = 0
-	};
-
-	if ( DeviceState.CAN2 == OFFLINE )
-	{
-		return 3;
-	}
-
-	if ( HAL_FDCAN_GetTxFifoFreeLevel(hfdcan2p) < 1 )
-	{
-		// return error, can fifo full.
-		return 2;
-	}
-
-	if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcan2p, &TxHeader, pTxData) != HAL_OK)
-	{
-		Errors.CANSendError2++;
-		return 1;
-//		Error_Handler();
-
-	}
-#endif
 
 	return 0;
 }
-
 
 //canReceiveData
 
@@ -983,23 +899,6 @@ char CAN_ConfigRequest( uint8_t command, uint8_t success )
 	return 1;
 }
 
-char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter )
-{
-
-#ifdef HPF19
-left  // 0x47e
-right // 0x47f
-#endif
-	uint8_t CANTxData[8];
-
-	resetCanTx(CANTxData);
-
-	storeLEint16(response,&CANTxData[0]);
-	storeLEint16(request,&CANTxData[2]);
-
-	return CAN2Send( 0x400 + CarState.Inverters[inverter].COBID, 4, CANTxData );
-}
-
 
 char CAN_SendErrors( void )
 {
@@ -1283,14 +1182,6 @@ bool processCan2Message( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8])
 // TODO Investigate new potential memory corruption. Workaround attemped using circular buffer.
 
 
-#ifndef RTOS
-struct {
-		FDCAN_RxHeaderTypeDef RxHeader;
-		uint8_t CANRxData[8];
-} CanRX[8];
-
-volatile uint8_t CanRXPos = 0;
-#endif
 
 /**
  * interrupt rx callback for canbus messages
@@ -1300,49 +1191,15 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	FDCAN_RxHeaderTypeDef RxHeader;
 
 	if(hfdcan->Instance == FDCAN1){
-#ifdef RTOS
 		blinkOutput(LED3, BlinkVeryFast, Once);
-#else
-		toggleOutput(LED3);
-#endif
 		Errors.CANCount1++;
 	} else if(hfdcan->Instance == FDCAN2) {
-#ifdef RTOS
 		blinkOutput(LED2, BlinkVeryFast, Once);
-#else
-		toggleOutput(LED2);
-#endif
 		 Errors.CANCount2++;
 	}
 
 	if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET)
 	{
-#ifndef RTOS
-		uint8_t *CANRxData;
-
-		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &CanRX[curpos].RxHeader, &CANRxData) != HAL_OK)
-		{
-			// Reception Error
-			Error_Handler();
-		}
-
-		CanRXPos++;
-		if ( CanRXPos > 7 ) CanRXPos = 0;
-
-		RxHeader = CanRX[curpos].RxHeader;
-		CANRxData = CanRX[curpos].CANRxData;
-
-		if ( !processCan1Message(&RxHeader, CANRxData) )
-		switch ( RxHeader.Identifier )
-		{
-			default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
-#ifdef HPF20
-				toggleOutput(LED7);
-#endif
-				break;
-		}
-
-#else
 		/* We have not woken a task at the start of the ISR. */
 		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -1368,7 +1225,6 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	        /* Actual macro used here is port specific. */
 	        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	    }
-#endif
 
 		volatile uint8_t bufferlevel = HAL_FDCAN_GetRxFifoFillLevel(hfdcan,FDCAN_RX_FIFO0);
 		if (bufferlevel > 25 ) // buffer shouldn't fill up under normal use, not sending >30 messages per cycle.
@@ -1401,33 +1257,15 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 	uint8_t CANRxData[8];
 
 	if(hfdcan->Instance == FDCAN1){
-#ifdef RTOS
 		blinkOutput(LED3, BlinkVeryFast, Once);
-#else
-		toggleOutput(LED3);
-#endif
 		Errors.CANCount1++;
 	} else if(hfdcan->Instance == FDCAN2) {
-#ifdef RTOS
 		blinkOutput(LED2, BlinkVeryFast, Once);
-#else
-		toggleOutput(LED2);
-#endif
-		 Errors.CANCount2++;
+		Errors.CANCount2++;
 	}
 
 	if((RxFifo1ITs & FDCAN_IT_RX_FIFO1_NEW_MESSAGE) != RESET) // if there is a message waiting process it
 	{
-#ifndef RTOS
-		/* Retrieve Rx message from RX FIFO1 */
-		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO1, &RxHeader, CANRxData) != HAL_OK)
-		{
-			/* Reception Error */
-			Error_Handler();
-		}
-
-		processCan2Message(&RxHeader, CANRxData);
-#else
 		BaseType_t xHigherPriorityTaskWoken;
 
 		/* We have not woken a task at the start of the ISR. */
@@ -1453,7 +1291,6 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 	        /* Actual macro used here is port specific. */
 	        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	    }
-#endif
 
 		volatile uint8_t bufferlevel = HAL_FDCAN_GetRxFifoFillLevel(hfdcan,FDCAN_RX_FIFO1);
 		if (bufferlevel > 25 ) // buffer shouldn't fill up under normal use, not sending >30 messages per cycle.
@@ -1513,7 +1350,6 @@ int initCAN( void )
 	FDCAN1_start(); // sets up can ID filters and starts can bus 1
 	FDCAN2_start(); // starts up can bus 2
 
-#ifdef RTOS
 	CANTxQueue = xQueueCreateStatic( CANTxQUEUE_LENGTH,
 								CANTxITEMSIZE,
 								CANTxQueueStorageArea,
@@ -1532,8 +1368,6 @@ int initCAN( void )
 	CANRxTaskHandle = osThreadNew(CANRxTask, NULL, &CANRxTask_attributes);
 
 	CAN_SendStatus(0,0,1); // earliest possible place to send can message signifying wakeup.
-#endif
-
 
 	return 0;
 }

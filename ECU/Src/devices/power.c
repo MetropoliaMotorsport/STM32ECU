@@ -2,7 +2,7 @@
  * power.c
  *
  *  Created on: Jul 17, 2020
- *      Author: visa
+ *      Author: Visa
  */
 
 #include "ecumain.h"

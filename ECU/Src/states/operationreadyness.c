@@ -19,22 +19,7 @@ int ReadyRequest( void )   // request data / invalidate existing data to ensure 
 	CAN_NMTSyncRequest(); // anything working with cansync will respond with
 	setHV( false, false );
 
-#ifndef RTOS
-	uint16_t command;
-
-	// request ready states from devices.
-	for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
-	{
-		// send request to enter operational mode
-		if ( ( CarState.Inverters[i].InvState != 0xFF && GetInverterState( CarState.Inverters[i].InvState ) != INVERTERREADY) ) // || InverterSent == 0  ) // uncomment if doesn't work anymore, can't see why set.
-		{
-			command = InverterStateMachine( &CarState.Inverters[i] ); // request left inv state machine to pre operation readyness if not already
-			CANSendInverter( command, 0, i );
-		}
-	}
-#else
 	invRequestState(STOPPED);
-#endif
 
 //	InverterSent = 0; // invertersent not being set to 1, means always sending command? should only be sent once to request change, unless state is still wrong.
 
@@ -75,34 +60,9 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 #endif
 					(0x1 << PedalADCReceived);//
 
-#ifdef HPF20
-#ifndef RTOS
-		for ( int i=0;i<MOTORCOUNT;i++)
-		{
-			returnvalue += (0x1 << (InverterReceived+i));
-		}
-#endif
-#endif
-
-
 			//(0x1 << YAWOnlineBit);
 	}
 
-	// change order, get status from pdo3, and then compare against pdo2?, 2 should be more current being higher priority
-
-#ifndef RTOS
-	if ( DeviceState.Inverter == OFFLINE )
-
-	for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
-	{
-		receiveINVStatus(&CarState.Inverters[i]);
-
-		if ( receiveINVSpeed(&CarState.Inverters[i]) )
-			returnvalue &= ~(0x1 << (InverterReceived+i));  // speed should always be seen every cycle in RTDM
-
-		receiveINVTorque(&CarState.Inverters[i]);
-	}
-#endif
 
 #ifdef HPF19
 	if ( DeviceState.FrontSpeedSensors == ENABLED)
@@ -150,11 +110,8 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 
 #ifdef STMADC
 
-#ifdef RTOS
     if ( DeviceState.ADCSanity == 0 ) returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
-#else
-    if ( CheckADCSanity() == 0 ) returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
-#endif
+
 
 #else
 	if ( DeviceState.ADC == Operational )
@@ -234,15 +191,6 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 	bool invready = true;
 
 	if ( DeviceState.Inverter != STOPPED ) invready = false;
-
-#ifndef RTOS
-	for ( int i=0;i<MOTORCOUNT;i++)
-	{
-		if ( GetInverterState(CarState.Inverters[i].InvState) != INVERTERREADY ) invready = false;
-		// if any inverter has yet to be put in ready status, we are not ready.
-		//  || ( GetInverterState(CarState.Inverters[i].InvState) == INVERTERONLINE
-	}
-#endif
 
 	if (received != 0 )
 	{ // activation requested but not everything is in satisfactory condition to continue

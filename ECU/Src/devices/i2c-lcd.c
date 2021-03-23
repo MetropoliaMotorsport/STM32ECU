@@ -836,7 +836,6 @@ int initLCD( void )
 		lcd_clearscroll();
 	}
 
-#ifdef RTOS
 	LCDQueue = xQueueCreateStatic( LCDQUEUE_LENGTH,
 							  LCDITEMSIZE,
 							  LCDQueueStorageArea,
@@ -845,7 +844,6 @@ int initLCD( void )
 	vQueueAddToRegistry(LCDQueue, "LCDQueue" );
 
 	LCDTaskHandle = osThreadNew(LCDTask, NULL, &LCDTask_attributes);
-#endif
 
 #endif
 	return 0;

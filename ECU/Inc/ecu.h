@@ -23,6 +23,7 @@
 	#define MATLAB
 	#define USEIMU
 	#define PWMSTEERING
+	#define LENZE
 #endif
 // Calibration settings for pedals.
 

@@ -2,7 +2,7 @@
  * interrupts.c
  *
  *  Created on: 8 Jan 2019
- *      Author: drago
+ *      Author: Visa
  */
 
 #include "ecumain.h"
@@ -48,15 +48,7 @@ void initInterrupts( void )
 		  Error_Handler();
 	}
 	InButtonpress = 0;
-
-	// start LCD update Timer.
-	if ( HAL_TIM_Base_Start_IT(&htim6) != HAL_OK){
-		Error_Handler();
-	}
-
 #endif
-
-
 
 #ifdef PARALLELLCD
 	  HAL_NVIC_SetPriority(TIM17_IRQn, 0, 0);

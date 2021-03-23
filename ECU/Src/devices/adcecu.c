@@ -1,7 +1,6 @@
 /*
- * ecu.c
+ * adcecu.c
  *
- *  Created on: 30 Dec 2018
  *      Author: Visa
  */
 
@@ -866,20 +865,6 @@ HAL_StatusTypeDef startADC(void)
 		Error_Handler();
 	}
 
-#ifndef RTOS
-	if ( HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t *)aADCxConvertedData, ADC_CONVERTED_DATA_BUFFER_SIZE)  != HAL_OK)
-	{
-		Error_Handler();
-	}
-
-	// start ADC conversion
-	//  return HAL_ADC_Start_DMA(&hadc1,(uint32_t *)aADCxConvertedData,ADC_CONVERTED_DATA_BUFFER_SIZE);
-	if ( HAL_ADC_Start_DMA(&hadc3,(uint32_t *)aADCxConvertedDataADC3,ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3) != HAL_OK)
-	{
-		Error_Handler();
-	}
-#endif
-
 	// in RTOS mode ADC poll is requested per cycle.
 
 	DeviceState.ADC = OPERATIONAL;
@@ -1007,51 +992,27 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 //	ADC_msg msg;
-#ifdef RTOS
+
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-#endif
 
 	if(!usecanADC ) // don't process ADC values if ECU has been setup to use dummy values
 	{
 		if ( hadc->Instance == ADC1 )
 		{
-#ifndef RTOS
-			ReadADC1(false);
-#else
 			blinkOutput(LED2, BlinkVeryFast, 1);
 		    xSemaphoreGiveFromISR( xADC1, &xHigherPriorityTaskWoken );
-#endif
 		}
 		else
 		if ( hadc->Instance == ADC3 ) // TODO update for variable amount of ADC channels
 		{
-#ifdef RTOS
 			blinkOutput(LED3, BlinkVeryFast, 1);
 		    xSemaphoreGiveFromISR( xADC3, &xHigherPriorityTaskWoken );
-#else
-			ReadADC3(false);
-	#ifdef HPF19
-			ADC_Data[8] =  aADCxConvertedDataADC3[2];
-			ADC_Data[9] =  aADCxConvertedDataADC3[3];
-
-			if ( minmaxADC )
-			{
-				for( int i = 8; i < 10; i++)
-				{
-					if ( ADC_Data[i] < ADC_DataMin[i] ) ADC_DataMin[i] = ADC_Data[i];
-					if ( ADC_Data[i] > ADC_DataMax[i] ) ADC_DataMax[i] = ADC_Data[i];
-				}
-			}
-	#endif
-#endif
 		}
 
-#ifdef RTOS
 	    if( xHigherPriorityTaskWoken )
 	    {
 	        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	    }
-#endif
 	}
 }
 #endif
@@ -1334,12 +1295,7 @@ int initADC( void )
 	} else return 99;
 #endif
 
-#ifndef RTOS
-
-
-#else
 	ADCTaskHandle = osThreadNew(ADCTask, NULL, &ADCTask_attributes);
-#endif
 
 	return 0;
 }

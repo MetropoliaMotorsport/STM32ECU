@@ -26,25 +26,7 @@ char IdleRequest( void )   // request data / invalidate existing data to ensure 
 
 	// request ready states from devices.
 
-#ifndef RTOS
-	uint16_t command;
-	for ( int i=0;i<MOTORCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
-	{
-		if ( GetInverterState( CarState.Inverters[i].InvState ) != INVERTERREADY ) // should be in ready state, if not, send state request.
-		{
-			command = InverterStateMachine( &CarState.Inverters[i] ); // request left inv state machine to On from ready.
-			CANSendInverter( command, 0, i );
-		}
-
-		// run the state machine to check whether it's allowing high voltage now if wasn't already.
-		if (  !CarState.Inverters[i].HighVoltageAllowed && GetInverterState( CarState.Inverters[i].InvState ) == INVERTERREADY )
-		{
-			InverterStateMachine( &CarState.Inverters[i] );
-		}
-	}
-#else
 	invRequestState( PREOPERATIONAL ); // request to go into ready for HV
-#endif
 
 	return 0;
 }
@@ -61,16 +43,10 @@ char OperationalReceive( uint16_t returnvalue )
 #ifndef POWERNODES
 				  (0x1 << PDMReceived)+
 #endif
-#ifdef RTOS
-				  (0x1 << InverterReceived)+
-#endif
+				  (0x1 << InverterReceived)+ // TODO inverter receive
 				  (0x1 << PedalADCReceived);
 #ifdef HPF20
-#ifndef RTOS
-		for ( int i=0;i<MOTORCOUNT;i++){
-			returnvalue+=InverterReceived+i;
-		}
-#endif
+
 //				  (0x1 << InverterLReceived)+
 //				  (0x1 << InverterRReceived);
 #endif
@@ -78,25 +54,8 @@ char OperationalReceive( uint16_t returnvalue )
 
 	// change order, get status from pdo3, and then compare against pdo2?, 2 should be more current being higher priority
 
-
-
-#ifndef RTOS
-//	if ( OperationalState == RunningState )
-	{
-		for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
-		{
-			receiveINVStatus(&CarState.Inverters[i]);
-
-			if ( receiveINVSpeed(&CarState.Inverters[i]) )
-				returnvalue &= ~(0x1 << (InverterReceived+i));  // speed should always be seen every cycle in RTDM
-
-			receiveINVTorque(&CarState.Inverters[i]);
-		}
-	}
-#else
 	if ( DeviceState.Inverter > OFFLINE )
 		returnvalue &= ~(0x1 << (InverterReceived));
-#endif
 
 #ifdef HPF19
 	if (DeviceState.FrontSpeedSensors == ENABLED )
@@ -121,11 +80,7 @@ char OperationalReceive( uint16_t returnvalue )
 		returnvalue &= ~(0x1 << IVTReceived); // assume IVT is present, don't go to error state if missing.
 
 		// need new function to check for ADC input, so that more workable with a CAN node.
-#ifdef RTOS
     if ( DeviceState.ADCSanity == 0 ) returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
-#else
-    if ( CheckADCSanity() == 0 ) returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
-#endif
 
     return returnvalue;
 }
@@ -142,11 +97,8 @@ char OperationalReceiveLoop( void )
 
 	// loop for upto 5ms before end process loop time waiting for data or all data received.
 	// allows time to process incoming data, should be ~5ms.
-#ifndef RTOS
-	DWT_Delay((PROCESSLOOPTIME-MS1*5-(gettimer()-loopstart))*1000); // wait for 5ms
-#else
+
 	vTaskDelay(5);
-#endif
 //	do
 //	{
 		// check for resanityceived data and set states

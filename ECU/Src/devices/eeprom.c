@@ -101,7 +101,7 @@ void EEPROMTask(void *argument)
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT( EEPROMQueue );
 
-	EEPROM_msg msg;
+//	EEPROM_msg msg;
 
 	while( 1 )
 	{
@@ -127,9 +127,7 @@ bool GetEEPROMCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandl
 	EEPROMConfigDataTime= gettimer();
 	memcpy(EEPROMConfigdata, CANRxData, 8);
 	EEPROMConfignewdata = true; // moved to end to ensure data is not read before updated.
-#ifdef RTOS
 	DoEEPROM();
-#endif
 	return true;
 }
 
@@ -592,11 +590,7 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 	 }
 
   /* Turn LED3 on: Transfer error in reception/transmission process */
-#ifdef RTOS
-	  blinkOutput(LED7, BlinkVeryFast, 1);
-#else
-	  toggleOutput(LED7);
-#endif
+	 blinkOutput(LED7, BlinkVeryFast, 1);
 }
 
 
@@ -696,20 +690,6 @@ int initEEPROM( void )
 				HAL_Delay(3000); // ensure message can be seen.
 	 };
 
-#ifndef RTOS
-	ReceiveInProgress = false;
-	ReceiveType = 0;
-	TransferSize = 0;
-	SendInProgress = false;
-	SendLast = 0;
-	BufferPos = 0;
-
-
-
-	eepromwrite = false;
-	eepromwritetype = 0;
-	eepromwritestart = 0;
-#else
 	EEPROMQueue = xQueueCreateStatic( EEPROMQUEUE_LENGTH,
 							  EEPROMITEMSIZE,
 							  EEPROMQueueStorageArea,
@@ -719,9 +699,7 @@ int initEEPROM( void )
 
 	EEPROMTaskHandle = osThreadNew(EEPROMTask, NULL, &EEPROMTask_attributes);
 
-#endif
-
-	 return 0;
+	return 0;
 }
 
 

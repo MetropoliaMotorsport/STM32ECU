@@ -51,25 +51,10 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 						  (0x1 << IVTReceived);
 	}
 
-#ifdef RTOS
 	if ( DeviceState.ADCSanity == 0 )
 	   returnvalue &= ~(0x1 << PedalADCReceived);
 	else
 	   returnvalue |= 0x1 << PedalADCReceived;
-#else
-	if ( DeviceState.ADC == OFFLINE )
-	{
-		DeviceState.ADC = OPERATIONAL;
-		returnvalue &= ~(0x1 << PedalADCReceived); // using local adc, already established online in initialisation.
-	} else
-	{
-		if ( CheckADCSanity() == 0 )
-		   returnvalue &= ~(0x1 << PedalADCReceived);
-		else
-		   returnvalue |= 0x1 << PedalADCReceived;
-	}
-
-#endif
 
 
 #ifdef HPF19
@@ -88,23 +73,10 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	}
 #endif
 
-#ifdef RTOS
 	if ( DeviceState.Inverter != OFFLINE && DeviceState.Inverter != INERROR )
 		   returnvalue &= ~(0x1 << Inverter1Received);
 		else
 		   returnvalue |= 0x1 << Inverter1Received;
-#else
-	if ( receiveINVNMT(&CarState.Inverter[Inverter1])) // TODO check this for two inverters.
-	{
-		// only checks for inverters being present, both motors don't have to report present.
-	//		if ( ( CarState.LeftInvState != 0xFF || CarState.RightInvState != 0xFF ) )
-			if ( GetInverterState(CarState.Inverters[Inverter1].InvState) >= 0 || GetInverterState(CarState.Inverters[Inverter1+1].InvState) >= 0 )
-			{
-				returnvalue &= ~(0x1 << Inverter1Received);
-			} else returnvalue |= 0x1 << Inverter1Received;
-
-	} else returnvalue |= 0x1 << Inverter1Received; // TODO check if this works on HPF19
-#endif
 
 #ifdef TWOINVERTERMODULES
 	if ( receiveINVNMT(CarState.Inverters[Inverter2]))
@@ -231,6 +203,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 
 #ifndef RTOS
+    	// what was this doing?
 		if ( ( OperationLoops % 10 ) == 0 ) { sendPowerNodeReq(); }
 #endif
 		// generate device waiting string.
@@ -243,10 +216,6 @@ int PreOperationState( uint32_t OperationLoops  )
 			strcpy(str, "Wait:");
 
 #ifdef POWERNODES
-#ifndef RTOS
-			receivePowerNodes(); // will need more fixing, but expect to be removing non RTOS mode shortly.
-#endif
-
 			if ( getPNodeWait() != NULL )
 			{
 				sprintf(&str[strlen(str)],"P%s ", getPNodeWait() );
@@ -254,12 +223,7 @@ int PreOperationState( uint32_t OperationLoops  )
 #endif
 
 #ifdef ANALOGNODES
-#ifdef RTOS
 
-#else
-			uint8_t analognodesoncrit = receiveAnalogNodesCritical();
-			uint16_t analognodeson = receiveAnalogNodes();
-#endif
 			if ( getADCWait() != NULL )
 			{
 				sprintf(&str[strlen(str)],"A%s ", getADCWait() );
@@ -402,11 +366,7 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 	}; // check
 */
 
-#ifndef RTOS
-	DWT_Delay((PROCESSLOOPTIME-MS1*5-(gettimer()-loopstart))*1000); // wait for 5ms
-#else
 	vTaskDelay(5);
-#endif
 
 	preoperationstate = DevicesOnline(preoperationstate);
 
@@ -444,18 +404,6 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 		FanControl();
 #endif
 
-#ifndef RTOS
-	if ( !CarState.TestHV )
-	{
-		for ( int i=0;i<MOTORCOUNT;i++)
-		{
-			receiveINVStatus(&CarState.Inverters[i]);
-			receiveINVSpeed(&CarState.Inverters[i]);
-			receiveINVTorque(&CarState.Inverters[i]);
-		}
-	}
-#endif
-
 	ReadyToStart = 0;
 
 	if ( !CheckShutdown() )
@@ -472,15 +420,8 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 
 	bool invonline = true;
 
-#ifndef RTOS
-	for ( int i=0;i<MOTORCOUNT;i++)
-	{
-		if ( CarState.Inverters[i].InvState == 0xFF ) invonline = false; // if any inverter has yet to be put in a status, all inverters are not ready.
-	}
-#else
-	if ( DeviceState.Inverter < BOOTUP ) invonline = false;
-#endif
 
+	if ( DeviceState.Inverter < BOOTUP ) invonline = false;
 
 	if ( errorPower() ) { ReadyToStart += 1; }
 	if ( preoperationstate != 0 ) { ReadyToStart += 2; }

@@ -1,20 +1,12 @@
 /*
  * inverter.h
  *
- *  Created on: 01 May 2019
- *      Author: drago
+ *  Created on: 23 Mar 2021
+ *      Author: Visa
  */
 
 #ifndef INVERTER_H_
 #define INVERTER_H_
-
-#define InverterRL_COBID			(0x7E) // 126 // swap
-#define InverterRR_COBID			(0x7F) // 127 // swap
-
-#ifdef HPF20
-#define InverterFL_COBID			(0x7C) // 124 // swap
-#define InverterFR_COBID			(0x7D) // 125 // swap
-#endif
 
 typedef struct Inv_msg {
 	DeviceStatus state;
@@ -22,15 +14,12 @@ typedef struct Inv_msg {
 
 extern QueueHandle_t InvQueue;
 
-
-extern CANData InverterCANErr[];;
-extern CANData InverterCANNMT[];
-extern CANData InverterCANPDO1[];
-extern CANData InverterCANPDO2[];
-extern CANData InverterCANPDO3[];
-extern CANData InverterCANPDO4[];
-
 #ifndef RTOS
+DeviceStatus GetInverterState( uint16_t Status );
+int8_t InverterStateMachine( volatile InverterState *Inverter);
+#endif
+
+// these need to be defined in the inverter specific c file
 uint8_t receiveINVNMT( volatile InverterState *Inverter);
 uint8_t receiveINVStatus( volatile InverterState *Inverter );
 uint8_t receiveINVSpeed( volatile InverterState *Inverter);
@@ -39,16 +28,12 @@ uint8_t receiveINVTorque( volatile InverterState *Inverter);
 uint8_t requestINV( uint8_t Inverter );
 uint8_t invError( uint8_t Inverter );
 
-
-DeviceStatus GetInverterState( uint16_t Status );
-int8_t InverterStateMachine( volatile InverterState *Inverter);
-#endif
-
 bool invertersStateCheck( DeviceStatus state );
 
 uint8_t invRequestState( DeviceStatus state );
 void resetInv( void );
 int initInv( void );
+void StopMotors( void );
 
 #endif /* INVERTER_H_ */
 

@@ -2,7 +2,7 @@
  * interrupts.h
  *
  *  Created on: 8 Jan 2019
- *      Author: drago
+ *      Author: Visa
  */
 
 #ifndef INTERRUPTS_H_

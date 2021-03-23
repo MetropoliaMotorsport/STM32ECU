@@ -260,20 +260,7 @@ int RunningRequest( void )
 	// FANS.
 #endif
 
-#ifndef RTOS
-	uint16_t command;
-
-	for ( int i=0;i<MOTORCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
-	{
-		if ( GetInverterState( CarState.Inverters[i].InvState ) == INVERTERON ) // should be in ready state, so request ON state.
-		{
-			command = InverterStateMachine( &CarState.Inverters[i] ); // request left inv state machine to On from ready.
-			CANSendInverter( command, 0, i );
-		}
-	}
-#else
 	invRequestState( OPERATIONAL );
-#endif
 
 	// else inverter not in expected state.
 	return 0;
@@ -332,23 +319,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	// check data validity, // any critical errors, drop state.
 
-#ifndef RTOS
-	for ( int i=0;i<MOTORCOUNT;i++)
-	{
-		if  ( !( GetInverterState( CarState.Inverters[i].InvState ) == INVERTEROPERATING
-			  || GetInverterState( CarState.Inverters[i].InvState ) == INVERTERON ) )
-		{
-			Errors.ErrorPlace = 0xE0+i;
-			return OperationalErrorState;
-		}
 
-		if ( readystate == 0 && GetInverterState( CarState.Inverters[i].InvState ) != INVERTEROPERATING )
-		{  // an inverter has changed state from operating after reaching it unexpectedly, fault status of some sort.
-			Errors.ErrorPlace = 0xE5+i;
-			return OperationalErrorState;
-		}
-	}
-#else
 	if  ( !( DeviceState.Inverter == OPERATIONAL
 		  || DeviceState.Inverter == PREOPERATIONAL ) )
 	{
@@ -361,7 +332,6 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		Errors.ErrorPlace = 0xE5;
 		return OperationalErrorState;
 	}
-#endif
 
 	bool moving = false;
 
@@ -394,14 +364,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	{
 		// send inverter request for ONLINE but not running?
 
-		// drop inverter state before switching main state.
-
-#ifndef RTOS
-		for ( int i=0;i<MOTORCOUNT;i++)
-		{
-			CANSendInverter( InverterStateMachine( &CarState.Inverters[i] ), 0, i );
-		}
-#endif
+		// TODO drop inverter state before switching main state.
 
 		return IdleState; // check if need to drop HV in a special order.
 	}
@@ -543,17 +506,15 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		FanControl();
 #endif
 
+
+	    for ( int i=0;i<MOTORCOUNT;i++)
+	    {
 #ifdef NOTORQUEREQUEST
-	    for ( int i=0;i<MOTORCOUNT;i++)
-	    {
-			CANSendInverter( 0b00001111, 0, i );
-	    }
+	    	CarState.Inverters[i].Torque_Req = 0
 #else
-	    for ( int i=0;i<MOTORCOUNT;i++)
-	    {
-			CANSendInverter( 0b00001111, CarState.Inverters[i].Torque_Req, i ); // send defined state request, else non consistent behaviour can happen.
-	    }
+	    	CarState.Inverters[i].Torque_Req = CarState.Torque_Req;
 #endif
+	    }
 	}
 
 	// if drop status due to error, check if recoverable, or if limp mode possible.

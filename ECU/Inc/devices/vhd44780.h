@@ -2,7 +2,7 @@
  * vhd44780.c
  *
  *  Created on: 5 Mar 2019
- *      Author: visa
+ *      Author: Visa
  *
  *
  */

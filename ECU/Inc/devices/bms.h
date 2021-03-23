@@ -2,7 +2,7 @@
  * bms.h
  *
  *  Created on: 01 May 2019
- *      Author: drago
+ *      Author: Visa
  */
 
 #ifndef BMS_H_

@@ -179,8 +179,7 @@ uint8_t CANSendPDMFAN( void );
 
 char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode );
 char CAN_SendStatus( char state, char substate, uint32_t errorcode );
-char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter );
-char CANTorqueRequest( uint16_t requestl, uint16_t requestr );
+//char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter );
 char CANLogDataFast( void );
 char CANLogDataSlow( void );
 char CAN_NMTSyncRequest( void );

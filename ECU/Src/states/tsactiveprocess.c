@@ -11,22 +11,6 @@
 /* Private includes ----------------------------------------------------------*/
 
 #include "ecumain.h"
-#ifndef RTOS
-int TSActiveINVRequest( volatile InverterState *Inverter )
-{
-	uint16_t command;
-	if ( GetInverterState( Inverter->InvState ) < INVERTERON
-#ifdef IVTEnable
-			&& CarState.VoltageINV > 480
-#endif
-			) // should be in ready state, so request ON state.
-	{
-		command = InverterStateMachine( Inverter ); // request left inv state machine to On from ready.
-		CANSendInverter( command, 0, Inverter->InverterNum );
-	} // else inverter not in expected state.
-	return 0;
-}
-#endif
 
 int TSActiveRequest( void )
 {
@@ -38,14 +22,8 @@ int TSActiveRequest( void )
 #ifdef POWERNODES
 	setDevicePower(IVT, 1);
 #endif
-#ifndef RTOS
-	for ( int i=0;i<MOTORCOUNT;i++) // send next state request to all inverter that aren't already in ON state.
-	{
-		 TSActiveINVRequest( &CarState.Inverters[i] );
-	}
-#else
+
 	invRequestState(PREOPERATIONAL);
-#endif
 
 	return 0;
 }

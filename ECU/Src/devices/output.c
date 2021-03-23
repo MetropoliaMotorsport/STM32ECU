@@ -2,7 +2,7 @@
  * output.c
  *
  *  Created on: 14 Apr 2019
- *      Author: drago
+ *      Author: Visa
  */
 
 #include "ecumain.h"
@@ -276,7 +276,6 @@ int getGpioPin(output output)
  */
 void setOutput(output output, output_state state)
 {
-#ifdef RTOS
 	output_msg msg;
 
 	msg.output = output;
@@ -290,21 +289,10 @@ void setOutput(output output, output_state state)
 		xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
 	else
 		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
-#else
-	if ( output < OUTPUTCount ){
-		if ( state == Off )
-		  LEDs[output].state = 0;
-		else
-		  LEDs[output].state = 9;
-	}
-//	LEDs[output].blinktime = 0;
-//	LEDs[output].blinkingrate = 0;
-#endif
 }
 
 void setOutputNOW(output output, output_state state)
 {
-#ifdef RTOS
 	output_msg msg;
 
 	msg.output = output;
@@ -324,19 +312,6 @@ void setOutputNOW(output output, output_state state)
 		xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
 	else
 		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
-#else
-	if ( output < OUTPUTCount ){
-		if ( state == Off )
-		{
-			HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), 0);
-			LEDs[output].state = 0;
-		} else
-		{
-			HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), 1);
-			LEDs[output].state = 9;
-		}
-	}
-#endif
 }
 
 /**
@@ -344,7 +319,6 @@ void setOutputNOW(output output, output_state state)
  */
 void toggleOutput(output output)
 {
-#ifdef RTOS
 	output_msg msg;
 
 	msg.output = output;
@@ -355,12 +329,6 @@ void toggleOutput(output output)
 		xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
 	else
 		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
-#else
-
-	if ( output < OUTPUTCount ){
-		if ( LEDs[output].state == 0 ) LEDs[output].state = 9; else LEDs[output].state = 0;
-	}
-#endif
 }
 
 void toggleOutputMetal(output output)
@@ -375,7 +343,6 @@ void toggleOutputMetal(output output)
 
 void blinkOutput(output output, output_state blinkingrate, uint32_t time) // max 30 seconds if timed.
 {
-#ifdef RTOS
 	output_msg msg;
 
 	msg.output = output;
@@ -386,29 +353,6 @@ void blinkOutput(output output, output_state blinkingrate, uint32_t time) // max
 		xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
 	else
 		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
-#else
-	if ( output < OUTPUTCount ){
-		switch ( blinkingrate )
-		{
-			case Off : LEDs[output].blinkingrate = 0; break;
-			case On : LEDs[output].blinkingrate = 9; break;
-			case BlinkVerySlow : LEDs[output].blinkingrate = 8; break;
-			case BlinkSlow : LEDs[output].blinkingrate = 4; break;
-			case BlinkMed : LEDs[output].blinkingrate = 2; break;
-			case BlinkFast : LEDs[output].blinkingrate = 1; break;
-			default :
-				LEDs[output].blinkingrate = 9;
-				break;
-		}
-
-		if ( time == 255 ){
-			LEDs[output].blinktime = LEDBLINKNONSTOP;
-		} else
-		{
-			LEDs[output].blinktime = time*8;
-		}
-	}
-#endif
 }
 
 void stopBlinkOutput(output output)
@@ -418,21 +362,7 @@ void stopBlinkOutput(output output)
 
 void timeOutput(output output, uint32_t time)
 {
-#ifdef RTOS
 	blinkOutput(output, Timed, time);
-
-#else
-	if ( output < OUTPUTCount ){
-		LEDs[output].blinkingrate = 0;
-
-		if ( time == 255 ){
-			LEDs[output].blinktime = LEDBLINKNONSTOP;
-		} else
-		{
-			LEDs[output].blinktime = time*8;
-		}
-	}
-#endif
 }
 
 /**
@@ -440,15 +370,6 @@ void timeOutput(output output, uint32_t time)
  */
 int initOutput( void )
 {
-#ifndef RTOS
-	for ( int i = 0; i < OUTPUTCount; i++)
-	{
-		LEDs[i].blinkingrate = 0;
-		LEDs[i].state = 0;
-		LEDs[i].blinktime = 0; // set default state of LED's to off, no blinking
-	}
-
-#else
 	OutputQueue = xQueueCreateStatic( OutputQUEUE_LENGTH,
 							  OutputITEMSIZE,
 							  OutputQueueStorageArea,
@@ -457,8 +378,6 @@ int initOutput( void )
 	vQueueAddToRegistry(OutputQueue, "OutputQueue" );
 
 	OutputTaskHandle = osThreadNew(OutputTask, NULL, &OutputTask_attributes);
-
-#endif
 
 	blinkOutput(LED1, BlinkVerySlow, LEDBLINKNONSTOP); // startup board activity blinker/power light.
 
@@ -475,35 +394,6 @@ void __setLEDs( void )
 	setOutput(BMSLED, CarState.Shutdown.BMS);
 	setOutput(IMDLED, CarState.Shutdown.IMD);
 	setOutput(BSPDLED, CarState.Shutdown.BSPDBefore);
-
-#ifndef RTOS
-//	if ( CarState.TSALLeftInvLED == 1 && CarState.TSALRightInvLED == 1 )
-	{
-		LEDs[TSLED_Output].blinkingrate = 2; // cockpit led
-
-   } //else if ( CarState.TSALLeftInvLED >= 2 && CarState.TSALRightInvLED >= 2)
-	{
-		LEDs[TSLED_Output].blinkingrate = 0;
-
-	}// else
-	{
-		LEDs[TSLED_Output].blinkingrate = 0;
-	}
-
-//	if ( CarState.RtdmLeftInvLED == 1 && CarState.RtdmRightInvLED == 1 )
-	{
-		LEDs[RTDMLED_Output].blinkingrate = 2;
-	}// else if ( CarState.RtdmLeftInvLED >= 2 && CarState.RtdmRightInvLED >= 2)
-	{
-		LEDs[RTDMLED_Output].blinkingrate = 0;
-
-	} //else
-	{
-		LEDs[RTDMLED_Output].blinkingrate = 0;
-	}
-#endif
-
-//	LEDs[TSOFFLED_Output].blinkingrate = CarState.StopLED;
 }
 
 
@@ -513,11 +403,11 @@ void startupLEDs(void)
 	  setOutputNOW(LED1,On);
 	  setOutputNOW(LED2,On);
 	  setOutputNOW(LED3,On);
-	  HAL_Delay(300);
+	  vTaskDelay(300);
 	  setOutputNOW(LED1,Off);
-	  HAL_Delay(300);
+	  vTaskDelay(300);
 	  setOutputNOW(LED2,Off);
-	  HAL_Delay(300);
+	  vTaskDelay(300);
 	  setOutputNOW(LED3,Off);
 
 #ifdef OLDPOWEROn
@@ -526,13 +416,13 @@ void startupLEDs(void)
 	  setOutput(2,On);
 	  setOutput(3,On);
 	  // HAL_Delay(2000);
-	  HAL_Delay(500);
+	  vTaskDelay(500);
 #endif
 	  setOutput(BMSLED,On);
 	  setOutput(IMDLED,On);
 	  setOutput(BSPDLED,On);
 	  // HAL_Delay(2000);
-	  HAL_Delay(500);
+	  vTaskDelay(500);
 
 	  for(int i=0;i<=OUTPUTCount;i++){ // turn off all LED's
 		  setOutput(i, Off);

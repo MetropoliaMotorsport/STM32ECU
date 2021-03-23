@@ -2,7 +2,7 @@
  * power.h
  *
  *  Created on: Jul 17, 2020
- *      Author: visa
+ *      Author: Visa
  */
 
 #ifndef DEVICES_POWER_H_

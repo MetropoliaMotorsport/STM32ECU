@@ -332,12 +332,9 @@ bool DoMenu()
 		{
 			inmenu = false;
 			inedit = false;
-#ifndef RTOS
-			if (writeEEPROMDone() ) // try to commit config changes. How to deal with fail?
-#endif
-			{
-				writeEEPROMCurConf(); // write the data to eeprom. if in RTOS, this will enqueue it
-			}
+
+			writeEEPROMCurConf(); // enqueue write the data to eeprom.
+
 			return false;
 		}
 
@@ -413,9 +410,6 @@ int CheckConfigurationRequest( void )
 		CarState.Torque_Req_CurrentMax = 0;
 	}
 
-#ifndef RTOS
-	DoEEPROM(); // run eeprom processing from loop.
-#endif
 
 	if ( !EEPROMBusy() )
 	{

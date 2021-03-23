@@ -155,11 +155,7 @@ int Startup( uint32_t OperationLoops  )
 //	uint32_t loopstart = gettimer();
 //	uint32_t looptimer = 0;
 
-#ifndef RTOS
-	DWT_Delay((PROCESSLOOPTIME-MS1*5-(gettimer()-loopstart))*1000); // wait for 5ms
-#else
 	vTaskDelay(5);
-#endif
 /*	do
 	{
         // check for incoming data, break when all received.
@@ -172,11 +168,6 @@ int Startup( uint32_t OperationLoops  )
 
 	for ( int i=0;i<MOTORCOUNT;i++) // speed is received
 	{
-#ifndef RTOS
-		receiveINVStatus(&CarState.Inverters[i]);
-		receiveINVSpeed(&CarState.Inverters[i]);
-		receiveINVTorque(&CarState.Inverters[i]);
-#endif
 		if ( CarState.Inverters[i].InvState != 0xFF ) invertercount++;
 	}
 
@@ -293,9 +284,8 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 		CarState.HighVoltageReady = 0; // no high voltage allowed in this state.
 
-		for ( int i=0;i<MOTORCOUNT;i++){
-	        CANSendInverter( 0b00000110, 0, i );  // request inverters go to non operational state before cutting power.
-		}
+
+		StopMotors();
 
         sendPDM( 0 ); //disable high voltage on error state;
 
@@ -357,15 +347,10 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 	bool allowautoreset = true;
 	bool invertererror = false;
 
-#ifdef RTOS
 	if ( DeviceState.Inverter == INERROR ) invertererror = true;
-#endif
 
 	for ( int i=0;i<MOTORCOUNT;i++)
 	{
-#ifndef RTOS
-		if ( DeviceState.Inverters[i] == INERROR ) invertererror = true;
-#endif
 		if ( !Errors.InvAllowReset[i] ) allowautoreset = false;
 	}
 #endif
@@ -386,11 +371,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		strcat(str, "PDM " );
 	}
 
-#ifdef RTOS
 	if ( ! ( DeviceState.ADCSanity == 0 ))
-#else
-    if ( ! CheckADCSanity() == 0 )
-#endif
 	{
 		allowreset +=4;
 		strcat(str, "PDL " );
@@ -439,23 +420,14 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 int OperationalProcess( void )
 {
-#ifndef RTOS
-	lcd_setscrolltitle("Starting Main Loop");
-#endif
 	// initialise loop timer variable.
 	uint32_t looptimer = gettimer(); // was volatile, doesn't need to be
 
 	static uint16_t loopoverrun = 0;
 
 	cancount = 0;
-#ifndef RTOS
-	OperationalState = StartupState; // start with setup/waiting for devices state.
-#endif
 
 	// if( ADCState.newdata )
-#ifndef RTOS
-	while( 1 ) // start main process loop, exit by return statement from error or request only.
-#endif
 	{
 		if ( NewOperationalState != OperationalState ) // state has changed.
 		{
@@ -469,11 +441,8 @@ int OperationalProcess( void )
 		uint32_t currenttimer = gettimer();
 
 		//calculate right delay to wait for loop.
-#ifndef RTOS
-		DWT_Delay((PROCESSLOOPTIME-(currenttimer-looptimer))*1000);
-#else
+
 //		vTaskDelayUntil( &xLastCycleTime, MS1*10 );
-#endif
 
 //		if( looptimer + PROCESSLOOPTIME < currenttimer ) // once per 10ms second process state
 		{
