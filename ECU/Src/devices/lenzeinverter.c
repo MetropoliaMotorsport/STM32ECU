@@ -1,7 +1,8 @@
 /*
  * lenzeinverter.c
- * Created by Visa
  *
+ *  Created on: 21 Mar 2021
+ *      Author: Visa
  */
 
 // 1041 ( 411h )  52 1 0 0 -< turn on
@@ -15,8 +16,8 @@
 
 bool processINVError(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
 bool processINVStatus(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processINVTorque(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
-bool processINVSpeed(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
+bool processINVValues1(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
+bool processINVValues2(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
 bool processINVEmergency(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
 bool processINVNMT(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
 
@@ -37,43 +38,44 @@ CANData InverterCANNMT[MOTORCOUNT] = {
 		{ &DeviceState.Inverters[3], InverterFR_COBID+COBNMT_ID, 2, processINVNMT, NULL, 0, 3 }
 #endif
 };
+#
+
+#define TPDStatus 			( 0x1C0 )
+#define TPDVal1				( 0x240 )
+#define TPDVal2				( 0x280 )
 
 
-CANData InverterCANPDO1[MOTORCOUNT] = { // status
-		{ &DeviceState.Inverters[0], InverterRL_COBID+COBPDO1_ID, 4, processINVStatus, NULL, 0, 0 },
-		{ &DeviceState.Inverters[1], InverterRR_COBID+COBPDO1_ID, 4, processINVStatus, NULL, 0, 1 },
+CANData InverterCANMotorStatus[MOTORCOUNT] = { // status values
+		{ &DeviceState.Inverters[0], InverterRL_COBID + TPDStatus + ( InverterRL_Channel * 0x100 ), 4, processINVStatus, NULL, 0, 0 },
+		{ &DeviceState.Inverters[1], InverterRR_COBID + TPDStatus + ( InverterRR_Channel * 0x100 ), 4, processINVStatus, NULL, 0, 1 },
 #if MOTORCOUNT > 2
-		{ &DeviceState.Inverters[2], InverterFL_COBID+COBPDO1_ID, 4, processINVStatus, NULL, 0, 2 },
-		{ &DeviceState.Inverters[3], InverterFR_COBID+COBPDO1_ID, 4, processINVStatus, NULL, 0, 3 }
-#endif
-};
-
-CANData InverterCANPDO2[MOTORCOUNT] = { // speed
-		{ &DeviceState.Inverters[0], InverterRL_COBID+COBPDO2_ID, 6, processINVSpeed, NULL, INVERTERTIMEOUT, 0 },
-		{ &DeviceState.Inverters[1], InverterRR_COBID+COBPDO2_ID, 6, processINVSpeed, NULL, INVERTERTIMEOUT, 1 },
-#if MOTORCOUNT > 2
-		{ &DeviceState.Inverters[2], InverterFL_COBID+COBPDO2_ID, 6, processINVSpeed, NULL, INVERTERTIMEOUT, 2 },
-		{ &DeviceState.Inverters[3], InverterFR_COBID+COBPDO2_ID, 6, processINVSpeed, NULL, INVERTERTIMEOUT, 3 }
+		{ &DeviceState.Inverters[2], InverterFL_COBID + TPDStatus + ( InverterFL_Channel * 0x100 ), 4, processINVStatus, NULL, 0, 2 },
+		{ &DeviceState.Inverters[3], InverterFR_COBID + TPDStatus + ( InverterFR_Channel * 0x100 ), 4, processINVStatus, NULL, 0, 3 }
 #endif
 };
 
 
-CANData InverterCANPDO3[MOTORCOUNT] = { // torque
-		{ NULL, InverterRL_COBID+COBPDO3_ID, 4, processINVTorque, NULL, 0, 0 },
-		{ NULL, InverterRR_COBID+COBPDO3_ID, 4, processINVTorque, NULL, 0, 1 },
+CANData InverterCANMotorValues1[MOTORCOUNT] = { // speed/torque
+		{ &DeviceState.Inverters[0], InverterRL_COBID + TPDVal1 + ( InverterRL_Channel * 0x100 ), 4, processINVValues1, NULL, 0, 0 },
+		{ &DeviceState.Inverters[1], InverterRR_COBID + TPDVal1 + ( InverterRR_Channel * 0x100 ), 4, processINVValues1, NULL, 0, 1 },
 #if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID+COBPDO3_ID, 4, processINVTorque, NULL, 0, 2 },
-		{ NULL, InverterFR_COBID+COBPDO3_ID, 4, processINVTorque, NULL, 0, 3 }
+		{ &DeviceState.Inverters[2], InverterFL_COBID + TPDVal1 + ( InverterFL_Channel * 0x100 ), 4, processINVValues1, NULL, 0, 2 },
+		{ &DeviceState.Inverters[3], InverterFR_COBID + TPDVal1 + ( InverterFR_Channel * 0x100 ), 4, processINVValues1, NULL, 0, 3 }
 #endif
 };
 
-CANData InverterCANPDO4[MOTORCOUNT] = { // not currently used
-		{ NULL, InverterRL_COBID+COBPDO4_ID, 6, NULL, NULL, 0, 0, true },
-		{ NULL, InverterRR_COBID+COBPDO4_ID, 6, NULL, NULL, 0, 1, true },
+CANData InverterCANMotorValues2[MOTORCOUNT] = { // speed
+		{ &DeviceState.Inverters[0], InverterRL_COBID + TPDVal2 + ( InverterRL_Channel * 0x100 ), 6, processINVValues2, NULL, INVERTERTIMEOUT, 0 },
+		{ &DeviceState.Inverters[1], InverterRR_COBID + TPDVal2 + ( InverterRR_Channel * 0x100 ), 6, processINVValues2, NULL, INVERTERTIMEOUT, 1 },
 #if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID+COBPDO4_ID, 6, NULL, NULL, 0, 2, true },
-		{ NULL, InverterFR_COBID+COBPDO4_ID, 6, NULL, NULL, 0, 3, true }
+		{ &DeviceState.Inverters[2], InverterFL_COBID + TPDVal2 + ( InverterFL_Channel * 0x100 ), 6, processINVValues2, NULL, INVERTERTIMEOUT, 2 },
+		{ &DeviceState.Inverters[3], InverterFR_COBID + TPDVal2 + ( InverterFR_Channel * 0x100 ), 6, processINVValues2, NULL, INVERTERTIMEOUT, 3 }
 #endif
+};
+
+CANData InverterCANAPPCStatus[INVERTERCOUNT] = { // torque
+		{ NULL, InverterRL_COBID+COBTPDO1_ID, 4, processINVStatus, NULL, 0, 0 },
+		{ NULL, InverterRR_COBID+COBTPDO1_ID, 4, processINVStatus, NULL, 0, 1 }
 };
 
 
@@ -84,7 +86,7 @@ char InvSend( )
 	  //  msg[1] := 0;
 
 	//CanSend(RPDO5_id+id, msgblank, 8, 0);
-
+	return 0;
 }
 
 
@@ -136,6 +138,7 @@ right // 0x47f
 //	storeLEint16(request,&CANTxData[2]);
 
 //	return CAN2Send( 0x400 + CarState.Inverters[inverter].COBID, 4, CANTxData );
+	return 0;
 }
 
 
@@ -152,9 +155,6 @@ bool processINVNMT(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahand
 	// mark all inverter statuses as non operational for startup, so that they can be discovered and processed through state machine.
 
 	Inverter->InvState = 0xFF;
-	Inverter->InvStateCheck = 0xFF;
-	Inverter->InvStateCheck3 = 0xFF;
-
 	return true;
 }
 
@@ -268,13 +268,36 @@ bool processINVError(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 }
 
 
-//&CarState.Inverters[i]
+bool processAPPCStatus(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle)
+{
+	volatile InverterState *Inverter = &CarState.Inverters[datahandle->index];
+
+	int16_t InvInputVoltage = getLEint16(&CANRxData[0])/16;
+//	int16_t InvTemperature = getLEint16(&CANRxData[2])/16;
+
+	if ( InvInputVoltage > 5 && InvInputVoltage < 800 )
+	{
+		if ( InvInputVoltage > 60 )
+			Inverter->HighVoltageAvailable = true;
+		else
+			Inverter->HighVoltageAvailable = false;
+
+		return true;
+	} else // bad data.
+	{
+		return false;
+	}
+}
 
 
 bool processINVStatus(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle)
 {
 	volatile InverterState *Inverter = &CarState.Inverters[datahandle->index];
-	uint16_t status = CANRxData[0];//*256+CANRxData[1]; - second byte not actually used publically, definition private.
+	uint16_t status = CANRxData[0];
+
+//	uint16_t statusword = getLEint16(&CANRxData[0]);
+//	uint32_t latchedStatus1 = getLEint32(&CANRxData[2]);
+//	uint16_t latchedStatus2 = getLEint16(&CANRxData[6]);
 
 	if ( ( CANRxData[1]==22 || CANRxData[1]==6 )
 			&& checkStatusCode(CANRxData[0]) )
@@ -298,7 +321,7 @@ uint8_t receiveINVStatus( volatile InverterState *Inverter  )
 	uint32_t operationalstatus =0;
 	uint32_t validdata = 0;
 
-	pdotime = InverterCANPDO1[Inverter->InverterNum].time = gettimer();
+	pdotime = InverterCANMotorStatus[Inverter->InverterNum].time = gettimer();
 	operationalstatus = DeviceState.Inverters[Inverter->InverterNum];
 	if ( Inverter->InvState != 0xFF) validdata = 1;
 
@@ -315,107 +338,26 @@ uint8_t receiveINVStatus( volatile InverterState *Inverter  )
 }
 
 
-bool processINVTorque(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle)
+bool processINVValues1(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle) // try to reread if possible?
 {
 	volatile InverterState *Inverter = &CarState.Inverters[datahandle->index];
-	uint16_t status = CANRxData[0];//*256+CANRxData[1]; - second byte not actually used publically, definition private.
-	uint16_t torque = CANRxData[2]*256+CANRxData[3]; // not yet converter to correct value, reverse of torque request.
-
-	if ( ( CANRxData[1]==22 ||CANRxData[1]==6 )
-			&& checkStatusCode(CANRxData[0])
-			// && torque < maxtorquepossible )
-		)
-	{
-		Inverter->InvTorque = torque;
-		Inverter->InvStateCheck3 = status;
-		return true;
-	} else // bad data.
-	{
-		Inverter->InvStateCheck3 = 0xFE; // flag up that an invalid status was received.
-		#ifdef errorLED
-		blinkOutput(IMDLED_Output,LEDBLINK_FOUR,255);
-		#endif
-		return false;
-	}
-}
-
-uint8_t receiveINVTorque( volatile InverterState *Inverter  )
-{
-	uint32_t operationalstatus = 0;
-
-	/*
-	operationalstatus = DeviceState.Inverters[Inverter->InverterNum];
-	if ( Inverter->StateCheck3 != 0xFF) validdata = 1;
-	 */
-
-	if (// time - pdotime <=  && // can't timeout on torque message.
-			operationalstatus != OFFLINE )
-	{
-		return 1; // data received within windows
-	} else return 0;
-
-#ifdef pdo3timeout
-	else
-	{
-		if ( time - pdotime > INVERTERTIMEOUT )
-		{
-			switch ( Inverters )
-			{
-				case LeftInverter :
-					if ( errorsentl == 0 )
-					{
-						CAN_SendStatus(99,INVERTERRECEIVED+Inverters->InverterNum+57,99);
-					}
-					errorsentl = 1;
-					break;
-				case RightInverter :
-					if ( errorsentr == 0 )
-					{
-						CAN_SendErrorStatus(99,INVERTERRECEIVED+Inverters->InverterNum+57,99);
-						}
-					errorsentr = 1;
-					break;
-			}
-		}
-		return 0;
-	}
-#endif
-}
-
-
-
-bool processINVSpeed(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle) // try to reread if possible?
-{
-	volatile InverterState *Inverter = &CarState.Inverters[datahandle->index];
-
-	uint16_t status = CANRxData[0];//*256+CANRxData[1];
 
 //	int32_t Speed = (CANRxData[5]*16777216+CANRxData[4]*65536+CANRxData[3]*256+CANRxData[2]) * ( 1.0/4194304 ) * 60;
 
-	int32_t Speed = getLEint32(&CANRxData[2]);
+	int32_t Speed = getLEint32(&CANRxData[0]);
+	int16_t Torque = getLEint16(&CANRxData[4]);
+	int16_t Current = getLEint16(&CANRxData[6]);
 
-	if ( ( CANRxData[1]==22 ||CANRxData[1]==6 )
-			&& checkStatusCode(CANRxData[0])
-			&& abs(Speed) < 15000 )
+	if ( abs(Speed) < 15000 && abs(Torque) < 1000 && abs(Current) < 1000 )
 	{
 		Inverter->Speed = Speed;
-		Inverter->InvStateCheck = status;
-
-		if ( Inverter->InvBadStatus == 1 || Inverter->InvState == 0xFF )
-		{
-			Inverter->InvState = status;
-			Inverter->InvBadStatus = 0;
-			DeviceState.Inverters[Inverter->InverterNum] = GetInverterState(Inverter->InvState ); // correct state if wrong.
-		} // this will mark as online if offline.
-			else if ( Inverter->InvState != Inverter->InvStateCheck ) // was commented out for RL
-		{
-			Inverter->InvState = status; // was commented out for RL
-		}
+		Inverter->InvTorque = Torque;
+		Inverter->InvCurrent = Torque;
 
 		return true;
 	} else // bad data.
 	{
-		Inverter->InvStateCheck = 0xFE;
+//		Inverter->InvStateCheck = 0xFE;
 
 #ifdef errorLED
 		blinkOutput(IMDLED_Output,LEDBLINK_FOUR,255);
@@ -425,10 +367,66 @@ bool processINVSpeed(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 	}
 }
 
-uint8_t receiveINVSpeed( volatile InverterState *Inverter )
+
+bool processINVValues2(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle) // try to reread if possible?
 {
-	return receivedCANData(&InverterCANPDO2[Inverter->InverterNum]);
+//	volatile InverterState *Inverter = &CarState.Inverters[datahandle->index];
+
+	int16_t MotorTemp = getLEint16(&CANRxData[0])/16;
+//	int16_t powerActFiltered = getLEint16(&CANRxData[2]);
+//	int16_t volSActFiltered = getLEint16(&CANRxData[4]);
+	int16_t PowerModTemp = getLEint16(&CANRxData[6])/16;
+
+	if ( abs(MotorTemp) > 0 && abs(MotorTemp) < 200 && abs(PowerModTemp) > 0 && abs(PowerModTemp) < 200 )
+	{
+		// don't actually have anything to do with these right now.
+		return true;
+	} else // bad data.
+	{
+#ifdef errorLED
+		blinkOutput(IMDLED_Output,LEDBLINK_FOUR,255);
+#endif
+		return false;
+	}
 }
 
+uint8_t receiveINVSpeed( volatile InverterState *Inverter )
+{
+	return receivedCANData(&InverterCANMotorValues1[Inverter->InverterNum]);
+}
+
+uint8_t receiveINVTorque( volatile InverterState *Inverter  )
+{
+	return receivedCANData(&InverterCANMotorValues1[Inverter->InverterNum]);
+}
+
+bool registerInverterCAN( void )
+{
+	for( int i=0;i<MOTORCOUNT;i++)
+	{
+		RegisterCan2Message(&InverterCANErr[i]);
+		RegisterCan2Message(&InverterCANNMT[i]);
+
+		// TPDO 2 - status from inverter A
+		// TPDO 3 - actual values (1) from motor A
+		// TPDO 4 - actual values (2) from motor A
+
+		// TPDO 5 - status from inverter B
+		// TPDO 6 - actual values (1) from motor B
+		// TPDO 7 - actual values (2) from motor B
+
+		RegisterCan2Message(&InverterCANMotorValues1[i]);
+		RegisterCan2Message(&InverterCANMotorValues2[i]);
+		RegisterCan2Message(&InverterCANMotorStatus[i]);
+	}
+
+	for( int i=0;i<INVERTERCOUNT;i++)
+	{
+		// TPDO 1 - actual values from device
+		RegisterCan2Message(&InverterCANAPPCStatus[i]);
+	}
+
+	return true;
+}
 
 #endif

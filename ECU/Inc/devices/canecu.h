@@ -80,12 +80,21 @@
 	#define INV2_BUS				CANB0
 #endif
 
+
+
 #define COBERR_ID				(0x80)
 #define COBNMT_ID				(0x700)
-#define COBPDO1_ID				(0x180)
-#define COBPDO2_ID				(0x280)
-#define COBPDO3_ID				(0x380)
-#define COBPDO4_ID				(0x480)
+
+#define COBTPDO1_ID				(0x180) // lenze 1
+#define COBTPDO2_ID				(0x280) // lenze 4
+#define COBTPDO3_ID				(0x380) // lenze 7
+#define COBTPDO4_ID				(0x480)
+
+#define COBRPDO1_ID				(0x200)
+#define COBRPDO2_ID				(0x300)
+#define COBRPDO3_ID				(0x400)
+#define COBRPDO4_ID				(0x500)
+#define COBRPDO5_ID				(0x540)
 
 #define Inverter_BUS			hfdcan2
 

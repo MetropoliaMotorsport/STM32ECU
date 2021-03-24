@@ -24,6 +24,7 @@
 	#define USEIMU
 	#define PWMSTEERING
 	#define LENZE
+	#define MOTORCOUNT		(4)
 #endif
 // Calibration settings for pedals.
 
@@ -328,29 +329,27 @@ uint16_t ErrorCode; // global error code.
 #define INVERTERERROR			INERROR//-99
 */
 
-#ifdef HPF20
-#define MOTORCOUNT				(4)
-#define Inverter1				(0)
-#define Inverter2				(2)
-#else
-#define MOTORCOUNT				(2)
-#endif
 extern volatile uint32_t ADCloops;
 
 typedef struct { // new structure for inverter related data, so that it can be used as general pointer.
 	uint8_t InverterNum;
 	bool HighVoltageAllowed;
+	bool HighVoltageAvailable;
 	uint16_t InvState;
 	uint16_t InvBadStatus;
+#ifdef SIEMENS
 	uint16_t InvStateCheck;
 	uint16_t InvStateCheck3;
+#endif
 	uint16_t InvCommand;
 
-	uint16_t Torque_Req;
-	uint16_t InvTorque;
+	int16_t Torque_Req;
+	int16_t InvTorque;
+	int16_t InvCurrent;
 
 	int32_t Speed;
 	uint16_t COBID;
+	bool	MCChannel;
 } InverterState;  // define external into realmain?
 
 

@@ -744,11 +744,24 @@ char CAN_SENDINVERTERERRORS( void )
 {
 
     uint8_t CANTxData[8] =
-    { CarState.Inverters[RearLeftInverter].InvState,CarState.Inverters[RearRightInverter].InvState, CarState.Inverters[RearLeftInverter].InvStateCheck, CarState.Inverters[RearRightInverter].InvStateCheck,
+    { CarState.Inverters[RearLeftInverter].InvState,
+      CarState.Inverters[RearRightInverter].InvState,
+#ifdef SIEMENS
+	  CarState.Inverters[RearLeftInverter].InvStateCheck,
+	  CarState.Inverters[RearRightInverter].InvStateCheck,
+#else
+	  0,0,
+#endif
 #ifndef HPF20
 			0,0,0,0
 #else
-			CarState.Inverters[FrontRightInverter].InvState, CarState.Inverters[FrontLeftInverter].InvStateCheck, CarState.Inverters[FrontRightInverter].InvStateCheck
+			CarState.Inverters[FrontRightInverter].InvState,
+#ifdef SIEMENS
+			CarState.Inverters[FrontLeftInverter].InvStateCheck,
+			CarState.Inverters[FrontRightInverter].InvStateCheck
+#else
+			0,0
+#endif
 #endif
     };
 
@@ -905,11 +918,24 @@ char CAN_SendErrors( void )
 #ifndef sharedCAN
 #endif
 
-	uint8_t CANTxData[8] = { CarState.Inverters[RearLeftInverter].InvState,CarState.Inverters[RearRightInverter].InvState, CarState.Inverters[RearLeftInverter].InvStateCheck, CarState.Inverters[RearRightInverter].InvStateCheck,
+	uint8_t CANTxData[8] = { CarState.Inverters[RearLeftInverter].InvState,
+			CarState.Inverters[RearRightInverter].InvState,
+	#ifdef SIEMENS
+			CarState.Inverters[RearLeftInverter].InvStateCheck,
+			CarState.Inverters[RearRightInverter].InvStateCheck,
+	#else
+			0,0,
+	#endif
 #ifndef HPF20
 			0,0,0,0
 #else
-			CarState.Inverters[FrontRightInverter].InvState, CarState.Inverters[FrontLeftInverter].InvStateCheck, CarState.Inverters[FrontRightInverter].InvStateCheck
+			CarState.Inverters[FrontRightInverter].InvState,
+	#ifdef SIEMENS
+			CarState.Inverters[FrontLeftInverter].InvStateCheck,
+			CarState.Inverters[FrontRightInverter].InvStateCheck
+	#else
+			0,0
+	#endif
 #endif
     };
 //  old message

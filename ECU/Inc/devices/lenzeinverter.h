@@ -1,27 +1,29 @@
 /*
  * lenzeinverter.h
  *
- *  Created on: 01 May 2019
- *      Author: drago
+ *  Created on: 21 Mar 2021
+ *      Author: Visa
  */
 
 #ifndef LENZEINVERTER_H_
 #define LENZEINVERTER_H_
 
-#define InverterRL_COBID			(0x7E) // 126 // swap
-#define InverterRR_COBID			(0x7F) // 127 // swap
+#define INVERTERCOUNT				(MOTORCOUNT/2)
 
-#ifdef HPF20
-#define InverterFL_COBID			(0x7C) // 124 // swap
-#define InverterFR_COBID			(0x7D) // 125 // swap
-#endif
+#define Inverter1_NodeID			(1)
+#define Inverter2_NodeID			(2)
 
-extern CANData InverterCANErr[];;
-extern CANData InverterCANNMT[];
-extern CANData InverterCANPDO1[];
-extern CANData InverterCANPDO2[];
-extern CANData InverterCANPDO3[];
-extern CANData InverterCANPDO4[];
+// define which wheel is which
+
+#define InverterRL_COBID			(Inverter1_NodeID)
+#define InverterRL_Channel			(false)
+#define InverterRR_COBID			(Inverter2_NodeID)
+#define InverterRR_Channel			(true)
+
+#define InverterFL_COBID			(Inverter1_NodeID)
+#define InverterFL_Channel			(false)
+#define InverterFR_COBID			(Inverter2_NodeID)
+#define InverterFR_Channel			(true)
 
 
 #endif /* LENZEINVERTER_H_ */

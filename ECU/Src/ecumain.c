@@ -407,7 +407,7 @@ int realmain(void)
 {
   /* MCU Configuration--------------------------------------------------------*/
 
- int MainState = 0;
+//    int MainState = 0;
 
 	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	HAL_Init();

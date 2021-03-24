@@ -337,21 +337,30 @@ void resetInv( void )
 	for ( int i=0;i<MOTORCOUNT; i++)
 	{
 		CarState.Inverters[i].InvState = 0xFF;
+#ifdef SIEMENS
 		CarState.Inverters[i].InvStateCheck = 0xFF;
 		CarState.Inverters[i].InvStateCheck3 = 0xFF;
+#endif
 		CarState.Inverters[i].InvBadStatus = 1;
 		CarState.Inverters[i].Torque_Req = 0;
 		CarState.Inverters[i].Speed = 0;
 		CarState.Inverters[i].HighVoltageAllowed = false;
 		CarState.Inverters[i].InverterNum = i;
+		CarState.Inverters[i].MCChannel = false;
 	}
 
 	CarState.Inverters[0].COBID = InverterRL_COBID;
 	CarState.Inverters[1].COBID = InverterRR_COBID;
 
+//	CarState.Inverters[0].MCChannel = InverterRL_Channel;
+//	CarState.Inverters[1].MCChannel = InverterRR_Channel;
+
 #if MOTORCOUNT > 2
 	CarState.Inverters[2].COBID = InverterFL_COBID;
 	CarState.Inverters[3].COBID = InverterFR_COBID;
+
+//	CarState.Inverters[2].MCChannel = InverterFL_Channel;
+//	CarState.Inverters[3].MCChannel = InverterFR_Channel;
 #endif
 
 	for ( int i=0;i<MOTORCOUNT;i++)
@@ -373,15 +382,8 @@ int initInv( void )
 
 	RegisterResetCommand(resetInv);
 
-	for( int i=0;i<MOTORCOUNT;i++)
-	{
-		RegisterCan2Message(&InverterCANErr[i]);
-		RegisterCan2Message(&InverterCANNMT[i]);
-		RegisterCan2Message(&InverterCANPDO1[i]);
-		RegisterCan2Message(&InverterCANPDO2[i]);
-		RegisterCan2Message(&InverterCANPDO3[i]);
-		RegisterCan2Message(&InverterCANPDO4[i]);
-	}
+
+	registerInverterCAN();
 
 	InvQueue = xQueueCreateStatic( InvQUEUE_LENGTH,
 							  InvITEMSIZE,

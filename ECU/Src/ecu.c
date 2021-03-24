@@ -34,22 +34,22 @@ void swapByteOrder_int16(double *current, const int16_t *rawsignal, size_t lengt
 
 inline uint32_t getLEint32( uint8_t data[4] )
 {
-  return data[3]*16777216+data[2]*65536+data[1]*256+data[0];
+  return (data[3]<<24)+(data[2]<<16)+(data[1]<<8)+data[0];
 }
 
 inline uint16_t getLEint16( uint8_t data[2] )
 {
-  return data[1]*256+data[0];
+  return (data[1]<<8)+data[0];
 }
 
 inline uint32_t getBEint32( uint8_t data[4] )
 {
-  return data[0]*16777216+data[1]*65536+data[2]*256+data[3];
+  return (data[0]<<24)+(data[1]<<16)+(data[2]<<8)+data[3];
 }
 
 inline uint16_t getBEint16( uint8_t data[2] )
 {
-  return data[0]*256+data[1];
+  return (data[0]<<8)+data[1];
 }
 
 void RearSpeedCalculation( long leftdata, long rightdata )

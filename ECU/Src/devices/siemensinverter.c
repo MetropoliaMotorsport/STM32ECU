@@ -10,6 +10,7 @@
 
 #include "ecumain.h"
 #ifdef SIEMENS
+#include "siemensinverter.h"
 
 bool processINVError(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
 bool processINVStatus(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
@@ -38,39 +39,39 @@ CANData InverterCANNMT[MOTORCOUNT] = {
 
 
 CANData InverterCANPDO1[MOTORCOUNT] = { // status
-		{ &DeviceState.Inverters[0], InverterRL_COBID+COBPDO1_ID, 4, processINVStatus, NULL, 0, 0 },
-		{ &DeviceState.Inverters[1], InverterRR_COBID+COBPDO1_ID, 4, processINVStatus, NULL, 0, 1 },
+		{ &DeviceState.Inverters[0], InverterRL_COBID+COBTPDO1_ID, 4, processINVStatus, NULL, 0, 0 },
+		{ &DeviceState.Inverters[1], InverterRR_COBID+COBTPDO1_ID, 4, processINVStatus, NULL, 0, 1 },
 #if MOTORCOUNT > 2
-		{ &DeviceState.Inverters[2], InverterFL_COBID+COBPDO1_ID, 4, processINVStatus, NULL, 0, 2 },
-		{ &DeviceState.Inverters[3], InverterFR_COBID+COBPDO1_ID, 4, processINVStatus, NULL, 0, 3 }
+		{ &DeviceState.Inverters[2], InverterFL_COBID+COBTPDO1_ID, 4, processINVStatus, NULL, 0, 2 },
+		{ &DeviceState.Inverters[3], InverterFR_COBID+COBTPDO1_ID, 4, processINVStatus, NULL, 0, 3 }
 #endif
 };
 
 CANData InverterCANPDO2[MOTORCOUNT] = { // speed
-		{ &DeviceState.Inverters[0], InverterRL_COBID+COBPDO2_ID, 6, processINVSpeed, NULL, INVERTERTIMEOUT, 0 },
-		{ &DeviceState.Inverters[1], InverterRR_COBID+COBPDO2_ID, 6, processINVSpeed, NULL, INVERTERTIMEOUT, 1 },
+		{ &DeviceState.Inverters[0], InverterRL_COBID+COBTPDO2_ID, 6, processINVSpeed, NULL, INVERTERTIMEOUT, 0 },
+		{ &DeviceState.Inverters[1], InverterRR_COBID+COBTPDO2_ID, 6, processINVSpeed, NULL, INVERTERTIMEOUT, 1 },
 #if MOTORCOUNT > 2
-		{ &DeviceState.Inverters[2], InverterFL_COBID+COBPDO2_ID, 6, processINVSpeed, NULL, INVERTERTIMEOUT, 2 },
-		{ &DeviceState.Inverters[3], InverterFR_COBID+COBPDO2_ID, 6, processINVSpeed, NULL, INVERTERTIMEOUT, 3 }
+		{ &DeviceState.Inverters[2], InverterFL_COBID+COBTPDO2_ID, 6, processINVSpeed, NULL, INVERTERTIMEOUT, 2 },
+		{ &DeviceState.Inverters[3], InverterFR_COBID+COBTPDO2_ID, 6, processINVSpeed, NULL, INVERTERTIMEOUT, 3 }
 #endif
 };
 
 
 CANData InverterCANPDO3[MOTORCOUNT] = { // torque
-		{ NULL, InverterRL_COBID+COBPDO3_ID, 4, processINVTorque, NULL, 0, 0 },
-		{ NULL, InverterRR_COBID+COBPDO3_ID, 4, processINVTorque, NULL, 0, 1 },
+		{ NULL, InverterRL_COBID+COBTPDO3_ID, 4, processINVTorque, NULL, 0, 0 },
+		{ NULL, InverterRR_COBID+COBTPDO3_ID, 4, processINVTorque, NULL, 0, 1 },
 #if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID+COBPDO3_ID, 4, processINVTorque, NULL, 0, 2 },
-		{ NULL, InverterFR_COBID+COBPDO3_ID, 4, processINVTorque, NULL, 0, 3 }
+		{ NULL, InverterFL_COBID+COBTPDO3_ID, 4, processINVTorque, NULL, 0, 2 },
+		{ NULL, InverterFR_COBID+COBTPDO3_ID, 4, processINVTorque, NULL, 0, 3 }
 #endif
 };
 
 CANData InverterCANPDO4[MOTORCOUNT] = { // not currently used
-		{ NULL, InverterRL_COBID+COBPDO4_ID, 6, NULL, NULL, 0, 0, true },
-		{ NULL, InverterRR_COBID+COBPDO4_ID, 6, NULL, NULL, 0, 1, true },
+		{ NULL, InverterRL_COBID+COBTPDO4_ID, 6, NULL, NULL, 0, 0, true },
+		{ NULL, InverterRR_COBID+COBTPDO4_ID, 6, NULL, NULL, 0, 1, true },
 #if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID+COBPDO4_ID, 6, NULL, NULL, 0, 2, true },
-		{ NULL, InverterFR_COBID+COBPDO4_ID, 6, NULL, NULL, 0, 3, true }
+		{ NULL, InverterFL_COBID+COBTPDO4_ID, 6, NULL, NULL, 0, 2, true },
+		{ NULL, InverterFR_COBID+COBTPDO4_ID, 6, NULL, NULL, 0, 3, true }
 #endif
 };
 
@@ -89,17 +90,7 @@ right // 0x47f
 	storeLEint16(response,&CANTxData[0]);
 	storeLEint16(request,&CANTxData[2]);
 
-	return CAN2Send( 0x400 + CarState.Inverters[inverter].COBID, 4, CANTxData );
-}
-
-
-int8_t InitInverterData( void )
-{
-	for ( int i=0;i<MOTORCOUNT;i++)
-	{
-
-	}
-	return 0;
+	return CAN2Send( COBRPDO3_ID + CarState.Inverters[inverter].COBID, 4, CANTxData );
 }
 
 
@@ -231,26 +222,6 @@ bool processINVError(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 #endif
 }
 
-
-//&CarState.Inverters[i]
-
-bool checkStatusCode( uint8_t status )
-{
-	switch ( status )
-	{
-		case 49 : // ready to switch on.
-		case 51 : // on
-		case 55 : // operation
-		case 64 : // startup
-		case 96 : //
-		case 104 : // error
-		case 200 : // very error // c0   c8     192-200 errors.
-			return true;
-			break;
-		default :
-			return false;
-	}
-}
 
 bool processINVStatus(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle)
 {
@@ -409,6 +380,23 @@ bool processINVSpeed(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 uint8_t receiveINVSpeed( volatile InverterState *Inverter )
 {
 	return receivedCANData(&InverterCANPDO2[Inverter->InverterNum]);
+}
+
+
+bool registerInverterCAN( void )
+{
+	for( int i=0;i<MOTORCOUNT;i++)
+	{
+		RegisterCan2Message(&InverterCANErr[i]);
+		RegisterCan2Message(&InverterCANNMT[i]);
+
+		RegisterCan2Message(&InverterCANPDO1[i]);
+		RegisterCan2Message(&InverterCANPDO2[i]);
+		RegisterCan2Message(&InverterCANPDO3[i]);
+		RegisterCan2Message(&InverterCANPDO4[i]);
+	}
+
+	return true;
 }
 
 #endif
