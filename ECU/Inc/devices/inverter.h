@@ -34,6 +34,9 @@ bool invertersStateCheck( DeviceStatus state );
 bool registerInverterCAN( void );
 bool checkStatusCode( uint8_t status );
 DeviceStatus GetInverterState ( uint16_t Status );
+char InvSend( volatile InverterState *Inverter, uint16_t cmd, int32_t vel, int16_t torque );
+void InvResetError( volatile InverterState *Inverter );
+bool InvStartupCfg( volatile InverterState *Inverter );
 
 uint8_t invRequestState( DeviceStatus state );
 void resetInv( void );

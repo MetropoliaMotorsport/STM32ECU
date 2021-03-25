@@ -34,6 +34,9 @@ bool processIVTWhData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datah
 
 void IVTTimeout( uint16_t id );
 
+char CAN_SendIVTTurnon( void );
+char CAN_SendIVTTrigger( void );
+
 CANData IVTMsg=	{ &DeviceState.IVT, IVTMsg_ID, 6, processIVTMsgData, NULL, 0 };
 
 CANData IVTCan[8] = {
@@ -323,6 +326,20 @@ int IVTstate( void ) // not currently being used, not properly functional
 		return 1;
 	} else
 	return 0;
+}
+
+
+char CAN_SendIVTTrigger( void )
+{
+	uint8_t CANTxData[8] = { 49, 0, 175,0,0,0,0,0 };
+	return CAN1Send( IVTCmd_ID, 8, CANTxData );
+}
+
+
+char CAN_SendIVTTurnon( void )
+{
+	uint8_t CANTxData[8] = { 52, 1,0,0,0,0,0,0 }; // turn on from pre operation.
+	return CAN1Send( IVTCmd_ID, 8, CANTxData );
 }
 
 

@@ -19,11 +19,8 @@
 #endif
 
 
-#ifdef RTOS
 DeviceStatus GetInverterState( uint16_t Status );
-int8_t InverterStateMachine( volatile InverterState *Inverter);
-#endif
-
+int8_t InverterStateMachineResponse( volatile InverterState *Inverter);
 
 osThreadId_t InvTaskHandle;
 const osThreadAttr_t InvTask_attributes = {
@@ -88,6 +85,8 @@ void InvTask(void *argument)
 {
 	Inv_msg msg;
 
+	bool reseterror = false;
+
 	TickType_t xLastWakeTime;
 
 	DeviceState.Inverter = OFFLINE;
@@ -114,6 +113,9 @@ void InvTask(void *argument)
 		DeviceStatus lowest=OPERATIONAL;
 		DeviceStatus highest=OFFLINE;
 
+		// TODO determine when to run inverter config on first detection.
+
+
 		if ( !invertersinerror )
 		for ( int i=0;i<MOTORCOUNT;i++) // speed is received
 		{
@@ -121,7 +123,7 @@ void InvTask(void *argument)
 			if ( CarState.Inverters[i].InvState != 0xFF && DeviceState.Inverters[i] != OFFLINE )
 			{
 			// run the state machine and get command to match current situation.
-				command = InverterStateMachine( &CarState.Inverters[i] );
+				command = InverterStateMachineResponse( &CarState.Inverters[i] );
 
 				// maybe store highest too so that operation can continue with only some operating motors if necessary?
 				if ( GetInverterState( CarState.Inverters[i].InvState ) < lowest ) lowest = GetInverterState( CarState.Inverters[i].InvState );
@@ -134,19 +136,32 @@ void InvTask(void *argument)
 					if ( ( RequestedState > STOPPED && CarState.VoltageINV > 480 && CarState.Inverters[i].HighVoltageAllowed) || RequestedState <= STOPPED )
 #endif
 					{
-	//					CANSendInverter( command, 0, i );
+						InvSend( &CarState.Inverters[i], command, 0, i );
 					}
 				}
 			} else if ( lowest != INERROR ) lowest = OFFLINE;
+
+			// store lowest known inverter state as global state, or error if not in operational state.
+
 			DeviceState.Inverter = lowest;
 
 		} else
 		{
-			DeviceState.Inverter = INERROR;
+			DeviceState.Inverter = INERROR; // deal with clearing error if possible here.
+
+			reseterror = true; // for now just try to reset error if there is one regardless.
+			// TODO add proper error checking, automatically reset on some errors like PDO timeout.
+
+			if ( reseterror )
+			{
+				for ( int i=0;i<MOTORCOUNT;i++)
+				{
+					InvResetError(&CarState.Inverters[i]);
+				}
+				reseterror = false;
+			}
+
 		}
-
-		// store lowest known inverter state as global state.
-
 
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME ); // only allow one command per cycle
 	}
@@ -213,20 +228,12 @@ DeviceStatus GetInverterState ( uint16_t Status ) // status 104, failed to turn 
 
 bool invertersStateCheck( DeviceStatus state )
 {
-#ifdef RTOS
 	if ( DeviceState.Inverter ==  state ) return true;
 	else return false;
-#else
-	bool requestedstate = true;
-	for ( int i=0;i<MOTORCOUNT;i++){
-		 if ( GetInverterState( CarState.Inverters[i].InvState ) != state ) requestedstate = false;
-	}
-	return requestedstate;
-#endif
 }
 
 
-int8_t InverterStateMachine( volatile InverterState *Inverter ) // returns response to send inverter based on current state.
+int8_t InverterStateMachineResponse( volatile InverterState *Inverter ) // returns response to send inverter based on current state.
 {
 	uint16_t State, TXState;
 
@@ -258,7 +265,11 @@ int8_t InverterStateMachine( volatile InverterState *Inverter ) // returns respo
 			if ( CarState.HighVoltageReady )
 			{  // TS enable button pressed and both inverters are marked HV ready proceed to state 3.
 				HighVoltageAllowed = true;
+#ifdef LENZE
+				TXState = 0b00001111; // Lenze doesn't want to go to pre operational from stopped, have to skip straight to operational.
+#else
 				TXState = 0b00000111; // request Switch on message, State 3..
+#endif
 			} else
 			{
 				HighVoltageAllowed = false;

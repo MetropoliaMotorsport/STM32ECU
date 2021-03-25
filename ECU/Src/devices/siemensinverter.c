@@ -76,23 +76,25 @@ CANData InverterCANPDO4[MOTORCOUNT] = { // not currently used
 };
 
 
-char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter )
+void InvResetError( volatile InverterState *Inverter )
 {
 
-#ifdef HPF19
-left  // 0x47e
-right // 0x47f
-#endif
-	uint8_t CANTxData[8];
-
-	resetCanTx(CANTxData);
-
-	storeLEint16(response,&CANTxData[0]);
-	storeLEint16(request,&CANTxData[2]);
-
-	return CAN2Send( COBRPDO3_ID + CarState.Inverters[inverter].COBID, 4, CANTxData );
 }
 
+char InvSend( volatile InverterState *Inverter, uint16_t cmd, int32_t vel, int16_t torque )
+{
+	uint8_t CANTxData[8] = {0};
+
+	storeLEint16(cmd,&CANTxData[0]);
+	storeLEint16(torque,&CANTxData[2]);
+
+	return CAN2Send( COBRPDO3_ID + Inverter->COBID, 4, CANTxData );
+}
+
+bool InvStartupCfg( volatile InverterState *Inverter )
+{
+
+}
 
 
 bool processINVNMT(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle) // try to reread if possible?

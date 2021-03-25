@@ -21,6 +21,8 @@ bool processINVValues2(uint8_t CANRxData[8], uint32_t DataLength, CANData * data
 bool processINVEmergency(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
 bool processINVNMT(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
 
+bool processAPPCOnline(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
+
 CANData InverterCANErr[MOTORCOUNT]= {
 		{ &DeviceState.Inverters[0], InverterRL_COBID+COBERR_ID, 8, processINVError, NULL, 0, 0 },
 		{ &DeviceState.Inverters[1], InverterRR_COBID+COBERR_ID, 8, processINVError, NULL, 0, 1 },
@@ -46,30 +48,30 @@ CANData InverterCANNMT[MOTORCOUNT] = {
 
 
 CANData InverterCANMotorStatus[MOTORCOUNT] = { // status values
-		{ &DeviceState.Inverters[0], InverterRL_COBID + TPDStatus + ( InverterRL_Channel * 0x100 ), 4, processINVStatus, NULL, 0, 0 },
-		{ &DeviceState.Inverters[1], InverterRR_COBID + TPDStatus + ( InverterRR_Channel * 0x100 ), 4, processINVStatus, NULL, 0, 1 },
+		{ &DeviceState.Inverters[0], InverterRL_COBID + TPDStatus + ( InverterRL_Channel * 0x100 ), 8, processINVStatus, NULL, 0, 0 },
+		{ &DeviceState.Inverters[1], InverterRR_COBID + TPDStatus + ( InverterRR_Channel * 0x100 ), 8, processINVStatus, NULL, 0, 1 },
 #if MOTORCOUNT > 2
-		{ &DeviceState.Inverters[2], InverterFL_COBID + TPDStatus + ( InverterFL_Channel * 0x100 ), 4, processINVStatus, NULL, 0, 2 },
-		{ &DeviceState.Inverters[3], InverterFR_COBID + TPDStatus + ( InverterFR_Channel * 0x100 ), 4, processINVStatus, NULL, 0, 3 }
+		{ &DeviceState.Inverters[2], InverterFL_COBID + TPDStatus + ( InverterFL_Channel * 0x100 ), 8, processINVStatus, NULL, 0, 2 },
+		{ &DeviceState.Inverters[3], InverterFR_COBID + TPDStatus + ( InverterFR_Channel * 0x100 ), 8, processINVStatus, NULL, 0, 3 }
 #endif
 };
 
 
 CANData InverterCANMotorValues1[MOTORCOUNT] = { // speed/torque
-		{ &DeviceState.Inverters[0], InverterRL_COBID + TPDVal1 + ( InverterRL_Channel * 0x100 ), 4, processINVValues1, NULL, 0, 0 },
-		{ &DeviceState.Inverters[1], InverterRR_COBID + TPDVal1 + ( InverterRR_Channel * 0x100 ), 4, processINVValues1, NULL, 0, 1 },
+		{ &DeviceState.Inverters[0], InverterRL_COBID + TPDVal1 + ( InverterRL_Channel * 0x100 ), 8, processINVValues1, NULL, 0, 0 },
+		{ &DeviceState.Inverters[1], InverterRR_COBID + TPDVal1 + ( InverterRR_Channel * 0x100 ), 8, processINVValues1, NULL, 0, 1 },
 #if MOTORCOUNT > 2
-		{ &DeviceState.Inverters[2], InverterFL_COBID + TPDVal1 + ( InverterFL_Channel * 0x100 ), 4, processINVValues1, NULL, 0, 2 },
-		{ &DeviceState.Inverters[3], InverterFR_COBID + TPDVal1 + ( InverterFR_Channel * 0x100 ), 4, processINVValues1, NULL, 0, 3 }
+		{ &DeviceState.Inverters[2], InverterFL_COBID + TPDVal1 + ( InverterFL_Channel * 0x100 ), 8, processINVValues1, NULL, 0, 2 },
+		{ &DeviceState.Inverters[3], InverterFR_COBID + TPDVal1 + ( InverterFR_Channel * 0x100 ), 8, processINVValues1, NULL, 0, 3 }
 #endif
 };
 
 CANData InverterCANMotorValues2[MOTORCOUNT] = { // speed
-		{ &DeviceState.Inverters[0], InverterRL_COBID + TPDVal2 + ( InverterRL_Channel * 0x100 ), 6, processINVValues2, NULL, INVERTERTIMEOUT, 0 },
-		{ &DeviceState.Inverters[1], InverterRR_COBID + TPDVal2 + ( InverterRR_Channel * 0x100 ), 6, processINVValues2, NULL, INVERTERTIMEOUT, 1 },
+		{ &DeviceState.Inverters[0], InverterRL_COBID + TPDVal2 + ( InverterRL_Channel * 0x100 ), 8, processINVValues2, NULL, INVERTERTIMEOUT, 0 },
+		{ &DeviceState.Inverters[1], InverterRR_COBID + TPDVal2 + ( InverterRR_Channel * 0x100 ), 8, processINVValues2, NULL, INVERTERTIMEOUT, 1 },
 #if MOTORCOUNT > 2
-		{ &DeviceState.Inverters[2], InverterFL_COBID + TPDVal2 + ( InverterFL_Channel * 0x100 ), 6, processINVValues2, NULL, INVERTERTIMEOUT, 2 },
-		{ &DeviceState.Inverters[3], InverterFR_COBID + TPDVal2 + ( InverterFR_Channel * 0x100 ), 6, processINVValues2, NULL, INVERTERTIMEOUT, 3 }
+		{ &DeviceState.Inverters[2], InverterFL_COBID + TPDVal2 + ( InverterFL_Channel * 0x100 ), 8, processINVValues2, NULL, INVERTERTIMEOUT, 2 },
+		{ &DeviceState.Inverters[3], InverterFR_COBID + TPDVal2 + ( InverterFR_Channel * 0x100 ), 8, processINVValues2, NULL, INVERTERTIMEOUT, 3 }
 #endif
 };
 
@@ -78,69 +80,90 @@ CANData InverterCANAPPCStatus[INVERTERCOUNT] = { // torque
 		{ NULL, InverterRR_COBID+COBTPDO1_ID, 4, processINVStatus, NULL, 0, 1 }
 };
 
-
-char InvSend( )
-{
-	// RPDO5, one per invertor
-	  // msg[0] := 0;
-	  //  msg[1] := 0;
-
-	//CanSend(RPDO5_id+id, msgblank, 8, 0);
-	return 0;
-}
+// use APPC RDO1 sending as trigger to signify online.
+CANData InverterCANAPPCSRDO1[INVERTERCOUNT] = { // torque
+		{ NULL, InverterRL_COBID+COBTPDO1_ID, 8, processAPPCOnline, NULL, 0, 0 },
+		{ NULL, InverterRR_COBID+COBTPDO1_ID, 8, processAPPCOnline, NULL, 0, 1 }
+};
 
 
 // two per MC
 //char InvSend( uint16_t response, uint16_t request, uint8_t inverter )
 
-char MCSend( uint16_t cmd, int32_t vel )
+void InvResetError( volatile InverterState *Inverter )
 {
 	uint8_t msg[8] = {0};
+	msg[0] = 0x80;
+
+	if ( Inverter->MCChannel == false )
+	{
+		CAN2Send(COBRPDO1_ID + Inverter->COBID, 8, msg);
+	} else
+	{
+		CAN2Send(COBRPDO3_ID + Inverter->COBID, 8, msg);
+	}
+}
+
+char InvSend( volatile InverterState *Inverter, uint16_t cmd, int32_t vel, int16_t torque )
+{
+	uint8_t msg1[8] = {0};
+	uint8_t msg2[8] = {0};
 	uint8_t msgblank[8] = {0};
 
-
-    msg[0] = cmd;// cmd shr 8;
-    msg[1] = 0;  // most significant byte;
-
-    msg[7] = 0; // torque
-    msg[6] = 0; // torque
-
+  //  msg[0] = cmd;// cmd shr 8;
+  //  msg[1] = cmd >> 8;  // most significant byte;
 
     vel = vel * 0x4000;
 
-    msg[5] = vel >> 24;    // speed
-    msg[4] = vel >> 16;
-    msg[3] = vel >> 8;
-    msg[2] = vel;
-
-    // inv 1
- //   MainForm.Output.Items.Add('VelSend()');
- //   CanSend(RPDO1_id+id, msg, 8, 0);
- //   CanSend(RPDO2_id+id, msgblank, 8, 0);
+    // store values for primary request.
+    storeLEint16(torque, &msg1[0]);
+    storeLEint32(vel, &msg1[2]);
+    storeLEint16(torque, &msg1[6]);
 
 
-    // inv2
+    // secondary values, what units are these in? they presumably need multiplying up. by 16?
+    storeLEint16(620, &msg2[0]);
+    storeLEint16(400, &msg2[2]);
+    storeLEint16(20, &msg2[4]); // max power
+    storeLEint16(0, &msg2[6]); // max regeneration
 
-    msg[0] = 0;// cmd shr 8;
- //   CanSend(RPDO3_id+id, msg, 8, 0);
- //   CanSend(RPDO4_id+id, msgblank, 8, 0);
+//	resetCanTx(CANTxData);
 
+	if ( Inverter->MCChannel == false )
+	{
+		CAN2Send( Inverter->COBID+COBRPDO3_ID, 8, msgblank ); // this should probably be disabled, not needed?
+		CAN2Send( Inverter->COBID+COBRPDO1_ID, 8, msg1 );
+		CAN2Send( Inverter->COBID+COBRPDO2_ID, 8, msg2 );
 
-#ifdef HPF19
-left  // 0x47e
-right // 0x47f
-#endif
-	uint8_t CANTxData[8];
+	} else
+	{
+		CAN2Send( Inverter->COBID+COBRPDO3_ID, 8, msg1 );
+		CAN2Send( Inverter->COBID+COBRPDO5_ID, 8, msg2 );
+	}
 
-	resetCanTx(CANTxData);
-
-//	storeLEint16(response,&CANTxData[0]);
-//	storeLEint16(request,&CANTxData[2]);
-
-//	return CAN2Send( 0x400 + CarState.Inverters[inverter].COBID, 4, CANTxData );
 	return 0;
 }
 
+
+bool InvStartupCfg( volatile InverterState *Inverter )
+{
+	if ( Inverter->MCChannel == false )
+	{
+	  sendSDO(bus0,  Inverter->COBID+32, 0x4004, 1, 1234);    // disable APPC PDO to take manual control
+
+ // set sdo to 10ms cycle
+ //   sendSDO(bus0, Inverter->COBID, 0x1801, 5, 10);
+
+ // set SDO's to sync   0x1800-1806  = TPDO 1 through 7
+	  sendSDO(bus0, Inverter->COBID, 0x1801, 2, 1);
+	  sendSDO(bus0, Inverter->COBID, 0x1802, 2, 1);
+	//  sendSDO(bus0, Inverter->COBID, 0x1803, 2, 1);
+
+	  sendSDO(bus0, Inverter->COBID, 0x1804, 2, 1);
+	  sendSDO(bus0, Inverter->COBID, 0x1805, 2, 1);
+    //  sendSDO(bus0, Inverter->COBID, 0x1806, 2, 1);
+	}
+}
 
 
 bool processINVNMT(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle) // try to reread if possible?
@@ -243,13 +266,18 @@ bool processINVError(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 		{
 			 Inverter->InvState = 0xFE;
 		}
-		 Inverter->InvBadStatus = 1;
+		Inverter->InvBadStatus = 1;
+
+
+
 		DeviceState.Inverters[datahandle->index] = ERROR;
         if ( Errors.InvAllowReset[datahandle->index] == 1 )
         {
             Errors.InvAllowReset[datahandle->index] = AllowReset;
         }
         Errors.INVReceiveStatus[datahandle->index]++;
+
+
 #ifdef SENDBADDATAERROR
 //		CAN_SendErrorStatus(99,INVERTERRECEIVED+Inverter->InverterNum,99);
 #endif
@@ -390,6 +418,15 @@ bool processINVValues2(uint8_t CANRxData[8], uint32_t DataLength, CANData * data
 	}
 }
 
+
+
+bool processAPPCOnline(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle)
+{
+	volatile InverterState *Inverter = &CarState.Inverters[datahandle->index];
+	InvStartupCfg( Inverter );
+}
+
+
 uint8_t receiveINVSpeed( volatile InverterState *Inverter )
 {
 	return receivedCANData(&InverterCANMotorValues1[Inverter->InverterNum]);
@@ -424,6 +461,7 @@ bool registerInverterCAN( void )
 	{
 		// TPDO 1 - actual values from device
 		RegisterCan2Message(&InverterCANAPPCStatus[i]);
+		RegisterCan2Message(&InverterCANAPPCSRDO1[i]);
 	}
 
 	return true;

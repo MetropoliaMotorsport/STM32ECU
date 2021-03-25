@@ -567,6 +567,27 @@ char CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 	return 0;
 }
 
+
+char sendSDO( enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub, uint32_t data)
+{
+
+	uint8_t msg[8];
+
+    msg[0] = 0x22;
+    storeLEint16(idx, &msg[1]);
+    msg[3] = sub;
+    storeLEint32(data, &msg[4]);
+
+	if ( bus == bus0 )
+	{
+		CAN2Send( COBSDOS_ID+id, 8, msg );
+	} else
+	{
+		CAN1Send( COBSDOS_ID+id, 8, msg );
+	}
+	return 0;
+}
+
 //canReceiveData
 
 
@@ -870,18 +891,6 @@ char CAN_SendADCminmax( void )
 	return 0;
 }
 
-char CAN_SendIVTTrigger( void )
-{
-	uint8_t CANTxData[8] = { 49, 0, 175,0,0,0,0,0 };
-	return CAN1Send( IVTCmd_ID, 8, CANTxData );
-}
-
-
-char CAN_SendIVTTurnon( void )
-{
-	uint8_t CANTxData[8] = { 52, 1,0,0,0,0,0,0 }; // turn on from pre operation.
-	return CAN1Send( IVTCmd_ID, 8, CANTxData );
-}
 // send nmt command to all nodes.
 
 /*

@@ -21,17 +21,7 @@
 #define FLSpeed_BUS				CAN1
 #define FRSpeed_COBID			0x70 // 113  // 0x71 orig
 #define FRSpeed_BUS				CAN1
-#define IVTCmd_ID		    	0x411
-#define IVTMsg_ID			    0x511
-#define IVTI_ID			    	0x521
-#define IVTU1_ID		    	0x522
-#define IVTU2_ID		    	0x523
-#define IVTU3_ID				0x524
-#define IVTT_ID					0x525
-#define IVTW_ID			    	0x526
-#define IVTAs_ID		    	0x527
-#define IVTWh_ID				0x528
-#define IVTBase_ID 				IVTI_ID
+
 #define PDM_ID					0x520
 #define MEMORATOR_ID			0x7B
 
@@ -96,7 +86,9 @@
 #define COBRPDO4_ID				(0x500)
 #define COBRPDO5_ID				(0x540)
 
-#define Inverter_BUS			hfdcan2
+#define COBSDOS_ID				(0x600)
+
+#define Inverter_BUS			CANB0
 
 #define ECU_CAN_ID				0x20 // send +1
 
@@ -178,6 +170,7 @@ int ResetCanReceived( void );
 int ResetOperationCanReceived( void );
 char CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData );
 char CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData );
+char sendSDO( enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub, uint32_t data);
 char CAN_NMT( uint8_t, uint8_t );
 char CAN_ConfigRequest( uint8_t command, uint8_t success );
 char CANKeepAlive( void );
@@ -196,9 +189,6 @@ char CAN_NMTSyncRequest( void );
 char CAN_SendLED( void );
 
 char CAN_SENDINVERTERERRORS( void );
-
-char CAN_SendIVTTurnon( void );
-char CAN_SendIVTTrigger( void );
 
 void ResetCanData(volatile CANData *data );
 
