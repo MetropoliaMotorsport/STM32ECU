@@ -113,8 +113,7 @@ void InvTask(void *argument)
 		DeviceStatus lowest=OPERATIONAL;
 		DeviceStatus highest=OFFLINE;
 
-		// TODO determine when to run inverter config on first detection.
-
+		// TODO determine when to run inverter config on first detection. - done by detecting APPC traffic in canbus response.
 
 		if ( !invertersinerror )
 		for ( int i=0;i<MOTORCOUNT;i++) // speed is received
@@ -129,14 +128,15 @@ void InvTask(void *argument)
 				if ( GetInverterState( CarState.Inverters[i].InvState ) < lowest ) lowest = GetInverterState( CarState.Inverters[i].InvState );
 				if ( GetInverterState( CarState.Inverters[i].InvState ) > highest ) highest = GetInverterState( CarState.Inverters[i].InvState );
 
-				// only send command if we're not in wanted state to try and transition towards it.
+				// only change command if we're not in wanted state to try and transition towards it.
 				if ( GetInverterState( CarState.Inverters[i].InvState ) != RequestedState )
 				{
 #ifdef IVTEnable // Only allow transitions to states requesting HV if it's available, and allowed?.
 					if ( ( RequestedState > STOPPED && CarState.VoltageINV > 480 && CarState.Inverters[i].HighVoltageAllowed) || RequestedState <= STOPPED )
 #endif
 					{
-						InvSend( &CarState.Inverters[i], command, 0, i );
+						//InvSend( &CarState.Inverters[i], command, 0, 0 );
+						CarState.Inverters[i].InvCommand = command;
 					}
 				}
 			} else if ( lowest != INERROR ) lowest = OFFLINE;
@@ -157,11 +157,29 @@ void InvTask(void *argument)
 				for ( int i=0;i<MOTORCOUNT;i++)
 				{
 					InvResetError(&CarState.Inverters[i]);
+					// TODO set inverter command for error state?
 				}
 				reseterror = false;
 			}
 
 		}
+
+		// process actual request if inverters are online.
+		if ( DeviceState.Inverter > OFFLINE )
+		{
+			for ( int i=0;i<MOTORCOUNT;i++)
+			{
+				if ( CarState.AllowTorque ) // but only send an actual torque request if carstate allows it.
+				{
+					InvSend( &CarState.Inverters[i], 0, &CarState.Inverters[i].Torque_Req );
+				} else
+				{
+					InvSend( &CarState.Inverters[i], 0, 0 );
+				}
+			}
+		}
+
+		// CarState.Inverters[i].Torque_Req = CarState.Torque_Req;
 
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME ); // only allow one command per cycle
 	}

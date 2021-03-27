@@ -40,7 +40,8 @@ int TSActiveProcess( uint32_t OperationLoops )
 		lcd_setscrolltitle("TS Active");
 		lcd_clearscroll();
 		prechargetimer = gettimer();
-		CarState.HighVoltageReady = 1; // only enable if reading high enough voltage.
+		CarState.HighVoltageReady = true; // only enable if reading high enough voltage.
+		CarState.AllowTorque = false;
 		setOutput(TSLED,On);
 		blinkOutput(TSLED,On,0);
 		setOutput(RTDMLED,Off);

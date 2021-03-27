@@ -141,7 +141,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 //		sanitystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		received = 0xFFFF;
 //		InverterSent = 0;
-		CarState.HighVoltageReady = 0; // no high voltage allowed in this state.
+		CarState.HighVoltageReady = false; // no high voltage allowed in this state.
 	}
 #ifndef everyloop
 	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing

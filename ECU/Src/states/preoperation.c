@@ -157,11 +157,12 @@ int PreOperationState( uint32_t OperationLoops  )
 	lcd_send_stringline(0,str, 255);
 
     if ( OperationLoops == 0 )
-	    {
+	{
     	//	lcd_setscrolltitle("Pre Operation");
     //		lcd_send_stringpos(3,0,"  <Red for config>");
 	    	preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
-	    	CarState.HighVoltageReady = 0;
+	    	CarState.HighVoltageReady = false;
+			CarState.AllowTorque = false;
 	    	ReadyToStart = 0xFFFF;
 	    	minmaxADCReset();
 	    	setDevicePower(Buzzer, 0);
@@ -178,7 +179,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	 //   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
 	    	// send to individual devices rather than reset everything if needed.
-	    }
+	}
 #ifndef everyloop
 	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
 #endif

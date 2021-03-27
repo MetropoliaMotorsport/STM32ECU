@@ -382,6 +382,8 @@ volatile struct CarState {
 	uint8_t  TorqueVectoring;
 #endif
 
+	bool AllowTorque;
+
 	int32_t Torque_Req;
 	uint8_t Torque_Req_Max;
     uint8_t Torque_Req_CurrentMax;

@@ -104,7 +104,7 @@ void InvResetError( volatile InverterState *Inverter )
 	}
 }
 
-char InvSend( volatile InverterState *Inverter, uint16_t cmd, int32_t vel, int16_t torque )
+char InvSend( volatile InverterState *Inverter, int32_t vel, int16_t torque )
 {
 	uint8_t msg1[8] = {0};
 	uint8_t msg2[8] = {0};
@@ -116,7 +116,7 @@ char InvSend( volatile InverterState *Inverter, uint16_t cmd, int32_t vel, int16
     vel = vel * 0x4000;
 
     // store values for primary request.
-    storeLEint16(torque, &msg1[0]);
+    storeLEint16(Inverter->InvCommand, &msg1[0]);
     storeLEint32(vel, &msg1[2]);
     storeLEint16(torque, &msg1[6]);
 
@@ -163,6 +163,8 @@ bool InvStartupCfg( volatile InverterState *Inverter )
 	  sendSDO(bus0, Inverter->COBID, 0x1805, 2, 1);
     //  sendSDO(bus0, Inverter->COBID, 0x1806, 2, 1);
 	}
+
+	return true;
 }
 
 
@@ -423,7 +425,7 @@ bool processINVValues2(uint8_t CANRxData[8], uint32_t DataLength, CANData * data
 bool processAPPCOnline(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle)
 {
 	volatile InverterState *Inverter = &CarState.Inverters[datahandle->index];
-	InvStartupCfg( Inverter );
+	return InvStartupCfg( Inverter );
 }
 
 

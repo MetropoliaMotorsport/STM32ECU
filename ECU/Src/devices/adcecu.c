@@ -98,7 +98,7 @@ uint16_t TorqueLargelowRangeInput[sizeof(((eepromdata*)0)->] = {50,600, 950}; //
 int16_t TorqueLargelowRangeOutput[sizeof(((eepromdata*)0)->] = {0, 400,1000};
 */
 
-#ifdef HPF19
+	#ifdef HPF19
 
 uint16_t CoolantInput[sizeof(((eepromdata*)0)->CoolantInput)/2] =  { 0 }; // { 1000,4235, 4851, 5661, 6889, 8952, 11246, 14262, 18894, 22968, 27081, 33576, 39050, 44819, 49192, 54011, 58954,  64113, 64112};
 int16_t CoolantOutput[sizeof(((eepromdata*)0)->CoolantOutput)/2] = { 0 }; // { -1,   120,   115,  109,  101,   90,    82,    72,    60,    52,    46,    38,    32,    26,    22,    16,    11,    6, -1};
@@ -108,7 +108,7 @@ uint16_t DrivingModeInput[sizeof(((eepromdata*)0)->DrivingModeInput)/2+4] = { 0 
 int16_t DrivingModeOutput[sizeof(((eepromdata*)0)->DrivingModeInput)/2+4] = { 0 }; // { 1 , 1,    0,     1,   1,    2,    3,      4,     5,     6,    7,      8,     0 };
 uint8_t DriveModeSize = 0;
 
-#endif
+	#endif
 
 #else
 
