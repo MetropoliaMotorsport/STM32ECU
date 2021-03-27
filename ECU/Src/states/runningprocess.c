@@ -42,7 +42,7 @@ uint16_t PrintBrakeBalance( void )
 
 
 /*
- * APPS Check
+ * APPS Check, Should ignore regen sensor and only use physical brake.
  *
  */
 uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
@@ -67,7 +67,7 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	int difference = abs(ADCState.Torque_Req_L_Percent - ADCState.Torque_Req_R_Percent)/10;
 
 	//The average value of the APPS
-	int TorqueRequestPercent = ADCState.Torque_Req_R_Percent / 10; //(ADCState.Torque_Req_L_Percent + ADCState.Torque_Req_R_Percent) /2;
+	int TorqueRequestPercent = getTorqueReqCurve(ADCState.Torque_Req_R_Percent) / 10;
 
 	//   -Implausibility Test Failure : In case of more than 10 percent implausibility between the APPS,torque request is 0
 	//   -Implausibility allowed : more than 10 percent
@@ -173,7 +173,6 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 	}
 
 
-
 	// calculate actual torque request
 	if ( Torque_drivers_request != 0)
 	{
@@ -181,7 +180,6 @@ uint16_t PedalTorqueRequest( void ) // returns Nm request amount.
 		return getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax/65; //  *0.01/10*1000 unnecessary calculations, works out to 1, gets rid of floating point
 
 		// return torquerequest;// Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
-
 	}
 	  //	  return getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax*0.01)*1000/65)/10; // Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
 	else
@@ -288,6 +286,8 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		allowstop = 0;
 		standstill = 0;
         limpcounter = 0;
+
+        CarState.AllowTorque = true;
 
     	if ( CarState.LimpRequest )
     		 CarState.Torque_Req_CurrentMax = LIMPNM;
@@ -506,15 +506,15 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		FanControl();
 #endif
 
-
 	    for ( int i=0;i<MOTORCOUNT;i++)
 	    {
 #ifdef NOTORQUEREQUEST
-	    	CarState.Inverters[i].Torque_Req = 0
+	    	CarState.Inverters[i].Torque_Req = 0;
 #else
 	    	CarState.Inverters[i].Torque_Req = CarState.Torque_Req;
 #endif
 	    }
+
 	}
 
 	// if drop status due to error, check if recoverable, or if limp mode possible.
