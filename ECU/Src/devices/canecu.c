@@ -666,8 +666,6 @@ char CAN_SendTimeBase( void ) // sends how long since power up and primary inver
 			Errors.CANSendError2,
 			CarState.Inverters[FrontLeftInverter].InvState,
 			CarState.Inverters[FrontRightInverter].InvState,
-	//		getByte(time,0),
-	//		getByte(time,1),
 			getByte(time,2),
 			getByte(time,3)
 	};

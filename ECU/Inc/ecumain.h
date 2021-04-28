@@ -60,7 +60,7 @@ extern CANData ECUCAN;
 #include "inverter.h"
 #include "bms.h"
 #include "adcecu.h"
-#include "i2c-lcd.h"
+#include "lcd.h"
 #include "eeprom.h"
 #include "memorator.h"
 #include "power.h"

@@ -10,6 +10,8 @@
 
 #include <stdbool.h>
 
+#define LCDBUFFER
+
 #define HPF20
 
 //#define HPF19
@@ -275,38 +277,20 @@ uint16_t ErrorCode; // global error code.
 #define DrivingModeErrorBit	    7
 
 
-#define InverterRLErrorBit		9
-#define InverterRRErrorBit		10
+#define Inverter1ErrorBit		9
+#define Inverter2ErrorBit		10
 
 #define BMSVoltageErrorBit		11
-#ifdef HPF20
-#define InverterFLErrorBit		9
-#define InverterFRErrorBit		10
-#endif
-
-
-
-#define Inverter1Received		0 //
-#define Inverter2Received		2
 
 #define InverterReceived		0
-//#define InverterRLReceived		1
-#ifdef HPF20
-//#define InverterFReceived		2
-//#define InverterFLReceived		3
-#else
-  #define FLeftSpeedReceived		2 // TODO fix conflict?
-  #define FRightSpeedReceived		3
-#endif
+#define FLeftSpeedReceived		2 // TODO fix conflict?
+#define FRightSpeedReceived		3
 #define PedalADCReceived		4
 #define BMSReceived				5
 #define PDMReceived				6
 #define MEMORATORReceived		7
 
-
 #define IVTReceived				8
-
-//#define YAWReceived			8
 
 #define INVERTERRECEIVED		20
 

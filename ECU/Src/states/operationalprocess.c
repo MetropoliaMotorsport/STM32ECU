@@ -670,15 +670,6 @@ int OperationalProcess( void )
 			totalloopcount++;
 		}
 
-
-		static int lcdupdatecounter = 0;
-		// update LCD at end of loop rather than timer so that all possible updates have been done, and there won't be priority clashes on what to display.
-		if ( DeviceState.LCD == OPERATIONAL && ( lcdupdatecounter % 5 ) == 0 )
-		{
-			lcd_update();
-		}
-		lcdupdatecounter++;
-
 #ifdef WFI
 		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
 #endif

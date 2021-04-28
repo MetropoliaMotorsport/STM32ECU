@@ -296,7 +296,6 @@ static int HardwareInit( void )
 	DeviceState.LCD = DISABLED;
 #endif
 	lcd_send_stringscroll("Start CANBUS");
-	lcd_update();
 
 	initPower();
 	initConfig();
@@ -332,7 +331,6 @@ static int HardwareInit( void )
 #endif
 
 	lcd_send_stringscroll("Enable LEDS");
-	lcd_update();
     initOutput(); // set default led states and start life indicator LED blinking.
 
 #ifdef POWERLOSSDETECT
@@ -357,7 +355,6 @@ static int HardwareInit( void )
 	while ( 1 ) {
 		sprintf(str,"%.8d", i);
 		lcd_send_stringpos(0,0,str);
-		lcd_update();
 		i++;
 	}
 #endif
@@ -369,14 +366,12 @@ static int HardwareInit( void )
 		HAL_Delay(100);
 		sprintf(str,"%.8d", i);
 		lcd_send_stringscroll(str);
-		lcd_update();
 	}
 
 	while ( 1 )
 	{
 
 		lcd_processscroll(GetUpDownPressed());
-		lcd_update();
 		HAL_Delay(50);
 
 	}
@@ -384,10 +379,8 @@ static int HardwareInit( void )
 
 	lcd_send_stringscroll("Hardware init done.");
 	lcd_clearscroll();
-	lcd_update();
 
 	lcd_send_stringscroll("Shutdown closed.");
-	lcd_update();
 //	ShutdownCircuitSet( true );
 //	while ( 1 ){};
 	return returnval;

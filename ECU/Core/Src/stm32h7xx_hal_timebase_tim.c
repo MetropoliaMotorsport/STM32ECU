@@ -42,14 +42,23 @@ TIM_HandleTypeDef        htim17;
 HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 {
   RCC_ClkInitTypeDef    clkconfig;
-  uint32_t              uwTimclock = 0;
-  uint32_t              uwPrescalerValue = 0;
+  uint32_t              uwTimclock;
+
+  uint32_t              uwPrescalerValue;
   uint32_t              pFLatency;
-  /*Configure the TIM17 IRQ priority */
-  HAL_NVIC_SetPriority(TIM17_IRQn, TickPriority ,0);
+/*Configure the TIM17 IRQ priority */
+  if (TickPriority < (1UL << __NVIC_PRIO_BITS))
+  {
+  HAL_NVIC_SetPriority(TIM17_IRQn, TickPriority ,0U);
 
   /* Enable the TIM17 global Interrupt */
   HAL_NVIC_EnableIRQ(TIM17_IRQn);
+    uwTickPrio = TickPriority;
+    }
+  else
+  {
+    return HAL_ERROR;
+  }
   /* Enable TIM17 clock */
   __HAL_RCC_TIM17_CLK_ENABLE();
 
@@ -57,10 +66,11 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   HAL_RCC_GetClockConfig(&clkconfig, &pFLatency);
 
   /* Compute TIM17 clock */
+
   uwTimclock = 2*HAL_RCC_GetPCLK2Freq();
 
   /* Compute the prescaler value to have TIM17 counter clock equal to 1MHz */
-  uwPrescalerValue = (uint32_t) ((uwTimclock / 1000000) - 1);
+  uwPrescalerValue = (uint32_t) ((uwTimclock / 1000000U) - 1U);
 
   /* Initialize TIM17 */
   htim17.Instance = TIM17;
@@ -71,7 +81,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   + ClockDivision = 0
   + Counter direction = Up
   */
-  htim17.Init.Period = (1000000 / 1000) - 1;
+  htim17.Init.Period = (1000000U / 1000U) - 1U;
   htim17.Init.Prescaler = uwPrescalerValue;
   htim17.Init.ClockDivision = 0;
   htim17.Init.CounterMode = TIM_COUNTERMODE_UP;

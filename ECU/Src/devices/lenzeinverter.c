@@ -113,7 +113,7 @@ char InvSend( volatile InverterState *Inverter, int32_t vel, int16_t torque )
   //  msg[0] = cmd;// cmd shr 8;
   //  msg[1] = cmd >> 8;  // most significant byte;
 
-    vel = vel * 0x4000;
+    vel = vel * 0x4000; // rpm multiplied out.
 
     // store values for primary request.
     storeLEint16(Inverter->InvCommand, &msg1[0]);

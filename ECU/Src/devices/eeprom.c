@@ -665,7 +665,6 @@ int startupReadEEPROM( void )
 int initEEPROM( void )
 {
 	lcd_send_stringscroll("Load EEPRom");
-	lcd_update();
 
 	 MX_I2C2_Init();
 	 int eepromstatus = startupReadEEPROM();
@@ -673,19 +672,16 @@ int initEEPROM( void )
 	 {
 		 case 0 :
 				lcd_send_stringscroll("EEPRom Read");
-				lcd_update();
 				DeviceState.EEPROM = ENABLED;
 				break;
 		 case 1 :
 				lcd_send_stringscroll("EEPRom Bad Data");
 				lcd_send_stringscroll("  Load New Data");
-				lcd_update();
 				DeviceState.EEPROM = ERROR;
 				HAL_Delay(3000); // ensure message can be seen.
 				break;
 		 default :
 				lcd_send_stringscroll("EEPRom Read Fail");
-				lcd_update();
 				DeviceState.EEPROM = DISABLED;
 				HAL_Delay(3000); // ensure message can be seen.
 	 };

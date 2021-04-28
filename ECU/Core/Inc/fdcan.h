@@ -1,12 +1,12 @@
 /**
   ******************************************************************************
-  * File Name          : FDCAN.h
-  * Description        : This file provides code for the configuration
-  *                      of the FDCAN instances.
+  * @file    fdcan.h
+  * @brief   This file contains all the function prototypes for
+  *          the fdcan.c file
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under Ultimate Liberty license
@@ -17,10 +17,11 @@
   ******************************************************************************
   */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __fdcan_H
-#define __fdcan_H
+#ifndef __FDCAN_H__
+#define __FDCAN_H__
+
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -47,14 +48,7 @@ void MX_FDCAN2_Init(void);
 #ifdef __cplusplus
 }
 #endif
-#endif /*__ fdcan_H */
 
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
+#endif /* __FDCAN_H__ */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

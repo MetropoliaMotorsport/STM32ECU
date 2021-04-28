@@ -63,8 +63,11 @@ char * getTimeStr( void ){
 		    curtime = *localtime(&rtctime);
 		    strftime(timestr, sizeof(timestr), "%H:%M:%S", &curtime);
 		}
-		return timestr;
-	} else return "";
+	} else
+	{
+		sprintf(timestr,"%.7lis", gettimer()/1000);
+	}
+	return timestr;
 }
 
 int initTime( void )

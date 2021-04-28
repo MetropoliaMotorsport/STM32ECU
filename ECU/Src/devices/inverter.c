@@ -171,7 +171,7 @@ void InvTask(void *argument)
 			{
 				if ( CarState.AllowTorque ) // but only send an actual torque request if carstate allows it.
 				{
-					InvSend( &CarState.Inverters[i], 0, &CarState.Inverters[i].Torque_Req );
+					InvSend( &CarState.Inverters[i], 0, CarState.Inverters[i].Torque_Req );
 				} else
 				{
 					InvSend( &CarState.Inverters[i], 0, 0 );

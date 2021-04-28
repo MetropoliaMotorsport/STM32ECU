@@ -847,6 +847,7 @@ HAL_StatusTypeDef startADC(void)
 	minmaxADCReset();
 	ADC_MultiModeTypeDef multimode;
 	multimode.Mode=ADC_MODE_INDEPENDENT;
+#ifdef CALIBRATEADC
 	if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
 	{
 		/* Calibration Error */
@@ -858,6 +859,7 @@ HAL_StatusTypeDef startADC(void)
 		/* Calibration Error */
 		Error_Handler();
 	}
+#endif
 
 
 	if ( HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
@@ -1287,7 +1289,6 @@ int initADC( void )
 	MX_ADC3_Init();
 
 	lcd_send_stringscroll("Start ADC");
-	lcd_update();
 
 	if ( startADC() == 0 )  //  starts the ADC dma processing.
 	{

@@ -39,10 +39,7 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 						  (0x1 << FLeftSpeedReceived) + // initialise return value to all devices in error state ( bit set )
 						  (0x1 << FRightSpeedReceived) +
 	#endif
-						  (0x1 << Inverter1Received)+
-#ifdef TWOINVERTERMODULES
-						  (0x1 << Inverter2Received)+
-#endif
+						  (0x1 << InverterReceived)+
 						  (0x1 << BMSReceived)+
 #ifndef POWERNODES
 						  (0x1 << PDMReceived)+
@@ -74,22 +71,9 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 #endif
 
 	if ( DeviceState.Inverter != OFFLINE && DeviceState.Inverter != INERROR )
-		   returnvalue &= ~(0x1 << Inverter1Received);
+		   returnvalue &= ~(0x1 << InverterReceived);
 		else
-		   returnvalue |= 0x1 << Inverter1Received;
-
-#ifdef TWOINVERTERMODULES
-	if ( receiveINVNMT(CarState.Inverters[Inverter2]))
-	{
-	//		if ( ( CarState.LeftInvState != 0xFF || CarState.RightInvState != 0xFF ) )
-			if ( GetInverterState(CarState.Inverters[Inverter2].InvState) >= 0 || GetInverterState(CarState.Inverters[Inverter2+1].InvState) >= 0 )
-			{
-				returnvalue &= ~(0x1 << Inverter2Received);
-			} else returnvalue |= 0x1 << Inverter2Received;
-
-	}
-#endif
-
+		   returnvalue |= 0x1 << InverterReceived;
 
 #ifndef POWERNODES
 
@@ -152,7 +136,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	char str[80] = "";
 
-	sprintf(str,"Boot   %8.8s %.3liv",getTimeStr(), CarState.VoltageBMS);
+	sprintf(str,"Boot   %8.8s %.3liv",getTimeStr(), lcd_geterrors());//, CarState.VoltageBMS);
 
 	lcd_send_stringline(0,str, 255);
 
@@ -235,10 +219,8 @@ int PreOperationState( uint32_t OperationLoops  )
 			if (preoperationstate & (0x1 << FLeftSpeedReceived) )  { strcat(str, "FSL " ); }
 			if (preoperationstate & (0x1 << FRightSpeedReceived) )  {strcat(str, "FSR " );  }
 #endif
-			if (preoperationstate & (0x1 << Inverter1Received) ) { strcat(str, "IV1 " ); }
-#ifdef TWOINVERTERMODULES
-			if (preoperationstate & (0x1 << Inverter2Received) )  { strcat(str, "IV2" );  }
-#endif
+			if (preoperationstate & (0x1 << InverterReceived) ) { strcat(str, "INV " ); }
+
 			if (preoperationstate & (0x1 << BMSReceived) ) { strcat(str, "BMS " );  }
 #ifndef POWERNODES
 			if (preoperationstate & (0x1 << PDMReceived) ) { strcat(str, "PDM " ); }
