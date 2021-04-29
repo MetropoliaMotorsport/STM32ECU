@@ -892,7 +892,6 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 	if ( DeviceState.LCD == OPERATIONAL ){
 		lcd_errormsg("ADC Error Check .LD");
 	}
-
 	toggleOutput(42);
 }
 

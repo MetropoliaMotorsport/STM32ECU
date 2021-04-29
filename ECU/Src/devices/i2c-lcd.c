@@ -45,7 +45,7 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 	}
 }
 
-int i2clcderrorcount( void ){
+int lcd_errorcount( void ){
 	return lcderrorcount;
 }
 
@@ -179,7 +179,7 @@ int lcd_send_data (char data)
 }
 
 
-void lcd_clear (void)
+void lcd_clear_internal(void)
 {
 	lcd_send_cmd (0x80);
 	for (int i=0; i<70; i++)
@@ -310,37 +310,38 @@ int lcd_send_stringposDIR( int row, int col, char *str )
 {
 	uint8_t data_t[40];
 
-	if ( !inerror ) {
+	int copylenmax = LCDCOLUMNS - col;
 
+	// ensure we don't write past last column of LCD.
+	if ( strlen(str) < copylenmax )
+	{
+		copylenmax = strlen(str);
+	}
 
-		int copylenmax = LCDCOLUMNS - col;
+	 // copy string into buffer in addition to directly sending it, so that updates don't wipe.
+//	memcpy(&LCDBuffer[col+row*20], str, strlen(str));
 
-		// ensure we don't write past last column of LCD.
-		if ( strlen(str) < copylenmax )
-		{
-			copylenmax = strlen(str);
-		}
+	if ( LCDQueue ) // if queue created, then add the string to queue too to properly display in lcd update.
+	{
+		lcd_send_stringpos( row, col, str, 0 );
+	}
 
-		 // copy string into buffer in addition to directly sending it, so that updates don't wipe.
-		memcpy(&LCDBuffer[col+row*20], str, strlen(str));
+	// create send command.
+	int row_offsets[] = { 0x00, 0x20, 0x40, 0x60 };//THIS WAS THE CHANGE FOR 4 LINES
 
-		// create send command.
-		int row_offsets[] = { 0x00, 0x20, 0x40, 0x60 };//THIS WAS THE CHANGE FOR 4 LINES
+	data_t[0] = 0x80; // 0x80 continuation bit with cmd
+	data_t[1] = (0x80 | (col + row_offsets[row])); // command acted.
+	data_t[2] = 0x40; // 0x40, rest of send is data. data bit only set 0b01000000 // @ sign.
+	int len = 3;
+	while (*str){
+		data_t[len] = *str++;
+		len++;
+	} // loop till 0
+	data_t[len] = 0;
 
-		data_t[0] = 0x80; // 0x80 continuation bit with cmd
-		data_t[1] = (0x80 | (col + row_offsets[row])); // command acted.
-		data_t[2] = 0x40; // 0x40, rest of send is data. data bit only set 0b01000000 // @ sign.
-		int len = 3;
-		while (*str){
-			data_t[len] = *str++;
-			len++;
-		} // loop till 0
-		data_t[len] = 0;
-
-		// output in blocking fashion to ensure gets sent even if interrupts not yet enabled.
-		if ( HAL_I2C_Master_Transmit(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) data_t, len,10) != HAL_OK ){ // blocking write to make sure it gets sent.
-			return 0;
-		}
+	// output in blocking fashion to ensure gets sent even if interrupts not yet enabled.
+	if ( HAL_I2C_Master_Transmit(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) data_t, len,10) != HAL_OK ){ // blocking write to make sure it gets sent.
+		return 0;
 	}
 
 	return 1;

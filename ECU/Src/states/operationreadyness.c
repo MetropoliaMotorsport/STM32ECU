@@ -136,8 +136,8 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
-		lcd_setscrolltitle("Readying Devices");
-		lcd_clearscroll();
+		lcd_clear();
+		lcd_settitle("Readying Devices");
 //		sanitystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		received = 0xFFFF;
 //		InverterSent = 0;

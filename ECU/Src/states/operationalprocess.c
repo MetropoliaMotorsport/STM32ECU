@@ -105,7 +105,7 @@ int Startup( uint32_t OperationLoops  )
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
-		lcd_setscrolltitle("Startup init");
+		lcd_settitle("Startup init");
 
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 
@@ -234,7 +234,7 @@ uint16_t CheckErrors( void )
 
 int LimpProcess( uint32_t OperationLoops  )
 {
-	lcd_setscrolltitle("LimpProcess(NA)");
+	lcd_settitle("LimpProcess(NA)");
 	CAN_SendStatus(1, LimpState, 0 );
 	setHV( true, false );
 	return LimpState;
@@ -242,7 +242,7 @@ int LimpProcess( uint32_t OperationLoops  )
 
 int TestingProcess( uint32_t OperationLoops  )
 {
-	lcd_setscrolltitle("TestingProcess(NA)");
+	lcd_settitle("TestingProcess(NA)");
 	CAN_SendStatus(1, TestingState, 0 );
 	setHV( true, false );
 	return TestingState;
@@ -276,8 +276,8 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
 		char str[20];
+		lcd_startscroll();
 		lcd_setscrolltitle("ERROR State");
-		lcd_clearscroll();
 
 		sprintf(str,"Loc:%.2X Code:%.4X", Errors.ErrorPlace, Errors.ErrorReason);
 		lcd_send_stringscroll(str);
@@ -387,7 +387,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
     }
 #endif
 
-    strpad(str,20);
+    strpad(str,20, true);
 
     if ( allowreset == 0 )
     {
@@ -409,6 +409,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 //		setupButtons();
 //		setupLEDs();
 		//loopcount = 0;
+		lcd_endscroll();
 		return StartupState;
 		// try to perform a full reset back to startup state here on user request.
 	}

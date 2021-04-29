@@ -248,7 +248,7 @@ int DoEEPROM( void )
 
 					sprintf(str,"Get: %s %.4d", datatype, receivepos );
 
-					strpad(str, 20);
+					strpad(str, 20, true);
 
 					lcd_send_stringline(3,str, 1);
 					memcpy(&Buffer[BufferPos],(uint8_t*)&EEPROMConfigdata[4],EEPROMConfigdata[3]);
@@ -437,7 +437,7 @@ int EEPROMReceive( void )
 
 		sprintf(str,"DataGet: %s %.4lu", datatype, TransferSize);
 
-		strpad(str, 20);
+		strpad(str, 20, true);
 
 		CAN_SendStatus(ReceivingData,ReceiveAck,0); // TODO move ack to receive loop with timer to see message?
 
@@ -489,7 +489,7 @@ int EEPROMSend( void )
 
 		sprintf(str,"Send: %s %.4lu", datatype, TransferSize);
 
-		strpad(str, 20);
+		strpad(str, 20, true);
 
 		lcd_send_stringline(3,str, 1);
 	} else lcd_send_stringline(3,"Bad EEPROM Send Req", 1);

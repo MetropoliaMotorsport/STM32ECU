@@ -23,4 +23,6 @@ int lcd_getstate( void );
 void lcd_resetbuffer();
 int lcd_dosend( void );
 
+int lcd_errorcount( void );
+
 #endif /* I2CLCD_H */

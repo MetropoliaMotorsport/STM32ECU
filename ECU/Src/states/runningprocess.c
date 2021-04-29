@@ -277,9 +277,8 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
-		 	 	 	 	 	 //12345678901234567890
-		lcd_setscrolltitle("RTDM:Throttle Active");
-		lcd_clearscroll();
+		lcd_clear();
+		lcd_settitle("RTDM:Throttle Active");
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		setOutput(RTDMLED,On); // move to ActivateRTDM
 		blinkOutput(RTDMLED,On,0);

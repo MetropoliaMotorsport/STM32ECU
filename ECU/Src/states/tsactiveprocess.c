@@ -37,8 +37,8 @@ int TSActiveProcess( uint32_t OperationLoops )
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
 		 	 	 	 	 	 //12345678901234567890
-		lcd_setscrolltitle("TS Active");
-		lcd_clearscroll();
+		lcd_clear();
+		lcd_settitle("TS Active");
 		prechargetimer = gettimer();
 		CarState.HighVoltageReady = true; // only enable if reading high enough voltage.
 		CarState.AllowTorque = false;

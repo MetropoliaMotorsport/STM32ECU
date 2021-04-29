@@ -231,7 +231,7 @@ int PreOperationState( uint32_t OperationLoops  )
 			if (preoperationstate & (0x1 << IVTReceived) ) { strcat(str, "IVT " );  }
 			if ( str[strlen(str)] == 32 ) { str[strlen(str)] = 0 ; }
 
-			strpad(str,20);
+			strpad(str,20, true);
 
 
 			lcd_send_stringline(1,str, 255);
@@ -262,7 +262,7 @@ int PreOperationState( uint32_t OperationLoops  )
 #endif
 				if (ReadyToStart & (0x1 << 2 ) ) { strcat(str, "INV " );  }
 
-				strpad(str,20);
+				strpad(str,20, true);
 
 				lcd_send_stringline(2,str,255);
 			}
@@ -273,8 +273,8 @@ int PreOperationState( uint32_t OperationLoops  )
 			// TODO print any non critical warning still.
 
 	//		lcd_clearscroll();
-			lcd_send_stringpos(1,0,"                    ");
-			lcd_send_stringpos(2,0,"   Ready To Start   ");
+			lcd_send_stringpos(1,0,"                    ", 255);
+			lcd_send_stringpos(2,0,"   Ready To Start   ", 255);
 
 	//		lcd_send_stringpos(3,0,"                    ");
 

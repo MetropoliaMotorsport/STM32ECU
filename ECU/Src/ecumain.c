@@ -165,7 +165,7 @@ void MainTask(void *argument)
 //	BaseType_t xHigherPriorityTaskWoken = false;
 //	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 
-	lcd_setscrolltitle("Starting Main Loop");
+	lcd_settitle("Starting Main Loop");
 
 	OperationalState = StartupState;
 
@@ -213,7 +213,7 @@ void HAL_Delay(  volatile uint32_t millis )
 	vTaskDelay(millis);
 }
 
-//In addition, I call the HAL_IncTick() function from the FreeRTOS TickHook:
+//In addition, call the HAL_IncTick() function from the FreeRTOS TickHook:
 
 void vApplicationTickHook( void )
 {
@@ -254,26 +254,10 @@ static int HardwareInit( void )
 	int returnval = 0;
 
 	// run through  the cubemx generated init functions.
-#ifndef RTOS
-	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-	if ( HAL_Init() != HAL_OK )
-	{
-		returnval = 99; // If error in basic hardware initialisation, something very bad wrong.
-	  	  	  	  	  	  //should possibly hang here, nothing yet initialised to communicate status.
-	}
-
-	/* Configure the system clock */
-	if ( SystemClock_Config() != HAL_OK )
-	{
-		returnval = 99; // if error in setting system clock something very bad wrong.
-		  	  	  	  	  //should possibly hang here, nothing yet initialised to communicate status.
-	}
-
-#endif
 
 	DWT_Init();
 
-	HAL_Delay(50); // delay to allow debugger to hopefully latch. // have some input pin act as a boot stopper.
+	vTaskDelay(50); // delay to allow debugger to hopefully latch. // have some input pin act as a boot stopper.
 
 	/* Initialize all configured peripherals */
 
@@ -285,6 +269,8 @@ static int HardwareInit( void )
 	ShutdownCircuitSet( false ); // ensure shutdown circuit is closed at start
 
 	initLCD();
+	lcd_startscroll();
+	lcd_setscrolltitle("Startup...");
 
 	initTimer();
 
@@ -363,26 +349,27 @@ static int HardwareInit( void )
 	char str[20];
 	int i = 0;
 	for ( i=0;i<10;i++ ){
-		HAL_Delay(100);
+		vTaskDelay(100);
 		sprintf(str,"%.8d", i);
 		lcd_send_stringscroll(str);
 	}
 
 	while ( 1 )
 	{
-
 		lcd_processscroll(GetUpDownPressed());
-		HAL_Delay(50);
-
+		vTaskDelay(50);
 	}
 #endif
 
 	lcd_send_stringscroll("Hardware init done.");
-	lcd_clearscroll();
 
-	lcd_send_stringscroll("Shutdown closed.");
+//	lcd_send_stringscroll("Shutdown closed.");
 //	ShutdownCircuitSet( true );
 //	while ( 1 ){};
+
+	vTaskDelay(200);
+
+	lcd_endscroll();
 	return returnval;
 }
 
@@ -408,197 +395,22 @@ int realmain(void)
 	/* Configure the system clock */
 	SystemClock_Config();
 
-	/*
-	initLCD();
 
-	HAL_Delay(20);
+	/* Init scheduler */
+	osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
 
-//	unsigned long counter;
+	MainTaskHandle = osThreadNew(MainTask, NULL, &MainTask_attributes);
 
-	struct lcd_message msg;
+	// MX_FREERTOS_Init();
 
-	uint32_t counter = 0;
+	/* Start scheduler */
+	osKernelStart();
 
-	for(;;)
-	{
-		char str[LCDCOLUMNS+1] = "";
-
-		sprintf(str,"Count: %.10u", counter );
-		counter++;
-
-		lcd_send_stringline(3,str, 255);
-//		printf("value received on queue: %lu \n",counter);
-
-		lcd_updatedisplay();
-		HAL_Delay(20);
-	}
-*/
-
-#ifdef RTOS
-
- /* Init scheduler */
- osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
-
- MainTaskHandle = osThreadNew(MainTask, NULL, &MainTask_attributes);
-
-// MX_FREERTOS_Init();
-
- /* Start scheduler */
- osKernelStart();
-
- while ( 1 )
- {};
+	while ( 1 )
+	{};
 
  // should never get here.
-
-#else
-
- // uint8_t CANTxData[8];
-  while (1) // primary state loop.
-  {
-	  switch ( MainState )
-	  {
-		case 0 : // initialisation, no external communication barring a turn on message.
-
-			switch ( HardwareInit() ) // call initialisation function.
-			{
-				case 0 :  // init successful, move to operational state.
-					ResetStateData(); // set values configured.
-					MainState = 1;
-					break;
-/*					case 1 :  // init not successful in non fatal manner.
-					InitAttempts++; // mark failed init, leave state at current to try again if not overrun attempts
-					break; */
-				case 99 : // unrecoverable init failure, full shutdown.
-				default :
-					MainState = 99;  // unrecoverable fault.
-
-			}
-			break;
-
-		case 1  : // operational state.
-			switch ( OperationalProcess() )
-			{
-				case 0 : // shouldn't need to return except for a full shutdown?
-					break;
-				default	: // any other state assumed to be error also.
-					MainState = 99;
-			}
-			break;
-		case 99 : //  error state
-			// trigger error LED's, try to send error can bus message.
-		default : // shouldn't be here, treat also as error state.
-			MainState = 99;
-			receivePDM();
-
-
-			setOutputNOW(LED1,On);
-
-			while( 1 ) // enter do nothing loop of failure.
-			{
-
-			};
-	}
-
-  }
-#endif
 }
-
-
-
-
-int testmain(void)
-{
-  HAL_Init();
-  SystemClock_Config();
-
-//  InButtonpress = 1; // prevent any button presses registering until setup.
-
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_ADC1_Init();
-//  MX_FDCAN1_Init();
-  MX_TIM3_Init();
-//  MX_FDCAN2_Init();
-  MX_TIM7_Init();
-//  MX_USB_OTG_FS_PCD_Init();
-//  MX_SDMMC1_SD_Init();
-//  MX_SPI5_Init();
-//  MX_USART2_UART_Init();
- // MX_SPI2_Init();
- // MX_WWDG1_Init();
-  MX_TIM6_Init();
-
-//  MX_ADC3_Init();
-  /* USER CODE BEGIN 2 */
-
-  initInterrupts();
-
-//	FDCAN1_start(); // sets up can ID filters and starts can bus 1
-	// first point from which can messages can be sent.
-//	FDCAN2_start();
-
-//  startADC();
-  int i = 0;
-  initInput(); // clears any errant processed button presses.
-
-  setOutput(LED2,Off);
-  setOutput(LED3,On);
-  blinkOutput(LED1, On, 5);
-  blinkOutput(LED2, On, 4);
-  blinkOutput(LED3, LEDBLINK_TWO, 255);
-
-  while (1)
-  {
-	  HAL_Delay(500);
-//	  int j = ADC_Data[SteeringADC];
-//	  CAN_SendStatus( i, 0, 0 );
-//	  CANSendInverter( 255-i, 0, 0 );
-	  i++;
-//	  int adcstuff = aADCxConvertedDataADC3;
-
-#ifdef HPF19
-	  if ( Input[UserBtn].pressed )
-	  {
-		  Input[UserBtn].pressed = 0;
-	/*	  toggleOutput(0);
-		  toggleOutput(1);
-		  toggleOutput(2);
-		  toggleOutput(3);
-		  toggleOutput(4);
-		  toggleOutput(5);
-		  toggleOutput(6);
-		  toggleOutput(7); */
-		  setOutput(LED2_Output,LEDOFF);
-		  setOutput(LED1_Output,LEDON);
-		//  toggleOutput(8);
-		//  toggleOutput(9);
-		//  toggleOutput(10);
-
-//		  blinkOutput(9, LEDBLINK_FOUR, 1);
-//		  blinkOutput(10, LEDBLINK_FOUR, 1);
-	  }
-#endif
-
-//	  LEDs[10].blinkingrate=1;
-//	  LEDs[8].blinkingrate=LED_BLINK_ONE;
-//	  LEDs[9].blinkingrate=LED_ON;
-//	  LEDs[10].blinkingrate=LED_OFF;
-//	  blinkOutput(8, LED_BLINK_FOUR, 0);
-
-//	  blinkOutput(10, LED_BLINK_FOUR, 4);
-
-//	  toggleOutput(9);
-//	  toggleOutput(10);
-//	  toggleOutput(11);
-//	  setOutput(13,0);
-//	  setOutput(14,1);
-//	  toggleOutput(15);*/
-
-  }
-  /* USER CODE END 3 */
-}
-
 
 #ifdef  USE_FULL_ASSERT
 /**
