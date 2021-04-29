@@ -24,6 +24,8 @@
 #endif
 
 
+#define PRINTDEBUGRUNNING
+
 static uint16_t DevicesOnline( uint16_t returnvalue )
 {
 // external devices ECU expects to be present on CAN
@@ -136,10 +138,14 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	char str[80] = "";
 
+#ifdef PRINTDEBUGRUNNING
+	PrintRunning( "Boot" );
+#else
+
 	sprintf(str,"Boot   %8.8s %.3liv",getTimeStr(), lcd_geterrors());//, CarState.VoltageBMS);
 
 	lcd_send_stringline(0,str, 255);
-
+#endif
     if ( OperationLoops == 0 )
 	{
     	//	lcd_setscrolltitle("Pre Operation");
@@ -233,8 +239,9 @@ int PreOperationState( uint32_t OperationLoops  )
 
 			strpad(str,20, true);
 
-
+#ifndef PRINTDEBUGRUNNING
 			lcd_send_stringline(1,str, 255);
+#endif
 
 			if ( ReadyToStart != 0 )
 			{
@@ -263,23 +270,17 @@ int PreOperationState( uint32_t OperationLoops  )
 				if (ReadyToStart & (0x1 << 2 ) ) { strcat(str, "INV " );  }
 
 				strpad(str,20, true);
-
+#ifndef PRINTDEBUGRUNNING
 				lcd_send_stringline(2,str,255);
+#endif
 			}
 
 		} else
 		{
-
 			// TODO print any non critical warning still.
 
-	//		lcd_clearscroll();
 			lcd_send_stringpos(1,0,"                    ", 255);
 			lcd_send_stringpos(2,0,"   Ready To Start   ", 255);
-
-	//		lcd_send_stringpos(3,0,"                    ");
-
-//			char str[20] ="";
-//			lcd_send_stringpos(2,0,str);
 		}
 
 	}
@@ -313,6 +314,12 @@ int PreOperationState( uint32_t OperationLoops  )
 			static bool showadc = false;
 
 			switch ( GetLeftRightPressed() )
+			{
+				case -1 : showbrakebal = !showbrakebal; break;
+				case 1 : showadc = !showadc; break;
+			}
+
+			switch ( GetUpDownPressed() )
 			{
 				case -1 : showbrakebal = !showbrakebal; break;
 				case 1 : showadc = !showadc; break;
@@ -376,7 +383,6 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 		CarState.Inverters[i].Torque_Req = Torque_Req;
 	}
 
-
 #ifdef TORQUEVECTOR
 		TorqueVectorProcess( Torque_Req );
 #endif
@@ -386,6 +392,9 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 #ifdef FANCONTROL
 		FanControl();
 #endif
+
+
+	// Check startup requirements.
 
 	ReadyToStart = 0;
 
@@ -401,30 +410,9 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 		setOutput(TSOFFLED,On);
 	}
 
-	bool invonline = true;
-
-
-	if ( DeviceState.Inverter < BOOTUP ) invonline = false;
-
 	if ( errorPower() ) { ReadyToStart += 1; }
 	if ( preoperationstate != 0 ) { ReadyToStart += 2; }
-	if ( !invonline ) { ReadyToStart += 4; }
-
-
-/*	if ( !errorPDM()
-			&& preoperationstate == 0
-			&& invonline // everything is ready to move to next state.
-#ifdef SHUTDOWNSWITCHCHECK
-            && CarState.ShutdownSwitchesClosed // only allow startup procedure if shutdown switches open.
-#endif
-	   )
-	{
-		ReadyToStart = true;
-	} else
-	{
-		ReadyToStart = false;
-	}
-*/
+	if ( DeviceState.Inverter >= BOOTUP  ) { ReadyToStart += 4; }
 
 	if ( ReadyToStart == 0 )
 	{
@@ -434,8 +422,6 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 
 			if ( ( RequestState == TestingState ) )
 			{
-//				OperationLoops = 0;
-//				return TestingState; // an alternate mode ( testing requested in config for next state.
 				return PreOperationalState;
 			}
 

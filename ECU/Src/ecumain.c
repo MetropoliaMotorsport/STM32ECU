@@ -283,6 +283,9 @@ static int HardwareInit( void )
 #endif
 	lcd_send_stringscroll("Start CANBUS");
 
+	initCAN();
+	initRTC();
+
 	initPower();
 	initConfig();
     initInv();
@@ -290,7 +293,6 @@ static int HardwareInit( void )
 	initPDM();
 	initIVT();
 	initBMS();
-	initMemorator();
 	initInput();
 	initECU();
 
@@ -307,8 +309,6 @@ static int HardwareInit( void )
 #ifdef ANALOGNODES
 	initAnalogNodes();
 #endif
-
-	initCAN();
 
 	initADC();
 

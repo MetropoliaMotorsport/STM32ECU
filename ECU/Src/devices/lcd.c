@@ -45,17 +45,11 @@ const osThreadAttr_t LCDTask_attributes = {
   .stack_size = 128 * 8
 };
 
-/* The queue is to be created to hold a maximum of 10 uint64_t
-variables. */
+
+// setup of the LCD Data queue
 #define LCDQUEUE_LENGTH    10
 #define LCDITEMSIZE		sizeof( struct lcd_msg )
-
-/* The variable used to hold the queue's data structure. */
 static StaticQueue_t LCDStaticQueue;
-
-
-/* The array to use as the queue's storage area.  This must be at least
-uxQueueLength * uxItemSize bytes. */
 uint8_t LCDQueueStorageArea[ LCDQUEUE_LENGTH * LCDITEMSIZE ];
 
 QueueHandle_t LCDQueue;

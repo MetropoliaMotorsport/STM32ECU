@@ -50,6 +50,7 @@ extern CANData ECUCAN;
 #include "tsactiveprocess.h"
 #include "runningprocess.h"
 #include "configuration.h"
+#include "errors.h"
 
 #include "timerecu.h"
 #include "dwt_delay.h"

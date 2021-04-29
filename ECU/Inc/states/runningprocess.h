@@ -12,7 +12,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime );
 
 uint16_t PedalTorqueRequest( void );
 
-uint16_t PrintRunning( void );
+uint16_t PrintRunning( char *title );
 
 uint16_t PrintBrakeBalance( void );
 

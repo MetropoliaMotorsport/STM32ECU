@@ -8,16 +8,42 @@
 #include "ecumain.h"
 
 
-uint16_t PrintRunning( void )
+uint16_t PrintRunning( char *title )
 {
-	char str[255];
+	char str[80] = "";
+
+	sprintf(str, "%-6s %8s %3liv", title, getCurTimeStr(), lcd_geterrors());//, CarState.VoltageBMS);
+
+	lcd_send_stringline(0,str, 255);
+
 	int Torque = ADCState.Torque_Req_R_Percent/10;
 	if ( Torque > 99 ) Torque = 99;
 
-	sprintf(str,"%.2linm(%.2d%%,%.2liact)", (CarState.Torque_Req*1000+15384-1)/15384, Torque, CarState.Torque_Req);
+	sprintf(str,"%2linm(%2d%%) APPS:%c",
+//	sprintf(str,"%2linm(%2d%%,%2liac) APPS:%c",
+			(CarState.Torque_Req*1000+15384-1)/15384,
+			Torque, //CarState.Torque_Req,
+			(CarState.APPSstatus > 0)?'_':'A');
 	lcd_send_stringline(1,str, 255);
-	sprintf(str,"%.2liv", (CarState.VoltageBMS));
-	lcd_send_stringline(3,str, 255);
+
+	int speed = 0xFFFF;
+
+	// find slowest wheel to define speed.
+	for ( int i = 0; i<MOTORCOUNT;i++)
+	{
+		if (CarState.Speed[i] < speed )
+			speed = CarState.Speed[i];
+	}
+
+	CarState.ActualSpeed = speed;
+
+	char angdir = ' ';
+
+	if ( ADCState.SteeringAngle < 0) angdir = 'L';
+	if ( ADCState.SteeringAngle > 0) angdir = 'R';
+
+	sprintf(str,"Spd:%3likmh Ang:%3d%c", (CarState.ActualSpeed), abs(ADCState.SteeringAngle), angdir);
+	lcd_send_stringline(2,str, 255);
 	return 0;
 }
 
@@ -278,7 +304,6 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
 		lcd_clear();
-		lcd_settitle("RTDM:Throttle Active");
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		setOutput(RTDMLED,On); // move to ActivateRTDM
 		blinkOutput(RTDMLED,On,0);
@@ -300,7 +325,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		CAN_SendStatus(1, RunningState, readystate );
 	}
 
-	PrintRunning();
+	PrintRunning("RTDM:TA");
 
 	RunningRequest();
 

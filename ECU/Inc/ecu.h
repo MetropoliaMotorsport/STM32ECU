@@ -393,6 +393,7 @@ volatile struct CarState {
 	int32_t Power;
 
 	int32_t Speed[4];
+	int32_t ActualSpeed;
 
 //	int32_t Wheel_Speed_Rear_Average;
 //	int32_t Wheel_Speed_Average;

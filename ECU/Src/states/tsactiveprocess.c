@@ -38,7 +38,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	{
 		 	 	 	 	 	 //12345678901234567890
 		lcd_clear();
-		lcd_settitle("TS Active");
+		//lcd_settitle("TS Active");
 		prechargetimer = gettimer();
 		CarState.HighVoltageReady = true; // only enable if reading high enough voltage.
 		CarState.AllowTorque = false;
@@ -56,6 +56,11 @@ int TSActiveProcess( uint32_t OperationLoops )
 	{
 		CAN_SendStatus(1, TSActiveState, readystate );
 	}
+
+	if ( CarState.VoltageINV < 400 )
+		PrintRunning("TS:Err");
+	else
+		PrintRunning("TS:On");
 
 	TSActiveRequest();
 

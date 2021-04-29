@@ -85,6 +85,13 @@ void ResetStateData( void ) // set default startup values for global state value
     CarState.PedalProfile = 0;
     CarState.DrivingMode = 0;
 
+    for ( int i = 0; i < MOTORCOUNT; i++ )
+    {
+    	CarState.Speed[i] = 0;
+    }
+
+    CarState.ActualSpeed = 0;
+
 	Errors.ErrorPlace = 0;
 	Errors.ErrorReason = 0;
 	Errors.CANSendError1 = 0;
@@ -248,177 +255,7 @@ int TestingProcess( uint32_t OperationLoops  )
 	return TestingState;
 }
 
-int OperationalErrorHandler( uint32_t OperationLoops )
-{
-	// determine whether occurred error is totally or partially recoverable, and what to do. Try to reset device in question.
-	// If still not co-operating either disable, suggest limp mode, or if absolutely critical, total failure.
 
-	// essentially if eg front speed sensors, or yaw sensor, or steering angle, or a single brake sensor
-	// then allow near normal operation without those sensors operating.
-
-	// if one inverter
-
-	static uint16_t errorstate;
-
-	static uint32_t errorstatetime = 0;
-
-#ifndef everyloop
-	if ( ( OperationLoops % LOGLOOPCOUNTSLOW ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
-#endif
-	{
-	//	if ( Errors.ADCErrorState )
-	//	  CAN_SendStatus(32, OperationalErrorState, Errors.ADCErrorState+(errorstate<<16));
-	//	else
-		  CAN_SendStatus(1, OperationalErrorState, Errors.OperationalReceiveError+(errorstate<<16));
-	//	devicestate+(sanitystate<<16)
-	}
-
-	if ( OperationLoops == 0) // reset state on entering/rentering.
-	{
-		char str[20];
-		lcd_startscroll();
-		lcd_setscrolltitle("ERROR State");
-
-		sprintf(str,"Loc:%.2X Code:%.4X", Errors.ErrorPlace, Errors.ErrorReason);
-		lcd_send_stringscroll(str);
-
-		CarState.HighVoltageReady = false; // no high voltage allowed in this state.
-		CarState.AllowTorque = false;
-
-
-		StopMotors();
-
-        sendPDM( 0 ); //disable high voltage on error state;
-
-        CAN_SendTimeBase();
-
-		errorstate = CheckErrors();
-
-		sprintf(str,"Errorstate: %.4X", errorstate);
-		lcd_send_stringscroll(str);
-		// send cause of error state.
-
-		ConfigReset();
-
-
-		switch ( Errors.ErrorPlace )
-		{
-		case 0xF1 : 	sprintf(str,"CANBUS1 Offline"); break;
-		case 0xF2 : 	sprintf(str,"CANBUS2 Offline"); break;
-		}
-		lcd_send_stringscroll(str);
-
-		if ( !CheckShutdown() ) // indicate shutdown switch status with blinking rate.
-		{
-			lcd_send_stringscroll("Shutdown switches");
-		}
-
-//		CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
-		blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
-		blinkOutput(RTDMLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
-		errorstatetime = gettimer();
-	}
-
-#ifdef POWERNODES
-	CAN_NMTSyncRequest();
-#endif
-
-	if ( Errors.InverterError ){
-		CAN_SENDINVERTERERRORS();
-		lcd_send_stringscroll("Inverter error");
-	}
-
-	if ( Errors.ErrorPlace ){
-		CAN_SendErrors();
-	}
-
-	receivePDM();
-
-	if ( !CheckShutdown() ) // indicate shutdown switch status with blinking rate.
-	{
-		blinkOutput(TSLED,LEDBLINK_ONE,LEDBLINKNONSTOP);
-		blinkOutput(RTDMLED,LEDBLINK_ONE,LEDBLINKNONSTOP);
-	} else
-	{
-		blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
-		blinkOutput(RTDMLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
-	}
-
-#ifdef AUTORESET
-	bool allowautoreset = true;
-	bool invertererror = false;
-
-	if ( DeviceState.Inverter == INERROR ) invertererror = true;
-
-	for ( int i=0;i<MOTORCOUNT;i++)
-	{
-		if ( !Errors.InvAllowReset[i] ) allowautoreset = false;
-	}
-#endif
-
-	int allowreset = 0; // allow reset if this is still 0 after checks.
-
-	char str[80] = "ERROR: ";
-
-	if ( errorstatetime + MS1000*2 > gettimer() ) // ensure error state is seen for at least 2 seconds.
-	{
-		allowreset += 1;
-		strcat(str, "" );
-	}
-
-	if ( ! ( CheckErrors() == 0 || CheckErrors() == 99 ) ) // inverter error checked in next step.
-	{
-//		allowreset += 2;
-		strcat(str, "PDM " );
-	}
-
-	if ( ! ( DeviceState.ADCSanity == 0 ))
-	{
-		allowreset +=4;
-		strcat(str, "PDL " );
-
-	}
-
-#ifdef SHUTDOWNSWITCHCHECK
-    if ( !CheckShutdown() )
-    {
-    	allowreset +=8;  // only allow exiting error state if shutdown switches closed. - maybe move to only for auto
-    	strcat(str, "SHT " );
-    }
-#endif
-
-    strpad(str,20, true);
-
-    if ( allowreset == 0 )
-    {
-    	lcd_setscrolltitle("ERROR (Can Reset) ");
-    } else
-    {
-    	lcd_setscrolltitle(str);
-    }
-
-
-	// wait for restart request if allowed by error state.
-	if ( allowreset == 0 && ( checkReset() == 1 // manual reset
-#ifdef AUTORESET
-        		|| ( invertererror  && allowautoreset ) // or automatic reset if allowed inverter error.
-#endif
-           )
-		)
-	{
-//		setupButtons();
-//		setupLEDs();
-		//loopcount = 0;
-		lcd_endscroll();
-		return StartupState;
-		// try to perform a full reset back to startup state here on user request.
-	}
-
-		// check for restart request. -> pre operation.
-  return OperationalErrorState;
-
-  //return FatalErrorState; // only go to fatal error if error deemed unrecoverable.
-}
 
 int OperationalProcess( void )
 {
@@ -429,251 +266,245 @@ int OperationalProcess( void )
 
 	cancount = 0;
 
-	// if( ADCState.newdata )
+
+	if ( NewOperationalState != OperationalState ) // state has changed.
 	{
-		if ( NewOperationalState != OperationalState ) // state has changed.
-		{
-			LastOperationalState = OperationalState;
-			OperationalState = NewOperationalState;
-			loopcount = 0;
-			clearButtons(); // don't let any user input pass between states
-			loopoverrun = 0; // reset over run counter.
-		}
+		LastOperationalState = OperationalState;
+		OperationalState = NewOperationalState;
+		loopcount = 0;
+		clearButtons(); // don't let any user input pass between states
+		loopoverrun = 0; // reset over run counter.
+	}
 
-		uint32_t currenttimer = gettimer();
+	uint32_t currenttimer = gettimer();
 
-		//calculate right delay to wait for loop.
+	//calculate right delay to wait for loop.
 
 //		vTaskDelayUntil( &xLastCycleTime, MS1*10 );
 
 //		if( looptimer + PROCESSLOOPTIME < currenttimer ) // once per 10ms second process state
-		{
-			// check how much past 10ms timer is, if too far, soft error. Allow a few times, but not too many before entering an error state?
-			int lastlooplength = currenttimer-looptimer;
+	{
+		// check how much past 10ms timer is, if too far, soft error. Allow a few times, but not too many before entering an error state?
+		int lastlooplength = currenttimer-looptimer;
 
-			looptimer = gettimer(); // start timing loop
+		looptimer = gettimer(); // start timing loop
 
 
 #ifdef WATCHDOG
-			// tickle the watchdog
-		    if (HAL_WWDG_Refresh(&hwwdg1) != HAL_OK)
-		    {
-		      Error_Handler();
-		    }
-		    if ( loopcount % 100 == 0 ) toggleOutput(LED2_Output);
+		// tickle the watchdog
+		if (HAL_WWDG_Refresh(&hwwdg1) != HAL_OK)
+		{
+		  Error_Handler();
+		}
+		if ( loopcount % 100 == 0 ) toggleOutput(LED2_Output);
 #endif
 
-			if ( lastlooplength > PROCESSLOOPTIME*1.1 )
+		if ( lastlooplength > PROCESSLOOPTIME*1.1 )
+		{
+			CAN_SendStatus(1, OperationalStateOverrun, lastlooplength);
+
+			loopoverrun++; // bms
+
+			if ( ( loopcount % 100 ) == 0) // allow one loop overrun every 100 by decrementing overrun counter if over 0
 			{
-				CAN_SendStatus(1, OperationalStateOverrun, lastlooplength);
-
-				loopoverrun++; // bms
-
-				if ( ( loopcount % 100 ) == 0) // allow one loop overrun every 100 by decrementing overrun counter if over 0
-				{
-				   if ( loopoverrun > 0 )
-				   {
-					   loopoverrun--;
-				   }
-				}
-
-				if ( loopoverrun > 10 )
-				{
-					// if too many overruns,  do something?
-					LastOperationalState = OperationalState;
-					OperationalState = NewOperationalState;
-				}
+			   if ( loopoverrun > 0 )
+			   {
+				   loopoverrun--;
+			   }
 			}
 
-			switch ( OperationalState )
+			if ( loopoverrun > 10 )
 			{
-				case StartupState : // NMT, initial startup.
-					NewOperationalState = Startup(loopcount); // run NMT state machine till got responses.
-					break;
+				// if too many overruns,  do something?
+				LastOperationalState = OperationalState;
+				OperationalState = NewOperationalState;
+			}
+		}
 
-				case PreOperationalState : // pre operation - configuration, wait for device presence announcements in pre operation state.
-					NewOperationalState = PreOperationState(loopcount);
-					break;
+		switch ( OperationalState )
+		{
+			case StartupState : // NMT, initial startup.
+				NewOperationalState = Startup(loopcount); // run NMT state machine till got responses.
+				break;
 
-				case OperationalReadyState : // operation has been requested, get all devices to operational ready state and check sanity.
-					NewOperationalState = OperationReadyness(loopcount);
-					break;
+			case PreOperationalState : // pre operation - configuration, wait for device presence announcements in pre operation state.
+				NewOperationalState = PreOperationState(loopcount);
+				break;
 
-				case IdleState:  // idle, inverters on. Ready to enter TS, everything should be ready to go at this stage.
-					NewOperationalState = IdleProcess(loopcount);
-					break;
+			case OperationalReadyState : // operation has been requested, get all devices to operational ready state and check sanity.
+				NewOperationalState = OperationReadyness(loopcount);
+				break;
 
-				case TSActiveState : // TS active state OperationalState, 0); // can return to state 3 ( stop button ) or go to 5
-					NewOperationalState = TSActiveProcess(loopcount);
-					break;
+			case IdleState:  // idle, inverters on. Ready to enter TS, everything should be ready to go at this stage.
+				NewOperationalState = IdleProcess(loopcount);
+				break;
 
-				case RunningState : // Running    // can return to state 3
-					NewOperationalState = RunningProcess(loopcount, looptimer + PROCESSLOOPTIME );
-					break;
+			case TSActiveState : // TS active state OperationalState, 0); // can return to state 3 ( stop button ) or go to 5
+				NewOperationalState = TSActiveProcess(loopcount);
+				break;
 
-				case TestingState : // testing state, can only enter from state 1.
-					NewOperationalState = TestingProcess(loopcount);
-					break;
+			case RunningState : // Running    // can return to state 3
+				NewOperationalState = RunningProcess(loopcount, looptimer + PROCESSLOOPTIME );
+				break;
 
-				case LimpState : // limping state, allow car to operate with limited input/motor power in slow mode.
-					NewOperationalState = LimpProcess(loopcount);
-					break;
+			case TestingState : // testing state, can only enter from state 1.
+				NewOperationalState = TestingProcess(loopcount);
+				break;
+
+			case LimpState : // limping state, allow car to operate with limited input/motor power in slow mode.
+				NewOperationalState = LimpProcess(loopcount);
+				break;
 
 /*				case 90 : // non critical error, limp potentially possible.? // currently looking to move to limp mode from operational ready state.
-					CANSendPDM(0,0);
-			//		CAN_NMT( 0x80, 0x0 ); // request pre operation to restart everything.
+				CANSendPDM(0,0);
+		//		CAN_NMT( 0x80, 0x0 ); // request pre operation to restart everything.
 
-					NewOperationalState = NMTReset();
+				NewOperationalState = NMTReset();
 
-					// set limp mode.
+				// set limp mode.
 */
-				case OperationalErrorState : // critical error or unknown state.					CAN_SendStatus(1, OperationalState, OperationalErrorState);
-					NewOperationalState = OperationalErrorHandler( loopcount );
-					break;
+			case OperationalErrorState : // critical error or unknown state.					CAN_SendStatus(1, OperationalState, OperationalErrorState);
+				NewOperationalState = OperationalErrorHandler( loopcount );
+				break;
 
-				default : // 99
-					NewOperationalState = OperationalErrorHandler( loopcount );
-				//	return FatalErrorState; // error state, quit state machine.
-			}
+			default : // 99
+				NewOperationalState = OperationalErrorHandler( loopcount );
+			//	return FatalErrorState; // error state, quit state machine.
+		}
 
-	/*		if ( Errors.InverterError > 0)
-			{
-				Errors.ErrorPlace = 0xF0;
-				NewOperationalState = OperationalErrorState;
-			} */
-
-
-			FDCAN_ProtocolStatusTypeDef CAN1Status, CAN2Status;
-
-			HAL_FDCAN_GetProtocolStatus(&hfdcan1, &CAN1Status);
-			HAL_FDCAN_GetProtocolStatus(&hfdcan2, &CAN2Status);
+/*		if ( Errors.InverterError > 0)
+		{
+			Errors.ErrorPlace = 0xF0;
+			NewOperationalState = OperationalErrorState;
+		} */
 
 
-			static uint8_t offcan1 = 0;
+		FDCAN_ProtocolStatusTypeDef CAN1Status, CAN2Status;
+
+		HAL_FDCAN_GetProtocolStatus(&hfdcan1, &CAN1Status);
+		HAL_FDCAN_GetProtocolStatus(&hfdcan2, &CAN2Status);
+
+
+		static uint8_t offcan1 = 0;
 #ifndef ONECAN
-			static uint8_t offcan2 = 0;
+		static uint8_t offcan2 = 0;
 #endif
 #ifdef RECOVERCAN
-			static uint32_t offcan1time = 0;
+		static uint32_t offcan1time = 0;
 #ifndef ONECAN
-			static uint32_t offcan2time = 0;
+		static uint32_t offcan2time = 0;
 #endif
 #endif
 
-			if ( CAN1Status.BusOff) // detect passive error instead and try to stay off bus till clears?
-			{
-			//	Errors.ErrorPlace = 0xAA;
-				  blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
-				  HAL_FDCAN_Stop(&hfdcan1);
-				  CAN_SendStatus(255,0,0);
+		if ( CAN1Status.BusOff) // detect passive error instead and try to stay off bus till clears?
+		{
+		//	Errors.ErrorPlace = 0xAA;
+			  blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
+			  HAL_FDCAN_Stop(&hfdcan1);
+			  CAN_SendStatus(255,0,0);
 
-				  if ( offcan1 == 0 )
-				  {
+			  if ( offcan1 == 0 )
+			  {
 #ifdef RECOVERCAN
-					  offcan1time = gettimer();
+				  offcan1time = gettimer();
 #endif
-					  offcan1 = 1;
-					  DeviceState.CAN1 = OFFLINE;
+				  offcan1 = 1;
+				  DeviceState.CAN1 = OFFLINE;
 //					  offcan1count++; // increment occurances of coming off bus. if reach threshhold, go to error state.
-				  }
-				  Errors.ErrorPlace = 0xF1;
-				  NewOperationalState = OperationalErrorState;
-			}
+			  }
+			  Errors.ErrorPlace = 0xF1;
+			  NewOperationalState = OperationalErrorState;
+		}
 
 #ifdef RECOVERCAN
-			if ( CAN1Status.BusOff && offcan1time+5000 >  gettimer() )
-			{
+		if ( CAN1Status.BusOff && offcan1time+5000 >  gettimer() )
+		{
 
-				if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
-				{
-				// Start Error
-					 Errors.ErrorPlace = 0xF2;
-					 NewOperationalState = OperationalErrorState;
-				} else
-				{
-					offcan1 = 0;
-					DeviceState.CAN1 = OPERATIONAL;
-					CAN_SendStatus(254,0,0);
-				}
+			if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
+			{
+			// Start Error
+				 LogError("CANBUS1 Off");
+				 Errors.ErrorPlace = 0xF2;
+				 NewOperationalState = OperationalErrorState;
+			} else
+			{
+				offcan1 = 0;
+				DeviceState.CAN1 = OPERATIONAL;
+				CAN_SendStatus(254,0,0);
 			}
+		}
 #endif
 
 /*			if ( HAL_FDCAN_IsRestrictedOperationMode(&hfdcan1) )
-			{
-				Errors.ErrorPlace = 0xF2;
-				NewOperationalState = OperationalErrorState;
-			} */
+		{
+			Errors.ErrorPlace = 0xF2;
+			NewOperationalState = OperationalErrorState;
+		} */
 #ifndef ONECAN
-			if ( CAN2Status.BusOff) // detect passive error instead and try to stay off bus till clears?
-			{
-			//	Errors.ErrorPlace = 0xAA;
-				  blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
-				  HAL_FDCAN_Stop(&hfdcan2);
-				  CAN_SendStatus(255,0,0);
-				  DeviceState.CAN2 = OFFLINE;
+		if ( CAN2Status.BusOff) // detect passive error instead and try to stay off bus till clears?
+		{
+		//	Errors.ErrorPlace = 0xAA;
+			  blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
+			  HAL_FDCAN_Stop(&hfdcan2);
+			  CAN_SendStatus(255,0,0);
+			  DeviceState.CAN2 = OFFLINE;
 
-				  if ( offcan2 == 0 )
-				  {
+			  if ( offcan2 == 0 )
+			  {
 #ifdef RECOVERCAN
-					  offcan2time = gettimer();
+				  offcan2time = gettimer();
 #endif
-					  offcan2 = 1;
-				  }
-				  Errors.ErrorPlace = 0xF3;
-				  NewOperationalState = OperationalErrorState;
-			}
+				  offcan2 = 1;
+			  }
+			  Errors.ErrorPlace = 0xF3;
+			  NewOperationalState = OperationalErrorState;
+		}
 
 #ifdef RECOVERCAN
-			if ( CAN2Status.BusOff && offcan2time+5000 >  gettimer() )
-			{
+		if ( CAN2Status.BusOff && offcan2time+5000 >  gettimer() )
+		{
 
-				if (HAL_FDCAN_Start(&hfdcan2) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
-				{
-				// Start Error
-					 Errors.ErrorPlace = 0xF4;
-					 NewOperationalState = OperationalErrorState;
-				} else
-				{
-					offcan2 = 0;
-					DeviceState.CAN2 = OPERATIONAL;
-					CAN_SendStatus(254,0,0);
-				}
+			if (HAL_FDCAN_Start(&hfdcan2) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
+			{
+			// Start Error
+				 Errors.ErrorPlace = 0xF4;
+				 NewOperationalState = OperationalErrorState;
+			} else
+			{
+				offcan2 = 0;
+				DeviceState.CAN2 = OPERATIONAL;
+				CAN_SendStatus(254,0,0);
 			}
+		}
 #endif
 #endif
 
 /*			if ( HAL_FDCAN_IsRestrictedOperationMode(&hfdcan2) )
-			{
-				Errors.ErrorPlace = 0xF4;
-				NewOperationalState = OperationalErrorState;
-			}
+		{
+			Errors.ErrorPlace = 0xF4;
+			NewOperationalState = OperationalErrorState;
+		}
 */
 
 #ifndef everyloop
-			if ( ( loopcount % LOGLOOPCOUNTFAST ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
+		if ( ( loopcount % LOGLOOPCOUNTFAST ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
 #endif
-			{
-				if ( DeviceState.LoggingEnabled ) CANLogDataFast();
-			}
-
-//#ifndef everyloop
-			if ( ( loopcount % LOGLOOPCOUNTSLOW ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
-//#endif
-			{
-				CAN_SendLED(); // send LED statuses for debug, make toggleable.
-#ifndef ANALOGNODES
-				if ( Errors.OperationalReceiveError == 0) CAN_SendADC(ADC_Data, 0);
-#endif
-				if ( DeviceState.LoggingEnabled ) CANLogDataSlow();
-			}
-	//		clearButtons();
-			loopcount++;
-			totalloopcount++;
+		{
+			if ( DeviceState.LoggingEnabled ) CANLogDataFast();
 		}
 
-#ifdef WFI
-		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
+		if ( ( loopcount % LOGLOOPCOUNTSLOW ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
+		{
+			CAN_SendLED(); // send LED statuses for debug, make toggleable.
+#ifndef ANALOGNODES
+			if ( Errors.OperationalReceiveError == 0) CAN_SendADC(ADC_Data, 0);
 #endif
+			if ( DeviceState.LoggingEnabled ) CANLogDataSlow();
+		}
+//		clearButtons();
+		loopcount++;
+		totalloopcount++;
 	}
+
 	return 0;
 }

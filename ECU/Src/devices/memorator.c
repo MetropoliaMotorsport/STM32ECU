@@ -10,8 +10,6 @@
 #include <stdio.h>
 #include <time.h>
 
-time_t rtctime;
-
 bool processTimeData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
 CANData  Memorator = { &DeviceState.Memorator, MEMORATOR_ID, 3, processTimeData, NULL, 1000 }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
@@ -20,7 +18,7 @@ CANData  Memorator = { &DeviceState.Memorator, MEMORATOR_ID, 3, processTimeData,
 bool processTimeData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 
-	if ( rtctime == 0 ) // only set time once?
+	if ( ! isRTCSet() ) // only set time once?
 	{
 		if ( DataLength == FDCAN_DLC_BYTES_6
 			&& CANRxData[0] > 19
@@ -41,7 +39,7 @@ bool processTimeData(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 			receivetime.tm_hour = CANRxData[3];
 			receivetime.tm_min = CANRxData[4];
 			receivetime.tm_sec = CANRxData[5];
-			rtctime  =	mktime ( &receivetime );
+			setRTC( mktime( &receivetime ) );
 			return true;
 
 		} else // bad data.
@@ -51,34 +49,10 @@ bool processTimeData(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 	} return true;
 }
 
-
-char * getTimeStr( void ){
-	static char timestr[9] = "00:00:00";
-	static time_t lasttime = 0;
-	if ( rtctime != 0 )
-	{
-		if (lasttime != rtctime )
-		{
-			struct tm curtime;
-		    curtime = *localtime(&rtctime);
-		    strftime(timestr, sizeof(timestr), "%H:%M:%S", &curtime);
-		}
-	} else
-	{
-		sprintf(timestr,"%.7lis", gettimer()/1000);
-	}
-	return timestr;
-}
-
-int initTime( void )
-{
-	rtctime = 0;
-	return 0;
-}
-
 void resetMemorator( void )
 {
-	rtctime = 0;
+//	rtctime = 0;
+//	setRTC( 0 );
 }
 
 int initMemorator( void )

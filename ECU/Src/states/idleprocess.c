@@ -159,8 +159,8 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
 							 //12345678901234567890
-		lcd_settitle("Ready to activate TS");
-		lcd_clearscroll();
+		lcd_clear();
+		//lcd_settitle("Ready to activate TS");
 		CarState.HighVoltageReady = false;
 		CarState.AllowTorque = false;
 		CheckHV = false;
@@ -177,7 +177,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		CAN_SendStatus(1, IdleState, readystate );
 	}
 
-	PrintRunning();
+	PrintRunning("Ready");
 
 	IdleRequest(); // process requests
 

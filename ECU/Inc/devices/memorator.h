@@ -8,11 +8,7 @@
 #ifndef MEMORATOR_H_
 #define MEMORATOR_H_
 
-extern time_t rtctime;
-
 extern CANData Memorator;
-
-char * getTimeStr( void );
 
 int initMemorator( void );
 
