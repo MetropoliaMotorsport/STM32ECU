@@ -59,6 +59,7 @@
 #include "output.h"
 #include "input.h"
 #include "debug.h"
+#include "watchdog.h"
 
 #include "dwt_delay.h"
 
@@ -162,6 +163,8 @@ void MainTask(void *argument)
 
 	OperationalState = StartupState;
 
+	registerWatchdogBit(0);
+
 #ifdef LEDTEST
 	setOutput(LED4, On);
 
@@ -177,6 +180,7 @@ void MainTask(void *argument)
 	for(;;)
 	{
 		OperationalProcess();
+		setWatchdogBit(0);
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 	}
 	// shouldn't get here, but terminate thread gracefully if do somehow.
@@ -247,8 +251,13 @@ static int HardwareInit( void )
 	ShutdownCircuitSet( false ); // ensure shutdown circuit is closed at start
 
 	initLCD();
+
+	if ( watchdogRebooted() )
+	  lcd_send_stringline(0, "Watchdog Rebooted...", 0);
+
 	lcd_startscroll();
 	lcd_setscrolltitle("Startup...");
+
 
 	initTimer();
 

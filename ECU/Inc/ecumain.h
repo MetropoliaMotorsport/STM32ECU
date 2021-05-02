@@ -72,6 +72,7 @@ extern CANData ECUCAN;
 #include "node.h"
 #include "imu.h"
 #include "torquecontrol.h"
+#include "watchdog.h"
 
 
 int realmain(void);

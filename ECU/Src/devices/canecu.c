@@ -87,10 +87,11 @@ void CANTxTask(void *argument)
 
 	can_msg msg;
 
+	registerWatchdogBit(1);
+
 	for(;;)
 	{
-        // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
-		if ( xQueueReceive(CANTxQueue,&msg,portMAX_DELAY) )
+		if ( xQueueReceive(CANTxQueue,&msg,10) )
 		{
 			if ( msg.bus == bus1)
 			{
@@ -120,6 +121,7 @@ void CANTxTask(void *argument)
 			//	Error_Handler();
 			}
 		}
+		setWatchdogBit(1);
 	}
 
 	osThreadTerminate(NULL);

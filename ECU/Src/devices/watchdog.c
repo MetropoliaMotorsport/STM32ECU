@@ -5,10 +5,8 @@
  */
 
 #include "ecumain.h"
-#ifdef WATCHDOG
 #include "wwdg.h"
-#endif
-
+#include "event_groups.h"
 
 
 osThreadId_t WatchdogTaskHandle;
@@ -18,7 +16,26 @@ const osThreadAttr_t WatchdogTask_attributes = {
   .stack_size = 128*4
 };
 
+bool watchdogreboot = false;
 
+EventGroupHandle_t xWatchdog, xWatchdogActive;
+
+void setWatchdogBit(uint8_t bit)
+{
+	xEventGroupSetBits(xWatchdog, ( 1 << bit ) );
+}
+
+void registerWatchdogBit(uint8_t bit)
+{
+	xEventGroupSetBits(xWatchdogActive, ( 1 << bit ) );
+	setWatchdogBit(bit);
+}
+
+
+bool watchdogRebooted( void )
+{
+	return watchdogreboot;
+}
 
 /**
   * @brief  Timeout calculation function.
@@ -62,12 +79,25 @@ static void WatchdogTask(void *pvParameters)
 {
 	volatile int count = 0;
 
+	vTaskDelay(20);
+
 	while ( 1 )
 	{
 		count++;
-		vTaskDelay(10);
-		HAL_WWDG_Refresh(&hwwdg1);
 
+		EventBits_t activeBits = xEventGroupGetBits(xWatchdogActive);
+
+		EventBits_t uxBits = xEventGroupGetBits(xWatchdog);
+
+		if( ( uxBits & activeBits ) == ( activeBits ) )
+		{
+			// only kick the watchdog if all expected bits are set.
+			HAL_WWDG_Refresh(&hwwdg1);
+		}
+
+		xEventGroupClearBits(xWatchdog, 0xFF );
+
+		vTaskDelay(20);
 	}
 }
 
@@ -79,13 +109,32 @@ int initWatchdog( void )
 	if (resetflag != RESET)
 	{
 		  // system has been reset by WWDG, do any special initialisation here.
-	//	__BKPT(1);
+		watchdogreboot = true;
+	} else
+	{
+		watchdogreboot = false;
 	}
 	/* Clear reset flags in any case */
 	__HAL_RCC_CLEAR_RESET_FLAGS();
 
 	/* Enable system wide reset */
 	HAL_RCCEx_WWDGxSysResetConfig(RCC_WWDG1);
+
+
+	// TODO allocate static?
+	xWatchdog = xEventGroupCreate();
+	xWatchdogActive = xEventGroupCreate();
+
+	    /* Was the event group created successfully? */
+	    if( xWatchdog == NULL )
+	    {
+	        /* The event group was not created because there was insufficient
+	        FreeRTOS heap available. */
+	    }
+	    else
+	    {
+	        /* The event group was created. */
+	    }
 
 	/*##-2- Init & Start WWDG peripheral ######################################*/
 	/*
@@ -104,7 +153,7 @@ int initWatchdog( void )
 
 	hwwdg1.Instance = WWDG1;
 
-	hwwdg1.Init.Prescaler = WWDG_PRESCALER_8;
+	hwwdg1.Init.Prescaler = WWDG_PRESCALER_16;
 	hwwdg1.Init.Window    = 96;
 	hwwdg1.Init.Counter   = 127;
 
@@ -117,16 +166,22 @@ int initWatchdog( void )
 		Error_Handler();
 	}
 
+	// manually setup stop watchdog when debugging.
+	// otherwise J-Link is non workable without disabling watchdog.
+	// no option in Cube IDE to disable like for ST-Link.
+
+	DBGMCU->APB3FZ1 = ( 1 << 6 ); //Bit6 WWDG1:WWDG1stopindebug;
+
 	HAL_NVIC_EnableIRQ(WWDG_IRQn);
 
 
-	volatile uint32_t windowend = TimeoutCalculation((hwwdg1.Init.Counter) - 1);
-	volatile uint32_t windowstart = TimeoutCalculation((hwwdg1.Init.Counter-hwwdg1.Init.Window) + 1);
+	volatile uint32_t windowend = TimeoutCalculation((hwwdg1.Init.Counter) + 1);
+	volatile uint32_t windowstart = windowend/2+TimeoutCalculation((hwwdg1.Init.Counter-hwwdg1.Init.Window) - 1);
 
 
 	volatile int counter = 0;
 
-	// min 8
+	// min 8 // should now be double.
 	// max 16
 
 /*	while ( 1 )
