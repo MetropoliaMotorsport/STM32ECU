@@ -69,7 +69,7 @@ void LCDTask(void *argument)
 
 	bool inscroll = false;
 
-    const TickType_t xFrequency = 20;
+    const TickType_t xFrequency = 16;
 
 	struct lcd_msg msg;
 
@@ -215,13 +215,9 @@ void strpad(char * str, int len, bool adddots){
 
 static int lcd_updatedisplay( void ) // batch send buffered LCD commands
 {
-/*	if ( lcd_getstate() )
-	{
-		return 1;
-	}
+	static uint32_t updatecount = 0;
 
-*/
-
+	updatecount++;
 	// for every update, check if line display timeout has expired and reset.
 	for ( int row=0;row<LCDROWS;row++)
 	{

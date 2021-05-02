@@ -163,7 +163,7 @@ void MainTask(void *argument)
 
 	OperationalState = StartupState;
 
-	registerWatchdogBit(0);
+	uint8_t watchdogBit = registerWatchdogBit("MainTask");
 
 #ifdef LEDTEST
 	setOutput(LED4, On);
@@ -180,7 +180,7 @@ void MainTask(void *argument)
 	for(;;)
 	{
 		OperationalProcess();
-		setWatchdogBit(0);
+		setWatchdogBit(watchdogBit);
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 	}
 	// shouldn't get here, but terminate thread gracefully if do somehow.

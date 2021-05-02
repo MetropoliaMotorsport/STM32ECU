@@ -10,7 +10,9 @@
 
 bool watchdogRebooted( void );
 void setWatchdogBit(uint8_t bit); // kick the watchdog.
-void registerWatchdogBit(uint8_t bit); // register a bit to be kicked.
+
+// register a bit to be kicked.
+uint8_t registerWatchdogBit( char * taskname );
 int initWatchdog( void );
 
 #endif /* WATCHDOG_H_ */

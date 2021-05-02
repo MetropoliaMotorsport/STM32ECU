@@ -18,7 +18,7 @@ osThreadId_t DebugTaskHandle;
 const osThreadAttr_t DebugTask_attributes = {
   .name = "DebugTask",
   .priority = (osPriority_t) osPriorityIdle,
-  .stack_size = 128*4
+  .stack_size = 128*6
 };
 
 #define DebugQUEUE_LENGTH    20
@@ -78,12 +78,18 @@ int PRINT_MESG_UART(const char * format, ... )
 		return 0;
 }
 
-void uartwritech(char ch)
+int uartwritech(char ch)
 {
-	char str[2];
-	str[0] = ch;
-	str[1] = 0;
-	PRINT_MESG_UART(str);
+	if(HAL_UART_Transmit_IT(&huart2, (uint8_t *)&ch, 1) != HAL_OK) {
+		return 0;
+	}
+
+	// set some realistic timeout
+	if( xSemaphoreTake(DebugUARTTxDone, 100) == pdTRUE) {
+		return 1;
+	} else
+		return 0;
+
 }
 
 
@@ -108,24 +114,23 @@ char uartread( char *ch )
 	return 0;
 }
 
+#ifdef configSUPPORT_DYNAMIC_ALLOCATION
+
+#else
+
+#endif
+
+static char str[40*100] = { 0 };
+
 
 static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	char str[40*5] = { 0 };
-
 	int inputpos = 0;
 	uartwrite(DEBUGPROMPT);
 
-	while (1)
-	{
-		char ch = 0;
-		if( uartread(&ch) )
-			uartwritech(ch);
-		else
-			uartwritech('_');
-	}
+	char ch = 0;
 
 	while (1) {
 		// just to be on safe side then.

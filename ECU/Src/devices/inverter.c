@@ -94,6 +94,8 @@ void InvTask(void *argument)
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTime = xTaskGetTickCount();
 
+	uint8_t watchdogBit = registerWatchdogBit("InvTask");
+
 	while( 1 )
 	{
 		if ( xQueueReceive(InvQueue,&msg,0) ) // queue to receive requested operational state.
@@ -180,7 +182,7 @@ void InvTask(void *argument)
 		}
 
 		// CarState.Inverters[i].Torque_Req = CarState.Torque_Req;
-
+		setWatchdogBit(watchdogBit);
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME ); // only allow one command per cycle
 	}
 

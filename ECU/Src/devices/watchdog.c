@@ -7,7 +7,10 @@
 #include "ecumain.h"
 #include "wwdg.h"
 #include "event_groups.h"
+#include "semphr.h"
 
+#define MAXWATCHDOGTASKS			10
+#define MAXWATCHDOGTASKNAMELENGTH 	20
 
 osThreadId_t WatchdogTaskHandle;
 const osThreadAttr_t WatchdogTask_attributes = {
@@ -19,16 +22,62 @@ const osThreadAttr_t WatchdogTask_attributes = {
 bool watchdogreboot = false;
 
 EventGroupHandle_t xWatchdog, xWatchdogActive;
+SemaphoreHandle_t debugAllocate;
+
+struct watchdogTaskInfo {
+
+};
+
+char watchdogTasks[MAXWATCHDOGTASKS][MAXWATCHDOGTASKNAMELENGTH] = { 0 };
 
 void setWatchdogBit(uint8_t bit)
 {
 	xEventGroupSetBits(xWatchdog, ( 1 << bit ) );
 }
 
-void registerWatchdogBit(uint8_t bit)
+uint8_t registerWatchdogBit( char * taskname )
 {
-	xEventGroupSetBits(xWatchdogActive, ( 1 << bit ) );
-	setWatchdogBit(bit);
+	// grab semaphore to prevent another task being able to conflict with assignment during startup if a context switch occurs.
+	xSemaphoreTake(debugAllocate, portMAX_DELAY);
+	uint8_t allocation = 0;
+
+	if ( taskname[0] == 0 )
+	{
+		LogError("Must give a taskname to watchdog");
+
+		while ( 1 )
+		{
+// tried to allocate too many watchdog bits, force a hang, which will cause a reset.
+
+		}
+	}
+
+
+	// find first non zero allocation, or a pre existing one matching name.
+	while ( ( watchdogTasks[allocation][0] != 0 && strncmp(taskname, watchdogTasks[allocation],MAXWATCHDOGTASKNAMELENGTH ) ) != 0 && allocation < MAXWATCHDOGTASKS )
+	{
+		allocation++;
+	}
+
+	// make sure we are within allocation size.
+	if ( allocation >= MAXWATCHDOGTASKS )
+	{
+		LogError("Too many watchdog tasks");
+
+		while ( 1 )
+		{
+// tried to allocate too many watchdog bits, force a hang, which will cause a reset.
+
+		}
+	}
+	// copy the taskname into buffer
+	strncpy(watchdogTasks[allocation], taskname,  MAXWATCHDOGTASKNAMELENGTH);
+
+	xEventGroupSetBits(xWatchdogActive, ( 1 << allocation ) );
+
+	setWatchdogBit(allocation);
+	xSemaphoreGive(debugAllocate);
+	return allocation;
 }
 
 
@@ -93,6 +142,9 @@ static void WatchdogTask(void *pvParameters)
 		{
 			// only kick the watchdog if all expected bits are set.
 			HAL_WWDG_Refresh(&hwwdg1);
+		} else
+		{
+
 		}
 
 		xEventGroupClearBits(xWatchdog, 0xFF );
@@ -103,6 +155,10 @@ static void WatchdogTask(void *pvParameters)
 
 int initWatchdog( void )
 {
+
+	for ( int i=0; i<MAXWATCHDOGTASKS;i++)
+		watchdogTasks[i][0] = 0;
+
 	volatile uint8_t resetflag = __HAL_RCC_GET_FLAG(RCC_FLAG_WWDG1RST);
 
 	/*##-1- Check if the system has resumed from WWDG reset ####################*/
@@ -125,16 +181,18 @@ int initWatchdog( void )
 	xWatchdog = xEventGroupCreate();
 	xWatchdogActive = xEventGroupCreate();
 
-	    /* Was the event group created successfully? */
-	    if( xWatchdog == NULL )
-	    {
-	        /* The event group was not created because there was insufficient
-	        FreeRTOS heap available. */
-	    }
-	    else
-	    {
-	        /* The event group was created. */
-	    }
+	debugAllocate = xSemaphoreCreateMutex();
+
+	/* Was the event group created successfully? */
+	if( xWatchdog == NULL )
+	{
+		/* The event group was not created because there was insufficient
+		FreeRTOS heap available. */
+	}
+	else
+	{
+		/* The event group was created. */
+	}
 
 	/*##-2- Init & Start WWDG peripheral ######################################*/
 	/*

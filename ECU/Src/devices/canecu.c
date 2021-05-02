@@ -87,7 +87,7 @@ void CANTxTask(void *argument)
 
 	can_msg msg;
 
-	registerWatchdogBit(1);
+	uint8_t watchdogBit = registerWatchdogBit("CANTxTask");
 
 	for(;;)
 	{
@@ -121,7 +121,7 @@ void CANTxTask(void *argument)
 			//	Error_Handler();
 			}
 		}
-		setWatchdogBit(1);
+		setWatchdogBit(watchdogBit);
 	}
 
 	osThreadTerminate(NULL);
@@ -136,10 +136,12 @@ void CANRxTask(void *argument)
 
 	can_msg msg;
 
+	uint8_t watchdogBit = registerWatchdogBit("CANTxTask");
+
 	for(;;)
 	{
         // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
-		if( xQueueReceive(CANRxQueue,&msg,portMAX_DELAY) )
+		if( xQueueReceive(CANRxQueue,&msg,10) )
 		{
 			FDCAN_RxHeaderTypeDef RxHeader;
 			RxHeader.Identifier = msg.id;
@@ -170,6 +172,9 @@ void CANRxTask(void *argument)
 
 			}
 		}
+
+		setWatchdogBit(watchdogBit);
+
 	}
 
 	osThreadTerminate(NULL);
