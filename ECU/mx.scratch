@@ -14,26 +14,7 @@
       <ProjectName>ECU</ProjectName>
       <ProjectNature>C</ProjectNature>
       <Secure />
-      <filestoremove>
-        <file>
-          <name>Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_eth.c</name>
-        </file>
-        <file>
-          <name>Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_eth_ex.c</name>
-        </file>
-        <file>
-          <name>Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd.c</name>
-        </file>
-        <file>
-          <name>Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd_ex.c</name>
-        </file>
-        <file>
-          <name>Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_usb.c</name>
-        </file>
-        <file>
-          <name>Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c</name>
-        </file>
-      </filestoremove>
+      <filestoremove />
       <sourceEntriesToRemove>
         <sourceEntry />
       </sourceEntriesToRemove>

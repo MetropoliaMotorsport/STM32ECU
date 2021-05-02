@@ -15,5 +15,6 @@ void LogError( char *message );
 
 int OperationalErrorHandler( uint32_t OperationLoops );
 
+int initERRORState( void );
 
 #endif /* STATES_ERRORS_H_ */

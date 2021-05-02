@@ -90,6 +90,7 @@ void PowerTask(void *argument)
 
 	}
 
+	// Shouldn't get here, but terminate clearly if do.
 	osThreadTerminate(NULL);
 }
 
@@ -100,15 +101,7 @@ int setHV( bool HV, bool buzzer )
 #else
 	bool HVR = true;
 
-#ifdef RTOS
 	if ( DeviceState.Inverter < STOPPED ) HVR = false;
-	// TODO dobule check this is good enough to
-#else
-	for ( int i = 0;i<MOTORCOUNT;i++)
-	{
-		if ( ! CarState.Inverters[i].HighVoltageAllowed) HVR = false;
-	} // HVR will be false if any of the inverters are not in true state.
-#endif
 
 	if ( ( HVR && HV ) || CarState.TestHV )
 	{
@@ -235,7 +228,6 @@ int initPower( void )
 
 	resetPower();
 
-#ifdef RTOS
 	PowerQueue = xQueueCreateStatic( PowerQUEUE_LENGTH,
 							  PowerITEMSIZE,
 							  PowerQueueStorageArea,
@@ -244,7 +236,6 @@ int initPower( void )
 	vQueueAddToRegistry(PowerQueue, "PowerQueue" );
 
 	PowerTaskHandle = osThreadNew(PowerTask, NULL, &PowerTask_attributes);
-#endif
 
 	return 0;
 }

@@ -58,6 +58,7 @@
 #include "ecu.h"
 #include "output.h"
 #include "input.h"
+#include "debug.h"
 
 #include "dwt_delay.h"
 
@@ -147,23 +148,15 @@ void MainTask(void *argument)
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	HardwareInit();
 
-    ResetStateData();
+	initERRORState();
+	initDebug();
 
-//	vTaskDelay(500);
+    ResetStateData();
 
 	TickType_t xLastWakeTime;
 
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTime = xTaskGetTickCount();
-
-//	struct AMessage *pxMessage;
-
-//	struct lcd_msg msg;
-
-	uint32_t counter = 0;
-
-//	BaseType_t xHigherPriorityTaskWoken = false;
-//	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 
 	lcd_settitle("Starting Main Loop");
 
@@ -184,21 +177,6 @@ void MainTask(void *argument)
 	for(;;)
 	{
 		OperationalProcess();
-		counter++;
-//		msg.type = LCD_Cmd;
-//		msg.data.count = counter;
-
-//		xQueueSend( LCDQueue, ( void * ) &msg, ( TickType_t ) 0 );
-
-//		blinkOutput(LED7, BlinkVeryFast, 1);
-
-		uint32_t random;
-
-		HAL_RNG_GenerateRandomNumber(&hrng, &random);
-
-		if ( random % 100 == 0 )
-			blinkOutput(LED6, BlinkVeryFast, 10);
-
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 	}
 	// shouldn't get here, but terminate thread gracefully if do somehow.
@@ -247,6 +225,8 @@ static int HardwareInit( void )
 	//int32_t 	dsize
 //	)	 DMA
 
+	MX_DMA_Init();
+
 	static int enteredcount = 0;
 	enteredcount++;
 	ErrorCode = 0;
@@ -254,8 +234,6 @@ static int HardwareInit( void )
 	int returnval = 0;
 
 	// run through  the cubemx generated init functions.
-
-	DWT_Init();
 
 	vTaskDelay(50); // delay to allow debugger to hopefully latch. // have some input pin act as a boot stopper.
 
@@ -311,10 +289,6 @@ static int HardwareInit( void )
 #endif
 
 	initADC();
-
-#ifdef WATCHDOG
-	initWatchdog();
-#endif
 
 	lcd_send_stringscroll("Enable LEDS");
     initOutput(); // set default led states and start life indicator LED blinking.
@@ -395,9 +369,13 @@ int realmain(void)
 	/* Configure the system clock */
 	SystemClock_Config();
 
-
 	/* Init scheduler */
 	osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
+
+	// init the watchdog before anything else so that it will catch any startup hang.
+
+	DWT_Init();
+	initWatchdog();
 
 	MainTaskHandle = osThreadNew(MainTask, NULL, &MainTask_attributes);
 

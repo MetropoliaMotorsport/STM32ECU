@@ -131,6 +131,7 @@ void LCDTask(void *argument)
 					break;
 
 				case LCD_Scroll_Title :
+					inscroll = true;
 					copylen = strlen(msg.string);
 					memcpy(ScrollTitle, msg.string, copylen);
 					strpad(ScrollTitle, LCDCOLUMNS, false);
@@ -139,6 +140,7 @@ void LCDTask(void *argument)
 
 				case LCD_Scroll_Add :
 				{
+					inscroll = true;
 
 					int scroll = 0;
 
@@ -213,10 +215,12 @@ void strpad(char * str, int len, bool adddots){
 
 static int lcd_updatedisplay( void ) // batch send buffered LCD commands
 {
-	if ( lcd_getstate() )
+/*	if ( lcd_getstate() )
 	{
 		return 1;
 	}
+
+*/
 
 	// for every update, check if line display timeout has expired and reset.
 	for ( int row=0;row<LCDROWS;row++)

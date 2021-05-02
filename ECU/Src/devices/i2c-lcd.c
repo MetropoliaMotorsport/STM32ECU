@@ -60,8 +60,14 @@ void LCD_I2CError( void )
 
 int lcd_getstate( void )
 {
-	if (HAL_I2C_GetState(lcdi2c) != HAL_I2C_STATE_READY)
+	HAL_I2C_StateTypeDef state = HAL_I2C_GetState(lcdi2c);
+
+	if ( state != HAL_I2C_STATE_READY)
 	{
+		for ( int i=0;i<10;i++)
+		{
+			volatile int j = 0;
+		}
 		return 1;
 	}
 	return 0;

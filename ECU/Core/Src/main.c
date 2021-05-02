@@ -79,7 +79,8 @@ void MX_FREERTOS_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-//	testmain();
+  // used so that main is still generated to see all the init steps CubeMX generated
+  //	so that they can be integrated into our main.
   realmain();
   /* USER CODE END 1 */
 

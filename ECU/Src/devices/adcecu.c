@@ -1282,8 +1282,6 @@ void resetADC( void )
 int initADC( void )
 {
 #ifdef STMADC
-	MX_DMA_Init();
-
 	MX_ADC1_Init();
 	MX_ADC3_Init();
 

@@ -49,13 +49,4 @@ void initInterrupts( void )
 	}
 	InButtonpress = 0;
 #endif
-
-#ifdef PARALLELLCD
-	  HAL_NVIC_SetPriority(TIM17_IRQn, 0, 0);
-	  HAL_NVIC_EnableIRQ(TIM17_IRQn);
-
-	if ( HAL_TIM_Base_Start_IT(&htim17) != HAL_OK){
-		Error_Handler();
-	}
-#endif
 }

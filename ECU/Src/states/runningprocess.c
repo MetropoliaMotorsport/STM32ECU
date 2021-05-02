@@ -290,6 +290,7 @@ int RunningRequest( void )
 	return 0;
 }
 
+
 int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 {
 	// EV4.11.3 RTDM Check

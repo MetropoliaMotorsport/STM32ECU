@@ -215,8 +215,6 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 
 
-
-
 int initERRORState( void )
 {
 	ERRORQueue = xQueueCreateStatic( ERRORQUEUE_LENGTH,

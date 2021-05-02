@@ -46,7 +46,11 @@ int RegisterResetCommand( ResetCommand * Handler )
 
 void ResetStateData( void ) // set default startup values for global state values.
 {
-	for ( int i=0;i<ResetCount;i++) (*ResetCommands[i])();
+	for ( int i=0;i<ResetCount;i++)
+	{
+		if ( ResetCommands[i] != NULL )
+				(*ResetCommands[i])();
+	}
 
 	DeviceState.CAN1 = OPERATIONAL;
 	DeviceState.CAN2 = OPERATIONAL;
@@ -239,6 +243,126 @@ uint16_t CheckErrors( void )
 }
 
 
+int CheckCanError( void )
+{
+	int result = 0;
+
+	FDCAN_ProtocolStatusTypeDef CAN1Status, CAN2Status;
+
+	HAL_FDCAN_GetProtocolStatus(&hfdcan1, &CAN1Status);
+	HAL_FDCAN_GetProtocolStatus(&hfdcan2, &CAN2Status);
+
+
+	static uint8_t offcan1 = 0;
+#ifndef ONECAN
+	static uint8_t offcan2 = 0;
+#endif
+#ifdef RECOVERCAN
+	static uint32_t offcan1time = 0;
+#ifndef ONECAN
+	static uint32_t offcan2time = 0;
+#endif
+#endif
+
+	if ( CAN1Status.BusOff) // detect passive error instead and try to stay off bus till clears?
+	{
+	//	Errors.ErrorPlace = 0xAA;
+		  blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
+		  HAL_FDCAN_Stop(&hfdcan1);
+		  CAN_SendStatus(255,0,0);
+
+		  if ( offcan1 == 0 )
+		  {
+#ifdef RECOVERCAN
+			  offcan1time = gettimer();
+#endif
+			  offcan1 = 1;
+			  DeviceState.CAN1 = OFFLINE;
+//					  offcan1count++; // increment occurances of coming off bus. if reach threshhold, go to error state.
+		  }
+		  Errors.ErrorPlace = 0xF1;
+		 LogError("CANBUS1 Down");
+//		  result +=1;
+	}
+
+#ifdef RECOVERCAN
+	if ( CAN1Status.BusOff && offcan1time+1000 >  gettimer() )
+	{
+
+		if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
+		{
+		// Start Error
+			 LogError("CANBUS1 Offline");
+			 Errors.ErrorPlace = 0xF2;
+			 result +=2;
+		} else
+		{
+			offcan1 = 0;
+			Errors.ErrorPlace = 0xF1;
+			LogError("CANBUS1 Up");
+			DeviceState.CAN1 = OPERATIONAL;
+			CAN_SendStatus(254,0,0);
+		}
+	}
+#endif
+
+/*			if ( HAL_FDCAN_IsRestrictedOperationMode(&hfdcan1) )
+	{
+		Errors.ErrorPlace = 0xF2;
+		NewOperationalState = OperationalErrorState;
+	} */
+#ifndef ONECAN
+	if ( CAN2Status.BusOff) // detect passive error instead and try to stay off bus till clears?
+	{
+	//	Errors.ErrorPlace = 0xAA;
+		  blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
+		  HAL_FDCAN_Stop(&hfdcan2);
+		  CAN_SendStatus(255,0,0);
+		  DeviceState.CAN2 = OFFLINE;
+
+		  if ( offcan2 == 0 )
+		  {
+#ifdef RECOVERCAN
+			  offcan2time = gettimer();
+#endif
+			  offcan2 = 1;
+		  }
+		  Errors.ErrorPlace = 0xF3;
+		  LogError("CANBUS2 Down");
+//		  result +=4;
+	}
+
+#ifdef RECOVERCAN
+	if ( CAN2Status.BusOff && offcan2time+5000 >  gettimer() )
+	{
+		if (HAL_FDCAN_Start(&hfdcan2) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
+		{
+		// Start Error
+			 Errors.ErrorPlace = 0xF4;
+			 LogError("CANBUS2 Offline");
+			 result +=8;
+		} else
+		{
+			offcan2 = 0;
+			LogError("CANBUS1 Up");
+			DeviceState.CAN2 = OPERATIONAL;
+			CAN_SendStatus(254,0,0);
+		}
+	}
+#endif
+#endif
+
+/*			if ( HAL_FDCAN_IsRestrictedOperationMode(&hfdcan2) )
+	{
+		Errors.ErrorPlace = 0xF4;
+		NewOperationalState = OperationalErrorState;
+	}
+*/
+	return result;
+
+}
+
+
 int LimpProcess( uint32_t OperationLoops  )
 {
 	lcd_settitle("LimpProcess(NA)");
@@ -289,15 +413,6 @@ int OperationalProcess( void )
 
 		looptimer = gettimer(); // start timing loop
 
-
-#ifdef WATCHDOG
-		// tickle the watchdog
-		if (HAL_WWDG_Refresh(&hwwdg1) != HAL_OK)
-		{
-		  Error_Handler();
-		}
-		if ( loopcount % 100 == 0 ) toggleOutput(LED2_Output);
-#endif
 
 		if ( lastlooplength > PROCESSLOOPTIME*1.1 )
 		{
@@ -355,14 +470,6 @@ int OperationalProcess( void )
 				NewOperationalState = LimpProcess(loopcount);
 				break;
 
-/*				case 90 : // non critical error, limp potentially possible.? // currently looking to move to limp mode from operational ready state.
-				CANSendPDM(0,0);
-		//		CAN_NMT( 0x80, 0x0 ); // request pre operation to restart everything.
-
-				NewOperationalState = NMTReset();
-
-				// set limp mode.
-*/
 			case OperationalErrorState : // critical error or unknown state.					CAN_SendStatus(1, OperationalState, OperationalErrorState);
 				NewOperationalState = OperationalErrorHandler( loopcount );
 				break;
@@ -372,119 +479,11 @@ int OperationalProcess( void )
 			//	return FatalErrorState; // error state, quit state machine.
 		}
 
-/*		if ( Errors.InverterError > 0)
+
+		if ( CheckCanError() )
 		{
-			Errors.ErrorPlace = 0xF0;
-			NewOperationalState = OperationalErrorState;
-		} */
-
-
-		FDCAN_ProtocolStatusTypeDef CAN1Status, CAN2Status;
-
-		HAL_FDCAN_GetProtocolStatus(&hfdcan1, &CAN1Status);
-		HAL_FDCAN_GetProtocolStatus(&hfdcan2, &CAN2Status);
-
-
-		static uint8_t offcan1 = 0;
-#ifndef ONECAN
-		static uint8_t offcan2 = 0;
-#endif
-#ifdef RECOVERCAN
-		static uint32_t offcan1time = 0;
-#ifndef ONECAN
-		static uint32_t offcan2time = 0;
-#endif
-#endif
-
-		if ( CAN1Status.BusOff) // detect passive error instead and try to stay off bus till clears?
-		{
-		//	Errors.ErrorPlace = 0xAA;
-			  blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
-			  HAL_FDCAN_Stop(&hfdcan1);
-			  CAN_SendStatus(255,0,0);
-
-			  if ( offcan1 == 0 )
-			  {
-#ifdef RECOVERCAN
-				  offcan1time = gettimer();
-#endif
-				  offcan1 = 1;
-				  DeviceState.CAN1 = OFFLINE;
-//					  offcan1count++; // increment occurances of coming off bus. if reach threshhold, go to error state.
-			  }
-			  Errors.ErrorPlace = 0xF1;
-			  NewOperationalState = OperationalErrorState;
-		}
-
-#ifdef RECOVERCAN
-		if ( CAN1Status.BusOff && offcan1time+5000 >  gettimer() )
-		{
-
-			if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
-			{
-			// Start Error
-				 LogError("CANBUS1 Off");
-				 Errors.ErrorPlace = 0xF2;
-				 NewOperationalState = OperationalErrorState;
-			} else
-			{
-				offcan1 = 0;
-				DeviceState.CAN1 = OPERATIONAL;
-				CAN_SendStatus(254,0,0);
-			}
-		}
-#endif
-
-/*			if ( HAL_FDCAN_IsRestrictedOperationMode(&hfdcan1) )
-		{
-			Errors.ErrorPlace = 0xF2;
-			NewOperationalState = OperationalErrorState;
-		} */
-#ifndef ONECAN
-		if ( CAN2Status.BusOff) // detect passive error instead and try to stay off bus till clears?
-		{
-		//	Errors.ErrorPlace = 0xAA;
-			  blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
-			  HAL_FDCAN_Stop(&hfdcan2);
-			  CAN_SendStatus(255,0,0);
-			  DeviceState.CAN2 = OFFLINE;
-
-			  if ( offcan2 == 0 )
-			  {
-#ifdef RECOVERCAN
-				  offcan2time = gettimer();
-#endif
-				  offcan2 = 1;
-			  }
-			  Errors.ErrorPlace = 0xF3;
-			  NewOperationalState = OperationalErrorState;
-		}
-
-#ifdef RECOVERCAN
-		if ( CAN2Status.BusOff && offcan2time+5000 >  gettimer() )
-		{
-
-			if (HAL_FDCAN_Start(&hfdcan2) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
-			{
-			// Start Error
-				 Errors.ErrorPlace = 0xF4;
-				 NewOperationalState = OperationalErrorState;
-			} else
-			{
-				offcan2 = 0;
-				DeviceState.CAN2 = OPERATIONAL;
-				CAN_SendStatus(254,0,0);
-			}
-		}
-#endif
-#endif
-
-/*			if ( HAL_FDCAN_IsRestrictedOperationMode(&hfdcan2) )
-		{
-			Errors.ErrorPlace = 0xF4;
 			NewOperationalState = OperationalErrorState;
 		}
-*/
 
 #ifndef everyloop
 		if ( ( loopcount % LOGLOOPCOUNTFAST ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing

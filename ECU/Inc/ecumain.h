@@ -15,6 +15,8 @@
 
 #include "main.h"
 
+#define WATCHDOG
+
 #ifdef HPF19
 	#include "wwdg.h"
 #endif

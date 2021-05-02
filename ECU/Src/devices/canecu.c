@@ -1388,14 +1388,14 @@ int initCAN( void )
 								CANTxQueueStorageArea,
 								&CANTxStaticQueue );
 
-	vQueueAddToRegistry(OutputQueue, "CANTxQueue" );
+	vQueueAddToRegistry(CANTxQueue, "CANTxQueue" );
 
 	CANRxQueue = xQueueCreateStatic( CANRxQUEUE_LENGTH,
 								CANRxITEMSIZE,
 								CANRxQueueStorageArea,
 								&CANRxStaticQueue );
 
-	vQueueAddToRegistry(OutputQueue, "CANRxQueue" );
+	vQueueAddToRegistry(CANRxQueue, "CANRxQueue" );
 
 	CANTxTaskHandle = osThreadNew(CANTxTask, NULL, &CANTxTask_attributes);
 	CANRxTaskHandle = osThreadNew(CANRxTask, NULL, &CANRxTask_attributes);

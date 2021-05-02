@@ -597,12 +597,12 @@ void resetInput( void )
 
 int initInput( void )
 {
-	OutputQueue = xQueueCreateStatic( InputQUEUE_LENGTH,
+	InputQueue = xQueueCreateStatic( InputQUEUE_LENGTH,
 							  InputITEMSIZE,
 							  InputQueueStorageArea,
 							  &InputStaticQueue );
 
-	vQueueAddToRegistry(OutputQueue, "OutputQueue" );
+	vQueueAddToRegistry(InputQueue, "InputQueue" );
 
 	// make sure queue registered before the functions that could call it are used.
 
