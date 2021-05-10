@@ -25,7 +25,11 @@ bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * da
 int receivePowerNodes( void );
 char * getPNodeStr( void );
 
+uint8_t getDevicePowerListSize( void );
+
 int sendPowerNodeReq( void );
+bool getNodeDevicePower(DevicePower device );
+bool getNodeDeviceExpectedPower(DevicePower device );
 int setNodeDevicePower( DevicePower device, bool state );
 
 bool powerErrorOccurred( DevicePower device );

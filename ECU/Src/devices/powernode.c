@@ -27,17 +27,21 @@ typedef struct nodepowerreqstruct {
 typedef struct devicepowerreqstruct {
 	DevicePower device; //
 	uint8_t nodeid;
-	uint8_t output; // enable
-	uint8_t state; // request state
+	uint8_t output; // which bit of enable request is this device on
+	bool expectedstate; // what state are we requesting.
+	bool waiting;
+	bool actualstate;
 } devicepowerreq;
 
+
+// TODO this list should be sanity checked for duplicates at tune time.
 devicepowerreq DevicePowerList[] =
 {
 		{ Telemetry, 33, 4 },
 		{ Front1, 33, 5 },
 
 		{ Inverters, 34, 3 },
-		{ ECU, 34, 4 },
+		{ ECU, 34, 4, true, 0, true }, // ECU has to have power or we aren't booted.. so just assume it.
 		{ Front2, 34, 5 },
 
 		{ LeftFans, 35, 2 },
@@ -243,21 +247,42 @@ bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 }
 
 
+bool setActualDevicePower( uint8_t nodeid, uint8_t channel, bool state )
+{
+	// find the device
+	for ( int i = 0; DevicePowerList != None; i++ )
+	{
+		if ( DevicePowerList[i].nodeid == nodeid && DevicePowerList[i].output == channel )
+		{
+			DevicePowerList[i].waiting = false;
+			DevicePowerList[i].actualstate = state;
+			break;
+		}
+	}
+
+}
+
+
 bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 
-//	CANRxData[0] ==     // nodeid
 	for ( int i=0;PowerRequests[i].nodeid != 0;i++)
 	{
 		if ( PowerRequests[i].nodeid == CANRxData[0] && CANRxData[1] == 1 ) // check for power request change.
 		{
-			PowerRequests[i].output ^= CANRxData[2];
-			PowerRequests[i].state ^= CANRxData[3];
+			PowerRequests[i].output ^= CANRxData[2]; // xor the input with the request. if the reply is set, this will zero out the request.
+			PowerRequests[i].state ^= CANRxData[3]; // update the status of which outputs are on.
 
-			//TODO if output = 0 and state != 0 then something is on that we didn't expect? update local expectation or clear.
+			// update the device power table for current actual reported state.
+			for ( int i=0;i<6;i++)
+			{
+				if ( CANRxData[2] & ( 1 << i ) )
+				{
+					setActualDevicePower(PowerRequests[i].nodeid, i, CANRxData[3] & ( 1 << i ) );
+				}
+			}
 
-//			PowerRequests[i].output = 0; // we've had ack that request on this node was processed, clear it.
-//			PowerRequests[i].state = 0;
+			break; // request has been processed, stop iterating.
 		}
 	}
 	return true;
@@ -332,15 +357,16 @@ bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle )
 		case U7I1_SWITCH_OFF : channel = 5; break; //PO5
 	}
 
-	if ( channel != 255 )
+	if ( channel != 255 ) // received error was assigned a channel.
 	{
-		sendPowerNodeErrReset( nodeid,  channel );
+		sendPowerNodeErrReset( nodeid,  channel ); // clear error to stop node transmitting error state.
 		for ( int i=0;PowerRequests[i].nodeid != 0;i++)
 		{ // find the node record where error occurred.
 			if ( PowerRequests[i].nodeid == nodeid )
 			{
 				if ( PowerRequests[i].error[channel] < 255 ) PowerRequests[i].error[channel]++;
-				// keep a count of how many times error occurred.
+				// keep a count of how many times an error has occurred.
+				// send some kind of notification to power task
 			}
 		}
 
@@ -417,6 +443,31 @@ int average(int count, ...)
 	return 0;
 }
 
+bool getNodeDevicePower(DevicePower device )
+{
+	for ( int i=0;DevicePowerList[i].device != None;i++)
+	{
+		if ( DevicePowerList[i].device == device )
+			return DevicePowerList[i].actualstate;
+	}
+
+	// device not found
+	return false;
+}
+
+bool getNodeDeviceExpectedPower(DevicePower device )
+{
+	for ( int i=0;DevicePowerList[i].device != None;i++)
+	{
+		if ( DevicePowerList[i].device == device )
+			return DevicePowerList[i].expectedstate;
+	}
+
+	// device not found
+	return false;
+}
+
+
 
 int setNodeDevicePower( DevicePower device, bool state )
 {
@@ -426,23 +477,30 @@ int setNodeDevicePower( DevicePower device, bool state )
 	{
 		if ( DevicePowerList[i].device == device )
 		{ // found the device in list, try to set request.
+			DevicePowerList[i].expectedstate = state;
 
-			for ( int j=0;PowerRequests[j].nodeid != 0;j++)
+			// check if we're already in the expected state.
+			if ( DevicePowerList[i].expectedstate != DevicePowerList[i].actualstate)
+				DevicePowerList[i].waiting = true;
+			else
+				DevicePowerList[i].waiting = false;
+			for ( int j=0;PowerRequests[j].nodeid != 0;j++) // search though the list of power nodes
 			{
-				if ( PowerRequests[j].nodeid ==  DevicePowerList[i].nodeid )
+				if ( PowerRequests[j].nodeid == DevicePowerList[i].nodeid ) // check if node on list matches the wanted id.
 				{
-					// check existing request.
+					// check existing request queued for node..
 					bool enabled = PowerRequests[j].output & (0x1 <<  DevicePowerList[i].output);
-					if ( !enabled || // no request not yet made
+					if ( !enabled || // no request yet made
 						( enabled && (PowerRequests[j].state & (0x1 << DevicePowerList[i].output) ) != state ) // request different to previously not processed request
 					)
 					{
 						PowerRequests[j].output |= (0x1 << DevicePowerList[i].output); // set enable output
 						if ( state == true )
-						  PowerRequests[j].state |=(0x1 << DevicePowerList[i].output); // set bit
+							PowerRequests[j].state |=(0x1 << DevicePowerList[i].output); // set bit
 						else
-						  PowerRequests[j].state &= ~(0x1 << DevicePowerList[i].output); // unset bit
+							PowerRequests[j].state &= ~(0x1 << DevicePowerList[i].output); // unset bit
 						powerreqset = 0;
+
 					} else powerreqset = 1; // request already set
 				}
 				if ( powerreqset == 0 ) break;
@@ -460,9 +518,9 @@ int sendPowerNodeErrReset( uint8_t id, uint8_t channel )
 	return 0;
 }
 
+// check and return if an power error has occured on a device.
 bool powerErrorOccurred( DevicePower device )
 {
-
 	for ( int i=0;DevicePowerList[i].device != None;i++)
 	{
 		if ( DevicePowerList[i].device == device )
@@ -472,7 +530,6 @@ bool powerErrorOccurred( DevicePower device )
 			{
 				if ( PowerRequests[j].nodeid ==  DevicePowerList[i].nodeid )
 				{
-
 					if ( PowerRequests[j].error[DevicePowerList[i].output] )
 						return true;
 					else
@@ -505,6 +562,13 @@ int sendPowerNodeReq( void )
 
 	};
 	return senderror;
+}
+
+uint8_t getDevicePowerListSize( void )
+{
+	int i = 0;
+	for (;DevicePowerList[i].device != None;i++);
+	return i;
 }
 
 void resetPowerNodes( void )

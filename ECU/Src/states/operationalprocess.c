@@ -52,9 +52,6 @@ void ResetStateData( void ) // set default startup values for global state value
 				(*ResetCommands[i])();
 	}
 
-	DeviceState.CAN1 = OPERATIONAL;
-	DeviceState.CAN2 = OPERATIONAL;
-
 #ifdef FANCONTROL
 	CarState.FanPowered = 0;
 #else
@@ -89,11 +86,6 @@ void ResetStateData( void ) // set default startup values for global state value
     CarState.PedalProfile = 0;
     CarState.DrivingMode = 0;
 
-    for ( int i = 0; i < MOTORCOUNT; i++ )
-    {
-    	CarState.Speed[i] = 0;
-    }
-
     CarState.ActualSpeed = 0;
 
 	Errors.ErrorPlace = 0;
@@ -106,83 +98,48 @@ void ResetStateData( void ) // set default startup values for global state value
 
 int Startup( uint32_t OperationLoops  )
 {
-	static uint16_t readystate;
 #ifndef everyloop
 	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
 #endif
 	{
-		CAN_SendStatus(1, StartupState, readystate);
+		CAN_SendStatus(1, StartupState, 0);
 	}
 
-	if ( OperationLoops == 0) // reset state on entering/rentering.
-	{
-		lcd_settitle("Startup init");
+	lcd_settitle("Startup init");
 
-		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
+	// send startup state message here.
+	// reset all state information.
 
-		// send startup state message here.
-		// reset all state information.
+	ResetStateData(); // set car state settings back to blank state.
 
-		ResetStateData(); // set car state settings back to blank state.
+	setOutput(RTDMLED,Off);
+	setOutput(TSLED,Off);
+	setOutput(TSOFFLED,On);
+	blinkOutput(RTDMLED,Off,0); // ensure nothing blinking.
+	blinkOutput(TSOFFLED,Off,0);
+	blinkOutput(TSLED,Off,0);
 
-//		ResetCanReceived(); // clear any previously received candata, incase we're doing a complete new startup.
+	// set relay output LED's off
+	setOutput(BMSLED,Off);
+	setOutput(IMDLED,Off);
+	setOutput(BSPDLED,Off);
 
-		setOutput(RTDMLED,Off);
-		setOutput(TSLED,Off);
-		setOutput(TSOFFLED,On);
-		blinkOutput(RTDMLED,Off,0); // ensure nothing blinking.
-		blinkOutput(TSOFFLED,Off,0);
-		blinkOutput(TSLED,Off,0);
+	// Show status LED's for 2 seconds for rules compliance.
 
-		// set relay output LED's off
-		setOutput(BMSLED,Off);
-		setOutput(IMDLED,Off);
-		setOutput(BSPDLED,Off);
+	blinkOutput(BMSLED,On,2);
+	blinkOutput(IMDLED,On,2);
+	blinkOutput(BSPDLED,On,2);
 
-		// Show status LED's for 2 seconds for rules compliance.
+#ifdef FRONTSPEED
+	CAN_NMT(0x81,FLSpeed_COBID);
+	CAN_NMT(0x81,FRSpeed_COBID);
+#endif
 
-		blinkOutput(BMSLED,On,2);
-		blinkOutput(IMDLED,On,2);
-		blinkOutput(BSPDLED,On,2);
-
-		CAN_NMT(0x81,FLSpeed_COBID);
-		CAN_NMT(0x81,FRSpeed_COBID);
-
-		ShutdownCircuitSet( false );
-
-		if ( CAN_NMTSyncRequest() ) // sent NMT sync packet to can to ensure we hear from any awake devices.
-		{
-		 // NMT sent, enter wait and configure state.
-			return StartupState;
-
-		} else
-		{
-		 // error sending NMT
-			return OperationalErrorState;
-		}
-
-	}
-
-//	uint32_t loopstart = gettimer();
-//	uint32_t looptimer = 0;
+	ShutdownCircuitSet( false );
 
 	vTaskDelay(5);
-/*	do
-	{
-        // check for incoming data, break when all received.
-		looptimer = gettimer() - loopstart;
-	} while ( looptimer < PROCESSLOOPTIME-50 ); // check
-*/
-//	if ( readystate == 1 ) return StartupState;
 
-	uint8_t invertercount = 0;
-
-	for ( int i=0;i<MOTORCOUNT;i++) // speed is received
-	{
-		if ( CarState.Inverters[i].InvState != 0xFF ) invertercount++;
-	}
-
-	if ( invertercount == MOTORCOUNT ) // we've received status from inverters, don't send reset.
+	if ( DeviceState.Inverter > OFFLINE )
 	{
 		return PreOperationalState;
 	} else if ( CAN_NMT( 0x81, 0x0 ) ) // sent NMT reset packet to can buses if not received inverter status.
@@ -217,9 +174,10 @@ uint16_t CheckErrors( void )
 	for ( int i=0;i<MOTORCOUNT;i++) // speed isreceived
 	{
 		// send request to enter operational mode
-		if ( !CarState.TestHV && CarState.Inverters[i].InvState == INERROR )
+		// TODO inverters check error.
+		//if ( !CarState.TestHV && CarState.Inverters[i].InvState == INERROR )
 		{
-			return 99; // serious error, no operation allowed. -- inverter
+		//	return 99; // serious error, no operation allowed. -- inverter
 		}
 
 	}
@@ -367,7 +325,7 @@ int LimpProcess( uint32_t OperationLoops  )
 {
 	lcd_settitle("LimpProcess(NA)");
 	CAN_SendStatus(1, LimpState, 0 );
-	setHV( true, false );
+	setRunningPower( true, false );
 	return LimpState;
 }
 
@@ -375,7 +333,7 @@ int TestingProcess( uint32_t OperationLoops  )
 {
 	lcd_settitle("TestingProcess(NA)");
 	CAN_SendStatus(1, TestingState, 0 );
-	setHV( true, false );
+	setRunningPower( true, false );
 	return TestingState;
 }
 
@@ -390,6 +348,7 @@ int OperationalProcess( void )
 
 	cancount = 0;
 
+	CAN_NMTSyncRequest();
 
 	if ( NewOperationalState != OperationalState ) // state has changed.
 	{

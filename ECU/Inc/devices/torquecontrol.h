@@ -18,5 +18,7 @@ typedef struct vectoradjusttype {
 int initVectoring( void );
 void doVectoring(int16_t Torque_Req, vectoradjust * adj);
 
+uint16_t PedalTorqueRequest( void );
+
 #endif /* TORQUECONTROL_H_ */
 

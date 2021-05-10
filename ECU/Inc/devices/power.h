@@ -29,14 +29,21 @@ typedef enum DevicePowertype {
 
 } DevicePower;
 
-
+typedef enum DevicePowerStatetype {
+	DirectPowerCmd,
+	StartupPower,
+	IdlePower,
+	TSEnabledPower,
+	EmergencyPower
+} DevicePowerState;
 
 typedef struct Power_msg {
+	DevicePowerState state;
 	DevicePower power;
-	bool		state;
+	bool		enabled;
 } Power_msg;
 
-int setHV( bool HV, bool buzzer );
+int setRunningPower( bool HV, bool buzzer );
 int errorPower( void );
 bool CheckShutdown( void );
 char * ShutDownOpenStr( void );
@@ -45,10 +52,14 @@ void ShutdownCircuitSet( bool state );
 int ShutdownCircuitCurrent( void );
 int ShutdownCircuitState( void );
 
-int setDevicePower( DevicePower device, bool state );
+int setDevicePower( DevicePower device, bool enabled );
+
+char * getDevicePowerNameLong( DevicePower device );
 
 char * getPNodeWait( void );
 
 int initPower( void );
+
+void FanControl( void );
 
 #endif /* DEVICES_POWER_H_ */

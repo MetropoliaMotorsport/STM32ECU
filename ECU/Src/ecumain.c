@@ -150,6 +150,7 @@ void MainTask(void *argument)
 	HardwareInit();
 
 	initERRORState();
+
 	initDebug();
 
     ResetStateData();
@@ -177,7 +178,7 @@ void MainTask(void *argument)
 
 	blinkOutput(LED7, BlinkFast, 1500);
 #endif
-	for(;;)
+	while(1)
 	{
 		OperationalProcess();
 		setWatchdogBit(watchdogBit);

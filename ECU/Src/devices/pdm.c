@@ -166,7 +166,8 @@ int sendPDM( bool buzzer )
 	bool HVR = true;
 	for ( int i = 0;i<MOTORCOUNT;i++)
 	{
-		if ( ! CarState.Inverters[i].HighVoltageAllowed) HVR = false;
+		// TODO inverter check HVA
+		//if ( ! CarState.Inverters[i].HighVoltageAllowed) HVR = false;
 	} // HVR will be false if any of the inverters are not in true state.
 
 	if ( ( HVR && CarState.HighVoltageReady ) || CarState.TestHV )

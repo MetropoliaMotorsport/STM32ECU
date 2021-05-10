@@ -15,7 +15,7 @@
 osThreadId_t WatchdogTaskHandle;
 const osThreadAttr_t WatchdogTask_attributes = {
   .name = "WatchdogTask",
-  .priority = (osPriority_t) osPriorityAboveNormal,
+  .priority = (osPriority_t) osPriorityHigh,
   .stack_size = 128*4
 };
 
@@ -142,9 +142,9 @@ static void WatchdogTask(void *pvParameters)
 		{
 			// only kick the watchdog if all expected bits are set.
 			HAL_WWDG_Refresh(&hwwdg1);
-		} else
+		}// else
 		{
-
+//			HAL_WWDG_Refresh(&hwwdg1);
 		}
 
 		xEventGroupClearBits(xWatchdog, 0xFF );
@@ -158,6 +158,15 @@ int initWatchdog( void )
 
 	for ( int i=0; i<MAXWATCHDOGTASKS;i++)
 		watchdogTasks[i][0] = 0;
+
+	// TODO allocate static?
+	xWatchdog = xEventGroupCreate();
+	xWatchdogActive = xEventGroupCreate();
+
+	debugAllocate = xSemaphoreCreateMutex();
+
+
+#ifdef true
 
 	volatile uint8_t resetflag = __HAL_RCC_GET_FLAG(RCC_FLAG_WWDG1RST);
 
@@ -176,12 +185,6 @@ int initWatchdog( void )
 	/* Enable system wide reset */
 	HAL_RCCEx_WWDGxSysResetConfig(RCC_WWDG1);
 
-
-	// TODO allocate static?
-	xWatchdog = xEventGroupCreate();
-	xWatchdogActive = xEventGroupCreate();
-
-	debugAllocate = xSemaphoreCreateMutex();
 
 	/* Was the event group created successfully? */
 	if( xWatchdog == NULL )
@@ -232,24 +235,26 @@ int initWatchdog( void )
 
 	HAL_NVIC_EnableIRQ(WWDG_IRQn);
 
+	// min 8 // should now be double.
+	// max 16
 
+#ifdef TESTWATCHDOGTIMING
 	volatile uint32_t windowend = TimeoutCalculation((hwwdg1.Init.Counter) + 1);
 	volatile uint32_t windowstart = windowend/2+TimeoutCalculation((hwwdg1.Init.Counter-hwwdg1.Init.Window) - 1);
 
 
 	volatile int counter = 0;
 
-	// min 8 // should now be double.
-	// max 16
-
-/*	while ( 1 )
+	while ( 1 )
 	{
 		counter++;
-		HAL_Delay(16); // ensure that first trigger will be within window.
+		DWT_Delay(17*1000); // ensure that first trigger will be within window.
 		HAL_WWDG_Refresh(&hwwdg1);
 
 	}
-*/
+#endif
+
 	WatchdogTaskHandle = osThreadNew(WatchdogTask, NULL, &WatchdogTask_attributes);
+#endif
 	return 0;
 }

@@ -22,7 +22,7 @@
 	#define SCREEN
 	#define POWERNODES
 	#define ANALOGNODES
-	#define MATLAB
+	//#define MATLAB
 	#define USEIMU
 	#define PWMSTEERING
 	#define LENZE
@@ -315,28 +315,6 @@ uint16_t ErrorCode; // global error code.
 
 extern volatile uint32_t ADCloops;
 
-typedef struct { // new structure for inverter related data, so that it can be used as general pointer.
-	uint8_t InverterNum;
-	bool HighVoltageAllowed;
-	bool HighVoltageAvailable;
-	uint16_t InvState;
-	uint16_t InvBadStatus;
-#ifdef SIEMENS
-	uint16_t InvStateCheck;
-	uint16_t InvStateCheck3;
-#endif
-	uint16_t InvCommand;
-
-	int16_t Torque_Req;
-	int16_t InvTorque;
-	int16_t InvCurrent;
-
-	int32_t Speed;
-	uint16_t COBID;
-	bool	MCChannel;
-} InverterState;  // define external into realmain?
-
-
 typedef struct {
 	bool BOTS;
 	bool InertiaSwitch;
@@ -359,14 +337,9 @@ volatile struct CarState {
 	char HighVoltageReady;
 	bool TestHV;
 
-	InverterState Inverters[MOTORCOUNT];
 	uint16_t COBID;
 
-#ifdef TORQUEVECTOR
 	uint8_t  TorqueVectoring;
-#endif
-
-	bool AllowTorque;
 
 	int32_t Torque_Req;
 	uint8_t Torque_Req_Max;
@@ -392,7 +365,6 @@ volatile struct CarState {
 	int32_t VoltageAIRPDM;
 	int32_t Power;
 
-	int32_t Speed[4];
 	int32_t ActualSpeed;
 
 //	int32_t Wheel_Speed_Rear_Average;
@@ -408,7 +380,7 @@ volatile struct CarState {
 
 	ShutdownState Shutdown;
 
-} CarState, LastCarState, ErrorCarState;  // define external into realmain?
+} CarState;  // define external into realmain?
 
 
 typedef enum DeviceStatustype {
@@ -441,6 +413,7 @@ struct DeviceState {
 	DeviceStatus LCD;
 	DeviceStatus EEPROM;
 	DeviceStatus Memorator;
+	DeviceStatus BrakeLight;
 
 
 	DeviceStatus AnalogNode1;

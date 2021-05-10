@@ -11,13 +11,7 @@
 
 int ReadyRequest( void )   // request data / invalidate existing data to ensure we have fresh data from this cycle.
 {
-	int error = 0;
-
-	// Inverter Pre Operation preparedness.
-
-//	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
-	CAN_NMTSyncRequest(); // anything working with cansync will respond with
-	setHV( false, false );
+	setRunningPower( false, false );
 
 	invRequestState(STOPPED);
 
@@ -30,12 +24,8 @@ int ReadyRequest( void )   // request data / invalidate existing data to ensure 
 		DeviceState.FRSpeed = sickState( FRSpeed_COBID );
 	}
 #endif
-	// send BMS - currently no sync request, just sending data
 
-	// send PDM - currently no sync request, just sending data.
-//	requestIVT();
-
-	return error;
+	return 0;
 }
 
 int AllowLimp( void ) // function to determine if limp mode is allowable

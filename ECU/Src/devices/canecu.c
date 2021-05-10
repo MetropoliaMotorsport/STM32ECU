@@ -89,9 +89,28 @@ void CANTxTask(void *argument)
 
 	uint8_t watchdogBit = registerWatchdogBit("CANTxTask");
 
-	for(;;)
+
+	portTickType cycletick = xTaskGetTickCount();
+
+	portTickType waittick = CYCLETIME;
+
+	while( 1 )
 	{
-		if ( xQueueReceive(CANTxQueue,&msg,10) )
+		portTickType curtick = xTaskGetTickCount();
+
+		if ( curtick >= cycletick + CYCLETIME)
+		{
+			cycletick = curtick;
+			waittick = CYCLETIME;
+			setWatchdogBit(watchdogBit);
+		}
+		else
+		{
+			waittick = cycletick-curtick+CYCLETIME;
+		}
+
+
+		if ( xQueueReceive(CANTxQueue,&msg,waittick) )
 		{
 			if ( msg.bus == bus1)
 			{
@@ -121,7 +140,6 @@ void CANTxTask(void *argument)
 			//	Error_Handler();
 			}
 		}
-		setWatchdogBit(watchdogBit);
 	}
 
 	osThreadTerminate(NULL);
@@ -130,7 +148,6 @@ void CANTxTask(void *argument)
 
 void CANRxTask(void *argument)
 {
-
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT( CANRxQueue );
 
@@ -138,10 +155,27 @@ void CANRxTask(void *argument)
 
 	uint8_t watchdogBit = registerWatchdogBit("CANTxTask");
 
-	for(;;)
+	portTickType cycletick = xTaskGetTickCount();
+
+	portTickType waittick = CYCLETIME;
+
+	while( 1 )
 	{
+		portTickType curtick = xTaskGetTickCount();
+
+		if ( curtick >= cycletick + CYCLETIME)
+		{
+			cycletick = curtick;
+			waittick = CYCLETIME;
+			setWatchdogBit(watchdogBit);
+		}
+		else
+		{
+			waittick = cycletick-curtick+CYCLETIME;
+		}
+
         // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
-		if( xQueueReceive(CANRxQueue,&msg,10) )
+		if( xQueueReceive(CANRxQueue,&msg,waittick) )
 		{
 			FDCAN_RxHeaderTypeDef RxHeader;
 			RxHeader.Identifier = msg.id;
@@ -172,9 +206,6 @@ void CANRxTask(void *argument)
 
 			}
 		}
-
-		setWatchdogBit(watchdogBit);
-
 	}
 
 	osThreadTerminate(NULL);
@@ -664,15 +695,16 @@ uint8_t CANSendPDMFAN( void )
 char CAN_SendTimeBase( void ) // sends how long since power up and primary inverter status.
 {
 	// TODO check time being sent.
+	// TODO get inverter states.
 
 	uint32_t time = gettimer();
 	uint8_t CANTxData[8] = {
-			CarState.Inverters[RearLeftInverter].InvState,
+			//CarState.Inverters[RearLeftInverter].InvState,
 			Errors.CANSendError1,
-			CarState.Inverters[RearRightInverter].InvState,
+			//CarState.Inverters[RearRightInverter].InvState,
 			Errors.CANSendError2,
-			CarState.Inverters[FrontLeftInverter].InvState,
-			CarState.Inverters[FrontRightInverter].InvState,
+			//CarState.Inverters[FrontLeftInverter].InvState,
+			//CarState.Inverters[FrontRightInverter].InvState,
 			getByte(time,2),
 			getByte(time,3)
 	};
@@ -770,8 +802,11 @@ char CAN_SENDINVERTERERRORS( void )
 {
 
     uint8_t CANTxData[8] =
-    { CarState.Inverters[RearLeftInverter].InvState,
-      CarState.Inverters[RearRightInverter].InvState,
+    {
+      0,0,
+	  // TODO get inverter state.
+      //CarState.Inverters[RearLeftInverter].InvState,
+      //CarState.Inverters[RearRightInverter].InvState,
 #ifdef SIEMENS
 	  CarState.Inverters[RearLeftInverter].InvStateCheck,
 	  CarState.Inverters[RearRightInverter].InvStateCheck,
@@ -781,7 +816,8 @@ char CAN_SENDINVERTERERRORS( void )
 #ifndef HPF20
 			0,0,0,0
 #else
-			CarState.Inverters[FrontRightInverter].InvState,
+			0,
+			//CarState.Inverters[FrontRightInverter].InvState,
 #ifdef SIEMENS
 			CarState.Inverters[FrontLeftInverter].InvStateCheck,
 			CarState.Inverters[FrontRightInverter].InvStateCheck
@@ -932,8 +968,11 @@ char CAN_SendErrors( void )
 #ifndef sharedCAN
 #endif
 
-	uint8_t CANTxData[8] = { CarState.Inverters[RearLeftInverter].InvState,
-			CarState.Inverters[RearRightInverter].InvState,
+	uint8_t CANTxData[8] = {
+			0,0,
+			// TODO get inverer state.
+			//CarState.Inverters[RearLeftInverter].InvState,
+			//CarState.Inverters[RearRightInverter].InvState,
 	#ifdef SIEMENS
 			CarState.Inverters[RearLeftInverter].InvStateCheck,
 			CarState.Inverters[RearRightInverter].InvStateCheck,
@@ -943,7 +982,8 @@ char CAN_SendErrors( void )
 #ifndef HPF20
 			0,0,0,0
 #else
-			CarState.Inverters[FrontRightInverter].InvState,
+			0,
+			//CarState.Inverters[FrontRightInverter].InvState,
 	#ifdef SIEMENS
 			CarState.Inverters[FrontLeftInverter].InvStateCheck,
 			CarState.Inverters[FrontRightInverter].InvStateCheck
@@ -979,8 +1019,9 @@ char CANLogDataFast( void )
     // investigate to find out why, perhaps fifo buffer not acting as expect?
 
 	resetCanTx(CANTxData);
-	storeBEint16(CarState.Inverters[RearLeftInverter].Torque_Req, &CANTxData[0]); 	//torq_req_l can0 0x7C6 0,16be
-	storeBEint16(CarState.Inverters[RearRightInverter].Torque_Req, &CANTxData[2]); 	//torq_req_r can0 0x7C6 16,16be
+	// TODO get torque request
+	//storeBEint16(CarState.Inverters[RearLeftInverter].Torque_Req, &CANTxData[0]); 	//torq_req_l can0 0x7C6 0,16be
+	//storeBEint16(CarState.Inverters[RearRightInverter].Torque_Req, &CANTxData[2]); 	//torq_req_r can0 0x7C6 16,16be
 
 	storeBEint16(ADCState.BrakeF, &CANTxData[4]); 	//brk_press_f can0 0x7C6 32,16bee
 	storeBEint16(ADCState.BrakeR, &CANTxData[6]); 	//brk_press_r can0 0x7C6 48,16be
@@ -989,9 +1030,10 @@ char CANLogDataFast( void )
 
 	resetCanTx(CANTxData);
 
-	storeBEint32(CarState.Inverters[RearLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
+	// TODO get speed.
+	//storeBEint32(CarState.Inverters[RearLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
 
-	storeBEint32(CarState.Inverters[RearRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
+	//storeBEint32(CarState.Inverters[RearRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
 	CAN1Send( 0x7C7, 8, CANTxData );
 
 	resetCanTx(CANTxData);
@@ -1006,8 +1048,10 @@ char CANLogDataFast( void )
 
 	resetCanTx(CANTxData);
 
-	storeBEint16(CarState.Inverters[RearLeftInverter].InvTorque, &CANTxData[0]); //actual_torque_left_inverter_raw can0 0x7c9 0,16be
-	storeBEint16(CarState.Inverters[RearRightInverter].InvTorque, &CANTxData[2]); //actual_torque_right_inverter_raw can0 0x7c9 16,16be
+	// TODO get torque
+
+	//storeBEint16(CarState.Inverters[RearLeftInverter].InvTorque, &CANTxData[0]); //actual_torque_left_inverter_raw can0 0x7c9 0,16be
+	//storeBEint16(CarState.Inverters[RearRightInverter].InvTorque, &CANTxData[2]); //actual_torque_right_inverter_raw can0 0x7c9 16,16be
 
 	CAN1Send( 0x7C9, 8, CANTxData );
 
@@ -1038,9 +1082,11 @@ char CANLogDataFast( void )
 
 	resetCanTx(CANTxData);
 
-	storeBEint32(CarState.Inverters[RearLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
+	// TODO get inverter speeds
 
-	storeBEint32(CarState.Inverters[RearRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
+	//storeBEint32(CarState.Inverters[RearLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
+
+	//storeBEint32(CarState.Inverters[RearRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
 	CAN1Send( 0x7C7, 8, CANTxData );
 
 	resetCanTx(CANTxData);
@@ -1050,9 +1096,9 @@ char CANLogDataFast( void )
 
 	storeBEint32(CarState.SpeedFR, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
 #else
-	storeBEint32(CarState.Inverters[FrontLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
+	//storeBEint32(CarState.Inverters[FrontLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
 
-	storeBEint32(CarState.Inverters[FrontRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
+	//storeBEint32(CarState.Inverters[FrontRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
 #endif
 	CAN1Send( 0x7CC, 8, CANTxData );
 
@@ -1219,9 +1265,6 @@ bool processCan2Message( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8])
 	} return false; // ID not registered in handler.
 }
 
-// TODO Investigate new potential memory corruption. Workaround attemped using circular buffer.
-
-
 
 /**
  * interrupt rx callback for canbus messages
@@ -1375,6 +1418,10 @@ void resetCAN( void )
 #else
 	DeviceState.LoggingEnabled = DISABLED;
 #endif
+
+	DeviceState.CAN1 = OPERATIONAL;
+	DeviceState.CAN2 = OPERATIONAL;
+
 }
 
 int initCAN( void )

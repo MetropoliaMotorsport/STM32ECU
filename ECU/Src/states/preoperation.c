@@ -24,7 +24,7 @@
 #endif
 
 
-#define PRINTDEBUGRUNNING
+//#define PRINTDEBUGRUNNING
 
 static uint16_t DevicesOnline( uint16_t returnvalue )
 {
@@ -142,7 +142,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	PrintRunning( "Boot" );
 #else
 
-	sprintf(str,"Boot   %8.8s %.3liv",getTimeStr(), lcd_geterrors());//, CarState.VoltageBMS);
+	sprintf(str,"Boot   %8.8s %.3liv",getCurTimeStr(), lcd_geterrors());//, CarState.VoltageBMS);
 
 	lcd_send_stringline(0,str, 255);
 #endif
@@ -152,9 +152,12 @@ int PreOperationState( uint32_t OperationLoops  )
     //		lcd_send_stringpos(3,0,"  <Red for config>");
 	    	preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
 	    	CarState.HighVoltageReady = false;
-			CarState.AllowTorque = false;
+	    	InverterAllowTorque(false);
 	    	ReadyToStart = 0xFFFF;
 	    	minmaxADCReset();
+
+	    	// set startup powerstates to bring devices up.
+
 	    	setDevicePower(Buzzer, 0);
 
 			setDevicePower(Telemetry, 1);
@@ -185,7 +188,7 @@ int PreOperationState( uint32_t OperationLoops  )
     		else
     		{
 				Errors.ErrorPlace = 0xAA;
-				Errors.ErrorReason = 0;//TODO error code for lost power.;
+				Errors.ErrorReason = 0;//TODO error code for lost power.
     			return OperationalErrorState;
     		}
     	}
@@ -340,11 +343,7 @@ int PreOperationState( uint32_t OperationLoops  )
 			// do nothing
 	}
 
-#ifdef POWERNODES
-	CAN_NMTSyncRequest();
-#endif
-
-	setHV( false, false );
+	setRunningPower( false, false );
 
 	// checks if we have heard from other necessary connected devices for operation.
 /*
@@ -380,7 +379,8 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 	doVectoring(Torque_Req, &adj);
 
 	for ( int i=0;i<MOTORCOUNT;i++){
-		CarState.Inverters[i].Torque_Req = Torque_Req;
+		// TODO send inverter torque request
+		//CarState.Inverters[i].Torque_Req = Torque_Req;
 	}
 
 #ifdef TORQUEVECTOR
@@ -430,7 +430,8 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 				OperationLoops = 0;
 
 				for ( int i=0;i<MOTORCOUNT;i++){
-					CarState.Inverters[i].Torque_Req = 0;
+					// TODO send inverter torque requset
+					//CarState.Inverters[i].Torque_Req = 0;
 				}
 
 				setOutput(RTDMLED,Off);

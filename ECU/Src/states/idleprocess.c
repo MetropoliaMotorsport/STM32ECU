@@ -20,9 +20,7 @@ char IdleRequest( void )   // request data / invalidate existing data to ensure 
 //	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
 	CAN_NMTSyncRequest();
 
-	setHV( CheckHV, false );
-
-	//setDevicePower( Brake, buzzer );
+	setRunningPower( CheckHV, false );
 
 	// request ready states from devices.
 
@@ -87,7 +85,7 @@ char OperationalReceive( uint16_t returnvalue )
 
 char OperationalReceiveLoop( void )
 {
-	LastCarState = CarState;
+//	LastCarState = CarState;
 //	uint32_t loopstart = gettimer();
 //	uint32_t looptimer = 0;
 	uint8_t received = 0xFF;
@@ -162,7 +160,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		lcd_clear();
 		//lcd_settitle("Ready to activate TS");
 		CarState.HighVoltageReady = false;
-		CarState.AllowTorque = false;
+		InverterAllowTorque(false);
 		CheckHV = false;
 		HVEnableTimer = 0;
 		TSRequested = 0;
@@ -201,8 +199,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	// at this state, everything is ready to be powered up.
 
-	if ( // !CheckErrors() && // this is done in receive loop already.
-	  invertersStateCheck(STOPPED) // returns true if all inverters match state
+	if ( invertersStateCheck(STOPPED) // returns true if all inverters match state
 	  && !ReceiveNonCriticalError
 	  && CarState.VoltageBMS > MINHV
 #ifdef IVTEnable
@@ -226,17 +223,14 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 
 // allow APPS checking before RTDM
-	CarState.Torque_Req = PedalTorqueRequest();
+	vectoradjust adj;
 
-	for ( int i=0;i<MOTORCOUNT;i++)  // set all wheels to same torque request
-	{
-		CarState.Inverters[i].Torque_Req = CarState.Torque_Req;
-	}
+	if ( CarState.TorqueVectoring )
+		doVectoring( CarState.Torque_Req, &adj );
 
-#ifdef TORQUEVECTOR
-	TorqueVectorProcess( CarState.Torque_Req );
-#endif
-	// fail process, inverters go from 33->60->68  when no HV supplied and request startup.
+	if ( CarState.APPSstatus ) setOutput(TSLED,On); else setOutput(TSLED,Off);
+
+	InverterSetTorque(&adj, 0);
 
 	uint8_t InvHVPresent = 0;
 

@@ -64,10 +64,6 @@ int lcd_getstate( void )
 
 	if ( state != HAL_I2C_STATE_READY)
 	{
-		for ( int i=0;i<10;i++)
-		{
-			volatile int j = 0;
-		}
 		return 1;
 	}
 	return 0;

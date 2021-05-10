@@ -12,22 +12,6 @@
 
 #include "ecumain.h"
 
-int TSActiveRequest( void )
-{
-//	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
-	CAN_NMTSyncRequest();
-
-	setHV( true, false ); // will enable HV if inverters in ready status and HV enabled flag set.
-
-#ifdef POWERNODES
-	setDevicePower(IVT, 1);
-#endif
-
-	invRequestState(PREOPERATIONAL);
-
-	return 0;
-}
-
 int TSActiveProcess( uint32_t OperationLoops )
 {
 	static uint16_t readystate;
@@ -41,7 +25,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 		//lcd_settitle("TS Active");
 		prechargetimer = gettimer();
 		CarState.HighVoltageReady = true; // only enable if reading high enough voltage.
-		CarState.AllowTorque = false;
+		InverterAllowTorque(false);
 		setOutput(TSLED,On);
 		blinkOutput(TSLED,On,0);
 		setOutput(RTDMLED,Off);
@@ -58,11 +42,12 @@ int TSActiveProcess( uint32_t OperationLoops )
 	}
 
 	if ( CarState.VoltageINV < 400 )
-		PrintRunning("TS:Err");
+		PrintRunning("TS:LoV");
 	else
 		PrintRunning("TS:On");
 
-	TSActiveRequest();
+	setRunningPower( true, false ); // will enable HV if inverters in ready status and HV enabled flag set.
+	invRequestState(PREOPERATIONAL);
 
 	uint8_t ReceiveNonCriticalError = 0;
 
@@ -108,14 +93,11 @@ int TSActiveProcess( uint32_t OperationLoops )
 	// allow APPS checking before RTDM
 	int Torque_Req = PedalTorqueRequest();
 
-	for ( int i=0;i<MOTORCOUNT;i++)  // set all wheels to same torque request
-	{
-		CarState.Inverters[i].Torque_Req = Torque_Req;
-	} //
+	vectoradjust adj;
 
-#ifdef SIMPLETORQUEVECTOR
-	TorqueVectorProcess( Torque_Req );
-#endif
+	doVectoring(Torque_Req, &adj);
+
+	InverterSetTorque(&adj, 0);
 
 /*	uint16_t sanity = CheckADCSanity();
 	if ( sanity )

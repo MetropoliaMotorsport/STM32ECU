@@ -2,7 +2,7 @@
  * errors.c
  *
  *  Created on: 29 Apr 2021
- *      Author: visa
+ *      Author: Visa
  */
 
 #include "errors.h"
@@ -67,8 +67,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		lcd_send_stringscroll(str);
 
 		CarState.HighVoltageReady = false; // no high voltage allowed in this state.
-		CarState.AllowTorque = false;
-
+		InverterAllowTorque(false);
 
 		StopMotors();
 
@@ -101,20 +100,13 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	while ( uxQueueMessagesWaiting( ERRORQueue ) )
 	{
-		char str[LCDCOLUMNS+1];
+	//	char str[LCDCOLUMNS+1];
 		xQueueReceive(ERRORQueue,&error,0);
 
 
 
 		lcd_send_stringscroll(error.msg);
-
-
-
 	}
-
-#ifdef POWERNODES
-	CAN_NMTSyncRequest();
-#endif
 
 	if ( Errors.InverterError ){
 		CAN_SENDINVERTERERRORS();

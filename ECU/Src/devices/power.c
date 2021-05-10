@@ -60,7 +60,7 @@ void PowerTask(void *argument)
 		{
 #ifdef POWERNODES
 		//	int result =
-					setNodeDevicePower( msg.power, msg.state );
+			setNodeDevicePower( msg.power, msg.enabled );
 #else
  // on PDM only fans and HV are controlled.
 			if ( device == hv )
@@ -94,7 +94,7 @@ void PowerTask(void *argument)
 	osThreadTerminate(NULL);
 }
 
-int setHV( bool HV, bool buzzer )
+int setRunningPower( bool HV, bool buzzer )
 {
 #ifdef PDM
 	return sendPDM( int buzzer );
@@ -194,16 +194,23 @@ int ShutdownCircuitState( void )
 
 int setDevicePower( DevicePower device, bool state )
 {
-#ifdef ROS
 	Power_msg msg;
 
 	msg.power = device;
-	msg.state = state;
-	xQueueSend(PowerQueue, msg, 0);
+	msg.enabled = state;
+	xQueueSend(PowerQueue, &msg, 0);
 	return 0;
-#else
-	return setNodeDevicePower( device, state );
-#endif
+}
+
+int setPowerState( DevicePower device, bool enabled )
+{
+	Power_msg msg;
+
+	msg.state = DirectPowerCmd;
+	msg.power = device;
+	msg.enabled = enabled;
+	xQueueSend(PowerQueue, &msg, 0);
+	return 0;
 }
 
 int errorPower( void )
@@ -218,9 +225,49 @@ int errorPower( void )
 void resetPower( void )
 {
 	CarState.HighVoltageReady = 0;
-	setHV( false, false ); // send high voltage off request to PDM.
+	setRunningPower( false, false ); // send high voltage off request to PDM.
 }
 
+void FanControl( void )
+{
+	if(ADCState.Torque_Req_R_Percent > TORQUEFANLATCHPERCENTAGE*10) // if APPS position over requested% trigger fan latched on.
+	{
+		if ( !getNodeDevicePower(LeftFans ) )
+			setDevicePower( LeftFans, true );
+
+		if ( !getNodeDevicePower(RightFans ) )
+			setDevicePower( RightFans, true );
+
+		CarState.FanPowered = 1;
+	}
+}
+
+
+
+char * getDevicePowerNameLong( DevicePower device )
+{
+	switch ( device )
+	{
+	case None : return "None";
+	case Buzzer: return "Buzzer";
+	case Telemetry: return "Telemetry";
+	case Front1: return "Front1";
+	case Inverters: return "Inverters";
+	case ECU: return "ECU";
+	case Front2: return "Front2";
+	case LeftFans: return "LeftFans";
+	case RightFans: return "RightFans";
+	case LeftPump: return "LeftPump";
+	case RightPump: return "RightPump";
+	case IVT: return "IVT";
+	case Current: return "Current";
+	case TSAL: return "TSAL";
+	case Brake: return "Brake";
+	case Accu: return "Accu";
+	case AccuFan: return "AccuFan";
+	}
+	return "Error";
+}
 
 int initPower( void )
 {
