@@ -188,72 +188,61 @@ bool processANode18Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 char ANodeCritStr[10] = "";
 char ANodeStr[15] = "";
 
-int receiveAnalogNodes( void ) // any of these missing should just be a warning or note.
+void setAnalogNodesStr( uint32_t nodesonline ) // any of these missing should just be a warning or note.
 {
-	uint16_t nodesonline = 0b111111111;
-
 	ANodeStr[0] = 0;
 
 	uint8_t pos = 0;
 
-	if ( receivedCANData(&AnalogNode9) ) nodesonline -= 1;
-	else
+	if ( !(nodesonline & ( 0x1 << ANode9Bit )) )
 	{
 		ANodeStr[pos] = '9';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&AnalogNode10) ) nodesonline -= 2;
-	else
+	if ( !(nodesonline & ( 0x1 << ANode10Bit )) )
 	{
 		ANodeStr[pos] = '0';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&AnalogNode12) ) nodesonline -= 4;
-	else
+	if ( !(nodesonline & ( 0x1 << ANode12Bit )) )
 	{
 		ANodeStr[pos] = '2';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&AnalogNode13) ) nodesonline -= 8;
-	else
+	if ( !(nodesonline & ( 0x1 << ANode13Bit )) )
 	{
 		ANodeStr[pos] = '3';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&AnalogNode14) ) nodesonline -= 16;
-	else
+	if ( !(nodesonline & ( 0x1 << ANode14Bit )) )
 	{
 		ANodeStr[pos] = '4';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&AnalogNode15) ) nodesonline -= 32;
-	else
+	if ( !(nodesonline & ( 0x1 << ANode15Bit )) )
 	{
 		ANodeStr[pos] = '5';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&AnalogNode16) ) nodesonline -= 64;
-	else
+	if ( !(nodesonline & ( 0x1 << ANode16Bit )) )
 	{
 		ANodeStr[pos] = '6';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&AnalogNode17) ) nodesonline -= 128;
-	else
+	if ( !(nodesonline & ( 0x1 << ANode17Bit )) )
 	{
 		ANodeStr[pos] = '7';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&AnalogNode18) ) nodesonline -= 256;
-	else
+	if ( !(nodesonline & ( 0x1 << ANode18Bit )) )
 	{
 		ANodeStr[pos] = '8';
 		ANodeStr[pos+1] = '\0';
@@ -277,30 +266,24 @@ char * getAnalogNodesStr( void )
 }
 
 
-int receiveAnalogNodesCritical( void ) // 1 = APPS1 + regen. 11 = APPS2 + brakes  Only lack of these should prevent startup.
+void setAnalogNodesCriticalStr( uint32_t nodesonline ) // 1 = APPS1 + regen. 11 = APPS2 + brakes  Only lack of these should prevent startup.
 {
-	uint16_t nodesonline = 0b11;
-
 	ANodeCritStr[0] = 0;
 
 	uint8_t pos = 0;
 
-	if ( receivedCANData(&AnalogNode1) ) nodesonline -= 1;
-	else
+	if ( !(nodesonline & ( 0x1 << ANode1Bit )) )
 	{
 		ANodeCritStr[pos] = '1';
 		ANodeCritStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&AnalogNode11) ) nodesonline -= 2;
-	else
+	if ( !(nodesonline & ( 0x1 << ANode11Bit )) )
 	{
 		ANodeCritStr[pos] = 'A';
 		ANodeCritStr[pos+1] = '\0';
 		pos++;
 	}
-
-	return nodesonline;
 }
 
 

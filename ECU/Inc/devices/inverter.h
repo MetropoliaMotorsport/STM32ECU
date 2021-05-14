@@ -64,7 +64,6 @@ char InvSend( volatile InverterState *Inverter, int32_t vel, int16_t torque );
 void InvResetError( volatile InverterState *Inverter );
 bool InvStartupCfg( volatile InverterState *Inverter );
 
-
 void InverterSetTorque( vectoradjust *adj, int16_t MaxSpeed );
 int InverterGetSpeed( void );
 
@@ -73,6 +72,8 @@ uint8_t invRequestState( DeviceStatus state );
 void resetInv( void );
 int initInv( void );
 void StopMotors( void );
+
+extern TaskHandle_t InvTaskHandle;
 
 #endif /* INVERTER_H_ */
 

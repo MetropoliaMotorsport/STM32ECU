@@ -208,8 +208,6 @@ uint8_t receiveINVNMT( volatile InverterState *Inverter)
 }
 
 
-
-
 bool processINVError(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle)
 {
 	volatile InverterState *Inverter = &invState.Inverter[datahandle->index];
@@ -363,6 +361,7 @@ uint8_t receiveINVStatus( volatile InverterState *Inverter  )
 
 	if ( operationalstatus != OFFLINE && validdata ) // no timeout on inverter status pdo, not sent frequently.
 	{
+		xTaskNotify( InvTaskHandle, ( 0x1 << (Inverter->InverterNum*3+0) ), eSetBits);
 		return 1; // data received within windows
 	} else
 	{
@@ -386,6 +385,7 @@ bool processINVValues1(uint8_t CANRxData[8], uint32_t DataLength, CANData * data
 
 	if ( abs(Speed) < 15000 && abs(Torque) < 1000 && abs(Current) < 1000 )
 	{
+		xTaskNotify( InvTaskHandle, ( 0x1 << (Inverter->InverterNum*3+1) ), eSetBits);
 		Inverter->Speed = Speed;
 		Inverter->InvTorque = Torque;
 		Inverter->InvCurrent = Torque;
@@ -415,6 +415,7 @@ bool processINVValues2(uint8_t CANRxData[8], uint32_t DataLength, CANData * data
 
 	if ( abs(MotorTemp) > 0 && abs(MotorTemp) < 200 && abs(PowerModTemp) > 0 && abs(PowerModTemp) < 200 )
 	{
+		xTaskNotify( InvTaskHandle, ( 0x1 << (Inverter->InverterNum*3+2) ), eSetBits);
 		// don't actually have anything to do with these right now.
 		return true;
 	} else // bad data.

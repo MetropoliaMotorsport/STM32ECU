@@ -11,6 +11,18 @@
 #include "ecumain.h"
 #include "power.h"
 
+#define PNode33Bit  0
+#define PNode34Bit  1
+#define PNode35Bit  2
+#define PNode36Bit  3
+#define PNode37Bit  4
+#define PNodeAllBit ( (0x1 << PNode33Bit) \
+					+ (0x1 << PNode34Bit) \
+					+ (0x1 << PNode35Bit) \
+					+ (0x1 << PNode36Bit) \
+					+ (0x1 << PNode37Bit) \
+					)
+
 extern CANData PowerNodeErr;
 extern CANData PowerNodeAck;
 
@@ -23,7 +35,7 @@ extern CANData PowerNode37;
 bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle );
 bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 
-int receivePowerNodes( void );
+void setPowerNodeStr( uint32_t nodesonline );
 char * getPNodeStr( void );
 
 uint8_t getDevicePowerListSize( void );
@@ -34,6 +46,7 @@ bool getNodeDevicePower(DevicePower device );
 bool getNodeDeviceExpectedPower(DevicePower device );
 bool setNodeDevicePower( DevicePower device, bool state, bool reset );
 int getPowerDeviceIndex( DevicePower device );
+
 
 uint32_t powerErrorOccurred( DevicePower device );
 

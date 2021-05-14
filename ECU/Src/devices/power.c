@@ -113,28 +113,25 @@ void PowerTask(void *argument)
 
 		// check if powernodes received.
 
-		  BaseType_t xResult;
-		  uint32_t powernodeson = 0;
-	      xResult = xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
-	               	   	   	   ULONG_MAX,        /* Clear all bits on exit. */
-	                           &powernodeson, /* Stores the notified value. */
-	                           0 );
+		BaseType_t xResult;
+		uint32_t powernodesOnline = 0;
+		xResult = xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
+						   ULONG_MAX,        /* Clear all bits on exit. */
+						   &powernodesOnline, /* Stores the notified value. */
+						   0 );
 
-
-
-		  if( xResult == pdPASS )
-		  {
-
-		  }
-
-		if ( powernodeson == 0x11111 ) // all expecter power nodes reported in. // TODO automate
+		if( xResult == pdPASS )
 		{
-			DeviceState.PowerNodes = OPERATIONAL;
-			PNodeWaitStr[0] = 0;
-		} else
-		{
-			DeviceState.PowerNodes = INERROR; // haven't seen all needed.
-			strcpy(PNodeWaitStr, getPNodeStr());
+			if ( powernodesOnline == PNodeAllBit ) // all expecter power nodes reported in. // TODO automate
+			{
+				DeviceState.PowerNodes = OPERATIONAL;
+				PNodeWaitStr[0] = 0;
+			} else
+			{
+				DeviceState.PowerNodes = INERROR; // haven't seen all needed.
+				setPowerNodeStr( powernodesOnline );
+				strcpy(PNodeWaitStr, getPNodeStr());
+			}
 		}
 
 		sendPowerNodeReq(); // process pending power requests.

@@ -25,6 +25,5 @@
 #define InverterFR_COBID			(Inverter2_NodeID)
 #define InverterFR_Channel			(true)
 
-
 #endif /* LENZEINVERTER_H_ */
 

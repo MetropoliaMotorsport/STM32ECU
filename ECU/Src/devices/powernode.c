@@ -21,12 +21,6 @@
 #define MAXFANCURRENT		20
 #define MAXPUMPCURRENT		20
 
-#define PNode33Bit  0
-#define PNode34Bit  1
-#define PNode35Bit  2
-#define PNode36Bit  3
-#define PNode37Bit  4
-
 typedef struct nodepowerreqstruct {
 	uint8_t nodeid; //
 	uint8_t output; // enable
@@ -534,52 +528,42 @@ char * getPNodeStr( void )
 	else return PNodeStr;
 }
 
-int receivePowerNodes( void )
+void setPowerNodeStr( uint32_t nodesonline )
 {
-	uint8_t nodesonline = 0b00011111;
-
 	PNodeStr[0] = 0;
 
 	uint8_t pos = 0;
 
-//	if ( powernodesonline & ( 1 << PNode33Bit ) ) nodesonline -= 1;
-	if ( receivedCANData(&PowerNode33) ) nodesonline -= 1;
-	else
+	if ( !(nodesonline & ( 0x1 << PNode33Bit )) )
 	{
 		PNodeStr[pos] = '3';
 		PNodeStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&PowerNode34) ) nodesonline -= 2;
-	else
+	if ( !(nodesonline & ( 0x1 << PNode34Bit )) )
 	{
 		PNodeStr[pos] = '4';
 		PNodeStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&PowerNode35) ) nodesonline -= 4;
-	else
+	if ( !(nodesonline & ( 0x1 << PNode35Bit )) )
 	{
 		PNodeStr[pos] = '5';
 		PNodeStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&PowerNode36) ) nodesonline -= 8;
-	else
+	if ( !(nodesonline & ( 0x1 << PNode36Bit )) )
 	{
 		PNodeStr[pos] = '6';
 		PNodeStr[pos+1] = '\0';
 		pos++;
 	}
-	if ( receivedCANData(&PowerNode37) ) nodesonline -= 16;
-	else
+	if ( !(nodesonline & ( 0x1 << PNode37Bit )) )
 	{
 		PNodeStr[pos] = '7';
 		PNodeStr[pos+1] = '\0';
 		pos++;
 	}
-
-	return nodesonline;
 }
 
 

@@ -218,8 +218,8 @@
 #endif
 
 #ifdef HPF20
-#define NODETIMEOUT				400
-#define NODECRITICALTIMEOUT		100
+#define NODETIMEOUT				200
+#define NODECRITICALTIMEOUT		50
 #endif
 
 #define DEBUGMCU 0x5C001000
@@ -385,7 +385,7 @@ typedef struct {
 
 	ShutdownState Shutdown;
 
-} CarStateType;  // define external into realmain?
+} CarStateType;
 
 typedef enum DeviceStatustype {
 	INERROR,

@@ -251,15 +251,30 @@ void ADCTask(void *argument)
 
 		ADCWaitStr[0] = 0;
 
-		// check to see what actually received;
-		if ( receiveAnalogNodesCritical() != 0)
-		{
-//			strcpy(ADCWaitStr, getAnalogNodesCriticalStr());
-			strcat(ADCWaitStr, getAnalogNodesStr());
+		BaseType_t xResult;
+		uint32_t analoguenodesOnline = 0;
 
-			DeviceState.ADC = OPERATIONAL;
-		} else
-			DeviceState.ADC = INERROR;
+		xResult = xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
+						   ULONG_MAX,        /* Clear all bits on exit. */
+						   &analoguenodesOnline, /* Stores the notified value. */
+						   0 );
+
+		if( xResult == pdPASS )
+		{
+			if ( analoguenodesOnline == ANodeAllBit ) // all expecter power nodes reported in. // TODO automate
+			{
+				DeviceState.ADC = OPERATIONAL;
+				ADCWaitStr[0] = 0;
+			} else
+			{
+				if ( analoguenodesOnline > 0 )
+					DeviceState.ADC = INERROR;
+				else
+					DeviceState.ADC = OFFLINE;
+				setAnalogNodesStr( analoguenodesOnline );
+				strcpy(ADCWaitStr, getAnalogNodesStr());
+			}
+		}
 
 		DeviceState.ADCSanity = CheckADCSanity();
 
