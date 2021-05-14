@@ -6,27 +6,13 @@
  */
 
 #include "ecumain.h"
+#include "operationalreadyness.h"
+#include "inverter.h"
+#include "output.h"
+#include "power.h"
+#include "errors.h"
+#include "lcd.h"
 
-//static uint8_t InverterSent;
-
-int ReadyRequest( void )   // request data / invalidate existing data to ensure we have fresh data from this cycle.
-{
-	setRunningPower( false, false );
-
-	invRequestState(STOPPED);
-
-//	InverterSent = 0; // invertersent not being set to 1, means always sending command? should only be sent once to request change, unless state is still wrong.
-
-#ifdef HPF19
-	if (DeviceState.FrontSpeedSensors == ENABLED )
-	{
-		DeviceState.FLSpeed = sickState( FLSpeed_COBID );
-		DeviceState.FRSpeed = sickState( FRSpeed_COBID );
-	}
-#endif
-
-	return 0;
-}
 
 int AllowLimp( void ) // function to determine if limp mode is allowable
 {
@@ -74,7 +60,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 	}
 #endif
 
-	receiveBMS();
+	//receiveBMS();
 
 	if ( DeviceState.BMS != OFFLINE && ( CarState.VoltageBMS > 460 && CarState.VoltageBMS < 600) )
 	{
@@ -82,7 +68,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 		returnvalue &= ~(0x1 << BMSReceived); // return voltage in OK range.
 	}
 
-	receiveIVT();
+	//receiveIVT();
 
 	if ( DeviceState.IVT != OFFLINE )
 	{
@@ -104,7 +90,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 
 
 #else
-	if ( DeviceState.ADC == Operational )
+	if ( DeviceState.ADC == OPERATIONAL )
 	{
 		returnvalue &= ~(0x1 << PedalADCReceived); // using local adc, already established online in initialisation.
 	}
@@ -126,21 +112,15 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		setRunningPower( false, false );
+		SetErrorLogging(true);
 		lcd_clear();
 		lcd_settitle("Readying Devices");
-//		sanitystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		received = 0xFFFF;
-//		InverterSent = 0;
 		CarState.HighVoltageReady = false; // no high voltage allowed in this state.
 	}
-#ifndef everyloop
-	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
-#endif
-	{
-		CAN_SendStatus(1, OperationalReadyState, received );
-//		CAN_SendStatus(1, , sanitystate+(devicestate<<16));
-	}
-//	OperationLoops++; // counter for sending can status messages.
+
+	CAN_SendStatus(1, OperationalReadyState, received );
 
 	if ( OperationLoops > 500 )	// how many loops allow to get all data on time?, failure timeout.
 	{
@@ -148,70 +128,37 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 		return OperationalErrorState; // error, too long waiting for data. Go to error state to inform and allow restart of process.
 	}
 
-	uint32_t loopstart = gettimer();
-	uint32_t looptimer = 0;
+	invRequestState(STOPPED);
 
-	ReadyRequest(); // request state updates / get devices into ready mode / receiving any sensor information for checking sanity.
+	vTaskDelay(5);
 
-	do
-	{
-		received = ReadyReceive( received );
+	// this state is just to allow devices to get ready, don't need to check any data.
+
+//	received = ReadyReceive( received );
         // check for incoming data, break when all received.
-		looptimer = gettimer() - loopstart;
-#ifdef WFI
-		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
-#endif
-	} while ( received != 0 && looptimer < PROCESSLOOPTIME-MS1*5 ); // check
 
 	// process data.
 
-	uint16_t Errorcode = CheckErrors();
-
-	if ( Errorcode )
+	if ( CheckCriticalError() )
 	{
-		CAN_SendStatus(5, OperationalReadyState, received);
-		Errors.State = OperationalReadyState;
-	//	Errors.error = 1; // checkerrors;
+	//	CAN_SendStatus(5, OperationalReadyState, received);
+	//	Errors.State = OperationalReadyState;
 		Errors.ErrorPlace = 0xBB;
-		Errors.ErrorReason = Errorcode;
-		return OperationalErrorState; // something has triggered an error, drop to error state to deal with it.
+		return OperationalErrorState; // something has triggered an unacceptable error ( inverter error state etc ), drop to error state to deal with it.
+
 	}
-
-
-	bool invready = true;
-
-	if ( DeviceState.Inverter != STOPPED ) invready = false;
 
 	if (received != 0 )
 	{ // activation requested but not everything is in satisfactory condition to continue
 
 		// show error state but allow to continue in some state if non critical sensor fails sanity.
 
-	//	setOutput(TSLED,0);
-	//	blinkOutput(TSLED,LEDBLINK_TWO,0);
-#ifdef movetoerrorstate
-		if ( AllowLimp() )
-		{
-		//	blinkOutput(STOPLED,LEDBLINK_TWO,0); //indicate that limp mode is allowable.
-			if ( CheckLimpActivationRequest() ) // check if limp mode requested if possible.
-			{
-				return LimpState; // enter limp mode?, or set variable to toggle limp mode elsewhere.
-			}
-		}
-		else
-#endif
-		{
-			blinkOutput(TSLED,LEDBLINK_FOUR,1); // indicate TS was requested before system ready.
-	//		blinkOutput(STOPLED,LEDOFF,0); // disable limp mode alert
-			return OperationalReadyState; // maintain current state.
-		}
+		blinkOutput(TSLED,LEDBLINK_FOUR,1); // indicate TS was requested before system ready.
+		return OperationalReadyState; // maintain current state.
 	}
-	else if ( invready ) // Ready to switch on
+	else if ( DeviceState.Inverter >= STOPPED  ) // Ready to switch on
 	{ 		// everything is ok to continue.
-//		CarState.Torque_Req_Max = ADCState.DrivingMode; // set max torque request before enter operational state.
-//		CarState.Torque_Req_CurrentMax = ADCState.DrivingMode;
 		return IdleState; // ready to move onto TS activated but not operational state, idle waiting for RTDM activation.
-		// set TS ready for activation light.
 	}
 
 	return OperationalReadyState;

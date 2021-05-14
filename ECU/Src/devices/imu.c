@@ -6,7 +6,7 @@
  */
 
 #include "ecumain.h"
-
+#include "imu.h"
 
 bool processIMUStatus(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 bool processIMUUTC(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );

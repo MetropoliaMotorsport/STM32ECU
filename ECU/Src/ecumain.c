@@ -20,50 +20,30 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include <operationalprocess.h>
-#include "main.h"
-#include "adc.h"
-#include "dma.h"
-#include "fdcan.h"
-#include "i2c.h"
-#ifdef HPF19
-	#include "sdmmc.h"
-	#include "usb_otg.h"
-	#include "wwdg.h"
-#endif
-#include "spi.h"
-#include "tim.h"
-#include "usart.h"
-#include "rng.h"
-#include "gpio.h"
-#include "canecu.h"
-#include "interrupts.h"
-#ifdef HPF20
-	#include "eeprom.h"
-	#include <powernode.h>
-	#include "i2c-lcd.h"
-	#include <stdio.h>
-#endif
-
-#include <stdlib.h>
-
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-#include "event_groups.h"
-
-#include "cmsis_os.h"
-#include "operationalprocess.h"
 #include "ecumain.h"
-#include "ecu.h"
-#include "output.h"
-#include "input.h"
-#include "debug.h"
-#include "watchdog.h"
-
 #include "dwt_delay.h"
+#include "watchdog.h"
+#include "errors.h"
+#include "lcd.h"
+#include "eeprom.h"
+#include "powernode.h"
+#include "analognode.h"
+#include "node.h"
+#include "input.h"
+#include "output.h"
+#include "adcecu.h"
+#include "ivt.h"
+#include "bms.h"
+#include "timerecu.h"
+#include "imu.h"
+#include "inverter.h"
+#include "debug.h"
+#include "configuration.h"
+#include "operationalprocess.h"
 
-
+#include "dma.h"
+#include "gpio.h"
+#include "rng.h"
 
 HAL_StatusTypeDef SystemClock_Config(void);
 static int HardwareInit( void );
@@ -119,18 +99,18 @@ void StartDefaultTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
+volatile CarStateType CarState;
+volatile DeviceStateType DeviceState;
 
+#define MAINTASKSTACK_SIZE 128*6
+#define MAINTASKTASKNAME  "MainTaskTask"
+#define MAINTASKTASKPRIORITY 1
+StaticTask_t xMAINTASKTaskBuffer;
+StackType_t xMAINTASKStack[ MAINTASKSTACK_SIZE ];
 
-osThreadId_t MainTaskHandle;
-const osThreadAttr_t MainTask_attributes = {
-  .name = "MainTask",
-  .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 50
-};
+TaskHandle_t MainTaskTaskHandle = NULL;
 
-
-
-
+EventGroupHandle_t xStartupSync;
 
 /* USER CODE BEGIN 1 */
 /* Functions needed when configGENERATE_RUN_TIME_STATS is on */
@@ -150,8 +130,6 @@ void MainTask(void *argument)
 	HardwareInit();
 
 	initERRORState();
-
-	initDebug();
 
     ResetStateData();
 
@@ -178,14 +156,19 @@ void MainTask(void *argument)
 
 	blinkOutput(LED7, BlinkFast, 1500);
 #endif
+
+	xEventGroupSync( xStartupSync, 1, 1, 100 );
 	while(1)
 	{
+		TickType_t startloop = xLastWakeTime;
 		OperationalProcess();
 		setWatchdogBit(watchdogBit);
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
+		if (xLastWakeTime - startloop > CYCLETIME )
+			DebugMsg("Long process loop!");
 	}
 	// shouldn't get here, but terminate thread gracefully if do somehow.
-	osThreadTerminate(NULL);
+	vTaskDelete(NULL);
 }
 
 
@@ -247,6 +230,8 @@ static int HardwareInit( void )
 	MX_GPIO_Init(); // no failure return value
 	MX_RNG_Init();
 
+	initDebug();
+
 	// startup LCD first
 #ifdef HPF20
 	ShutdownCircuitSet( false ); // ensure shutdown circuit is closed at start
@@ -278,7 +263,9 @@ static int HardwareInit( void )
 	initConfig();
     initInv();
 	initIMU();
+#ifdef PDM
 	initPDM();
+#endif
 	initIVT();
 	initBMS();
 	initInput();
@@ -347,10 +334,6 @@ static int HardwareInit( void )
 
 	lcd_send_stringscroll("Hardware init done.");
 
-//	lcd_send_stringscroll("Shutdown closed.");
-//	ShutdownCircuitSet( true );
-//	while ( 1 ){};
-
 	vTaskDelay(200);
 
 	lcd_endscroll();
@@ -379,20 +362,24 @@ int realmain(void)
 	/* Configure the system clock */
 	SystemClock_Config();
 
-	/* Init scheduler */
-	osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
-
 	// init the watchdog before anything else so that it will catch any startup hang.
 
 	DWT_Init();
 	initWatchdog();
 
-	MainTaskHandle = osThreadNew(MainTask, NULL, &MainTask_attributes);
+    xStartupSync = xEventGroupCreate();
 
-	// MX_FREERTOS_Init();
+	MainTaskTaskHandle = xTaskCreateStatic(
+						  MainTask,
+						  MAINTASKTASKNAME,
+						  MAINTASKSTACK_SIZE,
+						  ( void * ) 1,
+						  MAINTASKTASKPRIORITY,
+						  xMAINTASKStack,
+						  &xMAINTASKTaskBuffer );
 
-	/* Start scheduler */
-	osKernelStart();
+
+	vTaskStartScheduler();
 
 	while ( 1 )
 	{};

@@ -7,6 +7,9 @@
 
 #include "ecumain.h"
 #include "input.h"
+#include "timerecu.h"
+#include "configuration.h"
+#include "tim.h"
 
 // PWM Pin needs capacitor taken off to deactivate low pass filter.
 
@@ -86,15 +89,18 @@ volatile uint32_t            uwFrequency = 0;
 volatile uint32_t reading;
 volatile uint32_t PWMtime;
 
-osThreadId_t InputTaskHandle;
-const osThreadAttr_t InputTask_attributes = {
-  .name = "InputTask",
-  .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 128*2
-};
+#define INPUTSTACK_SIZE 128*2
+#define INPUTTASKNAME  "InputTask"
+#define INPUTTASKPRIORITY 1
+StaticTask_t xINPUTTaskBuffer;
+StackType_t xINPUTStack[ INPUTSTACK_SIZE ];
+
+TaskHandle_t InputTaskHandle;
 
 void InputTask(void *argument)
 {
+	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY );
+
 	TickType_t xLastWakeTime;
 
 	// Initialise the xLastWakeTime variable with the current time.
@@ -149,7 +155,7 @@ void InputTask(void *argument)
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 	}
 
-	osThreadTerminate(NULL);
+	vTaskDelete(NULL);
 }
 
 
@@ -182,7 +188,7 @@ int initPWM( void )
   */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-  if ( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) // only get one update per loop?
+  if ( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) // only get one update per loop?
   {
 	PWMtime = gettimer(); // use for timing out if interrupt not getting triggered.
 
@@ -190,17 +196,17 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 	{
 		// this should be called ~ 8 times per loop
 		/* Get the Input Capture value */
-		uwIC2Value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
+		uwIC2Value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
 
 		if (uwIC2Value != 0)
 		{
 		  /* Duty cycle computation */
-		  uwDutyCycle = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1) * 10000 / uwIC2Value;
+		  uwDutyCycle = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) * 10000 / uwIC2Value;
 		  /* uwFrequency computation
 		  TIM4 counter clock = (RCC_Clocks.HCLK_Frequency) */
 		  uwFrequency = (HAL_RCC_GetHCLKFreq()) / uwIC2Value / 5;
 
-		  if ( uwFrequency > 850 || uwFrequency < 830 )
+		  if ( uwFrequency > 860 || uwFrequency < 830 ) // was 850
 			  DeviceState.PWM = INERROR;
 		  // ensure that frequenc is within expected range
 		  else
@@ -612,7 +618,14 @@ int initInput( void )
 
 	RegisterCan1Message(&CANButtonInput);
 
-	InputTaskHandle = osThreadNew(InputTask, NULL, &InputTask_attributes);
+	InputTaskHandle = xTaskCreateStatic(
+						  InputTask,
+						  INPUTTASKNAME,
+						  INPUTSTACK_SIZE,
+						  ( void * ) 1,
+						  INPUTTASKPRIORITY,
+						  xINPUTStack,
+						  &xINPUTTaskBuffer );
 
 	return 0;
 }

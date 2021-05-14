@@ -8,40 +8,33 @@
 #ifndef ECUMAIN_H_
 #define ECUMAIN_H_
 
+#include "main.h"
+#include "ecu.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 
-#include "main.h"
+#include "stm32h7xx_hal.h"
 
-#define WATCHDOG
-
-#ifdef HPF19
-	#include "wwdg.h"
-#endif
-#include "fdcan.h"
-#include "tim.h"
-#include "dma.h"
-#include "i2c.h"
-#include "adc.h"
-#include "comp.h"
-
-#include "ecu.h"
-
-#ifdef RTOS
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
 #include "event_groups.h"
-#include "cmsis_os.h"
-#endif
-
 
 #include "canecu.h"
 
 extern CANData ECUCAN;
 
+extern volatile CarStateType CarState;
+
+extern volatile DeviceStateType DeviceState;
+
+extern EventGroupHandle_t xStartupSync;
+
+typedef void (ResetCommand)( void );
+
+int RegisterResetCommand( ResetCommand Handler );
+
+/*
 #include "output.h"
 #include "input.h"
 
@@ -73,7 +66,8 @@ extern CANData ECUCAN;
 #include "imu.h"
 #include "torquecontrol.h"
 #include "watchdog.h"
-
+#include "brake.h"
+*/
 
 int realmain(void);
 

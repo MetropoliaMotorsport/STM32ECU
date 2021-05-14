@@ -6,6 +6,10 @@
  */
 
 #include "ecumain.h"
+#include "powernode.h"
+#include "power.h"
+#include "debug.h"
+#include "errors.h"
 #include <stdarg.h>
 
 #include <stdio.h>
@@ -17,17 +21,32 @@
 #define MAXFANCURRENT		20
 #define MAXPUMPCURRENT		20
 
+#define PNode33Bit  0
+#define PNode34Bit  1
+#define PNode35Bit  2
+#define PNode36Bit  3
+#define PNode37Bit  4
+
 typedef struct nodepowerreqstruct {
 	uint8_t nodeid; //
 	uint8_t output; // enable
 	uint8_t state; // request state
-	uint8_t error[6];
+	uint32_t error[6];
+	uint32_t timesent;
 } nodepowerreq;
+
+typedef struct nodepowerpwmstruct {
+	uint8_t nodeid; //
+	uint8_t output;
+	uint8_t dutycycle; // enable
+	uint32_t timesent;
+} nodepowerpwmreq;
 
 typedef struct devicepowerreqstruct {
 	DevicePower device; //
 	uint8_t nodeid;
 	uint8_t output; // which bit of enable request is this device on
+	bool pwm;
 	bool expectedstate; // what state are we requesting.
 	bool waiting;
 	bool actualstate;
@@ -55,8 +74,11 @@ devicepowerreq DevicePowerList[] =
 		{ Accu, 36, 4 },
 		{ AccuFan, 36, 5},
 
+		{ Back1, 37, 3 },
+		{ Back2, 37, 2 },
+		{ Back3, 37, 1 },
 		{ Current, 37, 4 },
-		{ TSAL, 37, 5 },
+		{ TSAL, 37, 5 }, // essential to be powered, else not compliant.
 
 		{ None }
 };
@@ -71,6 +93,10 @@ nodepowerreq PowerRequests[] =
 		{ 0 }
 };
 
+nodepowerpwmreq nodefanpwmreqs[2] = {0};
+bool queuedfanpwmLeft = false;
+bool queuedfanpwmRight = false;
+
 bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
 bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
@@ -80,6 +106,7 @@ bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 
 void PNode33Timeout( uint16_t id );
 void PNode34Timeout( uint16_t id );
+void PNode36Timeout( uint16_t id ); // critical due to brakelight
 
 //bool processPNodeTimeout(uint8_t CANRxData[8], uint32_t DataLength );
 
@@ -90,7 +117,7 @@ bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * da
 CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, PNode33Timeout, NODETIMEOUT }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
 CANData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, PNode34Timeout, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
 CANData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
-CANData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, NULL, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
+CANData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, PNode36Timeout, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
 CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 3, processPNode37Data, NULL, NODETIMEOUT }; // [?], Current, TSAL.
 
 
@@ -99,18 +126,25 @@ int sendPowerNodeErrReset( uint8_t id, uint8_t channel );
 
 void PNode33Timeout( uint16_t id )
 {
-/*	CarState.Shutdown.BOTS = 0;
+	CarState.Shutdown.BOTS = 0;
 	CarState.Shutdown.InertiaSwitch = 0;
 	CarState.Shutdown.BSPDAfter = 0;
 	CarState.Shutdown.BSPDBefore = 0;
-	*/
 }
+
 
 void PNode34Timeout( uint16_t id )
 {
 	CarState.Shutdown.CockpitButton = 0; // TODO set to right inputs.
 	CarState.Shutdown.LeftButton = 0;
 	CarState.Shutdown.RightButton = 0;
+}
+
+
+void PNode36Timeout( uint16_t id )
+{
+	DeviceState.BrakeLight = OFFLINE;
+    SetCriticalError();
 }
 
 
@@ -123,6 +157,7 @@ bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 		&& ( CANRxData[2] >= 0 && CANRxData[2] < 255 )
 		)
 	{
+		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode33Bit ), eSetBits);
 		CarState.Shutdown.BOTS = (CANRxData[0] & (0x1 << 4) );
 		CarState.Shutdown.InertiaSwitch = (CANRxData[0] & (0x1 << 0) );
 		CarState.Shutdown.BSPDAfter = (CANRxData[0] & (0x1 << 2) );
@@ -137,6 +172,7 @@ bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 	}
 }
 
+
 bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 
@@ -147,6 +183,7 @@ bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 		&& CANRxData[3] < 255
 		)
 	{
+		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode34Bit ), eSetBits);
 //		CarState.ShutdownSwitchesClosed = CANRxData[0];
 		CarState.Shutdown.CockpitButton = (CANRxData[0] & (0x1 << 2) ); // TODO set to right inputs.
 		CarState.Shutdown.LeftButton = (CANRxData[0] & (0x1 << 3) );
@@ -173,6 +210,7 @@ bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 		&& ( CANRxData[3] >= 0 && CANRxData[3] <= MAXPUMPCURRENT )
 		)
 	{
+		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode35Bit ), eSetBits);
 //		CarState.I_LeftFans = CANRxData[0];
 //		CarState.I_RightFans =  CANRxData[1];
 //		CarState.I_LeftPump =  CANRxData[2];
@@ -184,6 +222,7 @@ bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 		return false;
 	}
 }
+
 
 bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle ) // Rear
 {
@@ -198,6 +237,8 @@ bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 		&& ( CANRxData[6] >= 0 && CANRxData[6] <= 100 )
 		)
 	{
+		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode36Bit ), eSetBits);
+
 		CarState.I_BrakeLight = CANRxData[0];
 		CarState.I_Buzzers = CANRxData[1];
 		CarState.I_IVT = CANRxData[2];
@@ -210,6 +251,8 @@ bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 			CarState.Shutdown.IMD = true;
 		else
 			CarState.Shutdown.IMD = false;
+
+		DeviceState.BrakeLight = OPERATIONAL;
 
 //		should be 10 Hz in normal situation (I think duty cycle was based on measured resistance or something)
 //		and then 50 Hz for fault state (50% duty cycle),
@@ -227,6 +270,7 @@ bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 	}
 }
 
+
 bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 
@@ -236,6 +280,7 @@ bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 		&& ( CANRxData[2] >= 0 && CANRxData[2] <= 100 )
 		)
 	{
+		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode37Bit ), eSetBits);
 //		CarState.??? = (CANRxData[0] & (0x1 << 4) );
 //		CarState.I_currentMeasurement =  CANRxData[1];
 //		CarState.I_TSAL =  CANRxData[2];
@@ -256,39 +301,97 @@ bool setActualDevicePower( uint8_t nodeid, uint8_t channel, bool state )
 		{
 			DevicePowerList[i].waiting = false;
 			DevicePowerList[i].actualstate = state;
-			break;
+			return true;
 		}
 	}
-
+	return false;
 }
 
 
 bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
 
-	for ( int i=0;PowerRequests[i].nodeid != 0;i++)
+	if ( CANRxData[1] == 1) // power set ACK
 	{
-		if ( PowerRequests[i].nodeid == CANRxData[0] && CANRxData[1] == 1 ) // check for power request change.
+		for ( int i=0;PowerRequests[i].nodeid != 0;i++)
 		{
-			PowerRequests[i].output ^= CANRxData[2]; // xor the input with the request. if the reply is set, this will zero out the request.
-			PowerRequests[i].state ^= CANRxData[3]; // update the status of which outputs are on.
-
-			// update the device power table for current actual reported state.
-			for ( int i=0;i<6;i++)
+			if ( PowerRequests[i].nodeid == CANRxData[0] ) // check for power request change.
 			{
-				if ( CANRxData[2] & ( 1 << i ) )
-				{
-					setActualDevicePower(PowerRequests[i].nodeid, i, CANRxData[3] & ( 1 << i ) );
-				}
-			}
+				PowerRequests[i].output ^= CANRxData[2]; // XOR the input with the request. if the reply is set, this will zero out the request.
+				PowerRequests[i].state ^= CANRxData[3]; // update the status of which outputs are on.
 
-			break; // request has been processed, stop iterating.
+				// update the device power table for current actual reported state.
+				for ( int j=0;j<6;j++)
+				{
+					if ( CANRxData[2] & ( 1 << j ) )
+					{
+						setActualDevicePower(PowerRequests[i].nodeid, j, CANRxData[3] & ( 1 << j ) );
+					}
+				}
+
+				return true; // request has been processed, stop iterating.
+			}
 		}
-	}
+	} else
+	if ( CANRxData[1] == 2) // PWM set ack
+	{
+		if ( nodefanpwmreqs[0].nodeid == nodefanpwmreqs[1].nodeid )
+		{
+			if ( CANRxData[0] == nodefanpwmreqs[0].nodeid )
+			{
+				queuedfanpwmLeft = false;
+				queuedfanpwmRight = false;
+			}
+		} else if ( CANRxData[0] == nodefanpwmreqs[0].nodeid )
+		{
+			queuedfanpwmLeft = false;
+		} else if ( CANRxData[0] == nodefanpwmreqs[1].nodeid )
+		{
+			queuedfanpwmRight = false;
+		}
+	} else
+	if ( CANRxData[1] == 23) // Error reset
+		{
+			if ( nodefanpwmreqs[0].nodeid == nodefanpwmreqs[1].nodeid )
+			{
+				if ( CANRxData[0] == nodefanpwmreqs[0].nodeid )
+				{
+					queuedfanpwmLeft = false;
+					queuedfanpwmRight = false;
+				}
+			} else if ( CANRxData[0] == nodefanpwmreqs[0].nodeid )
+			{
+				queuedfanpwmLeft = false;
+			} else if ( CANRxData[0] == nodefanpwmreqs[1].nodeid )
+			{
+				queuedfanpwmRight = false;
+			}
+		}
+
 	return true;
 }
 
 // ERROR list from powernode main.h
+
+#define ERR_CAN_BUFFER_FULL			1
+#define ERR_CAN_FIFO_FULL			2
+#define ERR_MESSAGE_DISABLED		3
+#define ERR_DLC_0					4
+#define ERR_DLC_LONG				5
+#define ERR_SEND_FAILED				6
+#define ERR_RECIEVE_FAILED			7
+#define ERR_INVALID_COMMAND			8
+#define ERR_COMMAND_SHORT			9
+#define ERR_RECIEVED_INVALID_ID 	10
+#define ERR_CANBUSOFFLINE			11
+
+#define ERR_MODIFY_INVALID_MESSAGE	33
+#define ERR_MODIFY_INVALID_THING	34
+#define ERR_CLEAR_INVALID_ERROR		35
+
+#define ERR_MESS_INVALID_BYTES		97
+#define ERR_MESS_UNDEFINED			98
+
 
 #define WARN_UNDERVOLT_U5				193
 #define WARN_OVERVOLT_U5				194
@@ -321,6 +424,34 @@ bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * da
 #define ERROR_OVERCURR_TRIP_U7_0		221 //PO4
 #define ERROR_OVERCURR_TRIP_U7_1		222 //PO5
 
+#define ERROR_READ_TEMP					224
+#define WARN_TEMP_MEASURE_OVERFLOW		225
+#define WARN_VOLT_MEASURE_OVERFLOW		226
+
+#define WARN_PWM_INVALID_CHANNEL		257
+#define WARN_PWM_CHANNEL_UNINITIALIZED	258
+#define WARN_UNDEFINED_GPIO				259
+#define WARN_PWM_NOT_ENABLED			260
+/*
+Power Error 199
+Power Error 210
+Power Error 198
+Power Error 199
+Power Error 210
+Power Error 132
+Power Error 135
+Power Error 198
+Power Error 199
+Power Error 210
+Power Error 212
+Power Error 132
+Power Error 135
+Power Error 132
+Power Error 135
+Power Error 132
+Power Error 135
+
+*/
 
 //
 // command 12 is used to clear an error from switch shutoff
@@ -340,14 +471,25 @@ bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * da
 #define U7I1_SWITCH_OFF				134 //PO5
 
 
+#define MAXPNODEERRORS		40
+
+struct PowerNodeError
+{
+	uint8_t nodeid;
+	uint32_t error;
+} PowerNodeErrors[MAXPNODEERRORS];
+
+uint8_t PowerNodeErrorCount = 0;
+
 
 bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle )
 {
-	// acknowledge error received.
 	uint8_t channel = 255;
-	// set an error state to be acted upon elsewhere.
 
-	switch ( errorcode )
+	// log error to power queue.
+	PowerLogError(nodeid, errorcode);
+
+	switch ( errorcode ) // switch off errors, need to be ACK'ed to stop sending error code.
 	{
 		case U5I0_SWITCH_OFF : channel = 0; break; //PO0
 		case U5I1_SWITCH_OFF : channel = 1; break; //PO1
@@ -357,14 +499,21 @@ bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle )
 		case U7I1_SWITCH_OFF : channel = 5; break; //PO5
 	}
 
+	char str[40]= "";
+	snprintf(str, 40, "Power Error %d", errorcode);
+	DebugMsg(str);
+
 	if ( channel != 255 ) // received error was assigned a channel.
 	{
+
 		sendPowerNodeErrReset( nodeid,  channel ); // clear error to stop node transmitting error state.
 		for ( int i=0;PowerRequests[i].nodeid != 0;i++)
 		{ // find the node record where error occurred.
 			if ( PowerRequests[i].nodeid == nodeid )
 			{
-				if ( PowerRequests[i].error[channel] < 255 ) PowerRequests[i].error[channel]++;
+				if ( PowerRequests[i].error[channel] < 255 )
+					PowerRequests[i].error[channel]++;
+				setActualDevicePower( nodeid, channel, false );
 				// keep a count of how many times an error has occurred.
 				// send some kind of notification to power task
 			}
@@ -393,6 +542,7 @@ int receivePowerNodes( void )
 
 	uint8_t pos = 0;
 
+//	if ( powernodesonline & ( 1 << PNode33Bit ) ) nodesonline -= 1;
 	if ( receivedCANData(&PowerNode33) ) nodesonline -= 1;
 	else
 	{
@@ -468,26 +618,46 @@ bool getNodeDeviceExpectedPower(DevicePower device )
 }
 
 
-
-int setNodeDevicePower( DevicePower device, bool state )
+// Queue up power node requests to be sent.
+bool setNodeDevicePower( DevicePower device, bool state, bool reset )
 {
-	int powerreqset = 1;
+//	for ( int i=0;DevicePowerList[i].device != None;i++)
+//	{
 
-	for ( int i=0;DevicePowerList[i].device != None;i++)
-	{
-		if ( DevicePowerList[i].device == device )
-		{ // found the device in list, try to set request.
-			DevicePowerList[i].expectedstate = state;
+	int i = getPowerDeviceIndex( device );
+
+	if ( DevicePowerList[i].device == device )
+	{ // found the device in list, try to set request.
+		DevicePowerList[i].expectedstate = state;
+
+		if ( reset )
+		{
+			DevicePowerList[i].actualstate = state;
+			DevicePowerList[i].waiting = false;
+		} else
 
 			// check if we're already in the expected state.
-			if ( DevicePowerList[i].expectedstate != DevicePowerList[i].actualstate)
+			if ( DevicePowerList[i].expectedstate != DevicePowerList[i].actualstate )
 				DevicePowerList[i].waiting = true;
 			else
 				DevicePowerList[i].waiting = false;
-			for ( int j=0;PowerRequests[j].nodeid != 0;j++) // search though the list of power nodes
+
+		for ( int j=0;PowerRequests[j].nodeid != 0;j++) // search though the list of power nodes
+		{
+			if ( PowerRequests[j].nodeid == DevicePowerList[i].nodeid ) // check if node on list matches the wanted id.
 			{
-				if ( PowerRequests[j].nodeid == DevicePowerList[i].nodeid ) // check if node on list matches the wanted id.
+				// check there isn't a current error on the request.
+				if ( PowerRequests[j].error[DevicePowerList[i].output] == 0 || reset)
 				{
+					if ( reset ) // we had a pending request, cancel it.
+					{
+						PowerRequests[j].error[DevicePowerList[i].output] = 0;
+						PowerRequests[j].output &= ~(0x1 << DevicePowerList[i].output); // set enable output
+						PowerRequests[j].state &= ~(0x1 << DevicePowerList[i].output); // set enable output
+						return true;
+					}
+
+					// no error, can proceed with request.
 					// check existing request queued for node..
 					bool enabled = PowerRequests[j].output & (0x1 <<  DevicePowerList[i].output);
 					if ( !enabled || // no request yet made
@@ -499,47 +669,91 @@ int setNodeDevicePower( DevicePower device, bool state )
 							PowerRequests[j].state |=(0x1 << DevicePowerList[i].output); // set bit
 						else
 							PowerRequests[j].state &= ~(0x1 << DevicePowerList[i].output); // unset bit
-						powerreqset = 0;
 
-					} else powerreqset = 1; // request already set
-				}
-				if ( powerreqset == 0 ) break;
+						return true;
+
+					} else
+					{
+						return false; // request already set
+					}
+				} return false; // error on channel, couldn't set
 			}
-			if ( powerreqset == 0 ) break;
 		}
 	}
-	return powerreqset; // return if device was found and request set.
+//	}
+	return false; // return if device was found and request set.
+}
+
+bool sendFanPWM( uint8_t leftduty, uint8_t rightduty )
+{
+	// minimum useful duty is 18/255
+
+	// ensure we don't end up in a stall state
+	if ( leftduty < 20 && leftduty > 0 ) leftduty = 20;
+	if ( rightduty < 20 && rightduty > 0) rightduty = 20;
+
+	uint8_t index = getPowerDeviceIndex(LeftFans);
+
+	nodefanpwmreqs[0].nodeid = DevicePowerList[index].nodeid;
+	nodefanpwmreqs[0].output = DevicePowerList[index].output;
+	nodefanpwmreqs[0].dutycycle = leftduty;
+
+	index = getPowerDeviceIndex(RightFans);
+
+	nodefanpwmreqs[1].nodeid = DevicePowerList[index].nodeid;
+	nodefanpwmreqs[1].output = DevicePowerList[index].output;
+	nodefanpwmreqs[1].dutycycle = rightduty;
+
+	queuedfanpwmLeft = true;
+	queuedfanpwmRight = true;
+	return true;
 }
 
 int sendPowerNodeErrReset( uint8_t id, uint8_t channel )
 {
-	uint8_t candata[8] = { id, 12, };
+	uint8_t candata[8] = { id, 12, channel};
 	CAN1Send(NodeCmd_ID, 3, candata );
 	return 0;
 }
 
-// check and return if an power error has occured on a device.
-bool powerErrorOccurred( DevicePower device )
+
+int getPowerDeviceIndex( DevicePower device )
 {
-	for ( int i=0;DevicePowerList[i].device != None;i++)
+	int i = 0;
+	for (;DevicePowerList[i].device != None; i++)
 	{
 		if ( DevicePowerList[i].device == device )
-		{ // found the device in list, try to set request.
+		{
+			return i;
+		}
+	}
+	return i;
+}
 
-			for ( int j=0;PowerRequests[j].nodeid != 0;j++)
+// check and return if an power error has occured on a device.
+uint32_t powerErrorOccurred( DevicePower device )
+{
+//	for ( int i=0;DevicePowerList[i].device != None; i++)
+//	{
+	int i = getPowerDeviceIndex( device );
+
+	if ( DevicePowerList[i].device == device )
+	{ // found the device in list, try to set request.
+
+		for ( int j=0;PowerRequests[j].nodeid != 0;j++)
+		{
+			if ( PowerRequests[j].nodeid ==  DevicePowerList[i].nodeid )
 			{
-				if ( PowerRequests[j].nodeid ==  DevicePowerList[i].nodeid )
-				{
-					if ( PowerRequests[j].error[DevicePowerList[i].output] )
-						return true;
-					else
-						return false;
-				}
+				return PowerRequests[j].error[DevicePowerList[i].output];
+		//		if ( PowerRequests[j].error[DevicePowerList[i].output] )
+		//			return true;
+		//		else
+		//			return false;
 			}
 		}
 	}
-
-	return false; // TODO implement checking received errors.
+//	}
+	return 0;
 }
 
 
@@ -550,17 +764,50 @@ int sendPowerNodeReq( void )
 
 	for ( int i=0;i<POWERNODECOUNT;i++)
 	{
-
 		if ( PowerRequests[i].output != 0 )
 		{
 			candata[0] = PowerRequests[i].nodeid;
 			candata[2] = PowerRequests[i].output;
 			candata[3] = PowerRequests[i].state;
-			CAN1Send(NodeCmd_ID, 8, candata );
+			if ( PowerRequests[i].nodeid != 36)
+				CAN1Send(NodeCmd_ID, 8, candata );
 			// don't reset request until we've seen an ack -> use ack handler to clear request.
+			// give a small delay between can power request messages, to allow a tiny bit of leeway for some inrush maybe.
+			vTaskDelay(1);
 		}
-
 	};
+
+	if ( queuedfanpwmLeft || queuedfanpwmRight )
+	{
+		candata[1] = 2; // pwm set command.
+
+		if ( nodefanpwmreqs[0].nodeid == nodefanpwmreqs[1].nodeid ) // both requests on same node.
+		{
+			candata[0] = nodefanpwmreqs[0].nodeid;
+			candata[2] = (0x1 << nodefanpwmreqs[0].output) + (0x1 << nodefanpwmreqs[1].output);
+			candata[3] = nodefanpwmreqs[0].dutycycle;
+			candata[4] = nodefanpwmreqs[1].dutycycle;
+			CAN1Send(NodeCmd_ID, 5, candata );
+		} else // fans on different nodes
+		{
+			if ( queuedfanpwmLeft )
+			{
+				candata[0] = nodefanpwmreqs[0].nodeid;
+				candata[2] = (0x1 << nodefanpwmreqs[0].output);
+				candata[3] = nodefanpwmreqs[0].dutycycle;
+				CAN1Send(NodeCmd_ID, 4, candata );
+			}
+
+			if ( queuedfanpwmRight )
+			{
+				candata[0] = nodefanpwmreqs[1].nodeid;
+				candata[2] = (0x1 << nodefanpwmreqs[1].output);
+				candata[3] = nodefanpwmreqs[1].dutycycle;
+				CAN1Send(NodeCmd_ID, 4, candata );
+			}
+		}
+	}
+
 	return senderror;
 }
 
@@ -585,6 +832,11 @@ void resetPowerNodes( void )
 	CarState.Shutdown.BMSReason = false;
 	CarState.Shutdown.IMD = false;
 	CarState.Shutdown.AIROpen = false;
+
+// reset errors
+
+	PowerNodeErrorCount = 0;
+
 }
 
 int initPowerNodes( void )

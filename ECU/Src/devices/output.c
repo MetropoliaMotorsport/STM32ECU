@@ -6,13 +6,18 @@
  */
 
 #include "ecumain.h"
+#include "output.h"
+#include "timerecu.h"
 
-osThreadId_t OutputTaskHandle;
-const osThreadAttr_t OutputTask_attributes = {
-  .name = "OutputTask",
-  .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 128*2
-};
+#include "queue.h"
+
+#define OUTPUTSTACK_SIZE 128*6
+#define OUTPUTTASKNAME  "OutputTask"
+#define OUTPUTTASKPRIORITY 1
+StaticTask_t xOUTPUTTaskBuffer;
+StackType_t xOUTPUTStack[ OUTPUTSTACK_SIZE ];
+
+TaskHandle_t OutputTaskHandle;
 
 #define OutputQUEUE_LENGTH    20
 #define OutputITEMSIZE		sizeof( struct output_msg )
@@ -133,12 +138,12 @@ void BlinkTask( void * pvParameters )
 		}
     }
 
-	//osThreadTerminate(NULL);
 	vTaskDelete(NULL);
 }
 
 void OutputTask(void *argument)
 {
+	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY );
 
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT( OutputQueue );
@@ -209,7 +214,7 @@ void OutputTask(void *argument)
 									  "BlinkTask",     /* Text name for the task. */
 									  BLINKSTACK_SIZE,      /* Number of indexes in the xStack array. */
 									  ( void * ) msg.output,    /* Parameter passed into the task. */
-									  osPriorityLow,/* Priority at which the task is created. */
+									  2,/* Priority at which the task is created. */
 									  xStack[msg.output],          /* Array to use as the task's stack. */
 									  &xBlinkTaskBuffer[msg.output] );  /* Variable to hold the task's data structure. */
 					} else if ( msg.time > 0 && eTaskGetState(xBlinkHandle[msg.output]) == eSuspended )
@@ -236,7 +241,7 @@ void OutputTask(void *argument)
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 	}
 
-	osThreadTerminate(NULL);
+	vTaskDelete(NULL);
 }
 
 typedef struct ButtonData {
@@ -365,24 +370,7 @@ void timeOutput(output output, uint32_t time)
 	blinkOutput(output, Timed, time);
 }
 
-/**
- * @brief setup start state of LED's to off.
- */
-int initOutput( void )
-{
-	OutputQueue = xQueueCreateStatic( OutputQUEUE_LENGTH,
-							  OutputITEMSIZE,
-							  OutputQueueStorageArea,
-							  &OutputStaticQueue );
 
-	vQueueAddToRegistry(OutputQueue, "OutputQueue" );
-
-	OutputTaskHandle = osThreadNew(OutputTask, NULL, &OutputTask_attributes);
-
-	blinkOutput(LED1, BlinkVerySlow, LEDBLINKNONSTOP); // startup board activity blinker/power light.
-
-	return 0;
-}
 
 /**
  * @brief set the current state of LED's as defined by carstate variables.
@@ -427,4 +415,29 @@ void startupLEDs(void)
 	  for(int i=0;i<=OUTPUTCount;i++){ // turn off all LED's
 		  setOutput(i, Off);
 	  }
+}
+
+
+int initOutput( void )
+{
+	OutputQueue = xQueueCreateStatic( OutputQUEUE_LENGTH,
+							  OutputITEMSIZE,
+							  OutputQueueStorageArea,
+							  &OutputStaticQueue );
+
+	vQueueAddToRegistry(OutputQueue, "OutputQueue" );
+
+
+	OutputTaskHandle = xTaskCreateStatic(
+						  OutputTask,
+						  OUTPUTTASKNAME,
+						  OUTPUTSTACK_SIZE,
+						  ( void * ) 1,
+						  OUTPUTTASKPRIORITY,
+						  xOUTPUTStack,
+						  &xOUTPUTTaskBuffer );
+
+	blinkOutput(LED1, BlinkVerySlow, LEDBLINKNONSTOP); // startup board activity blinker/power light.
+
+	return 0;
 }

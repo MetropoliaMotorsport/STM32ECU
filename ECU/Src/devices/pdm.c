@@ -6,6 +6,9 @@
  */
 
 #include "ecumain.h"
+#include "pdm.h"
+#include "output.h"
+#include "power.h"
 
 
 bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
@@ -179,7 +182,7 @@ int sendPDM( bool buzzer )
 
 void resetPDM ( void )
 {
-	PDMCanData.seen = false;
+//	PDMCanData.seen = false;
 	DeviceState.PDM = OFFLINE;
 
 	CarState.Shutdown.BMS = true; // these are latched

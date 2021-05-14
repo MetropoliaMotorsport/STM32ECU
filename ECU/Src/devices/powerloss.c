@@ -5,8 +5,12 @@
  *      Author: Visa
  */
 
-#include <powernode.h>
+
 #include "ecumain.h"
+#include "powernode.h"
+#include "output.h"
+
+#include "comp.h"
 
 volatile bool powerlost = false;
 

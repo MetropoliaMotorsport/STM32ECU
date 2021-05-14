@@ -7,22 +7,19 @@
   ******************************************************************************
   */
 
-#include "main.h"
-#include <stdlib.h>
-
-/* Private includes ----------------------------------------------------------*/
-
 #include "ecumain.h"
-//#include "ecu.h"
-//#include "configuration.h"
-//#include "output.h"
-//#include "input.h"
-//#include "canecu.h"
-
-#ifdef LCD
-  #include "vhd44780.h"
-#endif
-
+#include "runningprocess.h"
+#include "preoperation.h"
+#include "configuration.h"
+#include "errors.h"
+#include "power.h"
+#include "adcecu.h"
+#include "bms.h"
+#include "lcd.h"
+#include "input.h"
+#include "output.h"
+#include "inverter.h"
+#include "powernode.h"
 
 //#define PRINTDEBUGRUNNING
 
@@ -80,7 +77,7 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 #ifndef POWERNODES
 
 
-	if ( receivePDM() )// && !errorPDM() )
+//	if ( receivePDM() )// && !errorPDM() )
 	{
 		returnvalue &= ~(0x1 << PDMReceived);
 	}
@@ -90,23 +87,23 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	}
 #endif
 
-	if ( receiveBMS() ) // ensure heard from BMS
+//	if ( receiveBMS() ) // ensure heard from BMS
 	{
 		returnvalue &= ~(0x1 << BMSReceived);
 	}
-	else
+/*	else
 	{
 		returnvalue |= 0x1 << BMSReceived;
-	}
+	} */
 
-	if ( receiveIVT() ) // ensure heard from IVT
+//	if ( receiveIVT() ) // ensure heard from IVT
 	{
 		returnvalue &= ~(0x1 << IVTReceived);
 	}
-	else
+/*	else
 	{
 		returnvalue |= 0x1 << IVTReceived; // why was this commented out?
-	}
+	} */
 
 	// check datalogger response?   --
 
@@ -148,30 +145,34 @@ int PreOperationState( uint32_t OperationLoops  )
 #endif
     if ( OperationLoops == 0 )
 	{
-    	//	lcd_setscrolltitle("Pre Operation");
-    //		lcd_send_stringpos(3,0,"  <Red for config>");
-	    	preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
-	    	CarState.HighVoltageReady = false;
-	    	InverterAllowTorque(false);
-	    	ReadyToStart = 0xFFFF;
-	    	minmaxADCReset();
+    	// pre operation state is to allow hardware to get ready etc, no point in logging errors at this point.
+    	// the user can see operational state.
+    	SetErrorLogging( false );
+		preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
+		CarState.HighVoltageReady = false;
+		InverterAllowTorque(false);
+		ReadyToStart = 0xFFFF;
+#ifdef STMADC
+		minmaxADCReset();
+#endif
 
-	    	// set startup powerstates to bring devices up.
+		// set startup powerstates to bring devices up.
 
-	    	setDevicePower(Buzzer, 0);
+//		setDevicePower(Buzzer, 0);
 
-			setDevicePower(Telemetry, 1);
-	    	setDevicePower(IVT, 1);
-			setDevicePower(Telemetry, 1);
-			setDevicePower(Front1, 1);
+//		setDevicePower(ECU, 1);
+//		setDevicePower(TSAL, 1);
+//		setDevicePower(IVT, 1);
+//		setDevicePower(Telemetry, 1);
+//		setDevicePower(Front1, 1);
 
-			setDevicePower(Inverters, 1);
-			setDevicePower(Front2, 1);
+//		setDevicePower(Inverters, 1);
+//		setDevicePower(Front2, 1);
 
-			initVectoring();
+		initVectoring();
 
-	 //   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
-	    	// send to individual devices rather than reset everything if needed.
+ //   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
+		// send to individual devices rather than reset everything if needed.
 	}
 #ifndef everyloop
 	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
@@ -181,6 +182,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		// do power request
 
+		// test power error checking.
     	if ( DeviceState.IVTEnabled && DeviceState.IVT == OFFLINE )
     	{
     		if ( !powerErrorOccurred( IVT ) )
@@ -193,18 +195,9 @@ int PreOperationState( uint32_t OperationLoops  )
     		}
     	}
 
-// pumps on 35
-
-
-#ifndef RTOS
-    	// what was this doing?
-		if ( ( OperationLoops % 10 ) == 0 ) { sendPowerNodeReq(); }
-#endif
 		// generate device waiting string.
 
 		if ( preoperationstate != 0 || ReadyToStart != 0 ){
- //   		lcd_send_stringpos(1,0,"Waiting for:");
-
 			// TODO add a checker that if all devices on canbus missing, show this instead of individual.
 
 			strcpy(str, "Wait:");
@@ -288,12 +281,6 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	}
 
-//	ResetCanReceived();
-
-//	uint32_t loopstart = gettimer();
-//	uint32_t looptimer = 0;
-
-
 	// check if received configuration requests, or mode change -> testing state.
 	switch ( CheckConfigurationRequest() ) // allows RequestState to be set to zero to prevent mode changing mid config, or request a different mode.
 	{
@@ -330,42 +317,25 @@ int PreOperationState( uint32_t OperationLoops  )
 
 			if ( showbrakebal ) PrintBrakeBalance( );
 
+#ifdef ADC
 			if ( showadc )
 			{
-
 				sprintf(str,"A1 %.5lu %.5lu %.5lu", ADC_Data[0], ADC_Data[1], ADC_Data[2]);
 				lcd_send_stringline(1,str, 255);
 
 				sprintf(str,"A3 %.5lu %.5lu %.5lu", ADC_Data[3], ADC_Data[4], ADC_Data[5]);
 				lcd_send_stringline(2,str, 255);
 			}
+#endif
 
 			// do nothing
 	}
 
 	setRunningPower( false, false );
 
-	// checks if we have heard from other necessary connected devices for operation.
-/*
-while (  looptimer < PROCESSLOOPTIME-50 ) {
-		looptimer = gettimer() - loopstart;
-#ifdef WFI
-		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
-#endif
-	}; // check
-*/
-
 	vTaskDelay(5);
 
 	preoperationstate = DevicesOnline(preoperationstate);
-
-	uint16_t error = CheckErrors();
-	// check error state.
-	if ( error )
-	{
-		// print error reasons preventing startup.
-//		return OperationalErrorState; // if a device is in error state, quit to error handler to decide how to proceed.
-	}
 
 	// set drive mode
 
@@ -389,11 +359,6 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 
 	if ( CarState.APPSstatus ) setOutput(RTDMLED,On); else setOutput(RTDMLED,Off);
 
-#ifdef FANCONTROL
-		FanControl();
-#endif
-
-
 	// Check startup requirements.
 
 	ReadyToStart = 0;
@@ -410,9 +375,9 @@ while (  looptimer < PROCESSLOOPTIME-50 ) {
 		setOutput(TSOFFLED,On);
 	}
 
-	if ( errorPower() ) { ReadyToStart += 1; }
+//	if ( errorPower() ) { ReadyToStart += 1; }
 	if ( preoperationstate != 0 ) { ReadyToStart += 2; }
-	if ( DeviceState.Inverter >= BOOTUP  ) { ReadyToStart += 4; }
+	if ( DeviceState.Inverter < BOOTUP  ) { ReadyToStart += 4; }
 
 	if ( ReadyToStart == 0 )
 	{

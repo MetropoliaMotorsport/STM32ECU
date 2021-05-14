@@ -9,6 +9,7 @@
 #define INPUT_H_
 
 #include "ecu.h"
+#include "queue.h"
 
 //#define Debouncetime 10000 // only allow one button press every 20ms? No longer being used, Tim7 used instead.
 
@@ -118,7 +119,7 @@ typedef struct input_msg {
 
 extern QueueHandle_t InputQueue;
 
-extern CANData CANButtonInput;
+//extern CANData CANButtonInput;
 
 int initPWM( void );
 bool receivePWM( void );

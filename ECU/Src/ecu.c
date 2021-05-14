@@ -7,14 +7,6 @@
 
 #include "ecumain.h"
 
-#ifdef LCD
-  #include "vhd44780.h"
-#endif
-
-
-
-//bool GetECUCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-
 CANData ECUCAN = { NULL, 21, 8, NULL, NULL, 0 };
 
 

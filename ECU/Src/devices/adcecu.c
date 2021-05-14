@@ -5,11 +5,20 @@
  */
 
 #include "ecumain.h"
+
+#include "adc.h"
+#include "eeprom.h"
+#include "errors.h"
+#include "input.h"
+#include "adcecu.h"
 #include "i2c-lcd.h"
 #include "semphr.h"
+#include "analognode.h"
+#include <limits.h>
 
 #define UINTOFFSET	360
 
+#ifdef STMADC
 volatile uint32_t ADCloops;
 volatile uint32_t ADC3loops;
 
@@ -30,9 +39,9 @@ volatile bool ADC3read = false;
 #endif
 
 // ADC conversion buffer, should be aligned in memory for faster DMA?
- DMA_BUFFER ALIGN_32BYTES (static uint32_t aADCxConvertedData[ADC_CONVERTED_DATA_BUFFER_SIZE]);
- DMA_BUFFER ALIGN_32BYTES (static uint32_t aADCxConvertedDataADC3[ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3]);
-// new calibration
+DMA_BUFFER ALIGN_32BYTES (static uint32_t aADCxConvertedData[ADC_CONVERTED_DATA_BUFFER_SIZE]);
+DMA_BUFFER ALIGN_32BYTES (static uint32_t aADCxConvertedDataADC3[ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3]);
+#endif
 
 #ifdef SIMPLETORQUEVECTOR
 uint16_t TorqueVectInput[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTORSTARTANGLE+UINTOFFSET, 0, TORQUEVECTORSTARTANGLE+UINTOFFSET,  TORQUEVECTORSTOPANGLE+UINTOFFSET };
@@ -165,17 +174,23 @@ uint8_t DriveModeSize = sizeof(DrivingModeInput)/sizeof(DrivingModeInput[0]);
 void ReadADC1(bool half);
 void ReadADC3(bool half);
 
-osThreadId_t ADCTaskHandle;
-const osThreadAttr_t ADCTask_attributes = {
-  .name = "ADCTask",
-  .priority = (osPriority_t) osPriorityHigh,
-  .stack_size = 128*2
-};
+TaskHandle_t ADCTaskHandle = NULL;
 
+//osThreadId_t ADCTaskHandle;
+#define ADCSTACK_SIZE 128*2
+#define ADCTASKNAME  "ADCTask"
+#define ADCTASKPRIORITY 10
+StaticTask_t xADCTaskBuffer;
+StackType_t xADCStack[ ADCSTACK_SIZE ];
+
+
+#ifdef STMADC
 //quick and dirty hack till rework adc back to one shot dma
 
 SemaphoreHandle_t xADC1 = NULL;
 SemaphoreHandle_t xADC3 = NULL;
+
+#endif
 
 char ADCWaitStr[20] = "";
 
@@ -190,9 +205,12 @@ void ADCTask(void *argument)
 {
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 
+	 xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY );
+
+#ifdef STMADC
 	xADC1 = xSemaphoreCreateBinary();
 	xADC3 = xSemaphoreCreateBinary();
-
+#endif
 	TickType_t xLastWakeTime;
 
 	// Initialise the xLastWakeTime variable with the current time.
@@ -202,61 +220,56 @@ void ADCTask(void *argument)
 
 	while( 1 )
 	{
-#ifdef PROFILE
-		volatile startime = DWT->CYCCNT;
-#endif
+#ifdef STMADC
 		// start the adc reads and then wait on their incoming queues.
 		if ( HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t *)aADCxConvertedData, ADC_CONVERTED_DATA_BUFFER_SIZE)  != HAL_OK)
 		{
 			DeviceState.ADC = INERROR;
 		}
 
+		HAL_StatusTypeDef adc3status = HAL_ADC_Start_DMA(&hadc3,(uint32_t *)aADCxConvertedDataADC3,ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3);
+
 		// start ADC conversion
 		//  return HAL_ADC_Start_DMA(&hadc1,(uint32_t *)aADCxConvertedData,ADC_CONVERTED_DATA_BUFFER_SIZE);
-		if ( HAL_ADC_Start_DMA(&hadc3,(uint32_t *)aADCxConvertedDataADC3,ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3) != HAL_OK)
+		if ( adc3status != HAL_OK)
 		{
 			DeviceState.ADC = INERROR;
 		}
 
 	//	if( == pdTRUE )
-		xSemaphoreTake( xADC1, portMAX_DELAY );
-		xSemaphoreTake( xADC3, portMAX_DELAY );
-#ifdef PROFILE
-		volatile totaltime = DWT->CYCCNT-starttime; // approx 72k cycles to here for adc read.
+
+		if ( DeviceState.ADC != INERROR )
+		{
+			xSemaphoreTake( xADC1, portMAX_DELAY );
+			xSemaphoreTake( xADC3, portMAX_DELAY );
+			ReadADC1(false);
+			ReadADC3(false);
+		}
 #endif
 
-		ReadADC1(false);
-		ReadADC3(false);
-
-		receiveAnalogNodes();
+	// move can receive to can thread.
 
 		ADCWaitStr[0] = 0;
 
 		// check to see what actually received;
-		if (  receiveAnalogNodesCritical() != 0)
+		if ( receiveAnalogNodesCritical() != 0)
 		{
-			strcpy(ADCWaitStr, getAnalogNodesCriticalStr());
+//			strcpy(ADCWaitStr, getAnalogNodesCriticalStr());
 			strcat(ADCWaitStr, getAnalogNodesStr());
 
 			DeviceState.ADC = OPERATIONAL;
 		} else
 			DeviceState.ADC = INERROR;
 
-		//get adc readings, then check them.
-
 		DeviceState.ADCSanity = CheckADCSanity();
 
 		if ( DeviceState.ADCSanity != 0 )
 			DeviceState.ADC = INERROR;
 
-		// if readings ok, then pass them to main loop?
-
-//		if ( DeviceState.ADC == INERROR )
-
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME ); // use task sync instead?
 	}
 
-	osThreadTerminate(NULL);
+	vTaskDelete(NULL);
 }
 
 
@@ -576,16 +589,20 @@ int getSteeringAnglePWM( void )
 {
 	volatile int angle = 0;
 
-	return 0;
-
 	if ( receivePWM() )
 	{
 		angle = getPWMDuty();
 		angle = ( angle*360.0 );
 		angle = angle / 10000; // center around 180;
 		angle = angle - 180;
-	} else angle = 0xFF; // not read, return impossible angle for sanity check.
-	return angle;
+		ADCState.SteeringAngle = angle;
+		xTaskNotify( ADCTaskHandle, ( 0x1 << SteeringAngleReceivedBit ), eSetBits);
+		return true;
+	} else
+	{
+		ADCState.SteeringAngle = 0xFFFF; // not read, return impossible angle for sanity check.
+		return false;
+	}
 }
 
 /**
@@ -822,6 +839,7 @@ int getTorqueVector(uint16_t RawADCInput)
 }
 #endif
 
+#ifdef STMADC
 void minmaxADCReset(void)
 {
 	for ( int i = 0; i<NumADCChan+NumADCChanADC3; i++)
@@ -830,23 +848,26 @@ void minmaxADCReset(void)
 		ADC_DataMin[i]=0xFFFFFFFF;
 	}
 }
+#endif
 
 
 HAL_StatusTypeDef startADC(void)
 {
 #ifdef STMADC
-
 	if ( (uint32_t) aADCxConvertedData < 0x24000000 ){
 		while ( 1 ) {
 			lcd_send_stringposDIR(0,0,"ADC DMA in wrong memory. ");
 			lcd_send_stringposDIR(1,0,"Fix .LD and recompile! ");
 		}
 	}
+#endif
 
 	minmaxADC = 1;
 	minmaxADCReset();
+#ifdef STMADC
 	ADC_MultiModeTypeDef multimode;
 	multimode.Mode=ADC_MODE_INDEPENDENT;
+
 #ifdef CALIBRATEADC
 	if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)
 	{
@@ -862,26 +883,19 @@ HAL_StatusTypeDef startADC(void)
 #endif
 
 
+
 	if ( HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
 	{
 		Error_Handler();
 	}
 
+#endif
+
 	// in RTOS mode ADC poll is requested per cycle.
 
 	DeviceState.ADC = OPERATIONAL;
-#endif
 
 	return 0;
-}
-
-
-HAL_StatusTypeDef stopADC( void )
-{
-#ifdef STMADC
-	  return (HAL_ADC_Stop_DMA(&hadc1) != HAL_OK); // this was causing a hang shortly after calling before.
-#endif
-		return 0;
 }
 
 #ifdef STMADC
@@ -971,25 +985,6 @@ void ReadADC3(bool half)
 	}
 }
 
-#ifndef RTOS // RTOS we just want the complete read per cycle.
-void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
-{
-// nothing yet
-	if(!usecanADC) // don't process ADC values if ECU has been setup to use dummy values
-	{
-		if ( hadc->Instance == ADC1 )
-		{
-			ReadADC1(true);
-		}
-		else
-		if ( hadc->Instance == ADC3 ) // TODO update for variable amount of ADC channels
-		{
-			ReadADC3(true);
-		}
-	}
-}
-#endif
-
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 //	ADC_msg msg;
@@ -1020,25 +1015,41 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 
 
 // checks all expected data is present and within acceptable range -- allow occasional error, remove inverter.
-uint16_t CheckADCSanity( void )
+uint32_t CheckADCSanity( void )
 {
-	uint16_t returnvalue=(0x1 << BrakeFErrorBit)+
-						(0x1 << BrakeRErrorBit)+
-						(0x1 << AccelRErrorBit)+
-						(0x1 << AccelLErrorBit)+
-						(0x1 << SteeringAngleErrorBit)
+	uint32_t expectedvalue=(0x1 << BrakeFReceivedBit)+
+						(0x1 << BrakeRReceivedBit)+
+						(0x1 << AccelRReceivedBit)+
+						(0x1 << AccelLReceivedBit)+
+						(0x1 << SteeringAngleReceivedBit)+
+					    (0x1 << CoolantLReceivedBit)+
+						(0x1 << CoolantRReceivedBit)+
+						(uint32_t)(0x1 << SteeringAngleReceivedBit)
 #ifdef HPF19
-					   +(0x1 << CoolantLErrorBit)+
-						(0x1 << CoolantRErrorBit)+
-						(0x1 << SteeringAngleErrorBit)+
-						(0x1 << DrivingModeErrorBit )
+						+(0x1 << DrivingModeErrorBit )
 #endif
 						;
-					//	(0x1 << BMSVoltageErrorBit); // set all bits to error state at start, should be 0 by end if OK
 
-	// check bit bit = (number >> n) & 0x1;
+	uint16_t returnvalue = 0;
 
-	if ( DeviceState.ADC != OFFLINE )
+    ADCState.SteeringAngle = getSteeringAnglePWM();
+
+
+	BaseType_t xResult;
+	uint32_t ADCReceived = 0;
+	xResult = xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
+					 ULONG_MAX,        /* Clear all bits on exit. */
+					 &ADCReceived, /* Stores the notified value. */
+					 0 );
+
+
+
+	if( xResult == pdPASS )
+	{
+
+	}
+
+	if ( ADCReceived == expectedvalue )
 	{
 		// request ADC data.
         // check adc's are giving values in acceptable range.
@@ -1134,45 +1145,41 @@ uint16_t CheckADCSanity( void )
         }
         else returnvalue &= ~(0x1 << DrivingModeErrorBit);
 #else
-        // check can data is uptodate.
 
-
-        ADCState.SteeringAngle = getSteeringAnglePWM();
 
         if ( abs(ADCState.SteeringAngle) >= 181 ) // if impossible angle.
         {
-            ADCState.SteeringAngle = 255;
-            returnvalue &= ~(0x1 << SteeringAngleErrorBit);
-         //   returnvalue |= 0x1 << SteeringAngleErrorBit;
+//            returnvalue &= ~(0x1 << SteeringAngleReceivedBit);
+         //   returnvalue |= 0x1 << SteeringAngleReceivedBit;
         }
-        else returnvalue &= ~(0x1 << SteeringAngleErrorBit);
+        else returnvalue &= ~(0x1 << SteeringAngleReceivedBit);
 
     	if ( getAnalogNodesCriticalStr() == NULL ) // string will be empty if everything expected received.
     	{
 
 			if ( ADCState.BrakeF < 0 || ADCState.BrakeF >= 240 )
-			   returnvalue |= 0x1 << BrakeFErrorBit; // error
-			else returnvalue &= ~(0x1 << BrakeFErrorBit); // ok
+			   returnvalue |= 0x1 << BrakeFReceivedBit; // Received
+			else returnvalue &= ~(0x1 << BrakeFReceivedBit); // ok
 
 			if ( ADCState.BrakeR < 0 || ADCState.BrakeR >= 240 )
-				returnvalue |= 0x1 << BrakeRErrorBit;
-			else returnvalue &= ~(0x1 << BrakeRErrorBit);
+				returnvalue |= 0x1 << BrakeRReceivedBit;
+			else returnvalue &= ~(0x1 << BrakeRReceivedBit);
 
-			if ( ADCState.Torque_Req_R_Percent < 0 || ADCState.Torque_Req_R_Percent > 1000 ) // if value is not between 0 and 100 then out of range error
-				returnvalue |= 0x1 << AccelRErrorBit;
-			else returnvalue &= ~(0x1 << AccelRErrorBit);
+			if ( ADCState.Torque_Req_R_Percent < 0 || ADCState.Torque_Req_R_Percent > 1000 ) // if value is not between 0 and 100 then out of range Received
+				returnvalue |= 0x1 << AccelRReceivedBit;
+			else returnvalue &= ~(0x1 << AccelRReceivedBit);
 
-		    if ( ADCState.Torque_Req_L_Percent < 0 || ADCState.Torque_Req_L_Percent > 1000 ) // if value is not between 0 and 100 then out of range error
-				returnvalue |= 0x1 << AccelLErrorBit;
-			else returnvalue &= ~(0x1 << AccelLErrorBit);
+		    if ( ADCState.Torque_Req_L_Percent < 0 || ADCState.Torque_Req_L_Percent > 1000 ) // if value is not between 0 and 100 then out of range Received
+				returnvalue |= 0x1 << AccelLReceivedBit;
+			else returnvalue &= ~(0x1 << AccelLReceivedBit);
 
     	} else
-    	{ // not received data, set error bits.
-			returnvalue |= 0x1 << BrakeFErrorBit; // error
-			returnvalue |= 0x1 << BrakeRErrorBit;
-			returnvalue |= 0x1 << AccelRErrorBit;
-			returnvalue |= 0x1 << AccelLErrorBit;
-            ADCState.BrakeF = 0; // if value is not between 0 and 255 then out of range error
+    	{ // not received data, set Received bits.
+			returnvalue |= 0x1 << BrakeFReceivedBit; // Received
+			returnvalue |= 0x1 << BrakeRReceivedBit;
+			returnvalue |= 0x1 << AccelRReceivedBit;
+			returnvalue |= 0x1 << AccelLReceivedBit;
+            ADCState.BrakeF = 0; // if value is not between 0 and 255 then out of range Received
             ADCState.BrakeR = 0;
             ADCState.Torque_Req_R_Percent = 0;
             ADCState.Torque_Req_L_Percent = 0;
@@ -1199,6 +1206,7 @@ uint16_t CheckADCSanity( void )
 		Errors.ADCErrorState=returnvalue; // store current error value for checking.
 		DeviceState.ADC = INERROR;
 
+#ifdef STMADC
 		for (int i=0;i<NumADCChan+2;i++)
 		ADC_DataError[i] = ADC_Data[i];
 
@@ -1213,7 +1221,9 @@ uint16_t CheckADCSanity( void )
 				CAN_SendADC(ADC_DataError, 1); // send error information to canbus - this should perhaps be latched to only happen once per error state.
 			}
 			returnvalue=0xFF; // 5 adc error reads happened in row, flag as error.
-}
+
+		}
+#endif
 	} else // no errors, clear flags.
 	{
 		if ( Errors.ADCError > 0 )	Errors.ADCError--;
@@ -1276,7 +1286,9 @@ int initCANADC( void )
 
 void resetADC( void )
 {
-
+#ifdef HPF19
+	usecanADC = 0;
+#endif
 }
 
 int initADC( void )
@@ -1293,7 +1305,17 @@ int initADC( void )
 	} else return 99;
 #endif
 
-	ADCTaskHandle = osThreadNew(ADCTask, NULL, &ADCTask_attributes);
+	ADCTaskHandle = xTaskCreateStatic(
+	                      ADCTask,
+	                      ADCTASKNAME,
+	                      ADCSTACK_SIZE,
+	                      ( void * ) 1,
+	                      ADCTASKPRIORITY,
+	                      xADCStack,
+	                      &xADCTaskBuffer );
+
+
+	configASSERT(ADCTaskHandle);
 
 	return 0;
 }

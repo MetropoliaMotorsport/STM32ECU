@@ -5,11 +5,16 @@
  *      Author: Visa
  */
 
-#include "timerecu.h"
 #include "ecumain.h"
-#include "stm32h7xx_hal_gpio.h"
+#include "timerecu.h"
+#include "eeprom.h"
+#include "memorator.h"
+#include "interrupts.h"
+//#include "stm32h7xx_hal_gpio.h"
 #include "i2c-lcd.h"
+#include "lcd.h"
 #include <time.h>
+#include "tim.h"
 
 static volatile uint32_t stTick, timerticks;
 

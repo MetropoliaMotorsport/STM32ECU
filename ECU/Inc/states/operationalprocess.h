@@ -12,11 +12,8 @@
 
 extern int OperationalState;
 
-typedef void (ResetCommand)( void );
-
 int OperationalProcess( void );
 uint16_t CheckErrors( void );
 void ResetStateData( void );
-int RegisterResetCommand( ResetCommand Handler );
 
 #endif /* OPERATIONALPROCESS_H_ */

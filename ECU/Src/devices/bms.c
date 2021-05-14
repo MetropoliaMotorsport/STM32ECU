@@ -6,6 +6,11 @@
  */
 
 #include "ecumain.h"
+#include "errors.h"
+#include "canecu.h"
+#include "bms.h"
+#include "output.h"
+
 
 // bms operation mode, byte 4   normal mode, data logging.
 // byte 5, cell with min voltage - mv, use to trigger
@@ -126,6 +131,7 @@ bool processBMSError(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 void BMSTimeout( uint16_t id )
 {
 	CarState.VoltageBMS=0;
+    SetCriticalError();
 }
 
 

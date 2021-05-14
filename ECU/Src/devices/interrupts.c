@@ -33,16 +33,6 @@ void initInterrupts( void )
 	HAL_NVIC_EnableIRQ(Input3_EXTI_IRQn);
 #endif
 
-#ifdef HPF20
-
-// setup in GPIO init already.
-// EXTI2_IRQn
-// EXTI3_IRQn
-// EXTI4_IRQn
-// EXTI9_5_IRQn
-// EXTI15_10_IRQn
-#endif
-
 #ifndef RTOS
 	if ( HAL_TIM_Base_Start_IT(&htim3) != HAL_OK){
 		  Error_Handler();

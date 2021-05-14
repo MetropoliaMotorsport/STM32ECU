@@ -11,9 +11,8 @@
 #include "ecumain.h"
 
 uint32_t gettimer(void);
-#ifdef RTOS
+
 void TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
-#endif
 
 bool isRTCSet( void );
 int setRTC( time_t time );

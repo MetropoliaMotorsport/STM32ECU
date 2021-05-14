@@ -6,28 +6,41 @@
  */
 
 #include "ecumain.h"
+#include "limits.h"
+#include "task.h"
+#include "power.h"
+#include "powernode.h"
+#include "errors.h"
+#include "adcecu.h"
 
-osThreadId_t PowerTaskHandle;
-const osThreadAttr_t PowerTask_attributes = {
-  .name = "PowerTask",
-  .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 128*2
-};
+TaskHandle_t PowerTaskHandle = NULL;
+
+
+#define POWERSTACK_SIZE 128*6
+#define POWERTASKNAME  "PowerTask"
+#define POWERTASKPRIORITY 1
+StaticTask_t xPOWERTaskBuffer;
+StackType_t xPOWERStack[ POWERSTACK_SIZE ];
+
 
 #define PowerQUEUE_LENGTH    20
+#define PowerErrorQUEUE_LENGTH    20
 #define PowerITEMSIZE		sizeof( Power_msg )
+#define PowerErrorITEMSIZE		sizeof( Power_Error_msg )
 
 /* The variable used to hold the queue's data structure. */
 static StaticQueue_t PowerStaticQueue;
+static StaticQueue_t PowerErrorStaticQueue;
 
 /* The array to use as the queue's storage area.  This must be at least
 uxQueueLength * uxItemSize bytes. */
 uint8_t PowerQueueStorageArea[ PowerQUEUE_LENGTH * PowerITEMSIZE ];
+uint8_t PowerErrorQueueStorageArea[ PowerErrorQUEUE_LENGTH * PowerErrorITEMSIZE ];
 
-QueueHandle_t PowerQueue;
+QueueHandle_t PowerQueue, PowerErrorQueue;
 
 
-// task shall take power hangling request, and forward them to nodes.
+// task shall take power handling request, and forward them to nodes.
 // ensure contact is kept with brake light board as brake light is SCS.
 
 // how to ensure power always enabled?
@@ -42,10 +55,15 @@ char * getPNodeWait( void)
 
 void PowerTask(void *argument)
 {
+	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY );
+
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT( PowerQueue );
 
 	Power_msg msg;
+	Power_Error_msg errormsg;
+
+	char str[MAXDEBUGOUTPUT];
 
 	TickType_t xLastWakeTime;
 
@@ -56,42 +74,75 @@ void PowerTask(void *argument)
 
 	while( 1 )
 	{
-		if ( xQueueReceive(PowerQueue,&msg,0) )
+		while ( xQueueReceive(PowerErrorQueue,&errormsg,0) )
+		{
+			snprintf(str, MAXDEBUGOUTPUT, "Power err: %d %lu", errormsg.nodeid, errormsg.error);
+			LogError( str );
+		}
+
+		// clear command queue
+		while ( xQueueReceive(PowerQueue,&msg,0) )
 		{
 #ifdef POWERNODES
-		//	int result =
-			setNodeDevicePower( msg.power, msg.enabled );
+			switch ( msg.cmd )
+			{
+			case PowerErrorReset :
+				setNodeDevicePower( msg.power, msg.enabled, true );
+				break;
+
+			case PowerError : break;
+
+			case DirectPowerCmd :
+				setNodeDevicePower( msg.power, msg.enabled, false );
+				break;
+			case FanPowerCmd :
+				sendFanPWM(msg.PWMLeft, msg.PWMRight);
+				break;
+			default:
+				break;
+			}
+
 #else
  // on PDM only fans and HV are controlled.
 			if ( device == hv )
 			{
 
 			}
-
 #endif
 		}
 
+		// check if powernodes received.
 
-		uint8_t powernodeson = receivePowerNodes();
+		  BaseType_t xResult;
+		  uint32_t powernodeson = 0;
+	      xResult = xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
+	               	   	   	   ULONG_MAX,        /* Clear all bits on exit. */
+	                           &powernodeson, /* Stores the notified value. */
+	                           0 );
 
-		if ( powernodeson > 0 )
-		{
-			DeviceState.PowerNodes = INERROR; // haven't seen all needed.
-			strcpy(PNodeWaitStr, getPNodeStr());
-		} else
+
+
+		  if( xResult == pdPASS )
+		  {
+
+		  }
+
+		if ( powernodeson == 0x11111 ) // all expecter power nodes reported in. // TODO automate
 		{
 			DeviceState.PowerNodes = OPERATIONAL;
 			PNodeWaitStr[0] = 0;
+		} else
+		{
+			DeviceState.PowerNodes = INERROR; // haven't seen all needed.
+			strcpy(PNodeWaitStr, getPNodeStr());
 		}
 
 		sendPowerNodeReq(); // process pending power requests.
 
 		vTaskDelayUntil( &xLastWakeTime, xFrequency );
-
 	}
 
-	// Shouldn't get here, but terminate clearly if do.
-	osThreadTerminate(NULL);
+	vTaskDelete(NULL);
 }
 
 int setRunningPower( bool HV, bool buzzer )
@@ -183,7 +234,11 @@ void ShutdownCircuitSet( bool state )
 int ShutdownCircuitCurrent( void )
 {
 	// check if ADC ok
+#ifdef STMADC
 	return ADC_Data[2] * 1.22; // ~780 count ~= 0.95A ~820=1A   1.22 multiplication factor for approx mA calibrated.
+#else
+	return 0;
+#endif
 }
 
 int ShutdownCircuitState( void )
@@ -191,35 +246,38 @@ int ShutdownCircuitState( void )
 	return HAL_GPIO_ReadPin(Shutdown_GPIO_Port, Shutdown_Pin);
 }
 
-
-int setDevicePower( DevicePower device, bool state )
+bool setDevicePower( DevicePower device, bool state )
 {
 	Power_msg msg;
 
+	msg.cmd = DirectPowerCmd;
 	msg.power = device;
 	msg.enabled = state;
-	xQueueSend(PowerQueue, &msg, 0);
-	return 0;
+	return ( xQueueSend(PowerQueue, &msg, 0) );
+
 }
 
-int setPowerState( DevicePower device, bool enabled )
+bool resetDevicePower( DevicePower device )
 {
 	Power_msg msg;
 
-	msg.state = DirectPowerCmd;
+	msg.cmd = PowerErrorReset;
 	msg.power = device;
-	msg.enabled = enabled;
-	xQueueSend(PowerQueue, &msg, 0);
-	return 0;
+	return ( xQueueSend(PowerQueue, &msg, 0) );
+
 }
 
-int errorPower( void )
+bool setPowerState( DevicePowerState devicestate, bool enabled )
 {
-#ifdef HPF19
-	return errorPDM()
-#endif
+	Power_msg msg;
 
-  return 0;
+	if ( devicestate != DirectPowerCmd && devicestate != PowerError)
+	{
+		msg.cmd = devicestate;
+		msg.enabled = enabled;
+		return xQueueSend(PowerQueue, &msg, 0);
+	}
+	return false;
 }
 
 void resetPower( void )
@@ -228,9 +286,18 @@ void resetPower( void )
 	setRunningPower( false, false ); // send high voltage off request to PDM.
 }
 
-void FanControl( void )
+void FanPWMControl( uint8_t leftduty, uint8_t rightduty )
 {
-	if(ADCState.Torque_Req_R_Percent > TORQUEFANLATCHPERCENTAGE*10) // if APPS position over requested% trigger fan latched on.
+//	for example: [7][2][5][255][128] will set the lowest numbered output (DI3)
+//to have a 100% duty cycle and the third output (DI5) to have a 50% duty cycle (if configured as PWM output)
+	Power_msg msg;
+
+	msg.cmd = FanPowerCmd;
+	msg.PWMLeft = leftduty;
+	msg.PWMRight = rightduty;
+	xQueueSend(PowerQueue, &msg, 0);
+
+/*	if(ADCState.Torque_Req_R_Percent > TORQUEFANLATCHPERCENTAGE*10) // if APPS position over requested% trigger fan latched on.
 	{
 		if ( !getNodeDevicePower(LeftFans ) )
 			setDevicePower( LeftFans, true );
@@ -240,6 +307,7 @@ void FanControl( void )
 
 		CarState.FanPowered = 1;
 	}
+	*/
 }
 
 
@@ -265,8 +333,23 @@ char * getDevicePowerNameLong( DevicePower device )
 	case Brake: return "Brake";
 	case Accu: return "Accu";
 	case AccuFan: return "AccuFan";
+	case Back1: return "Back1";
+	case Back2: return "Back2";
+	case Back3: return "Back3";
+
 	}
 	return "Error";
+}
+
+
+bool PowerLogError( uint8_t nodeid, uint32_t errorcode)
+{
+	Power_Error_msg msg;
+
+	msg.nodeid = nodeid;
+	msg.error = errorcode;
+
+	return ( xQueueSend(PowerErrorQueue, &msg, 0) );
 }
 
 int initPower( void )
@@ -282,7 +365,22 @@ int initPower( void )
 
 	vQueueAddToRegistry(PowerQueue, "PowerQueue" );
 
-	PowerTaskHandle = osThreadNew(PowerTask, NULL, &PowerTask_attributes);
+	PowerErrorQueue = xQueueCreateStatic( PowerErrorQUEUE_LENGTH,
+							  PowerErrorITEMSIZE,
+							  PowerErrorQueueStorageArea,
+							  &PowerErrorStaticQueue );
+
+	vQueueAddToRegistry(PowerErrorQueue, "PowerErrorQueue" );
+
+
+	PowerTaskHandle = xTaskCreateStatic(
+						  PowerTask,
+						  POWERTASKNAME,
+						  POWERSTACK_SIZE,
+						  ( void * ) 1,
+						  POWERTASKPRIORITY,
+						  xPOWERStack,
+						  &xPOWERTaskBuffer );
 
 	return 0;
 }

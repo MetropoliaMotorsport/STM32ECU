@@ -9,13 +9,19 @@
 #define ECU_H_
 
 #include <stdbool.h>
+#include "freertos.h"
+
+#define WATCHDOG
 
 #define LCDBUFFER
+
+#define MAXDEBUGOUTPUT 40
 
 #define HPF20
 
 //#define HPF19
 
+// HPF 20 doesn't use any local ADC, all via analogue nodes, and PWM.
 #ifdef HPF20
     #define RTOS
 	#define EEPROMSTORAGE
@@ -27,7 +33,16 @@
 	#define PWMSTEERING
 	#define LENZE
 	#define MOTORCOUNT		(4)
+	#define MEMORATAR
 #endif
+
+#ifdef HPF19
+	// Use onboard ADC, else expect ADC values by CAN.
+	#define STMADC
+// Retransmit IVT messages for BMS
+// #define retransmitIVT
+#endif
+
 // Calibration settings for pedals.
 
 #define ACCELERATORLZERO 4200
@@ -63,9 +78,6 @@
 // Use watchdog to reset if 10ms loop fails. -- timings currently not properly set.
 //#define WATCHDOG
 
-// Use onboard ADC, else expect ADC values by CAN.
-#define STMADC
-
 // Use basic torquevectoring
 //#define SIMPLETORQUEVECTOR
 #define TORQUEVECTORSTARTANGLE 20  //40
@@ -95,9 +107,6 @@
 #define COOLANTLIMPEXITTEMP 70
 #define COOLANTMAXTEMP	80
 
-
-#define MEMORATOR
-
 // Debug aids.
 
 #define debugrun
@@ -109,10 +118,9 @@
 #define everyloop
 
 // send log messages for AIM / remote reading of status
-#define LOGGINGON
+//#define LOGGINGON
 
 // Use IVT
-
 #define IVTEnable				// if not defined, IVT ignored and assumed present, giving a nominal voltage.
 
 // HV will still be allowed without TSAL connected
@@ -121,8 +129,6 @@
 // Use BMS Messages.
 #define BMSEnable				// if not defined, BMS ignored and assumed present.
 
-// Retransmit IVT messages for BMS
-// #define retransmitIVT
 
 // Define whether front speed encoders are expected.
 //#define FRONTSPEED				// enable front speed encoder reading.
@@ -166,8 +172,7 @@
 
 // Very simple attempt at some control code.
 //#define CONTROLTEST
-#define MINSPEEDFORCONTROL   100
-
+//#define MINSPEEDFORCONTROL   100
 
 // continue to set DriveMode when not in TS active.
 #define SETDRIVEMODEINIDLE
@@ -207,14 +212,14 @@
 #define IMUTIMEOUT				30 // needs to be uptodate to be useful.
 #define INVERTERTIMEOUT			100 // 10 cycles, 100ms.
 #define SICKTIMEOUT             20 // 2 cycles, then set speeds to zero.
-#define STMADC
 #endif
 #ifdef MEMORATOR
 #define MEMORATORTIMEOUT		2000 // 2 seconds, should be sending one message a second.
 #endif
 
 #ifdef HPF20
-#define NODETIMEOUT				1000
+#define NODETIMEOUT				400
+#define NODECRITICALTIMEOUT		100
 #endif
 
 #define DEBUGMCU 0x5C001000
@@ -257,25 +262,33 @@
 
 #define FatalErrorState			99
 
-
-uint16_t ErrorCode; // global error code.
-
 // status codes to send for errors.
 
+#define ReceivedCriticalError		0xFF
 #define OperationalStateOverrun		0xF
 #define PowerOnRequestBeforeReady 	0x10
 #define PowerOnRequestTimeout   	0x11
 
+#ifdef HPF20
+#define BrakeFReceivedBit			ANode11Bit
+#define BrakeRReceivedBit			ANode11Bit
+#define CoolantLReceivedBit			2
+#define CoolantRReceivedBit			3
+#define SteeringAngleReceivedBit	31
+#define AccelLReceivedBit			ANode1Bit
+#define AccelRReceivedBit			ANode11Bit
+#endif
 
-#define BrakeFErrorBit			0
-#define BrakeRErrorBit			1
-#define CoolantLErrorBit		2
-#define CoolantRErrorBit		3
-#define SteeringAngleErrorBit	4
-#define AccelLErrorBit			5
-#define AccelRErrorBit			6
-#define DrivingModeErrorBit	    7
-
+#ifdef HPF19
+#define BrakeFReceivedBit			0
+#define BrakeRReceivedBit			1
+#define CoolantLReceivedBit			2
+#define CoolantRReceivedBit			3
+#define SteeringAngleReceivedBit	31
+#define AccelLReceivedBit			ANode1Bit
+#define AccelRReceivedBit			ANode11Bit
+#define DrivingModeReceivedBit	    7
+#endif
 
 #define Inverter1ErrorBit		9
 #define Inverter2ErrorBit		10
@@ -305,14 +318,6 @@ uint16_t ErrorCode; // global error code.
 #define FrontRightInverter		3
 #endif
 
-/*
-#define INVERTERDISABLED		BOOTUP//1
-#define INVERTERREADY			STOPPED//2 // preoperation, ready for TS.
-#define INVERTERON				PREOPERATIONAL//3 // operating but not on, TS enabled.
-#define INVERTEROPERATING		OPERATIONAL//4 // output enabled ( RTDM only )
-#define INVERTERERROR			INERROR//-99
-*/
-
 extern volatile uint32_t ADCloops;
 
 typedef struct {
@@ -331,7 +336,7 @@ typedef struct {
 
 } ShutdownState;
 
-volatile struct CarState {
+typedef struct {
 	uint8_t brake_balance;
 
 	char HighVoltageReady;
@@ -380,8 +385,7 @@ volatile struct CarState {
 
 	ShutdownState Shutdown;
 
-} CarState;  // define external into realmain?
-
+} CarStateType;  // define external into realmain?
 
 typedef enum DeviceStatustype {
 	INERROR,
@@ -392,7 +396,7 @@ typedef enum DeviceStatustype {
 	OPERATIONAL,
 } DeviceStatus;
 
-struct DeviceState {
+typedef struct {
 	DeviceStatus CAN1;
 	DeviceStatus CAN2;
 	bool FrontSpeedSensors;
@@ -415,7 +419,6 @@ struct DeviceState {
 	DeviceStatus Memorator;
 	DeviceStatus BrakeLight;
 
-
 	DeviceStatus AnalogNode1;
 	DeviceStatus AnalogNode9;
 	DeviceStatus AnalogNode10;
@@ -436,44 +439,7 @@ struct DeviceState {
 	DeviceStatus PowerNode36; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
 	DeviceStatus PowerNode37; // [?], Current, TSAL.
 //	char ;
-} volatile DeviceState;
-
-
-struct ErrorCount {
-	uint16_t OperationalReceiveError;
-	uint16_t State;
-	uint8_t  InvAllowReset[MOTORCOUNT];
-//	uint8_t  LeftInvAllowReset;
-//    uint8_t  RightInvAllowReset;
-	uint16_t ErrorReason;
-	uint16_t ErrorPlace;
-
-	uint8_t  InverterError;
-
-	uint8_t InverterErrorHistory[8][8];
-	uint8_t InverterErrorHistoryPosition;
-	uint8_t InverterErrorHistoryID[8];
-
-	uint32_t CANError;
-	uint32_t CANCount1;
-	uint32_t CANCount2;
-	uint32_t CANTimeout;
-
- // specific devices
-	bool	 ADCSent;
-	uint32_t eepromerror;
-
-	uint32_t ADCError;
-	uint16_t ADCTimeout;
-	uint16_t ADCErrorState;
-
-	uint16_t INVReceiveStatus[MOTORCOUNT];
-	uint16_t INVReceiveSpd[MOTORCOUNT];
-	uint16_t INVReceiveTorque[MOTORCOUNT];
-
-	uint32_t CANSendError1;
-	uint32_t CANSendError2;
-} volatile Errors;
+} DeviceStateType;
 
 // helpers
 void swapByteOrder_int16(double *current, const int16_t *rawsignal, size_t length);

@@ -6,6 +6,8 @@
  */
 
 #include "ecumain.h"
+#include "memorator.h"
+#include "timerecu.h"
 
 #include <stdio.h>
 #include <time.h>

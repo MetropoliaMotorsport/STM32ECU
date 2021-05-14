@@ -6,6 +6,9 @@
  */
 
 #include "ecumain.h"
+#include "analognode.h"
+#include "powernode.h"
+#include "node.h"
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -15,18 +18,7 @@ bool processNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 CANData NodeErr = { NULL, NodeErr_ID, 6, processNodeErrData, NULL, 0 };
 CANData NodeAck = { NULL, NodeAck_ID, 8, processNodeAckData, NULL, 0 };
 
-#define MAXPNODEERRORS		40
-
-
-struct PowerNodeError
-{
-	uint8_t nodeid;
-	uint32_t error;
-} PowerNodeErrors[MAXPNODEERRORS];
-
-uint8_t PowerNodeErrorCount = 0;
-
-
+// Analogue node errors.
 
 #define ERR_CAN_FIFO_FULL			1
 #define ERR_SEND_FAILED				2
@@ -49,8 +41,6 @@ uint8_t PowerNodeErrorCount = 0;
 
 uint32_t Get_Error(uint8_t errorpage, uint8_t errorbit )
 {
-//	canErrors[(error/32)]  |= (1<<(error%32));
-//	canErrorToTransmit |= (1<<(error/32));
 	return errorpage*32+errorbit;
 }
 
@@ -65,19 +55,17 @@ bool processNodeErrData(uint8_t data[8], uint32_t DataLength, CANData * datahand
 		// reverse the actual error code for lookup from the can data.
 		uint32_t errorcode=data[1]*32+(data[2]*16777216+data[3]*65536+data[4]*256+data[5]);
 
+		// check which error bits set
 		for ( int i = 0;i<32;i++){
 			if ( errorcode & (1<<(i) ) )
 			{
-				if ( PowerNodeErrorCount < MAXPNODEERRORS )
+				if ( data[0] > 32 )
 				{
-					PowerNodeErrors[PowerNodeErrorCount].nodeid = data[0];
-					PowerNodeErrors[PowerNodeErrorCount].error = Get_Error(data[1], i );
-					// do something with the found error.
-					processPNodeErr(PowerNodeErrors[PowerNodeErrorCount].nodeid, PowerNodeErrors[PowerNodeErrorCount].error, datahandle );
-					PowerNodeErrorCount++;
+					processPNodeErr(data[0], Get_Error(data[1], i ), datahandle );
 				} else
 				{
-					// TODO what to do if hit too many errors?
+					processANodeErr(data[0], Get_Error(data[1], i ), datahandle );
+					// analogue node error.
 				}
 			}
 		}
@@ -87,10 +75,12 @@ bool processNodeErrData(uint8_t data[8], uint32_t DataLength, CANData * datahand
 
 bool processNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
+	// [node ID], [command], [d1], [d2], [d3], [d4], [ack_counter], [command]
 	if ( CANRxData[0] > 30) processPNodeAckData(CANRxData, DataLength, datahandle);
 
 	return true;
 }
+
 
 int initNodes( void )
 {

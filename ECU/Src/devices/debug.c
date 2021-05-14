@@ -7,19 +7,31 @@
 
 #include "debug.h"
 #include "ecumain.h"
-#include "semphr.h"
+
 #include "usart.h"
+#include "power.h"
+#include "powernode.h"
+
+// freeRTOS
+#include "semphr.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 
+typedef struct Debug_msg {
+	char str[MAXDEBUGOUTPUT];
+	//uint32_t msgval;
+} Debug_msg;
 
 
-osThreadId_t DebugTaskHandle;
-const osThreadAttr_t DebugTask_attributes = {
-  .name = "DebugTask",
-  .priority = (osPriority_t) osPriorityIdle,
-  .stack_size = 128*6
-};
+#define DEBUGSTACK_SIZE 128*6
+#define DEBUGTASKNAME  "DebugTask"
+#define DEBUGTASKPRIORITY 1
+StaticTask_t xDEBUGTaskBuffer;
+StackType_t xDEBUGStack[ DEBUGSTACK_SIZE ];
+
+TaskHandle_t DebugTaskHandle = NULL;
+
 
 #define DebugQUEUE_LENGTH    20
 #define DebugITEMSIZE		sizeof( Debug_msg )
@@ -35,7 +47,6 @@ QueueHandle_t DebugQueue;
 
 SemaphoreHandle_t DebugUARTTxDone;
 SemaphoreHandle_t DebugUARTRxDone;
-
 
 #define DEBUGPROMPT    "DebugCmd: "
 
@@ -107,19 +118,40 @@ void uartwritetwoline(char *str, char *str2)
 }
 
 
+// add message to uart message queue.
+bool DebugMsg( char * msg)
+{
+	struct Debug_msg debugmsg;
+	strncpy( debugmsg.str, msg, MAXDEBUGOUTPUT );
+	return xQueueSendToBack(DebugQueue,&debugmsg,0); // send it to error state handler queue for display to user.
+}
 
-char uartread( char *ch )
+bool redraw;
+
+// also handle printing debug messages here.
+char uartWait( char *ch )
 {
 	if(HAL_UART_Receive_IT(&huart2, (uint8_t *)ch, 1) != HAL_OK) {
 		return 0;
 	}
 
-	// set some realistic timeout
-	if( xSemaphoreTake(DebugUARTRxDone, portMAX_DELAY) == pdTRUE) {
-		return 1;
-	} else
-		return 0;
-	return 0;
+	struct Debug_msg msg;
+
+	redraw = false;
+
+	while ( 1 )
+	{
+		if( xSemaphoreTake(DebugUARTRxDone, 0) == pdTRUE) {
+			return 1;
+		}
+
+		if ( xQueueReceive(DebugQueue,&msg,10) )
+		{
+			uartwrite(msg.str);
+			uartwrite("\r\n");
+			redraw = true;
+		}
+	}
 }
 
 #ifdef configSUPPORT_DYNAMIC_ALLOCATION
@@ -138,14 +170,25 @@ static void DebugTask(void *pvParameters)
 	int inputpos = 0;
 	uartwrite("\r\nBooting ECU...\r\n\r\n");
 
+	redraw = false;
 
 	uartwrite(DEBUGPROMPT);
 
 	char ch = 0;
 
+	bool esc = false;
+
 	while (1) {
 		// just to be on safe side then.
-		int read = uartread(&ch);
+		int read = uartWait(&ch);
+
+		if ( redraw )
+		{
+			// we received debug output during keyboard wait, resend prompt and current imput to help.
+			uartwrite("x1b[k");
+			uartwrite(DEBUGPROMPT);
+			uartwrite(str);
+		}
 
 		// didn't receive a char, skip.
 		if ( read == 0 )
@@ -157,12 +200,50 @@ static void DebugTask(void *pvParameters)
 
 		bool endline = false;
 
+		// 27 = esc -- second keycode coming.
+		// 27/91/67 = left
+		// 91/68 = right
+		// ch 8 == backspace.
+		if ( esc )
+		{
+			if ( ch == 79 ) // f key
+				continue;
+				// ch == 80 = F1
+				// ch == 81 = f2 ...
+			if ( ch == 91)
+				continue;
+			if ( ch == 68 ) // left
+			{}
+			if ( ch == 67 ) // right
+			{}
+			esc = false;
+			continue;
+		} else
+		if ( ch == 27 )
+		{
+			esc = true;
+			continue;
+		} else
+		if ( ch == 8 )
+		{
+			if ( charcount > 0 )
+			{
+				str[charcount] = 0;
+				--charcount;
+				uartwritech(ch);
+				uartwritech(' ');
+				uartwritech(ch);
+			}
+		} else
 		if ( !( ch == '\n' || ch == '\r') )
 		{
-			str[charcount] = ch;
-			str[charcount+1] = 0;
-			uartwritech(ch);
-			++charcount;
+			if ( ch >= 32) // only process printable charecters.
+			{
+				str[charcount] = ch;
+				str[charcount+1] = 0;
+				uartwritech(ch);
+				++charcount;
+			}
 		} else
 		{
 			endline = true;
@@ -176,9 +257,9 @@ static void DebugTask(void *pvParameters)
 		{
 			if ( charcount > 0 )
 			{
-				char tkn1[TOKENLENGTH];
-				char tkn2[TOKENLENGTH];
-				char tkn3[TOKENLENGTH];
+				char tkn1[TOKENLENGTH] = "";
+				char tkn2[TOKENLENGTH] = "";
+				char tkn3[TOKENLENGTH] = "";
 
 				uint8_t tokens = 0;
 
@@ -198,6 +279,9 @@ static void DebugTask(void *pvParameters)
 
 						s += tknlen;
 						tokens++;
+					} else
+					{
+						strncpy(tkn1, "too long", tknlen);
 					}
 				}
 
@@ -253,6 +337,26 @@ static void DebugTask(void *pvParameters)
 					uartwritetwoline("AIR          ", CarState.Shutdown.AIROpen?"Closed":"Open");
 				} else
 
+				if ( strcmp(tkn1, "fanpwm") == 0 )
+				{
+					if ( tokens != 3 )
+					{
+						uartwrite("Please give left and right pwm duty.\r\n");
+					} else
+					{
+						if ( val1 > 255 || val2 > 255 || val1 < 0 || val2 < 0 )
+						{
+							uartwrite("invalid PWM duty cycles given");
+						} else
+						{
+							snprintf(str, 80, "Requesting fan PWMs Left: %4d Right: %4d\r\n", val1, val2);
+							uartwrite(str);
+
+							FanPWMControl( val1, val2 );
+						}
+					}
+				} else
+
 				if ( strcmp(tkn1, "power") == 0 )
 				{
 					DevicePower device = None;
@@ -263,24 +367,71 @@ static void DebugTask(void *pvParameters)
 						uartwrite("Power command: Help\r\n");
 					} else if ( strcmp(tkn2, "status") == 0 || strcmp(tkn2, "state") == 0)
 					{
-						uartwrite("Power        Exp Act\r\n");
-						uartwrite("--------------------\r\n");
+						uartwrite("Power        Exp Act Err\r\n");
+						uartwrite("------------------------\r\n");
 
 						uint8_t listsize = getDevicePowerListSize();
 
 						for ( int i=1;i<=listsize;i++)
 						{
-							snprintf(str, 80, "%-12s %-4s%-4s\r\n", getDevicePowerNameLong(i), getNodeDeviceExpectedPower(i)?"On":"Off", getNodeDevicePower(i)?"On":"Off");
+							snprintf(str, 80, "%-12s %-4s%-4s%-4d\r\n",
+										getDevicePowerNameLong(i),
+										getNodeDeviceExpectedPower(i)?"On":"Off",
+										getNodeDevicePower(i)?"On":"Off",
+										powerErrorOccurred(i)
+									//    powerErrorOccurred(i)?"Yes":"No"
+							);
 							uartwrite(str);
 						}
-
-					} else
+					} else if ( strcmp(tkn2, "all") == 0 )
 					{
+						if ( strcmp(tkn3, "reset") == 0 )
+						{
+							uartwrite("Power error reset for all\r\n");
+							for ( int i=1; i <= AccuFan; i++ )
+								resetDevicePower( i );
+						} else
+						{
+							if ( strcmp(tkn3, "on")  == 0 || strcmp(tkn3, "true")  == 0|| strcmp(tkn3, "enabled") == 0 )
+							{
+								state = true;
+							}
+							else if ( strcmp(tkn3, "off") == 0 || strcmp(tkn3, "false") == 0 || strcmp(tkn3, "disabled") == 0 )
+							{
+								state = false;
+							} else
+							{
+								badcmd = true;
+							}
 
+
+							if ( !badcmd )
+							{
+								uartwrite("Manual power request for all power set ");
+								uartwrite(state? "on":"off");
+								uartwrite("\r\n");
+
+								for ( int i=1; i <= AccuFan; i++ )
+									setDevicePower( i, state );
+
+							} else
+							{
+								badcmd = true;
+							}
+						}
+					}
+					else
+					{
 						if ( strcmp(tkn2, "none") == 0)
 							device = None;
 						else if ( strcmp(tkn2, "buzzer") == 0 )
 							device = Buzzer;
+						else if ( strcmp(tkn2, "back1") == 0 )
+							device = Back1;
+						else if ( strcmp(tkn2, "back2") == 0 )
+							device = Back2;
+						else if ( strcmp(tkn2, "back3") == 0 )
+							device = Back3;
 						else if ( strcmp(tkn2, "telemetry") == 0 )
 							device = Telemetry;
 						else if ( strcmp(tkn2, "front1") == 0 )
@@ -312,29 +463,38 @@ static void DebugTask(void *pvParameters)
 						else if ( strcmp(tkn2, "accufan") == 0 )
 							device = AccuFan;
 
-						if ( strcmp(tkn3, "on")  == 0 || strcmp(tkn3, "true")  == 0|| strcmp(tkn3, "enabled") == 0 )
+						if ( strcmp(tkn3, "reset")  == 0 )
 						{
-							state = true;
-						}
-						else if ( strcmp(tkn3, "off") == 0 || strcmp(tkn3, "false") == 0 || strcmp(tkn3, "disabled") == 0 )
-						{
-							state = false;
-						} else
-						{
-							device = None;
-						}
-
-						if ( device != None )
-						{
-							uartwrite("Manual power request for ");
+							uartwrite("Power error reset for ");
 							uartwrite(getDevicePowerNameLong(device));
-							uartwrite(" set ");
-							uartwrite(state? "on":"off");
 							uartwrite("\r\n");
-							setDevicePower( device, state );
+							resetDevicePower(device);
 						} else
 						{
-							badcmd = true;
+							if ( strcmp(tkn3, "on")  == 0 || strcmp(tkn3, "true")  == 0|| strcmp(tkn3, "enabled") == 0 )
+							{
+								state = true;
+							}
+							else if ( strcmp(tkn3, "off") == 0 || strcmp(tkn3, "false") == 0 || strcmp(tkn3, "disabled") == 0 )
+							{
+								state = false;
+							} else
+							{
+								device = None;
+							}
+
+							if ( device != None )
+							{
+								uartwrite("Manual power request for ");
+								uartwrite(getDevicePowerNameLong(device));
+								uartwrite(" set ");
+								uartwrite(state? "on":"off");
+								uartwrite("\r\n");
+								setDevicePower( device, state );
+							} else
+							{
+								badcmd = true;
+							}
 						}
 					}
 
@@ -364,7 +524,14 @@ static void DebugTask(void *pvParameters)
 					vTaskList( str );
 					uartwrite(str);
 					uartwrite("\r\n");
+				} else
+
+				{
+					uartwrite("Unknown command: ");
+					uartwrite(tkn1);
+					uartwrite("\r\n");
 				}
+
 			}
 
 			charcount = 0;
@@ -375,7 +542,7 @@ static void DebugTask(void *pvParameters)
 		}
 	}
 
-	osThreadTerminate(NULL);
+	vTaskDelete(NULL);
 }
 
 
@@ -393,7 +560,15 @@ int initDebug( void )
 
 	vQueueAddToRegistry(DebugQueue, "DebugQueue" );
 
-	DebugTaskHandle = osThreadNew(DebugTask, NULL, &DebugTask_attributes);
+	DebugTaskHandle = xTaskCreateStatic(
+						  DebugTask,
+						  DEBUGTASKNAME,
+						  DEBUGSTACK_SIZE,
+						  ( void * ) 1,
+						  DEBUGTASKPRIORITY,
+						  xDEBUGStack,
+						  &xDEBUGTaskBuffer );
+
 	return 0;
 }
 

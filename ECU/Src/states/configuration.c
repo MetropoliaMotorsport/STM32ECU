@@ -5,8 +5,14 @@
  *      Author: drago
  */
 
-#include "main.h"
 #include "ecumain.h"
+#include "configuration.h"
+#include "input.h"
+#include "timerecu.h"
+#include "ecumain.h"
+#include "lcd.h"
+#include "eeprom.h"
+#include "adcecu.h"
 
 static uint8_t ECUConfigdata[8] = {0};
 static bool	   ECUConfignewdata = false;
@@ -433,9 +439,11 @@ int CheckConfigurationRequest( void )
 	//		returnvalue = ReceivingConfig;
 			switch ( ECUConfigdata[0] )
 			{
+#ifdef STMADC
 				case 1 : // send ADC
 					CAN_SendADC(ADC_Data,0);
 					break;
+#endif
 				case 2 :
 					CAN_SendADCminmax();
 					break;

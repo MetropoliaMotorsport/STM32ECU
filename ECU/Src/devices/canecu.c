@@ -6,12 +6,21 @@
  */
 
 #include "ecumain.h"
+#include "dwt_delay.h"
+#include "canecu.h"
+#include "adcecu.h"
+#include "errors.h"
 
+#include "output.h"
+#include "timerecu.h"
+#include "power.h"
 
-#ifdef LCD
-  #include "vhd44780.h"
-#endif
+#include "queue.h"
+#include "watchdog.h"
 
+#include "ecumain.h"
+
+#include "fdcan.h"
 
 #ifdef ONECAN
 	#define sharedCAN
@@ -24,21 +33,22 @@ FDCAN_HandleTypeDef * hfdcan2p = NULL;
 int cancount;
 
 
-osThreadId_t CANTxTaskHandle;
-const osThreadAttr_t CANTxTask_attributes = {
-  .name = "CANTxTask",
-  .priority = (osPriority_t) osPriorityHigh,
-  .stack_size = 128 * 4
-};
+#define CANTXSTACK_SIZE 128*4
+#define CANTXTASKNAME  "CANTxTask"
+#define CANTXTASKPRIORITY 1
+StaticTask_t xCANTXTaskBuffer;
+StackType_t xCANTXStack[ CANTXSTACK_SIZE ];
+
+TaskHandle_t CANTxTaskHandle = NULL;
 
 
-osThreadId_t CANRxTaskHandle;
-const osThreadAttr_t CANRxTask_attributes = {
-  .name = "CANRxTask",
-  .priority = (osPriority_t) osPriorityHigh,
-  .stack_size = 128 * 16
-};
+#define CANRXSTACK_SIZE 128*16
+#define CANRXTASKNAME  "CANRxTask"
+#define CANRXTASKPRIORITY 1
+StaticTask_t xCANRXTaskBuffer;
+StackType_t xCANRXStack[ CANRXSTACK_SIZE ];
 
+TaskHandle_t CANRxTaskHandle = NULL;
 
 /* The queue is to be created to hold a maximum of 10 uint64_t
 variables. */
@@ -62,9 +72,12 @@ QueueHandle_t CANTxQueue, CANRxQueue;
 
 bool processCan1Message( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
 bool processCan2Message( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
+void processCanTimeouts( void );
 
 void CANTxTask(void *argument)
 {
+
+	 xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY );
 
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT( CANTxQueue );
@@ -88,7 +101,6 @@ void CANTxTask(void *argument)
 	can_msg msg;
 
 	uint8_t watchdogBit = registerWatchdogBit("CANTxTask");
-
 
 	portTickType cycletick = xTaskGetTickCount();
 
@@ -142,12 +154,14 @@ void CANTxTask(void *argument)
 		}
 	}
 
-	osThreadTerminate(NULL);
+	vTaskDelete(NULL);
 }
 
 
 void CANRxTask(void *argument)
 {
+	 xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY );
+
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT( CANRxQueue );
 
@@ -165,16 +179,18 @@ void CANRxTask(void *argument)
 
 		if ( curtick >= cycletick + CYCLETIME)
 		{
+			// once per cycle CAN stuff. Mostly handle timeouts, check if things received and kick watchdog.
 			cycletick = curtick;
 			waittick = CYCLETIME;
 			setWatchdogBit(watchdogBit);
+
+			processCanTimeouts();
 		}
 		else
 		{
 			waittick = cycletick-curtick+CYCLETIME;
 		}
 
-        // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
 		if( xQueueReceive(CANRxQueue,&msg,waittick) )
 		{
 			FDCAN_RxHeaderTypeDef RxHeader;
@@ -187,9 +203,9 @@ void CANRxTask(void *argument)
 				switch ( msg.id )
 				{
 					default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
-		#ifdef HPF20
+#ifdef HPF20
 						blinkOutput(LED7, BlinkVeryFast, 1);
-		#endif
+#endif
 						break;
 				}
 			} else
@@ -198,9 +214,9 @@ void CANRxTask(void *argument)
 				switch ( msg.id )
 				{
 					default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
-		#ifdef HPF20
+#ifdef HPF20
 						blinkOutput(LED7, BlinkVeryFast, 1);
-		#endif
+#endif
 						break;
 				}
 
@@ -208,10 +224,8 @@ void CANRxTask(void *argument)
 		}
 	}
 
-	osThreadTerminate(NULL);
+	vTaskDelete(NULL);
 }
-
-
 
 /**
  * @brief set filter states and start CAN module and it's interrupt for CANBUS1
@@ -232,131 +246,9 @@ void FDCAN1_start(void)
   }
 #endif
 
-#ifdef CANFILTERS
-  FDCAN_FilterTypeDef	sFilterConfig1;
-  HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, DISABLE, DISABLE);
-#else
   HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_ACCEPT_IN_RX_FIFO0, FDCAN_ACCEPT_IN_RX_FIFO0, DISABLE, DISABLE);
-#endif
 
   HAL_FDCAN_ConfigRxFifoOverwrite(&hfdcan1, FDCAN_RX_FIFO0, FDCAN_RX_FIFO_OVERWRITE);
-
-#ifdef CANFILTERS
-  // Configure Rx filter to only accept expected ID's into receive interrupt
-  sFilterConfig1.IdType = FDCAN_STANDARD_ID; // standard, not extended FD frame filter.
-  sFilterConfig1.FilterType = FDCAN_FILTER_RANGE; // filter all the id's between id1 and id2 in filter definition.
-  sFilterConfig1.FilterConfig = FDCAN_FILTER_TO_RXFIFO0; // FDCAN_FILTER_TO_RXFIFO0; // set can1 to receive via fifo0
-
-  sFilterConfig1.FilterIndex = 1; // BMS CAN 1
-  sFilterConfig1.FilterID1 = BMSBASE_ID; // 0xf 0x0 for all
-  sFilterConfig1.FilterID2 = BMSBASE_ID+3; // 07ff  0x0 for all
-
-
-  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
-  {
-    // Filter configuration Error
-    Error_Handler();
-  }
-
- // HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, DISABLE, DISABLE);
-
-  sFilterConfig1.IdType = FDCAN_STANDARD_ID; // standard, not extended FD frame filter.
-  sFilterConfig1.FilterType = FDCAN_FILTER_RANGE; // filter all the id's between id1 and id2 in filter definition.
-  sFilterConfig1.FilterConfig = FDCAN_FILTER_TO_RXFIFO0; // FDCAN_FILTER_TO_RXFIFO0; // set can1 to receive via fifo0
-
-  sFilterConfig1.FilterIndex++; // ECU CAN 1
-  sFilterConfig1.FilterID1 = ECU_CAN_ID;
-  sFilterConfig1.FilterID2 = ECU_CAN_ID+1;
-
-
-  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
-  {
-    // Filter configuration Error
-    Error_Handler();
-  }
-
-  sFilterConfig1.FilterIndex++; // filter for PDM CAN 1
-  sFilterConfig1.FilterID1 = PDM_ID;
-  sFilterConfig1.FilterID2 = PDM_ID;
-
-  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
-  {
-    // Filter configuration Error
-    Error_Handler();
-  }
-
-
-  #ifdef POWERNODES
-  sFilterConfig1.FilterIndex++; // filter for canbus ADC id's
-  sFilterConfig1.FilterID1 = NodeErr_ID;
-  sFilterConfig1.FilterID2 = NodeAck_ID;
-
-  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
-  {
-    // Filter configuration Error
-    Error_Handler();
-  }
-
-  sFilterConfig1.FilterIndex++; // filter for canbus ADC id's
-  sFilterConfig1.FilterID1 = AnalogNode9_ID;
-  sFilterConfig1.FilterID2 = PowerNode37_ID;
-
-  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
-  {
-    // Filter configuration Error
-    Error_Handler();
-  }
-
-  #endif
-
-  sFilterConfig1.FilterIndex++; // filter for fake button presses id's + induce hang.
-  sFilterConfig1.FilterID1 = AdcSimInput_ID;
-  sFilterConfig1.FilterID2 = AdcSimInput_ID+6;
-
-  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
-  {
-    // Filter configuration Error
-    Error_Handler();
-  }
-
-#ifdef MEMORATOR
-
-  sFilterConfig1.FilterIndex++; // filter for fake button presses id's + induce hang.
-  sFilterConfig1.FilterID1 = MEMORATOR_ID;
-  sFilterConfig1.FilterID2 = MEMORATOR_ID;
-
-  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
-  {
-    // Filter configuration Error
-    Error_Handler();
-  }
-#endif
-
-
-  // Front WheelSpeed CANOpen Filters
-
-   sFilterConfig1.FilterType = FDCAN_FILTER_MASK;  // configure CANOpen device filters by mask.
-
-   sFilterConfig1.FilterIndex++;
-   sFilterConfig1.FilterID1 = FLSpeed_COBID;
-   sFilterConfig1.FilterID2 = 0b00001111111;
-
-   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
-   {
-     // Filter configuration Error
-     Error_Handler();
-   }
-
-   sFilterConfig1.FilterIndex++;
-   sFilterConfig1.FilterID1 = FRSpeed_COBID;
-   sFilterConfig1.FilterID2 = 0b00001111111;
-
-   if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig1) != HAL_OK)
-   {
-     // Filter configuration Error
-     Error_Handler();
-   }
-#endif
 
 #ifndef ONECAN
   /* Start the FDCAN module */
@@ -372,111 +264,16 @@ void FDCAN1_start(void)
     // Notification Error
     Error_Handler();
   }
-
 #endif
 }
 
 void FDCAN2_start(void)
 {
-#ifdef CANFILTERS
-	  FDCAN_FilterTypeDef sFilterConfig2;
-#endif
-
 #ifdef ONECAN
   hfdcan2p = &hfdcan1;
-
-  #ifdef CANFILTERS
-  sFilterConfig2.FilterConfig = FDCAN_FILTER_TO_RXFIFO0; // set can2 to receive into fifo1
-  #endif
-
 #else
-
-  #ifdef CANFILTERS
-  sFilterConfig2.FilterConfig = FDCAN_FILTER_TO_RXFIFO1; // set can2 to receive into fifo1
-  HAL_FDCAN_ConfigGlobalFilter(hfdcan2p, FDCAN_REJECT, FDCAN_REJECT, DISABLE, DISABLE);
-  #else
   HAL_FDCAN_ConfigGlobalFilter(hfdcan2p, FDCAN_ACCEPT_IN_RX_FIFO1, FDCAN_ACCEPT_IN_RX_FIFO1, DISABLE, DISABLE);
-  #endif
   HAL_FDCAN_ConfigRxFifoOverwrite(hfdcan2p, FDCAN_RX_FIFO1, FDCAN_RX_FIFO_OVERWRITE);
-#endif
-
-#ifdef CANFILTERS
-  // Configure Rx filter for can2
-  sFilterConfig2.IdType = FDCAN_STANDARD_ID;
-  sFilterConfig2.FilterIndex = 64;
-  sFilterConfig2.FilterType = FDCAN_FILTER_RANGE;
-
-  sFilterConfig2.FilterID1 = 0x1;
-  sFilterConfig2.FilterID2 = 0x1;
-
-//  HAL_FDCAN_ConfigInterruptLines
-
-  if (HAL_FDCAN_ConfigFilter(hfdcan2p, &sFilterConfig2) != HAL_OK)
-  {
-    // Filter configuration Error
-    Error_Handler();
-  }
-
-
-   sFilterConfig2.FilterIndex++; // filter IVT MSG. CAN2
-   sFilterConfig2.FilterID1 = IVTMsg_ID;
-   sFilterConfig2.FilterID2 = IVTMsg_ID;
-
-   if (HAL_FDCAN_ConfigFilter(hfdcan2p, &sFilterConfig2) != HAL_OK)
-   {
-     // Filter configuration Error
-     Error_Handler();
-   }
-
-
-   sFilterConfig2.FilterIndex++; // IVT CAN2
-   sFilterConfig2.FilterID1 = IVTBase_ID;
-   sFilterConfig2.FilterID2 = IVTBase_ID+7; // IVTI_ID
-
-   if (HAL_FDCAN_ConfigFilter(hfdcan2p, &sFilterConfig2) != HAL_OK)
-   {
-     // Filter configuration Error
-     Error_Handler();
-   }
-
-  // Inverter CANOpen Filters
-
-  sFilterConfig2.FilterType = FDCAN_FILTER_MASK;  // configure CANOpen device filters by mask.
-
-  for ( int i = 0;i<MOTORCOUNT;i++)
-  {
-	  sFilterConfig2.FilterIndex++;
-	  sFilterConfig2.FilterID1 = CarState.Inverters[i].COBID;
-	  sFilterConfig2.FilterID2 = 0b00001111111; // 0x1fe - 0x1ff   0x2fe  - 0x2ff    0x77e - 0x77f
-
-	  if (HAL_FDCAN_ConfigFilter(hfdcan2p, &sFilterConfig2) != HAL_OK)
-	  {
-	    // Filter configuration Error
-	    Error_Handler();
-	  }
-  }
-
-  sFilterConfig2.FilterIndex++; // filter for canbus ADC id's
-  sFilterConfig2.FilterID1 = AnalogNode1_ID;
-  sFilterConfig2.FilterID2 = AnalogNode1_ID+1;
-
-  if (HAL_FDCAN_ConfigFilter(hfdcan2p, &sFilterConfig2) != HAL_OK)
-  {
-    // Filter configuration Error
-    Error_Handler();
-  }
-
-
-  /*
-  sFilterConfig2.FilterIndex++;
-  sFilterConfig2.FilterID1 = 0x77E;
-  sFilterConfig2.FilterID2 = 0x77F;
-
-  if (HAL_FDCAN_ConfigFilter(&hfdcan2, &sFilterConfig2) != HAL_OK)
-  {
-    // Filter configuration Error
-    Error_Handler();
-  } */
 #endif
 
 #ifdef ONECAN
@@ -513,31 +310,6 @@ void FDCAN2_start(void)
 #endif
 }
 
-/*
-int ResetCanReceived( void ) // only wait for new data since request.
-{
-	// inverters.
-
-	for ( int i=0;i<MOTORCOUNT;i++)
-	{
-//		ResetCanData(&CanState.InverterPDO1[i]);
-		ResetCanData(&CanState.InverterPDO2[i]);
-		ResetCanData(&CanState.InverterPDO3[i]);
-		ResetCanData(&CanState.InverterPDO4[i]);
-		ResetCanData(&CanState.InverterERR[i]);
-	}
-
-	// front wheel encoders
-#ifndef HPF20
-	ResetCanData(&CanState.FLeftSpeedERR);
-	ResetCanData(&CanState.FRightSpeedERR);
-	ResetCanData(&CanState.FLeftSpeedPDO1);
-	ResetCanData(&CanState.FRightSpeedPDO1);
-	ResetCanData(&CanState.FLeftSpeedNMT);
-	ResetCanData(&CanState.FRightSpeedNMT);
-#endif
-	return 0;
-} */
 
 void resetCanTx(volatile uint8_t CANTxData[8])
 {
@@ -555,17 +327,6 @@ int getNMTstate(volatile CANData *data )
 
 	}
   return 0;
-}
-
-void ResetCanData(volatile CANData *data )
-{
-	data->time = 0;
-	for ( int i=0; i<data->dlcsize; i++)
-	{
-	//	data->data[i] = 0;
-	}
-//	data->newdata = 0;
-//	data->processed = 0;
 }
 
 char CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
@@ -658,9 +419,9 @@ char CAN_NMTSyncRequest( void )
 	// send can id 0x80 to can 0 value 1. Call once per update loop.
 
 	uint8_t CANTxData[1] = { 1 };
-	CAN1Send( 0x80, 1, CANTxData ); // return values.
+	CAN1Send( 0x80, 0, CANTxData ); // return values.
 #ifndef sharedCAN
-	CAN2Send( 0x80, 1, CANTxData ); // return values.
+	CAN2Send( 0x80, 0, CANTxData ); // return values.
 #endif
 	return 1;
 	// send to both buses.
@@ -904,6 +665,7 @@ char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error )
 
 char CAN_SendADCminmax( void )
 {
+#ifdef STMADC
 	if ( minmaxADC )
 	{
 		CAN_SendADCValue(ADC_DataMin[ThrottleLADC],11);
@@ -929,6 +691,7 @@ char CAN_SendADCminmax( void )
 		CAN_SendADCValue(ADC_DataMax[CoolantTempRADC],28);
 #endif
 	}
+#endif
 	return 0;
 }
 
@@ -1076,7 +839,9 @@ char CANLogDataFast( void )
 
 //	storeBEint16(CarState.Power, &CANTxData[6]);
 //	storeBEint16(ADCloops, &CANTxData[6]);
+#ifdef STMADC
 	ADCloops=0;
+#endif
 	CAN1Send( 0x7CB, 8, CANTxData );
 
 
@@ -1107,34 +872,11 @@ char CANLogDataFast( void )
 	return 0;
 }
 
-void SetCanData(volatile CANData *data, uint8_t *CANRxData, uint32_t DataLength )
-{
-	int time = gettimer();
-//	data->count++;
-//	if ( data->newdata == 0 ) // only update data if previous data has been looked at.
-	{
-#ifdef OLDCAN
-		data->dlcsize = DataLength>>16;
-		data->data[0] = CANRxData[0];
-		data->data[1] = CANRxData[1];
-		data->data[2] = CANRxData[2];
-		data->data[3] = CANRxData[3];
-		data->data[4] = CANRxData[4];
-		data->data[5] = CANRxData[5];
-		data->data[6] = CANRxData[6];
-		data->data[7] = CANRxData[7];
-#endif
-		data->time = time;
-	//	int copylength = DataLength>>16;
-	//	memcpy(data->data, CANRxData, copylength);
-	//	data->dlcsize = DataLength>>16;
-//		data->newdata = 1; // moved to end to ensure data is not read before updated.
-	}
-}
 
-
+// process an incoming CAN data packet.
 void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLength )
 {
+	// stamp when we received it
 	datahandle->time = gettimer();
 
 	if ( datahandle->getData == NULL )
@@ -1172,7 +914,6 @@ void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLeng
 }
 
 
-// write a generic handler?
 int receivedCANData( CANData * datahandle )
 {
 	if ( datahandle->devicestate == NULL )
@@ -1223,10 +964,32 @@ uint32_t CANBUS1MessageCount;
 CANData * CanBUS2Messages[2048];
 uint32_t CANBUS2MessageCount;
 
+#define MAXTIMEOUTLIST	128
+
+CANData * CanTimeoutList[MAXTIMEOUTLIST];
+uint32_t CanTimeoutListCount;
+
+bool RegisterCanTimeout( CANData * CanMessage)
+{
+	if ( CanTimeoutListCount < MAXTIMEOUTLIST) // if there's a timeout, register timeout handler.
+	{
+		if ( CanMessage->timeout > 0 )
+		{
+			CanTimeoutList[CanTimeoutListCount] = CanMessage;
+			CanTimeoutListCount++;
+		}
+		return true;
+	} else
+		return false;
+}
+
 int RegisterCan1Message(CANData * CanMessage)
 {
 	if ( CanMessage != NULL && CanMessage->id != 0)
 	{
+		if (! RegisterCanTimeout( CanMessage) )
+			return 1;
+
 		CanBUS1Messages[CanMessage->id] = CanMessage;
 		CANBUS1MessageCount++;
 		return 0;
@@ -1240,6 +1003,9 @@ int RegisterCan2Message(CANData * CanMessage)
 #else
 	if ( CanMessage != NULL && CanMessage->id != 0)
 	{
+		if (! RegisterCanTimeout( CanMessage) )
+			return 1;
+
 		CanBUS2Messages[CanMessage->id] = CanMessage;
 		CANBUS2MessageCount++;
 		return 0;
@@ -1264,6 +1030,24 @@ bool processCan2Message( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8])
 		return true;
 	} return false; // ID not registered in handler.
 }
+
+void processCanTimeouts( void )
+{
+	for ( int i = 0; i < CanTimeoutListCount; i++ )
+	{
+		receivedCANData(CanTimeoutList[i]);
+	}
+//	receiveAnalogNodes();
+//	receivePowerNodes();
+//	receiveIMU();
+//	receiveIVT();
+//	receiveBMS();
+#ifdef PDM
+//	receivePDM();
+#endif
+}
+
+
 
 
 /**
@@ -1411,6 +1195,114 @@ void HAL_FDCAN_ErrorCallback(FDCAN_HandleTypeDef *canp) {
 // (or only re-enable the one you are using)
 }
 
+
+int CheckCanError( void )
+{
+	int result = 0;
+
+	FDCAN_ProtocolStatusTypeDef CAN1Status, CAN2Status;
+
+	HAL_FDCAN_GetProtocolStatus(&hfdcan1, &CAN1Status);
+	HAL_FDCAN_GetProtocolStatus(&hfdcan2, &CAN2Status);
+
+	static uint8_t offcan1 = 0;
+#ifndef ONECAN
+	static uint8_t offcan2 = 0;
+#endif
+#ifdef RECOVERCAN
+	static uint32_t offcan1time = 0;
+#ifndef ONECAN
+	static uint32_t offcan2time = 0;
+#endif
+#endif
+
+	if ( CAN1Status.BusOff) // detect passive error instead and try to stay off bus till clears?
+	{
+	//	Errors.ErrorPlace = 0xAA;
+		  blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
+		  HAL_FDCAN_Stop(&hfdcan1);
+		  CAN_SendStatus(255,0,0);
+
+		  if ( offcan1 == 0 )
+		  {
+#ifdef RECOVERCAN
+			  offcan1time = gettimer();
+#endif
+			  offcan1 = 1;
+			  DeviceState.CAN1 = OFFLINE;
+//					  offcan1count++; // increment occurances of coming off bus. if reach threshhold, go to error state.
+		  }
+		  Errors.ErrorPlace = 0xF1;
+		 LogError("CANBUS1 Down");
+//		  result +=1;
+	}
+
+#ifdef RECOVERCAN
+	if ( CAN1Status.BusOff && offcan1time+1000 >  gettimer() )
+	{
+
+		if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
+		{
+		// Start Error
+			 LogError("CANBUS1 Offline");
+			 Errors.ErrorPlace = 0xF2;
+			 result +=2;
+		} else
+		{
+			offcan1 = 0;
+			Errors.ErrorPlace = 0xF1;
+			LogError("CANBUS1 Up");
+			DeviceState.CAN1 = OPERATIONAL;
+			CAN_SendStatus(254,0,0);
+		}
+	}
+#endif
+
+#ifndef ONECAN
+	if ( CAN2Status.BusOff) // detect passive error instead and try to stay off bus till clears?
+	{
+	//	Errors.ErrorPlace = 0xAA;
+		  blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
+		  HAL_FDCAN_Stop(&hfdcan2);
+		  CAN_SendStatus(255,0,0);
+		  DeviceState.CAN2 = OFFLINE;
+
+		  if ( offcan2 == 0 )
+		  {
+#ifdef RECOVERCAN
+			  offcan2time = gettimer();
+#endif
+			  offcan2 = 1;
+		  }
+		  Errors.ErrorPlace = 0xF3;
+		  LogError("CANBUS2 Down");
+//		  result +=4;
+	}
+
+#ifdef RECOVERCAN
+	if ( CAN2Status.BusOff && offcan2time+5000 >  gettimer() )
+	{
+		if (HAL_FDCAN_Start(&hfdcan2) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
+		{
+		// Start Error
+			 Errors.ErrorPlace = 0xF4;
+			 LogError("CANBUS2 Offline");
+			 result +=8;
+		} else
+		{
+			offcan2 = 0;
+			LogError("CANBUS1 Up");
+			DeviceState.CAN2 = OPERATIONAL;
+			CAN_SendStatus(254,0,0);
+		}
+	}
+#endif
+#endif
+
+	return result;
+
+}
+
 void resetCAN( void )
 {
 #ifdef LOGGINGON
@@ -1426,6 +1318,8 @@ void resetCAN( void )
 
 int initCAN( void )
 {
+
+	CanTimeoutListCount = 0;
 	RegisterResetCommand(resetCAN);
 	resetCAN();
 
@@ -1451,8 +1345,23 @@ int initCAN( void )
 
 	vQueueAddToRegistry(CANRxQueue, "CANRxQueue" );
 
-	CANTxTaskHandle = osThreadNew(CANTxTask, NULL, &CANTxTask_attributes);
-	CANRxTaskHandle = osThreadNew(CANRxTask, NULL, &CANRxTask_attributes);
+	CANTxTaskHandle = xTaskCreateStatic(
+						  CANTxTask,
+						  CANTXTASKNAME,
+						  CANTXSTACK_SIZE,
+						  ( void * ) 1,
+						  CANTXTASKPRIORITY,
+						  xCANTXStack,
+						  &xCANTXTaskBuffer );
+
+	CANRxTaskHandle = xTaskCreateStatic(
+						  CANRxTask,
+						  CANRXTASKNAME,
+						  CANRXSTACK_SIZE,
+						  ( void * ) 1,
+						  CANRXTASKPRIORITY,
+						  xCANRXStack,
+						  &xCANRXTaskBuffer );
 
 	CAN_SendStatus(0,0,1); // earliest possible place to send can message signifying wakeup.
 

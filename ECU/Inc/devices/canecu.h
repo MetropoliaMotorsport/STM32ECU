@@ -8,7 +8,8 @@
 #ifndef CANECU_H_
 #define CANECU_H_
 
-#include "ecumain.h"
+#include "ecu.h"
+#include "queue.h"
 
 // definition of CAN ID's for nodes - Bus definitions not currently used
 
@@ -43,11 +44,11 @@
 #define AnalogNode17_ID			(1696)
 #define AnalogNode18_ID			(1698)
 
-#define PowerNode33_ID			(1710)
-#define PowerNode34_ID			(1711)
-#define PowerNode35_ID			(1712)
-#define PowerNode36_ID			(1713)
-#define PowerNode37_ID			(1714)
+#define PowerNode33_ID			(0x6AE) // 1710 0x6AE
+#define PowerNode34_ID			(0x6AF) // 17110x6AF
+#define PowerNode35_ID			(0x6B0) // 1712
+#define PowerNode36_ID			(0x6B1) // 1713
+#define PowerNode37_ID			(0x6B2) // 1714
 
 #define CANB0					(2)
 #define CANB1					(1)
@@ -140,7 +141,6 @@ typedef volatile struct CanDataType {
 	uint8_t  index;
 	bool	 CanOpen;
 	uint32_t time;
-	bool	 seen;
 	uint16_t error;
 	uint16_t receiveerr;
 	bool	 errorsent;
@@ -203,6 +203,7 @@ char CAN_SendADCminmax( void );
 char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error );
 //char CAN_SendADCVals( void );
 
+int CheckCanError( void );
 
 void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLength );
 int receivedCANData( CANData * datahandle );

@@ -8,7 +8,7 @@
 #ifndef OUTPUT_H_
 #define OUTPUT_H_
 
-#include "main.h"
+#include "ecumain.h"
 
 /*
 D0 - pin 10 PE13  output1 middle orange
@@ -86,26 +86,6 @@ typedef enum output {
 } output;
 
 #define Once					(1)
-
-#ifndef RTOS
-	#define BMSLED_Output 		(7)
-	#define IMDLED_Output		(5)
-	#define BSPDLED_Output		(3)
-
-	#define TSLED_Output		(1)
-	#define TSOFFLED_Output		(0)
-	#define RTDMLED_Output		(6)
-	//#define STOPLED_Output      (0)
-
-	#define LED1_Output			(12)
-	#define LED2_Output			(13)
-	#define LED3_Output			(14)
-	#define LED4_Output			(15)
-	#define LED5_Output			(16)
-	#define LED6_Output			(17)
-	#define LED7_Output			(18)
-#endif
-
 	#define OUTPUTCount		    (19)
 #endif
 
@@ -117,17 +97,6 @@ typedef enum output {
 #define LEDBLINK_ONE		BlinkVerySlow //2 // toggles every second.
 
 #define LEDBLINKNONSTOP     0xFFFF
-
-#ifndef RTOS
-struct OutputData {
-	volatile uint8_t state;
-	volatile uint8_t blinkingrate;
-	volatile uint16_t blinktime;
-
-};
-
-struct OutputData LEDs[OUTPUTCount];
-#endif
 
 void setOutput(output output, output_state state);
 void setOutputNOW(output output, output_state state); //  doesn't wait for timer to set output

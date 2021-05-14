@@ -6,28 +6,20 @@
  */
 
 
-#include "main.h"
 #include "ecumain.h"
+#include "idleprocess.h"
+#include "runningprocess.h"
+#include "operationalprocess.h"
+#include "configuration.h"
+#include "errors.h"
+#include "input.h"
+#include "inverter.h"
+#include "timerecu.h"
+#include "lcd.h"
+#include "output.h"
+#include "power.h"
 
 bool CheckHV = false;
-
-char IdleRequest( void )   // request data / invalidate existing data to ensure we have fresh data from this cycle.
-{
-	// Inverter Pre Operation preparedness.
-
-	// reset can data before operation to ensure we aren't checking old data from previous cycle.
-
-//	ResetCanReceived(); // reset can data before operation to ensure we aren't checking old data from previous cycle.
-	CAN_NMTSyncRequest();
-
-	setRunningPower( CheckHV, false );
-
-	// request ready states from devices.
-
-	invRequestState( PREOPERATIONAL ); // request to go into ready for HV
-
-	return 0;
-}
 
 char OperationalReceive( uint16_t returnvalue )
 {
@@ -70,10 +62,10 @@ char OperationalReceive( uint16_t returnvalue )
 #ifndef POWERNODES
 	if ( receivePDM() ) returnvalue &= ~(0x1 << PDMReceived);
 #endif
-	if ( receiveBMS() )
+//	if ( receiveBMS() )
 		returnvalue &= ~(0x1 << BMSReceived);
 
-	 receiveIVT();
+//	 receiveIVT();
 	// if ( receiveIVT() )
 		returnvalue &= ~(0x1 << IVTReceived); // assume IVT is present, don't go to error state if missing.
 
@@ -83,69 +75,6 @@ char OperationalReceive( uint16_t returnvalue )
     return returnvalue;
 }
 
-char OperationalReceiveLoop( void )
-{
-//	LastCarState = CarState;
-//	uint32_t loopstart = gettimer();
-//	uint32_t looptimer = 0;
-	uint8_t received = 0xFF;
-
-	static int errorcount = 0; // keep count of how many consecutive errors had.
-	static uint32_t errorfree = 0;
-
-	// loop for upto 5ms before end process loop time waiting for data or all data received.
-	// allows time to process incoming data, should be ~5ms.
-
-	vTaskDelay(5);
-//	do
-//	{
-		// check for resanityceived data and set states
-        // check for incoming data, break when all received.
-//		looptimer = gettimer() - loopstart;
-//		__WFI(); // sleep till interrupt, avoid loading cpu doing nothing.
-//	} while ( /* received != 0 && */ looptimer < PROCESSLOOPTIME-50 ); // check
-
-	received = OperationalReceive( received );
-
-	// check what not received here, only error for inverters
-
-	if ( received != 0 ) // not all expected data received in window.
-	{
-		CAN_SendStatus(1, OperationalState, received);
-		Errors.ErrorPlace = 0x9A;
-		Errors.OperationalReceiveError = received;
-		Errors.State = OperationalState;
-		return OperationalErrorState;
-	}
-
-	switch ( CheckErrors() )
-	{
-		case 0 :
-			errorfree++;
-			if ( errorfree >= ReduceErrorCountRate )
-			{
-				if ( errorcount > 0 ) errorcount--;
-			}
-			return 0;
-
-/*		case 1 : // non critical error.
-			errorcount++;
-			errorfree = 0;
-			if ( errorcount > MaxRunningErrorCount )
-			{
-				ErrorCarState = CarState;
-				return 99;
-			}
-//			CarState = LastCarState; // restore car state to last known good state.
-			return 1; */
-			break;
-
-		case 99 : // critical error.
-		default :
-			Errors.ErrorPlace = 0x9B;
-			return OperationalErrorState; // something has triggered an unacceptable error ( inverter error state etc ), drop to error state to deal with it.
-	}
-}
 
 int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 {
@@ -154,9 +83,14 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	static uint32_t HVEnableTimer;
 
+	// request ready states from devices.
+
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
 							 //12345678901234567890
+		setRunningPower( CheckHV, false );
+		invRequestState( PREOPERATIONAL ); // request to go into ready for HV
+
 		lcd_clear();
 		//lcd_settitle("Ready to activate TS");
 		CarState.HighVoltageReady = false;
@@ -177,30 +111,34 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	PrintRunning("Ready");
 
-	IdleRequest(); // process requests
-
 	//readystate = OperationalReceiveLoop();
 
-	uint8_t ReceiveNonCriticalError = 0;
 
-	uint8_t OperationalError = OperationalReceiveLoop();
+//		vTaskDelay(5);
 
-	switch ( OperationalError )
+	uint8_t received = OperationalReceive( received );
+
+	// check what not received here, only error for inverters
+
+	if ( received != 0 ) // not all expected data received in window.
 	{
-		case 0 : break;
-		case 1 : ReceiveNonCriticalError = 1; break;
-		case OperationalErrorState :
-			Errors.ErrorPlace = 0xCA;
-			Errors.ErrorReason = OperationalError;
-			return OperationalErrorState;
+		CAN_SendStatus(1, OperationalState, received);
+		Errors.ErrorPlace = 0x9A;
+		Errors.OperationalReceiveError = received;
+		Errors.State = OperationalState;
+		return OperationalErrorState;
 	}
 
-	// check for error messages -> drop state
+	if ( CheckCriticalError() )
+	{
+		Errors.ErrorPlace = 0xCA;
+		Errors.ErrorReason = 0;
+		return OperationalErrorState;
+	}
 
 	// at this state, everything is ready to be powered up.
 
 	if ( invertersStateCheck(STOPPED) // returns true if all inverters match state
-	  && !ReceiveNonCriticalError
 	  && CarState.VoltageBMS > MINHV
 #ifdef IVTEnable
 	#ifndef NOTSAL
@@ -208,7 +146,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	#endif
 #endif
 #ifdef SHUTDOWNSWITCHCHECK
-	  && CheckShutdown() // only allow TS enabling if shutdown switches are all closed.
+	  && CheckShutdown() // only allow TS enabling if shutdown switches are all closed, as it would otherwise fail
 #endif
 	  ) // minimum accumulator voltage to allow TS, set a little above BMS limit, so we can
 	{
@@ -220,7 +158,6 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 #ifdef SETDRIVEMODEINIDLE
 	setCurConfig();
 #endif
-
 
 // allow APPS checking before RTDM
 	vectoradjust adj;

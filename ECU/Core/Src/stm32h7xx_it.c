@@ -24,6 +24,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ecumain.h"
+#include "output.h"
+#include "configuration.h"
+#include "power.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -103,9 +106,11 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
 	CarState.HighVoltageReady = 0; // no high voltage allowed in this state.
-
+#ifdef HPF20
+	ShutdownCircuitSet( false ); // ensure shutdown circuit is open if we end up in a hard fault.
+#else
 	setRunningPower( false, false ); //disable high voltage on error state;
-	CheckErrors();
+#endif
 	// send cause of error state.
 	ConfigReset();
 	CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.

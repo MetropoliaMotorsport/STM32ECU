@@ -11,6 +11,9 @@
 
 
 #include "ecumain.h"
+#include "ivt.h"
+#include "timerecu.h"
+#include "errors.h"
 
 uint8_t LastIVTI[6] = {0,0,0,0,0,0};
 uint8_t LastIVTU1[6] = {0,0,0,0,0,0};
@@ -267,6 +270,8 @@ void IVTTimeout( uint16_t id )
 #endif
 	CarState.Power=0;
 	CarState.Current=0;
+
+    SetCriticalError();
 }
 
 int receiveIVT( void )

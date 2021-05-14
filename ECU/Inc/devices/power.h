@@ -8,10 +8,15 @@
 #ifndef DEVICES_POWER_H_
 #define DEVICES_POWER_H_
 
+#include "ecumain.h"
+
 typedef enum DevicePowertype {
 	None, // ensure 0 is not an actual device.
 	Buzzer,
 	Telemetry,
+	Back1,
+	Back2,
+	Back3,
 	Front1,
 	Inverters,
 	ECU,
@@ -31,28 +36,44 @@ typedef enum DevicePowertype {
 
 typedef enum DevicePowerStatetype {
 	DirectPowerCmd,
+	FanPowerCmd,
 	StartupPower,
 	IdlePower,
 	TSEnabledPower,
-	EmergencyPower
+	PowerError,
+	PowerErrorReset
 } DevicePowerState;
 
 typedef struct Power_msg {
-	DevicePowerState state;
+	DevicePowerState cmd;
+	union {
 	DevicePower power;
-	bool		enabled;
+	uint8_t PWMLeft;
+	};
+	union {
+	bool    enabled;
+	uint8_t PWMRight;
+	};
 } Power_msg;
+
+typedef struct Power_Error_msg {
+	uint8_t 	nodeid;
+	uint32_t	error;
+} Power_Error_msg;
 
 int setRunningPower( bool HV, bool buzzer );
 int errorPower( void );
 bool CheckShutdown( void );
 char * ShutDownOpenStr( void );
 
+bool PowerLogError( uint8_t nodeid, uint32_t errorcode);
+
 void ShutdownCircuitSet( bool state );
 int ShutdownCircuitCurrent( void );
 int ShutdownCircuitState( void );
 
-int setDevicePower( DevicePower device, bool enabled );
+bool setDevicePower( DevicePower device, bool enabled );
+bool resetDevicePower( DevicePower device );
 
 char * getDevicePowerNameLong( DevicePower device );
 
@@ -60,6 +81,8 @@ char * getPNodeWait( void );
 
 int initPower( void );
 
-void FanControl( void );
+void FanPWMControl( uint8_t leftduty, uint8_t rightduty );
+
+extern TaskHandle_t PowerTaskHandle;
 
 #endif /* DEVICES_POWER_H_ */

@@ -36,6 +36,9 @@
 /* USER CODE BEGIN Includes */
 
 #include "ecumain.h"
+#include "errors.h"
+#include "output.h"
+#include "timerecu.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

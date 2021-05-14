@@ -7,9 +7,14 @@
 
 #include "ecumain.h"
 #include "eeprom.h"
+#include "errors.h"
+#include "output.h"
 #include "i2c.h"
 #include "i2c-lcd.h"
+#include "timerecu.h"
+#include "lcd.h"
 #include "stm32h7xx_hal.h"
+#include "tim.h"
 
 uint16_t Memory_Address;
 volatile int Remaining_Bytes;
@@ -54,12 +59,14 @@ static uint8_t Buffer[BUFSIZE];
 
 static char datatype[20] = "";
 
-osThreadId_t EEPROMTaskHandle;
-const osThreadAttr_t EEPROMTask_attributes = {
-  .name = "EEPROMTask",
-  .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 128*2
-};
+
+#define EEPROMSTACK_SIZE 128*2
+#define EEPROMTASKNAME  "EEPROMTask"
+#define EEPROMTASKPRIORITY 1
+StaticTask_t xEEPROMTaskBuffer;
+StackType_t xEEPROMStack[ EEPROMSTACK_SIZE ];
+
+TaskHandle_t EEPROMTaskHandle;
 
 #define EEPROMQUEUE_LENGTH    20
 #define EEPROMITEMSIZE		sizeof( EEPROM_msg )
@@ -118,7 +125,7 @@ void EEPROMTask(void *argument)
 		vTaskDelay( CYCLETIME );
 	}
 
-	osThreadTerminate(NULL);
+	vTaskDelete(NULL);
 }
 
 
@@ -598,11 +605,11 @@ int startupReadEEPROM( void )
 {
 	// TODO could be optimised to only read necessary block.
 
-	HAL_Delay(100); // Allow time for EEPROM chip to initialise itself before start trying to access.
+	vTaskDelay(100); // Allow time for EEPROM chip to initialise itself before start trying to access.
 	HAL_I2CEx_ConfigAnalogFilter(&hi2c2,I2C_ANALOGFILTER_ENABLE);
 
 	HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 1); // block writing to eeprom, only reading at init.
-	HAL_Delay(1);
+	vTaskDelay(1);
 //#define READFULLEEPROM
 #ifdef READFULLEEPROM
 
@@ -659,43 +666,6 @@ int startupReadEEPROM( void )
 	return 0;
 	// headers ok, continue.
 #endif
-}
-
-
-int initEEPROM( void )
-{
-	lcd_send_stringscroll("Load EEPRom");
-
-	 MX_I2C2_Init();
-	 int eepromstatus = startupReadEEPROM();
-	 switch ( eepromstatus )
-	 {
-		 case 0 :
-				lcd_send_stringscroll("EEPRom Read");
-				DeviceState.EEPROM = ENABLED;
-				break;
-		 case 1 :
-				lcd_send_stringscroll("EEPRom Bad Data");
-				lcd_send_stringscroll("  Load New Data");
-				DeviceState.EEPROM = ERROR;
-				HAL_Delay(3000); // ensure message can be seen.
-				break;
-		 default :
-				lcd_send_stringscroll("EEPRom Read Fail");
-				DeviceState.EEPROM = DISABLED;
-				HAL_Delay(3000); // ensure message can be seen.
-	 };
-
-	EEPROMQueue = xQueueCreateStatic( EEPROMQUEUE_LENGTH,
-							  EEPROMITEMSIZE,
-							  EEPROMQueueStorageArea,
-							  &EEPROMStaticQueue );
-
-	vQueueAddToRegistry(EEPROMQueue, "EEPROMQueue" );
-
-	EEPROMTaskHandle = osThreadNew(EEPROMTask, NULL, &EEPROMTask_attributes);
-
-	return 0;
 }
 
 
@@ -907,5 +877,50 @@ bool writeEEPROMDone( void )
 bool stopEEPROM( void )
 {
 	return false;
+}
+
+
+
+int initEEPROM( void )
+{
+	lcd_send_stringscroll("Load EEPRom");
+
+	 MX_I2C2_Init();
+	 int eepromstatus = startupReadEEPROM();
+	 switch ( eepromstatus )
+	 {
+		 case 0 :
+				lcd_send_stringscroll("EEPRom Read");
+				DeviceState.EEPROM = ENABLED;
+				break;
+		 case 1 :
+				lcd_send_stringscroll("EEPRom Bad Data");
+				lcd_send_stringscroll("  Load New Data");
+				DeviceState.EEPROM = ERROR;
+				HAL_Delay(3000); // ensure message can be seen.
+				break;
+		 default :
+				lcd_send_stringscroll("EEPRom Read Fail");
+				DeviceState.EEPROM = DISABLED;
+				HAL_Delay(3000); // ensure message can be seen.
+	 };
+
+	EEPROMQueue = xQueueCreateStatic( EEPROMQUEUE_LENGTH,
+							  EEPROMITEMSIZE,
+							  EEPROMQueueStorageArea,
+							  &EEPROMStaticQueue );
+
+	vQueueAddToRegistry(EEPROMQueue, "EEPROMQueue" );
+
+	EEPROMTaskHandle = xTaskCreateStatic(
+						  EEPROMTask,
+						  EEPROMTASKNAME,
+						  EEPROMSTACK_SIZE,
+						  ( void * ) 1,
+						  EEPROMTASKPRIORITY,
+						  xEEPROMStack,
+						  &xEEPROMTaskBuffer );
+
+	return 0;
 }
 

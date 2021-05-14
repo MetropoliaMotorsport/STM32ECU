@@ -3,9 +3,11 @@
 /** Put this in the src folder **/
 
 #include "ecumain.h"
+#include "lcd.h"
+#include "i2c.h"
 #include "i2c-lcd.h"
+
 #include <stdbool.h>
-#include "stm32h7xx_hal.h"
 
 I2C_HandleTypeDef * lcdi2c;  // change your handler here accordingly
 extern SPI_HandleTypeDef hspi3;

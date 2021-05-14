@@ -8,6 +8,7 @@
 #ifndef INVERTER_H_
 #define INVERTER_H_
 
+#include "ecumain.h"
 #include "torquecontrol.h"
 
 void InverterAllowTorque(bool allow);

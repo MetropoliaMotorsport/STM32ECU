@@ -10,8 +10,13 @@
 // 1041 ( 411h )  49 0 175 0<- trigger message
 
 #include "ecumain.h"
+#include "eeprom.h"
+#include "errors.h"
+#include "inverter.h"
 #include "semphr.h"
 #include "torquecontrol.h"
+#include "watchdog.h"
+#include "power.h"
 
 #ifdef SIEMENS
 	#include "siemensinverter.h"
@@ -24,12 +29,14 @@ DeviceStatus GetInverterState( void );
 DeviceStatus InternalInverterState( uint16_t Status );
 int8_t InverterStateMachineResponse( volatile InverterState *Inverter);
 
-osThreadId_t InvTaskHandle;
-const osThreadAttr_t InvTask_attributes = {
-  .name = "InvTask",
-  .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 128*2
-};
+
+#define INVSTACK_SIZE 128*2
+#define INVTASKNAME  "DebugTask"
+#define INVTASKPRIORITY 1
+StaticTask_t xINVTaskBuffer;
+StackType_t xINVStack[ INVSTACK_SIZE ];
+
+TaskHandle_t InvTaskHandle;
 
 #define InvQUEUE_LENGTH    20
 #define InvITEMSIZE		   sizeof( Inv_msg )
@@ -112,18 +119,21 @@ bool checkStatusCode( uint8_t status )
 
 void StopMotors( void )
 {
-	for ( int i=0;i<MOTORCOUNT;i++){
-  //      CANSendInverter( 0b00000110, 0, i );  // request inverters go to non operational state before cutting power.
-	}
+
+
 }
 
 
 // task to manage inverter state.
 void InvTask(void *argument)
 {
+	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY ); // ensure that tasks don't start before all initialisation done.
+
 	Inv_msg msg;
 
 	bool reseterror = false;
+
+	bool allowregen = false;
 
 	TickType_t xLastWakeTime;
 
@@ -143,12 +153,12 @@ void InvTask(void *argument)
 		}
 
 		// check for data received.
-		for ( int i=0;i<MOTORCOUNT;i++)
-		{
-			receiveINVStatus(&invState.Inverter[i]);
-			receiveINVSpeed(&invState.Inverter[i]);
-			receiveINVTorque(&invState.Inverter[i]);
-		}
+//		for ( int i=0;i<MOTORCOUNT;i++)
+//		{
+//			receiveINVStatus(&invState.Inverter[i]);
+//			receiveINVSpeed(&invState.Inverter[i]);
+//			receiveINVTorque(&invState.Inverter[i]);
+//		}
 
 		DeviceStatus lowest=OPERATIONAL;
 		DeviceStatus highest=OFFLINE;
@@ -215,7 +225,11 @@ void InvTask(void *argument)
 				// but only send an actual torque request if both car and inverter state allow it.
 				if ( invState.AllowTorque && DeviceState.Inverter == OPERATIONAL )
 				{
-					InvSend( &invState.Inverter[i], invState.maxSpeed, invState.Inverter[i].Torque_Req );
+					// only allow a negative torque if regen is allowed.
+					if ( !allowregen && invState.Inverter[i].Torque_Req < 0 )
+						InvSend( &invState.Inverter[i], invState.maxSpeed, 0);
+					else
+						InvSend( &invState.Inverter[i], invState.maxSpeed, invState.Inverter[i].Torque_Req );
 				} else
 				{
 					InvSend( &invState.Inverter[i], 0, 0 );
@@ -224,15 +238,11 @@ void InvTask(void *argument)
 		}
 		xSemaphoreGive(InvUpdating);
 
-#ifdef FANCONTROL
-		FanControl();
-#endif
-
 		setWatchdogBit(watchdogBit);
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME ); // only allow one command per cycle
 	}
 
-	osThreadTerminate(NULL);
+	vTaskDelete(NULL);
 }
 
 
@@ -476,7 +486,14 @@ int initInv( void )
 
 	vQueueAddToRegistry(InvQueue, "InverterQueue" );
 
-	InvTaskHandle = osThreadNew(InvTask, NULL, &InvTask_attributes);
+	InvTaskHandle = xTaskCreateStatic(
+						  InvTask,
+						  INVTASKNAME,
+						  INVSTACK_SIZE,
+						  ( void * ) 1,
+						  INVTASKPRIORITY,
+						  xINVStack,
+						  &xINVTaskBuffer );
 
   return 0;
 }

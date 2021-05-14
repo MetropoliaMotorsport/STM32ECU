@@ -6,8 +6,13 @@
  */
 
 #include "ecumain.h"
+#include "lcd.h"
 #include "i2c-lcd.h"
+#include "timerecu.h"
+#include "queue.h"
 #include "semphr.h"
+
+#include "i2c.h"
 
 static int lcd_updatedisplay( void );
 static int lcd_printscroll( void );
@@ -38,16 +43,19 @@ DMA_BUFFER ALIGN_32BYTES (uint8_t LCDBuffer[LCDBUFSIZE]);
 static uint8_t LinePriority[4] = {0};
 static uint32_t LinePriorityTime[4] = {0};
 
-osThreadId_t LCDTaskHandle;
-const osThreadAttr_t LCDTask_attributes = {
-  .name = "LCDTask",
-  .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 128 * 8
-};
+
+
+#define LCDSTACK_SIZE 128*8
+#define LCDTASKNAME  "LCDTask"
+#define LCDTASKPRIORITY 1
+StaticTask_t xLCDTaskBuffer;
+StackType_t xLCDStack[ LCDSTACK_SIZE ];
+
+TaskHandle_t LCDTaskHandle;
 
 
 // setup of the LCD Data queue
-#define LCDQUEUE_LENGTH    10
+#define LCDQUEUE_LENGTH    20
 #define LCDITEMSIZE		sizeof( struct lcd_msg )
 static StaticQueue_t LCDStaticQueue;
 uint8_t LCDQueueStorageArea[ LCDQUEUE_LENGTH * LCDITEMSIZE ];
@@ -62,6 +70,8 @@ int lcd_geterrors( void )
 
 void LCDTask(void *argument)
 {
+	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY );
+
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT( LCDQueue );
 
@@ -192,8 +202,7 @@ void LCDTask(void *argument)
 	//	vTaskDelayUntil( &xLastWakeTime, xFrequency );
 	}
 
-	// shouldn't get here, but terminate thread cleanly if do.
-	osThreadTerminate(NULL);
+	vTaskDelete(NULL);
 }
 
 void strpad(char * str, int len, bool adddots){
@@ -297,7 +306,6 @@ int lcd_setscrolltitle( char * str )
 
 int lcd_clearscroll( void )
 {
-
 	struct lcd_msg msg;
 	msg.type = LCD_Scroll_Clear;
 	return xQueueSendToBack(LCDQueue,&msg,0);
@@ -306,7 +314,6 @@ int lcd_clearscroll( void )
 
 int lcd_clear( void )
 {
-
 	struct lcd_msg msg;
 	msg.type = LCD_Clear;
 	return xQueueSendToBack(LCDQueue,&msg,0);
@@ -413,7 +420,15 @@ int initLCD( void )
 		lcd_send_stringposDIR(0,0,"LCD Init.");
 	}
 
-	LCDTaskHandle = osThreadNew(LCDTask, NULL, &LCDTask_attributes);
+	LCDTaskHandle = xTaskCreateStatic(
+						  LCDTask,
+						  LCDTASKNAME,
+						  LCDSTACK_SIZE,
+						  ( void * ) 1,
+						  LCDTASKPRIORITY,
+						  xLCDStack,
+						  &xLCDTaskBuffer );
+
 #endif
 	return 0;
 }

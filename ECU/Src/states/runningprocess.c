@@ -6,6 +6,19 @@
  */
 
 #include "ecumain.h"
+#include "operationalprocess.h"
+#include "idleprocess.h"
+#include "errors.h"
+#include "power.h"
+#include "timerecu.h"
+#include "brake.h"
+
+#include "torquecontrol.h"
+#include "adcecu.h"
+#include "input.h"
+#include "output.h"
+#include "lcd.h"
+#include "inverter.h"
 
 
 uint16_t PrintRunning( char *title )
@@ -103,20 +116,15 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	setRunningPower( true, true ); // buzzer only sounds when value changes from 0 to 1
 	invRequestState( OPERATIONAL );
 
-	uint8_t OperationalError = OperationalReceiveLoop();
-
-	switch ( OperationalError )
+	if ( CheckCriticalError() )
 	{
-		case 0 : break;
-//		case 1 : ReceiveNonCriticalError = 1; break;
-		case OperationalErrorState :
-//			Errors.ErrorPlace = 0xEA;
-			Errors.ErrorReason = OperationalError;
-			return OperationalErrorState;
+		Errors.ErrorReason = ReceivedCriticalError;
+		return OperationalErrorState;
 	}
 
-	// check data validity, // any critical errors, drop state.
+	uint8_t received = OperationalReceive( received );
 
+	// check data validity, // any critical errors, drop state.
 
 	if  ( !( DeviceState.Inverter == OPERATIONAL
 		  || DeviceState.Inverter == PREOPERATIONAL ) )
@@ -150,7 +158,8 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	// check for unexpected can registration messages-> error state.
 
-	if ( CheckErrors() )
+
+	if ( CheckCriticalError() )
 	{
 			Errors.ErrorPlace = 0xEE;
 			return OperationalErrorState; // something has triggered an error, drop to error state to deal with it.

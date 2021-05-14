@@ -10,10 +10,9 @@
 
 #include "ecumain.h"
 
+#define MAXDEBUGOUTPUT 40
 
-typedef struct Debug_msg {
-	uint32_t msgval;
-} Debug_msg;
+bool DebugMsg( char * msg);
 
 int initDebug( void );
 

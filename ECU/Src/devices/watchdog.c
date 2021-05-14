@@ -5,6 +5,8 @@
  */
 
 #include "ecumain.h"
+#include "watchdog.h"
+#include "errors.h"
 #include "wwdg.h"
 #include "event_groups.h"
 #include "semphr.h"
@@ -12,12 +14,14 @@
 #define MAXWATCHDOGTASKS			10
 #define MAXWATCHDOGTASKNAMELENGTH 	20
 
-osThreadId_t WatchdogTaskHandle;
-const osThreadAttr_t WatchdogTask_attributes = {
-  .name = "WatchdogTask",
-  .priority = (osPriority_t) osPriorityHigh,
-  .stack_size = 128*4
-};
+
+#define WATCHDOGSTACK_SIZE 128*4
+#define WATCHDOGTASKNAME  "WatchdogTask"
+#define WATCHDOGTASKPRIORITY 1
+StaticTask_t xWATCHDOGTaskBuffer;
+StackType_t xWATCHDOGStack[ WATCHDOGSTACK_SIZE ];
+
+TaskHandle_t WatchdogTaskHandle = NULL;
 
 bool watchdogreboot = false;
 
@@ -126,6 +130,7 @@ static uint32_t TimeoutCalculation(uint32_t timevalue)
 
 static void WatchdogTask(void *pvParameters)
 {
+//	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY );
 	volatile int count = 0;
 
 	vTaskDelay(20);
@@ -134,16 +139,20 @@ static void WatchdogTask(void *pvParameters)
 	{
 		count++;
 
-		EventBits_t activeBits = xEventGroupGetBits(xWatchdogActive);
+		volatile EventBits_t activeBits = xEventGroupGetBits(xWatchdogActive);
 
-		EventBits_t uxBits = xEventGroupGetBits(xWatchdog);
+		volatile EventBits_t uxBits = xEventGroupGetBits(xWatchdog);
 
 		if( ( uxBits & activeBits ) == ( activeBits ) )
 		{
 			// only kick the watchdog if all expected bits are set.
 			HAL_WWDG_Refresh(&hwwdg1);
-		}// else
+		} else
 		{
+			if ( activeBits > 0 )
+			{
+				volatile int watchdognotkicked = 1;
+			}
 //			HAL_WWDG_Refresh(&hwwdg1);
 		}
 
@@ -165,8 +174,7 @@ int initWatchdog( void )
 
 	debugAllocate = xSemaphoreCreateMutex();
 
-
-#ifdef true
+#ifdef _WATCHDOG
 
 	volatile uint8_t resetflag = __HAL_RCC_GET_FLAG(RCC_FLAG_WWDG1RST);
 
@@ -254,7 +262,15 @@ int initWatchdog( void )
 	}
 #endif
 
-	WatchdogTaskHandle = osThreadNew(WatchdogTask, NULL, &WatchdogTask_attributes);
+	WatchdogTaskHandle = xTaskCreateStatic(
+						  WatchdogTask,
+						  WATCHDOGTASKNAME,
+						  WATCHDOGSTACK_SIZE,
+						  ( void * ) 1,
+						  WATCHDOGTASKPRIORITY,
+						  xWATCHDOGStack,
+						  &xWATCHDOGTaskBuffer );
+
 #endif
 	return 0;
 }

@@ -10,8 +10,10 @@
 // 1041 ( 411h )  49 0 175 0<- trigger message
 
 #include "ecumain.h"
-
+#include "eeprom.h"
+#include "errors.h"
 #include "inverter.h"
+#include "timerecu.h"
 
 #ifdef LENZE
 #include "lenzeinverter.h"

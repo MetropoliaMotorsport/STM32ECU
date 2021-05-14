@@ -41,7 +41,6 @@
           <heapSize>0x200</heapSize>
           <stackSize>0x400</stackSize>
           <board>custom</board>
-          <debugprobe>swd</debugprobe>
           <optimization />
           <Aincludes>
             <include />

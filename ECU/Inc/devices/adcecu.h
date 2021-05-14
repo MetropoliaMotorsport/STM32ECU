@@ -8,20 +8,7 @@
 #ifndef ADCECU_H_
 #define ADCECU_H_
 #include "eeprom.h"
-
-// redefine channels to match shield pins to make easier.
-
-/*
-ADC_Data[0]	working as ai1   ~4k to 65k. op amp              1.74k/3.3k     5v -> 3.275v   pa3
-ADC_Data[1]	working as ai7   ~5k-43k - 13-65k now.               150k/268k      4.5v -> 3.275v  pc0
-ADC_Data[2]	working as ai3    ~12.5k to 65k op amp. ( 84.7m, 2.89v max reading )   1.74k/3.3k   5v -> 3.275v   pa5
-ADC_Data[3]	working as ai4,   ~270k resistor.  3.3v max.         no divider           3.3v     pa6
-ADC_Data[4]	working as ai5,   ~270k resistor, 3.3v max.          no divider           3.3v     pa7
-ADC_Data[5]	working as ai2 ~8.5k to 65k op amp.                  1.74k/3.3k    5v -> 3.275v   pa4
----ADC_Data[6] volatile uint32_t   old ai6, very small input range. ~31k-42k 0-5v.  1.2-1.8v output for 0-5v input, climbing over time.
-ADC_Data[7]	volatile uint32_t	working ai0 on connector. ~4k to 65k op amp.         1.74k/3.3k    5v -> 3.275v   pa0
-ADC_data[8]	new ai6  | --                                 385k/150k   10v->3.125      pf4
-*/
+#include "ecu.h"
 
 #ifdef HPF19
 	#define SteeringADC			5 // ai2
@@ -53,17 +40,22 @@ ADC_data[8]	new ai6  | --                                 385k/150k   10v->3.125
 	#define NumADCChan		   	(3)
 	#define NumADCChanADC3 		(3)
 	#define SampleSize			(4)
+#ifdef STMADC
 	#define ADC_CONVERTED_DATA_BUFFER_SIZE   ((uint32_t) NumADCChan*SampleSize*2)
 	/* Size of array aADCxConvertedData[] */
 	#define ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3   ((uint32_t) NumADCChanADC3*SampleSize*2)
 #endif
+#endif
 
+#ifdef HPF19
 // using local or remote ADC.
 volatile char usecanADC;
+#endif
 
 volatile char minmaxADC;
 // ADC
 
+#ifdef STMADC
 typedef enum ADC_cmd{ adc1, adc3 } ADC_cmd;
 
 typedef struct ADC_msg {
@@ -76,6 +68,8 @@ volatile uint32_t ADC_Data[NumADCChan+NumADCChanADC3];
 volatile uint32_t ADC_DataError[NumADCChan+NumADCChanADC3];
 volatile uint32_t ADC_DataMin[NumADCChan+NumADCChanADC3];
 volatile uint32_t ADC_DataMax[NumADCChan+NumADCChanADC3];
+#endif
+
 
 struct  {
 	uint32_t lastread;
@@ -164,8 +158,10 @@ void SetupLowTravelTorque( void );
 #endif
 void SetupTorque( int request );
 
+#ifdef STMADC
 HAL_StatusTypeDef startADC(void);
-HAL_StatusTypeDef stopADC( void );
+#endif
+
 
 void minmaxADCReset(void);
 
@@ -175,10 +171,12 @@ void receiveCANInput( uint8_t * CANRxData );
 int initCANADC( void );
 #endif
 
-uint16_t CheckADCSanity( void );
+uint32_t CheckADCSanity( void );
 
 char * getADCWait( void);
 
 int initADC( void );
+
+extern TaskHandle_t ADCTaskHandle;
 
 #endif /* ADCECU_H_ */

@@ -5,14 +5,23 @@
  *      Author: Visa
  */
 
-#include "errors.h"
 #include "ecumain.h"
+#include "errors.h"
+#include "debug.h"
+#include "inverter.h"
+#include "input.h"
+#include "configuration.h"
+#include "output.h"
+#include "power.h"
+#include "timerecu.h"
+#include "lcd.h"
+#include "semphr.h"
+#include "queue.h"
 
 #define MAXERRORMSGLENGTH  40
 
 struct error_msg {
-
-  char msg[MAXERRORMSGLENGTH+1];
+  char msg[MAXERRORMSGLENGTH];
   time_t time;
 };
 
@@ -23,14 +32,33 @@ uint8_t ERRORQueueStorageArea[ ERRORQUEUE_LENGTH * ERRORITEMSIZE ];
 
 QueueHandle_t ERRORQueue;
 
+SemaphoreHandle_t CriticalError;
+
+volatile ErrorsType Errors;
+
+uint16_t ErrorCode;
+
+bool logerrors = false;
+
 void LogError( char *message )
 {
-	struct error_msg error;
-	error.time = getTime();
-	strncpy( error.msg, message, MAXERRORMSGLENGTH+1 );
-	xQueueSendToBack(ERRORQueue,&error,0);
+	if ( logerrors )
+	{
+		struct error_msg error;
+		error.time = getTime();
+		strncpy( error.msg, message, MAXERRORMSGLENGTH );
+		xQueueSendToBack(ERRORQueue,&error,0); // send it to error state handler queue for display to user.
+
+		lcd_send_stringline( 3, message, 2);
+
+		DebugMsg( message ); // also send it to UART output immediately.
+	}
 }
 
+void SetErrorLogging( bool log )
+{
+	logerrors = log;
+}
 
 int OperationalErrorHandler( uint32_t OperationLoops )
 {
@@ -42,19 +70,14 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	// if one inverter
 
-	static uint16_t errorstate;
-
 	static uint32_t errorstatetime = 0;
 
 #ifndef everyloop
 	if ( ( OperationLoops % LOGLOOPCOUNTSLOW ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
 #endif
 	{
-	//	if ( Errors.ADCErrorState )
-	//	  CAN_SendStatus(32, OperationalErrorState, Errors.ADCErrorState+(errorstate<<16));
-	//	else
-		  CAN_SendStatus(1, OperationalErrorState, Errors.OperationalReceiveError+(errorstate<<16));
-	//	devicestate+(sanitystate<<16)
+		// TODO get a better way to indicate error state.
+		  CAN_SendStatus(1, OperationalErrorState, Errors.OperationalReceiveError+(0<<16));
 	}
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
@@ -67,17 +90,17 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		lcd_send_stringscroll(str);
 
 		CarState.HighVoltageReady = false; // no high voltage allowed in this state.
-		InverterAllowTorque(false);
+		InverterAllowTorque(false); // immiedietly stop allowing torque request.
 
-		StopMotors();
+		ShutdownCircuitSet( false );
 
+#ifdef PDM
         sendPDM( 0 ); //disable high voltage on error state;
+#endif
 
         CAN_SendTimeBase();
 
-		errorstate = CheckErrors();
-
-		sprintf(str,"Errorstate: %.4X", errorstate);
+		sprintf(str,"Errorstate: %.4X", 0);
 		lcd_send_stringscroll(str);
 		// send cause of error state.
 
@@ -103,8 +126,6 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 	//	char str[LCDCOLUMNS+1];
 		xQueueReceive(ERRORQueue,&error,0);
 
-
-
 		lcd_send_stringscroll(error.msg);
 	}
 
@@ -117,7 +138,9 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		CAN_SendErrors();
 	}
 
+#ifdef PDM
 	receivePDM();
+#endif
 
 	if ( !CheckShutdown() ) // indicate shutdown switch status with blinking rate.
 	{
@@ -151,7 +174,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		strcat(str, "" );
 	}
 
-	if ( ! ( CheckErrors() == 0 || CheckErrors() == 99 ) ) // inverter error checked in next step.
+	if ( 0 ) // getPowerErrors() ) // inverter error checked in next step.
 	{
 //		allowreset += 2;
 		strcat(str, "PDM " );
@@ -168,7 +191,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
     if ( !CheckShutdown() )
     {
     	allowreset +=8;  // only allow exiting error state if shutdown switches closed. - maybe move to only for auto
-    	strcat(str, "SHT " );
+    	strcat(str, "SDC " );
     }
 #endif
 
@@ -206,15 +229,32 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 }
 
 
+bool SetCriticalError()
+{
+	// do a better fix
+//	if ( CriticalError != NULL)
+		return xSemaphoreGive( CriticalError );
+//	else return false;
+}
+
+bool CheckCriticalError()
+{
+	return xSemaphoreTake( CriticalError, 0);
+}
+
 
 int initERRORState( void )
 {
+	CriticalError = xSemaphoreCreateBinary();
+
 	ERRORQueue = xQueueCreateStatic( ERRORQUEUE_LENGTH,
 							  ERRORITEMSIZE,
 							  ERRORQueueStorageArea,
 							  &ERRORStaticQueue );
 
 	vQueueAddToRegistry(ERRORQueue, "ERRORQueue" );
+
+	SetErrorLogging( true );
 
 	return 0;
 }

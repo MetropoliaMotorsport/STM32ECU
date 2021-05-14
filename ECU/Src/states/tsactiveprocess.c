@@ -5,8 +5,18 @@
  *      Author: drago
  */
 
-#include "main.h"
-#include <stdlib.h>
+#include "ecumain.h"
+#include "tsactiveprocess.h"
+#include "runningprocess.h"
+#include "idleprocess.h"
+#include "adcecu.h"
+#include "inverter.h"
+#include "input.h"
+#include "output.h"
+#include "lcd.h"
+#include "timerecu.h"
+#include "power.h"
+#include "errors.h"
 
 /* Private includes ----------------------------------------------------------*/
 
@@ -51,17 +61,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 
 	uint8_t ReceiveNonCriticalError = 0;
 
-	uint8_t OperationalError = OperationalReceiveLoop();
-
-	switch ( OperationalError )
-	{
-		case 0 : break;
-		case 1 : ReceiveNonCriticalError = 1; break;
-		case OperationalErrorState :
-			Errors.ErrorPlace = 0xDA;
-			Errors.ErrorReason = OperationalError;
-			return OperationalErrorState;
-	}
+	uint8_t received = OperationalReceive( received );
 
 	uint32_t curtime = gettimer();
 
@@ -82,9 +82,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	  setOutput(RTDMLED,Off);
 	}
 
-	uint16_t errors = CheckErrors();
-
-	if ( errors )
+	if ( CheckCriticalError() )
 	{
 		Errors.ErrorPlace = 0xDB;
 		return OperationalErrorState; // something has triggered an error, drop to error state to deal with it.
@@ -98,14 +96,6 @@ int TSActiveProcess( uint32_t OperationLoops )
 	doVectoring(Torque_Req, &adj);
 
 	InverterSetTorque(&adj, 0);
-
-/*	uint16_t sanity = CheckADCSanity();
-	if ( sanity )
-	{
-		CAN_SendStatus(5, TSActiveState, sanity);
-		Errors.Errorreason = 0xEC;
-		return OperationalErrorState;
-	} */
 
 	/* EV 4.11.6
 	 * After the TS has been activated, additional actions must be required by the driver

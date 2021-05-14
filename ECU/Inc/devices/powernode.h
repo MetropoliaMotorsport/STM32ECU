@@ -9,6 +9,7 @@
 #define POWERNODE_H_
 
 #include "ecumain.h"
+#include "power.h"
 
 extern CANData PowerNodeErr;
 extern CANData PowerNodeAck;
@@ -27,12 +28,14 @@ char * getPNodeStr( void );
 
 uint8_t getDevicePowerListSize( void );
 
+bool sendFanPWM( uint8_t leftduty, uint8_t rightduty );
 int sendPowerNodeReq( void );
 bool getNodeDevicePower(DevicePower device );
 bool getNodeDeviceExpectedPower(DevicePower device );
-int setNodeDevicePower( DevicePower device, bool state );
+bool setNodeDevicePower( DevicePower device, bool state, bool reset );
+int getPowerDeviceIndex( DevicePower device );
 
-bool powerErrorOccurred( DevicePower device );
+uint32_t powerErrorOccurred( DevicePower device );
 
 int initPowerNodes( void );
 
