@@ -27,7 +27,6 @@
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
 I2C_HandleTypeDef hi2c4;
-DMA_HandleTypeDef hdma_i2c3_tx;
 
 /* I2C2 init function */
 void MX_I2C2_Init(void)
@@ -126,7 +125,7 @@ void MX_I2C4_Init(void)
 
   /* USER CODE END I2C4_Init 1 */
   hi2c4.Instance = I2C4;
-  hi2c4.Init.Timing = 0x307075B1;
+  hi2c4.Init.Timing = 0x70303AEE;
   hi2c4.Init.OwnAddress1 = 0;
   hi2c4.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c4.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -237,25 +236,6 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     /* I2C3 clock enable */
     __HAL_RCC_I2C3_CLK_ENABLE();
 
-    /* I2C3 DMA Init */
-    /* I2C3_TX Init */
-    hdma_i2c3_tx.Instance = DMA1_Stream2;
-    hdma_i2c3_tx.Init.Request = DMA_REQUEST_I2C3_TX;
-    hdma_i2c3_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
-    hdma_i2c3_tx.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_i2c3_tx.Init.MemInc = DMA_MINC_ENABLE;
-    hdma_i2c3_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-    hdma_i2c3_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-    hdma_i2c3_tx.Init.Mode = DMA_NORMAL;
-    hdma_i2c3_tx.Init.Priority = DMA_PRIORITY_LOW;
-    hdma_i2c3_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-    if (HAL_DMA_Init(&hdma_i2c3_tx) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    __HAL_LINKDMA(i2cHandle,hdmatx,hdma_i2c3_tx);
-
     /* I2C3 interrupt Init */
     HAL_NVIC_SetPriority(I2C3_EV_IRQn, 6, 0);
     HAL_NVIC_EnableIRQ(I2C3_EV_IRQn);
@@ -347,9 +327,6 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
     HAL_GPIO_DeInit(GPIOC, GPIO_PIN_9);
 
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_8);
-
-    /* I2C3 DMA DeInit */
-    HAL_DMA_DeInit(i2cHandle->hdmatx);
 
     /* I2C3 interrupt Deinit */
     HAL_NVIC_DisableIRQ(I2C3_EV_IRQn);

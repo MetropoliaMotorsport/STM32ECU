@@ -590,14 +590,18 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 		 LCD_I2CError();
 	 }  // HAL_I2C_ERROR_AF
 
+/*	 if ( I2cHandle->Instance == I2C4 ){
+	//	 volatile I2C_HandleTypeDef temp = *I2cHandle;
+		 LCD_I2CError();
+	 }  // HAL_I2C_ERROR_AF */
+
 	 if ( I2cHandle->Instance == I2C2 ){
 
 		 eepromwritinginprogress = false;
 
 	 }
 
-  /* Turn LED3 on: Transfer error in reception/transmission process */
-	 blinkOutput(LED7, BlinkVeryFast, 1);
+	 blinkOutput(LED5, BlinkVeryFast, 1);
 }
 
 

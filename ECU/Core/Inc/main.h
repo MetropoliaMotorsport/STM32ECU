@@ -125,6 +125,11 @@ void Error_Handler(void);
 #define DI6_Pin GPIO_PIN_6
 #define DI6_GPIO_Port GPIOG
 #define DI6_EXTI_IRQn EXTI9_5_IRQn
+#define DI7_Pin GPIO_PIN_7
+#define DI7_GPIO_Port GPIOC
+#define DI7_EXTI_IRQn EXTI9_5_IRQn
+#define TEST_Pin GPIO_PIN_4
+#define TEST_GPIO_Port GPIOB
 #define LD7_Pin GPIO_PIN_7
 #define LD7_GPIO_Port GPIOB
 #define LD8_Pin GPIO_PIN_8

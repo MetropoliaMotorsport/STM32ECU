@@ -1,4 +1,4 @@
-/*
+	/*
  * lenzeinverter.c
  *
  *  Created on: 21 Mar 2021
@@ -406,7 +406,7 @@ bool processINVValues1(uint8_t CANRxData[8], uint32_t DataLength, CANData * data
 
 bool processINVValues2(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle) // try to reread if possible?
 {
-//	volatile InverterState *Inverter = &InvState.Inverter[datahandle->index];
+	volatile InverterState *Inverter = &invState.Inverter[datahandle->index];
 
 	int16_t MotorTemp = getLEint16(&CANRxData[0])/16;
 //	int16_t powerActFiltered = getLEint16(&CANRxData[2]);

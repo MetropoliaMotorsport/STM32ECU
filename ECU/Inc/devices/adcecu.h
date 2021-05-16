@@ -119,8 +119,7 @@ struct ADCInterpolationTables { // pointers to array data for linear interpolati
 
 		struct ADCTable TorqueCurve;
 
-		struct ADCTable CoolantL;
-		struct ADCTable CoolantR;
+		struct ADCTable Coolant;
 
 		struct ADCTable ModeSelector;
 #ifdef TORQUEVECTOR

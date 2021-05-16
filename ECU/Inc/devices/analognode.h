@@ -33,7 +33,7 @@
 					+ (0x1 << ANode17Bit) \
 					+ (0x1 << ANode18Bit) \
 					)
-#define AnodeCritical (0x1 << ANode1Bit ) + (0x1 << ANode11Bit)
+#define AnodeCriticalBit (0x1 << ANode1Bit ) + (0x1 << ANode11Bit)
 
 
 extern CANData AnalogNode1;

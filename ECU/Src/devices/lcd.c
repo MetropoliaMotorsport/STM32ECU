@@ -6,6 +6,7 @@
  */
 
 #include "ecumain.h"
+#include "output.h"
 #include "lcd.h"
 #include "i2c-lcd.h"
 #include "timerecu.h"
@@ -404,6 +405,7 @@ int initLCD( void )
 #ifdef SCREEN
 
 	MX_I2C3_Init();
+//	MX_I2C4_Init();
 
 	for ( int i=0;i<LCDBUFSIZE;i++){ 	// clear display buffer.
 		LCDBuffer[i] = 32;

@@ -40,6 +40,7 @@
 #include "debug.h"
 #include "configuration.h"
 #include "operationalprocess.h"
+#include "uartecu.h"
 
 #include "dma.h"
 #include "gpio.h"
@@ -230,11 +231,15 @@ static int HardwareInit( void )
 	MX_GPIO_Init(); // no failure return value
 	MX_RNG_Init();
 
+	initUART();
+
 	initDebug();
 
 	// startup LCD first
 #ifdef HPF20
 	ShutdownCircuitSet( false ); // ensure shutdown circuit is closed at start
+
+    initOutput(); // set default led states and start life indicator LED blinking. needed for LCD powering.
 
 	initLCD();
 
@@ -288,8 +293,6 @@ static int HardwareInit( void )
 	initADC();
 
 	lcd_send_stringscroll("Enable LEDS");
-    initOutput(); // set default led states and start life indicator LED blinking.
-
 #ifdef POWERLOSSDETECT
     initPowerLossHandling()
 #endif
@@ -352,9 +355,7 @@ static int HardwareInit( void )
   */
 int realmain(void)
 {
-  /* MCU Configuration--------------------------------------------------------*/
-
-//    int MainState = 0;
+	/* MCU Configuration--------------------------------------------------------*/
 
 	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	HAL_Init();

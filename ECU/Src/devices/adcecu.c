@@ -25,7 +25,6 @@ volatile uint32_t ADC3loops;
 volatile bool ADC1read = false;
 volatile bool ADC3read = false;
 
-
 //variables that need to be accessible in ISR's
 
 //setup to place ADC buffers in compatible RAM region, ensure linker file is setup correctly for D1
@@ -43,131 +42,12 @@ DMA_BUFFER ALIGN_32BYTES (static uint32_t aADCxConvertedData[ADC_CONVERTED_DATA_
 DMA_BUFFER ALIGN_32BYTES (static uint32_t aADCxConvertedDataADC3[ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3]);
 #endif
 
-#ifdef SIMPLETORQUEVECTOR
-uint16_t TorqueVectInput[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTORSTARTANGLE+UINTOFFSET, 0, TORQUEVECTORSTARTANGLE+UINTOFFSET,  TORQUEVECTORSTOPANGLE+UINTOFFSET };
-int16_t TorqueVectOutput[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
-
-uint16_t TorqueVectInput2[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTORSTARTANGLE+UINTOFFSET, 0, TORQUEVECTORSTARTANGLE+UINTOFFSET,  TORQUEVECTORSTOPANGLE+UINTOFFSET };
-int16_t TorqueVectOutput2[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
-
-uint16_t TorqueVectInput3[] = { -TORQUEVECTORSTOPANGLE+UINTOFFSET, -TORQUEVECTORSTARTANGLE+UINTOFFSET, 0, TORQUEVECTORSTARTANGLE+UINTOFFSET,  TORQUEVECTORSTOPANGLE+UINTOFFSET };
-int16_t TorqueVectOutput3[] = { -TORQUEVECTORMAXNM*10,   0, 0,  0,  TORQUEVECTORMAXNM*10 };
-#endif
-
-#ifdef EEPROMSTORAGE
-
 #ifdef HPF19
-
-uint16_t SteeringInput[ sizeof(((eepromdata*)0)->ADCSteeringInput)/2 +2 ] = { 0 };
-int16_t SteeringOutput[ sizeof(((eepromdata*)0)->ADCSteeringOutput)/2 +2 ] = { 0 };
-uint8_t SteeringSize = 0;
-
+#include "adc_hpf19.h"
 #endif
 
-uint16_t BrakeRInput[sizeof(((eepromdata*)0)->ADCBrakeRPresInput)/2 +3 ] = { 1024, 1025, 	  0, 	 0, 65535 }; // at 240bar, should be 240 output, at 0 bar should be 0 // 62914
-int16_t BrakeROutput[sizeof(((eepromdata*)0)->ADCBrakeRPresOutput)/2 +3 ] = { -1,     0,    0,     240,  255 }; // output range // 240
-uint8_t BrakeRSize = sizeof(BrakeRInput)/sizeof(BrakeRInput[0]);
-
-
-uint16_t BrakeFInput[sizeof(((eepromdata*)0)->ADCBrakeFPresInput)/2 +3 ] = { 1024, 1025,    0,	 0, 65535 }; // at 240bar, should be 240 output, at 0 bar should be 0 // 62914
-int16_t BrakeFOutput[sizeof(((eepromdata*)0)->ADCBrakeFPresOutput)/2 +3 ] = { -1,     0,    0,     240,  255 }; // output range // 240
-uint8_t BrakeFSize = sizeof(BrakeFInput)/sizeof(BrakeFInput[0]);
-
-
-// define zero as 5% actual travel and 100% as 95% of actual travel
-uint16_t TorqueReqLInput[sizeof(((eepromdata*)0)->ADCTorqueReqLInput)/2+4] = {  1024,  1025, 0,     0,     64000,  64001 }; // calibration values for left input // 5800
-int16_t TorqueReqLOutput[sizeof(((eepromdata*)0)->ADCTorqueReqLInput)/2+4] = {  -1,  0,      0,     1000,   1000,  1001 }; // range defined 0-1000 to allow percentage accuracy even if not using full travel range.
-uint8_t TorqueReqLSize = 6; //sizeof(TorqueReqLInput)/sizeof(TorqueReqLInput[0]);
-
-
-// TorqueRMin(6798) / TorqueRMax(54369)
-uint16_t TorqueReqRInput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] =  {  1024,  1025, 0,     0,      64000,  64001 };; // calibration values for right input // 6200
-int16_t TorqueReqROutput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] = { -1,      0,      0,   1000,   1000,   1001 };
-
-uint8_t TorqueReqRSize = 6; //sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
-
-// Regen sensor.
-uint16_t BrakeTravelInput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] =  {  1024,  1025, 0,     0,      64000,  64001 };; // calibration values for right input // 6200
-int16_t BrakeTravelOutput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] = { -1,      0,      0,   1000,   1000,   1001 };
-
-uint8_t BrakeTravelSize = 6; //sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
-
-
-// TODO verify initialiser zeros out.
-uint16_t TorqueInputs[5][sizeof(((eepromdata*)0)->pedalcurves[0].PedalCurveInput)/2] = {{50,950}}; // start registered travel at 8%
-int16_t TorqueOutputs[5][sizeof(((eepromdata*)0)->pedalcurves[0].PedalCurveOutput)/2] = {{0,1000}};
-uint8_t TorqueCurveSize[5] = { 2, 0 };
-uint8_t TorqueCurveCount = 1;
-
-/*
-uint16_t TorqueLowTravelInput[sizeof(((eepromdata*)0)->] = {50,500}; // start registered travel at 10%
-int16_t TorqueLowTravelOutput[sizeof(((eepromdata*)0)->] = {0, 1000};
-
-uint16_t TorqueLargelowRangeInput[sizeof(((eepromdata*)0)->] = {50,600, 950}; // start registered travel at 10%
-int16_t TorqueLargelowRangeOutput[sizeof(((eepromdata*)0)->] = {0, 400,1000};
-*/
-
-	#ifdef HPF19
-
-uint16_t CoolantInput[sizeof(((eepromdata*)0)->CoolantInput)/2] =  { 0 }; // { 1000,4235, 4851, 5661, 6889, 8952, 11246, 14262, 18894, 22968, 27081, 33576, 39050, 44819, 49192, 54011, 58954,  64113, 64112};
-int16_t CoolantOutput[sizeof(((eepromdata*)0)->CoolantOutput)/2] = { 0 }; // { -1,   120,   115,  109,  101,   90,    82,    72,    60,    52,    46,    38,    32,    26,    22,    16,    11,    6, -1};
-uint8_t CoolantSize = 0;
-
-uint16_t DrivingModeInput[sizeof(((eepromdata*)0)->DrivingModeInput)/2+4] = { 0 }; // { 0 , 1022, 1023, 1024,4500, 13500, 23500, 33000, 40000, 49000, 57500, 65534, 65535 };
-int16_t DrivingModeOutput[sizeof(((eepromdata*)0)->DrivingModeInput)/2+4] = { 0 }; // { 1 , 1,    0,     1,   1,    2,    3,      4,     5,     6,    7,      8,     0 };
-uint8_t DriveModeSize = 0;
-
-	#endif
-
-#else
-
-
-// 19500 ~ -90  // 13300 full lock, 45000 ~ 90 deg right. 50000 full lock right. ~120
-uint16_t SteeringInput[] = { 6539, 13300, 20000, 33500, 63019}; // going to pwm this year, no ADC needed.
-int16_t SteeringOutput[] = { -210,  -120,  -90,   0,    210 };
-uint8_t SteeringSize = sizeof(SteeringInput)/sizeof(SteeringInput[0])
-
-// -1 needs to be at minimum
-// should be 0 to 25bar at 1-5v   0.6666v to 3.3v at adc -> 13107 -> 65536
-uint16_t BrakeRInput[] = {1024, 1025, BRAKEZERO, BRAKEMAX, 65535 }; // at 240bar, should be 240 output, at 0 bar should be 0 // 62914
-int16_t BrakeROutput[] = {-1,     0,    0,     240,  255 }; // output range // 240
-uint8_t BrakeRSize = sizeof(BrakeRInput)/sizeof(BrakeRInput[0]);
-
-uint16_t BrakeFInput[] = { 1024, 1025, BRAKEZERO,   BRAKEMAX, 65535 }; // calibrated input range //62914
-int16_t BrakeFOutput[] = { -1,     0,    0,     240,    255 }; // output range // 240
-uint8_t BrakeFSize = sizeof(BrakeFInput)/sizeof(BrakeFInput[0]);
-
-// zero should be approx real pedal zero, zero is read below this to allow for some variance without triggering errors.
-// ditto max value.
-
-// define zero as 5% actual travel and 100% as 95% of actual travel
-uint16_t TorqueReqLInput[] = { 1999,  2000, (ACCELERATORLMAX-ACCELERATORLZERO)/100*5+ACCELERATORLZERO,   (ACCELERATORLMAX-ACCELERATORLZERO)/100*98+ACCELERATORLZERO,  64000,  64001 }; // calibration values for left input // 5800
-int16_t TorqueReqLOutput[] = {  -1,  0,     0,     1000,      1000,  1001 }; // range defined 0-1000 to allow percentage accuracy even if not using full travel range.
-uint8_t TorqueReqLSize = sizeof(TorqueReqLInput)/sizeof(TorqueReqLInput[0]);
-
-// TorqueRMin(6798) / TorqueRMax(54369)
-uint16_t TorqueReqRInput[] = { 1999, 2000, (ACCELERATORRMAX-ACCELERATORRZERO)/100*5+ACCELERATORRZERO,  (ACCELERATORRMAX-ACCELERATORRZERO)/100*98+ACCELERATORRZERO,   64000,   64001 }; // calibration values for right input // 6200
-int16_t TorqueReqROutput[] = { -1,      0,      0,      1000,   1000,   1001 };
-uint8_t TorqueReqRSize = sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
-
-
-uint16_t TorqueLinearInput[] = {50,950}; // start registered travel at 8%
-int16_t TorqueLinearOutput[] = {0,1000};
-
-uint16_t TorqueLowTravelInput[] = {50,500}; // start registered travel at 10%
-int16_t TorqueLowTravelOutput[] = {0, 1000};
-
-uint16_t TorqueLargelowRangeInput[] = {50,600, 950}; // start registered travel at 10%
-int16_t TorqueLargelowRangeOutput[] = {0, 400,1000};
-
-uint16_t CoolantInput[] = { 1000,4235, 4851, 5661, 6889, 8952, 11246, 14262, 18894, 22968, 27081, 33576, 39050, 44819, 49192, 54011, 58954,  64113, 64112};
-int16_t CoolantOutput[] = { -1,   120,   115,  109,  101,   90,    82,    72,    60,    52,    46,    38,    32,    26,    22,    16,    11,    6, -1};
-uint8_t CoolantLElements = sizeof(CoolantInput)/sizeof(CoolantInput[0]);
-
-
-uint16_t DrivingModeInput[] = { 0 , 1022, 1023, 1024,4500, 13500, 23500, 33000, 40000, 49000, 57500, 65534, 65535 };
-int16_t DrivingModeOutput[] = { 1 , 1,    0,     1,   1,    2,    3,      4,     5,     6,    7,      8,     0 };
-uint8_t DriveModeSize = sizeof(DrivingModeInput)/sizeof(DrivingModeInput[0]);
+#ifdef HPF20
+#include "adc_hpf20.h"
 #endif
 
 
@@ -176,7 +56,6 @@ void ReadADC3(bool half);
 
 TaskHandle_t ADCTaskHandle = NULL;
 
-//osThreadId_t ADCTaskHandle;
 #define ADCSTACK_SIZE 128*2
 #define ADCTASKNAME  "ADCTask"
 #define ADCTASKPRIORITY 10
@@ -247,7 +126,7 @@ void ADCTask(void *argument)
 		}
 #endif
 
-	// move can receive to can thread.
+	    ADCState.SteeringAngle = getSteeringAnglePWM();
 
 		ADCWaitStr[0] = 0;
 
@@ -259,27 +138,26 @@ void ADCTask(void *argument)
 						   &analoguenodesOnline, /* Stores the notified value. */
 						   0 );
 
-		if( xResult == pdPASS )
+		if ( analoguenodesOnline == ANodeAllBit ) // all expecter power nodes reported in. // TODO automate
 		{
-			if ( analoguenodesOnline == ANodeAllBit ) // all expecter power nodes reported in. // TODO automate
-			{
-				DeviceState.ADC = OPERATIONAL;
-				ADCWaitStr[0] = 0;
-			} else
-			{
-				if ( analoguenodesOnline > 0 )
-					DeviceState.ADC = INERROR;
-				else
-					DeviceState.ADC = OFFLINE;
-				setAnalogNodesStr( analoguenodesOnline );
-				strcpy(ADCWaitStr, getAnalogNodesStr());
-			}
+			DeviceState.Sensors = OPERATIONAL;
+			ADCWaitStr[0] = 0;
+		} else
+		{
+			if ( analoguenodesOnline > 0 )
+				DeviceState.Sensors = INERROR;
+			else
+				DeviceState.Sensors = OFFLINE;
+			setAnalogNodesStr( analoguenodesOnline );
+			strcpy(ADCWaitStr, getAnalogNodesStr());
+		}
+
+		if ( analoguenodesOnline == AnodeCriticalBit )
+		{
+			// we've received all the SCS data
 		}
 
 		DeviceState.ADCSanity = CheckADCSanity();
-
-		if ( DeviceState.ADCSanity != 0 )
-			DeviceState.ADC = INERROR;
 
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME ); // use task sync instead?
 	}
@@ -292,8 +170,6 @@ bool SetupADCInterpolationTables( eepromdata * data )
 {
     // calibrated input range for steering, from left lock to center to right lock.
     // check if this can be simplified?
-
-#ifdef EEPROMSTORAGE
 
 	if ( checkversion(data->VersionString) )
 	{
@@ -407,7 +283,6 @@ bool SetupADCInterpolationTables( eepromdata * data )
 
 	#endif
 
-	#endif
 
 	#ifdef HPF19
 		ADCInterpolationTables.Steering.Input = SteeringInput;
@@ -442,41 +317,19 @@ bool SetupADCInterpolationTables( eepromdata * data )
 
 		ADCInterpolationTables.TorqueCurve.Elements = TorqueCurveSize[0];
 
-	#ifdef HPF19
+		ADCInterpolationTables.Coolant.Input = CoolantInput;
+		ADCInterpolationTables.Coolant.Output = CoolantOutput;
 
-		ADCInterpolationTables.CoolantL.Input = CoolantInput;
-		ADCInterpolationTables.CoolantL.Output = CoolantOutput;
-
-		ADCInterpolationTables.CoolantL.Elements = CoolantSize;
-
-		// currently set calibration of coolant 2 to same as coolant 1
-
-		ADCInterpolationTables.CoolantR.Input = CoolantInput;
-		ADCInterpolationTables.CoolantR.Output = CoolantOutput;
-
-		ADCInterpolationTables.CoolantR.Elements = CoolantSize;
+		ADCInterpolationTables.Coolant.Elements = CoolantSize;
 
 		ADCInterpolationTables.ModeSelector.Input = DrivingModeInput;
 		ADCInterpolationTables.ModeSelector.Output = DrivingModeOutput;
 
 		ADCInterpolationTables.ModeSelector.Elements = DriveModeSize;
 
-	#endif
-
-	#ifdef SIMPLETORQUEVECTOR
-		ADCInterpolationTables.TorqueVector.Input = TorqueVectInput;
-		ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput;
-
-		ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput)/sizeof(TorqueVectInput[0]);
-	#endif
-
     	return true;
-#ifdef EEPROMSTORAGE
 	} else return false;
-#endif
 }
-
-#ifdef EEPROMSTORAGE
 
 void SetupTorque( int request )
 {
@@ -484,57 +337,6 @@ void SetupTorque( int request )
 	ADCInterpolationTables.TorqueCurve.Output = TorqueOutputs[request];
 	ADCInterpolationTables.TorqueCurve.Elements = TorqueCurveSize[request];
 }
-
-#else
-
-void SetupNormalTorque( void )
-{
-	ADCInterpolationTables.TorqueCurve.Input = TorqueLinearInput;
-	ADCInterpolationTables.TorqueCurve.Output = TorqueLinearOutput;
-	ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLinearInput)/sizeof(TorqueLinearInput[0]);
-}
-
-void SetupLargeLowRangeTorque( void )
-{
-	ADCInterpolationTables.TorqueCurve.Input = TorqueLargelowRangeInput;
-	ADCInterpolationTables.TorqueCurve.Output = TorqueLargelowRangeOutput;
-	ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLargelowRangeInput)/sizeof(TorqueLargelowRangeInput[0]);
-}
-
-void SetupLowTravelTorque( void )
-{
-    ADCInterpolationTables.TorqueCurve.Input = TorqueLowTravelInput;
-    ADCInterpolationTables.TorqueCurve.Output = TorqueLowTravelOutput;
-    ADCInterpolationTables.TorqueCurve.Elements = sizeof(TorqueLowTravelInput)/sizeof(TorqueLowTravelInput[0]);
-}
-
-#endif
-
-#ifdef SIMPLETORQUEVECTOR
-
-void setuptorquesteering1( void )
-{
-    ADCInterpolationTables.TorqueVector.Input = TorqueVectInput;
-    ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput;
-
-    ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput)/sizeof(TorqueVectInput[0]);
-}
-
-void setuptorquesteering2( void )
-{
-    ADCInterpolationTables.TorqueVector.Input = TorqueVectInput2;
-    ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput2;
-
-    ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput2)/sizeof(TorqueVectInput2[0]);
-}
-
-void setuptorquesteering3( void )
-{
-    ADCInterpolationTables.TorqueVector.Input = TorqueVectInput3;
-    ADCInterpolationTables.TorqueVector.Output = TorqueVectOutput3;
-    ADCInterpolationTables.TorqueVector.Elements = sizeof(TorqueVectInput3)/sizeof(TorqueVectInput3[0]);
-}
-#endif
 
 /**
  * function to perform a linear interpolation using given input/output value arrays and raw data.
@@ -575,30 +377,6 @@ int16_t linearInterpolate(uint16_t Input[], int16_t Output[], uint16_t count, ui
     return Output[i] + ((RawADCInput - Input[i]) * dy / dx);
 }
 
-/**
- * convert raw steering ADC input into a steering percentage left/right.
- * -- is there a deadzone?
- */
-int getSteeringAngle(uint16_t RawADCInput) // input is only 12bit
-{
-#ifdef HPF19
-	if( usecanADC )  // check if we're operating on fake canbus ADC
-	{
-	  return CANADC.SteeringAngle;
-	}
-#endif
-#ifdef NODES
-
-#endif
-
-#ifndef STMADC
-	return 0;
-#endif
-    struct ADCTable ADC = ADCInterpolationTables.Steering;
-    int angle=linearInterpolate(ADC.Input, ADC.Output, ADC.Elements, RawADCInput); // make input 12bit.
-    return angle;
-}
-
 
 int getSteeringAnglePWM( void )
 {
@@ -631,9 +409,6 @@ int getBrakeF(uint16_t RawADCInput)
 	  return CANADC.BrakeF;
 	}
 #endif
-#ifndef STMADC
-	return 0;
-#endif
 #ifdef NOBRAKES
 	return 0;
 #else
@@ -652,9 +427,6 @@ int getBrakeR(uint16_t RawADCInput)
 	{
 	  return CANADC.BrakeR;
 	}
-#endif
-#ifndef STMADC
-	return 0;
 #endif
 #ifdef NOBRAKES
 	return 0;
@@ -676,9 +448,9 @@ int getBrakeBalance(uint16_t ADCInputF, uint16_t ADCInputR)
 		return (CANADC.BrakeF * 100) / ( CANADC.BrakeF + CANADC.BrakeR );
 	}
 #endif
-#ifndef STMADC
-	return 50;
-#endif
+
+
+
 
 	if (ADCInputF > 5 && ADCInputR > 5) // too small a value to get accurate reading
 	{
@@ -696,16 +468,9 @@ int getTorqueReqPercR( uint16_t RawADCInputR )
 	  return CANADC.Torque_Req_R_Percent;
 	}
 #endif
-#ifndef STMADC
-	return 0;
-#endif
 
-#ifdef NOAPPS
-	return 0;
-#else
     struct ADCTable ADC = ADCInterpolationTables.AccelR;
 	return linearInterpolate(ADC.Input, ADC.Output, ADC.Elements, RawADCInputR);
-#endif
 }
 
 int getTorqueReqPercL( uint16_t RawADCInputF )
@@ -795,7 +560,7 @@ int getDrivingMode(uint16_t RawADCInput)
 #endif
 }
 
-int getCoolantTemp1(uint16_t RawADCInput)
+int getCoolantTemp(uint16_t RawADCInput)
 {
 #ifdef HPF19
 	if( usecanADC )  // check if we're operating on fake canbus ADC
@@ -810,7 +575,7 @@ int getCoolantTemp1(uint16_t RawADCInput)
 #ifdef NOTEMPERATURE
 	return 20;
 #else
-    struct ADCTable ADC = ADCInterpolationTables.CoolantL;
+    struct ADCTable ADC = ADCInterpolationTables.Coolant;
 
   //  if ( RawADCInput < CoolantInput[0] ) { return 0; }
 
@@ -836,23 +601,13 @@ int getCoolantTemp2(uint16_t RawADCInput)
 #ifdef NOTEMPERATURE
 	return 20;
 #else
-    struct ADCTable ADC = ADCInterpolationTables.CoolantR;
-
-  //  if ( RawADCInput < CoolantInput[0] ) { return 0; }
+    struct ADCTable ADC = ADCInterpolationTables.Coolant;
 
     if ( RawADCInput > ADC.Input[ADC.Elements-1] ) { return 0; }
 
     return linearInterpolate(ADC.Input, ADC.Output, ADC.Elements, RawADCInput);
 #endif
 }
-
-#ifdef SIMPLETORQUEVECTOR
-int getTorqueVector(uint16_t RawADCInput)
-{
-    struct ADCTable ADC = ADCInterpolationTables.TorqueVector;
-    return linearInterpolate(ADC.Input, ADC.Output, ADC.Elements, RawADCInput+UINTOFFSET);
-}
-#endif
 
 #ifdef STMADC
 void minmaxADCReset(void)
@@ -1032,183 +787,50 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 // checks all expected data is present and within acceptable range -- allow occasional error, remove inverter.
 uint32_t CheckADCSanity( void )
 {
-	uint32_t expectedvalue=(0x1 << BrakeFReceivedBit)+
-						(0x1 << BrakeRReceivedBit)+
-						(0x1 << AccelRReceivedBit)+
-						(0x1 << AccelLReceivedBit)+
-						(0x1 << SteeringAngleReceivedBit)+
-					    (0x1 << CoolantLReceivedBit)+
-						(0x1 << CoolantRReceivedBit)+
-						(uint32_t)(0x1 << SteeringAngleReceivedBit)
-#ifdef HPF19
-						+(0x1 << DrivingModeErrorBit )
-#endif
-						;
-
 	uint16_t returnvalue = 0;
-
-    ADCState.SteeringAngle = getSteeringAnglePWM();
-
 
 	BaseType_t xResult;
 	uint32_t ADCReceived = 0;
-	xResult = xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
-					 ULONG_MAX,        /* Clear all bits on exit. */
-					 &ADCReceived, /* Stores the notified value. */
-					 0 );
 
-
-
-	if( xResult == pdPASS )
+	// check adc's are giving values in acceptable range.
+	if ( abs(ADCState.SteeringAngle) >= 181 ) // if impossible angle.
 	{
-
-	}
-
-	if ( ADCReceived == expectedvalue )
-	{
-		// request ADC data.
-        // check adc's are giving values in acceptable range.
-
-#ifdef HPF19
-        ADCState.BrakeF = getBrakeF(ADC_Data[BrakeFADC]); // if value is not between 0 and 255 then out of range error
-		if ( ADCState.BrakeF < 0 || ADCState.BrakeF >= 240 )
-		   returnvalue |= 0x1 << BrakeFErrorBit; // error
-		else returnvalue &= ~(0x1 << BrakeFErrorBit); // ok
-
-        ADCState.BrakeR = getBrakeR(ADC_Data[BrakeRADC]);
-        if ( ADCState.BrakeR < 0 || ADCState.BrakeR >= 240 )
-            returnvalue |= 0x1 << BrakeRErrorBit;
-        else returnvalue &= ~(0x1 << BrakeRErrorBit);
-
-        ADCState.Torque_Req_R_Percent = getTorqueReqPercR(ADC_Data[ThrottleRADC]);
-        if ( ADCState.Torque_Req_R_Percent < 0 || ADCState.Torque_Req_R_Percent > 1000 ) // if value is not between 0 and 100 then out of range error
-            returnvalue |= 0x1 << AccelRErrorBit;
-        else returnvalue &= ~(0x1 << AccelRErrorBit);
-
-        ADCState.Torque_Req_L_Percent = getTorqueReqPercL(ADC_Data[ThrottleLADC]);
-        if ( ADCState.Torque_Req_L_Percent < 0 || ADCState.Torque_Req_L_Percent > 1000 ) // if value is not between 0 and 100 then out of range error
-            returnvalue |= 0x1 << AccelLErrorBit;
-        else returnvalue &= ~(0x1 << AccelLErrorBit);
-
-
-        ADCState.CoolantTempL = getCoolantTemp1(ADC_Data[CoolantTempLADC]);
-        if ( ADCState.CoolantTempL <= 0 || ADCState.CoolantTempL >= 255 )
-        {
-            ADCState.CoolantTempR = 255;
-            returnvalue &= ~(0x1 << CoolantLErrorBit); // don't go to error state for invalid valuexs
-           // returnvalue |= 0x1 << CoolantLErrorBit;
-        }
-        else returnvalue &= ~(0x1 << CoolantLErrorBit);
-
-        static int16_t TempRHistory[30] = {0,0,0,0,0,0,0,0,0,0};
-        static uint8_t TempRLast = 0;
-
-        TempRHistory[TempRLast] = ADC_Data[CoolantTempRADC];
-        TempRLast++;
-
-    	if ( TempRLast > 29 ) TempRLast = 0;
-    	long sum = 0;
-    	for ( int i=0;i<30;i++)
-    	{
-    		sum += TempRHistory[i];
-    	}
-
-        ADCState.CoolantTempRRaw = sum/30;
-
-        ADCState.CoolantTempR = getCoolantTemp2(ADC_Data[CoolantTempRADC]);
-        if ( ADCState.CoolantTempR <= 0 || ADCState.CoolantTempR >= 255 )
-        {
-            ADCState.CoolantTempR = 255;
-            returnvalue &= ~(0x1 << CoolantRErrorBit); // don't go to error state for invalid valuexs
-         //   returnvalue |= 0x1 << CoolantRErrorBit;
-        }
-        else returnvalue &= ~(0x1 << CoolantRErrorBit);
-
-
-        // rolling average to clean up steering angle a bit.
-
-        static int16_t SteeringAngleHistory[10] = {0,0,0,0,0,0,0,0,0,0};
-        static uint8_t SteeringAngleLast = 0;
-
-        SteeringAngleHistory[SteeringAngleLast] = getSteeringAngle(ADC_Data[SteeringADC]);
-        SteeringAngleLast++;
-
-    	if ( SteeringAngleLast > 9 ) SteeringAngleLast = 0;
-
-    	sum = 0;
-    	for ( int i=0;i<10;i++)
-    	{
-    		sum += SteeringAngleHistory[i];
-    	}
-
-        ADCState.SteeringAngle = sum/10;// simple filter steering angle;
-
-        if ( abs(ADCState.SteeringAngle) >= 150 ) // if impossible angle.
-        {
-            ADCState.SteeringAngle = 180;
-            returnvalue &= ~(0x1 << SteeringAngleErrorBit);
-         //   returnvalue |= 0x1 << SteeringAngleErrorBit;
-        }
-        else returnvalue &= ~(0x1 << SteeringAngleErrorBit);
-
-        ADCState.DrivingMode = getDrivingMode(ADC_Data[DrivingModeADC]);
-        if ( abs(ADCState.DrivingMode) == 0 )
-        {
-            ADCState.DrivingMode = 0;
-            returnvalue &= ~(0x1 << DrivingModeErrorBit);
-         //   returnvalue |= 0x1 << DrivingModeErrorBit;
-        }
-        else returnvalue &= ~(0x1 << DrivingModeErrorBit);
-#else
-
-
-        if ( abs(ADCState.SteeringAngle) >= 181 ) // if impossible angle.
-        {
 //            returnvalue &= ~(0x1 << SteeringAngleReceivedBit);
-         //   returnvalue |= 0x1 << SteeringAngleReceivedBit;
-        }
-        else returnvalue &= ~(0x1 << SteeringAngleReceivedBit);
-
-    	if ( getAnalogNodesCriticalStr() == NULL ) // string will be empty if everything expected received.
-    	{
-
-			if ( ADCState.BrakeF < 0 || ADCState.BrakeF >= 240 )
-			   returnvalue |= 0x1 << BrakeFReceivedBit; // Received
-			else returnvalue &= ~(0x1 << BrakeFReceivedBit); // ok
-
-			if ( ADCState.BrakeR < 0 || ADCState.BrakeR >= 240 )
-				returnvalue |= 0x1 << BrakeRReceivedBit;
-			else returnvalue &= ~(0x1 << BrakeRReceivedBit);
-
-			if ( ADCState.Torque_Req_R_Percent < 0 || ADCState.Torque_Req_R_Percent > 1000 ) // if value is not between 0 and 100 then out of range Received
-				returnvalue |= 0x1 << AccelRReceivedBit;
-			else returnvalue &= ~(0x1 << AccelRReceivedBit);
-
-		    if ( ADCState.Torque_Req_L_Percent < 0 || ADCState.Torque_Req_L_Percent > 1000 ) // if value is not between 0 and 100 then out of range Received
-				returnvalue |= 0x1 << AccelLReceivedBit;
-			else returnvalue &= ~(0x1 << AccelLReceivedBit);
-
-    	} else
-    	{ // not received data, set Received bits.
-			returnvalue |= 0x1 << BrakeFReceivedBit; // Received
-			returnvalue |= 0x1 << BrakeRReceivedBit;
-			returnvalue |= 0x1 << AccelRReceivedBit;
-			returnvalue |= 0x1 << AccelLReceivedBit;
-            ADCState.BrakeF = 0; // if value is not between 0 and 255 then out of range Received
-            ADCState.BrakeR = 0;
-            ADCState.Torque_Req_R_Percent = 0;
-            ADCState.Torque_Req_L_Percent = 0;
-    	}
-#endif
-
-	} else // set all ADC to error bit if not online.
-	{
-		for ( int i=0;i<7;i++)
-		{
-			returnvalue |= 0x1 << i; // set error.
-	//		returnvalue &= ~(0x1 << i); // currently setting all to zero to allow quick testing
-		}
+	 //   returnvalue |= 0x1 << SteeringAngleReceivedBit;
 	}
+	else returnvalue &= ~(0x1 << SteeringAngleReceivedBit);
+
+	if ( getAnalogNodesCriticalStr() == NULL ) // string will be empty if everything expected received.
+	{
+
+		if ( ADCState.BrakeF < 0 || ADCState.BrakeF >= 240 )
+		   returnvalue |= 0x1 << BrakeFReceivedBit; // Received
+		else returnvalue &= ~(0x1 << BrakeFReceivedBit); // ok
+
+		if ( ADCState.BrakeR < 0 || ADCState.BrakeR >= 240 )
+			returnvalue |= 0x1 << BrakeRReceivedBit;
+		else returnvalue &= ~(0x1 << BrakeRReceivedBit);
+
+		if ( ADCState.Torque_Req_R_Percent < 0 || ADCState.Torque_Req_R_Percent > 1000 ) // if value is not between 0 and 100 then out of range Received
+			returnvalue |= 0x1 << AccelRReceivedBit;
+		else returnvalue &= ~(0x1 << AccelRReceivedBit);
+
+		if ( ADCState.Torque_Req_L_Percent < 0 || ADCState.Torque_Req_L_Percent > 1000 ) // if value is not between 0 and 100 then out of range Received
+			returnvalue |= 0x1 << AccelLReceivedBit;
+		else returnvalue &= ~(0x1 << AccelLReceivedBit);
+
+	} else
+	{ // not received data, set Received bits.
+		returnvalue |= 0x1 << BrakeFReceivedBit; // Received
+		returnvalue |= 0x1 << BrakeRReceivedBit;
+		returnvalue |= 0x1 << AccelRReceivedBit;
+		returnvalue |= 0x1 << AccelLReceivedBit;
+		ADCState.BrakeF = 0; // if value is not between 0 and 255 then out of range Received
+		ADCState.BrakeR = 0;
+		ADCState.Torque_Req_R_Percent = 0;
+		ADCState.Torque_Req_L_Percent = 0;
+	}
+
 
 	if ( ADCState.BrakeF > 5 && ADCState.BrakeR > 5
 		 && ADCState.BrakeF < 255 && ADCState.BrakeR < 255
@@ -1243,7 +865,6 @@ uint32_t CheckADCSanity( void )
 	{
 		if ( Errors.ADCError > 0 )	Errors.ADCError--;
 		Errors.ADCErrorState=0;
-		DeviceState.ADC = OPERATIONAL;
 	}
 
 	return returnvalue;

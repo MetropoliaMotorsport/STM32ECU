@@ -405,6 +405,7 @@ typedef struct {
 	bool LoggingEnabled;
 	DeviceStatus ADC;
 	uint16_t ADCSanity;
+	DeviceStatus Sensors;
 	DeviceStatus PWM;
 	DeviceStatus Inverter;
 	DeviceStatus Inverters[MOTORCOUNT];

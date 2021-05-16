@@ -11,6 +11,7 @@
 #include "usart.h"
 #include "power.h"
 #include "powernode.h"
+#include "uartecu.h"
 
 // freeRTOS
 #include "semphr.h"
@@ -24,6 +25,8 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
+#define DEBUGUART    UART2
+
 #define DEBUGSTACK_SIZE 128*6
 #define DEBUGTASKNAME  "DebugTask"
 #define DEBUGTASKPRIORITY 1
@@ -31,7 +34,6 @@ StaticTask_t xDEBUGTaskBuffer;
 StackType_t xDEBUGStack[ DEBUGSTACK_SIZE ];
 
 TaskHandle_t DebugTaskHandle = NULL;
-
 
 #define DebugQUEUE_LENGTH    20
 #define DebugITEMSIZE		sizeof( Debug_msg )
@@ -45,29 +47,8 @@ uint8_t DebugQueueStorageArea[ DebugQUEUE_LENGTH * DebugITEMSIZE ];
 
 QueueHandle_t DebugQueue;
 
-SemaphoreHandle_t DebugUARTTxDone;
-SemaphoreHandle_t DebugUARTRxDone;
 
 #define DEBUGPROMPT    "DebugCmd: "
-
-
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
-{
-		// receive complete
-	portBASE_TYPE xHigherPriorityWoken = pdFALSE;
-	xSemaphoreGiveFromISR(DebugUARTTxDone, &xHigherPriorityWoken);
-	portEND_SWITCHING_ISR(xHigherPriorityWoken);
-
-}
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-		// receive complete
-	portBASE_TYPE xHigherPriorityWoken = pdFALSE;
-	xSemaphoreGiveFromISR(DebugUARTRxDone, &xHigherPriorityWoken);
-	portEND_SWITCHING_ISR(xHigherPriorityWoken);
-}
-
 
 int PRINT_MESG_UART(const char * format, ... )
 {
@@ -77,40 +58,31 @@ int PRINT_MESG_UART(const char * format, ... )
 	va_start(ap, format);
 	n = vsnprintf ((char*)buffer, 128, format, ap);
 	va_end(ap);
-	//notify_uart(buffer, n);
-	if(HAL_UART_Transmit_IT(&huart2, (uint8_t*)buffer, n) != HAL_OK) {
+	if ( !UART_Transmit(DEBUGUART, (uint8_t*)buffer, n) )
+	{
 		return 0;
 	}
 
-	// set some realistic timeout
-	if( xSemaphoreTake(DebugUARTTxDone, 100) == pdTRUE) {
-		return 1;
-	} else
-		return 0;
+	return UART_WaitTXDone( DEBUGUART, 100);
 }
 
-int uartwritech(char ch)
+int uartwritech( const char ch)
 {
-	if(HAL_UART_Transmit_IT(&huart2, (uint8_t *)&ch, 1) != HAL_OK) {
+	if(!UART_Transmit(DEBUGUART, (uint8_t *)&ch, 1)) {
 		return 0;
 	}
 
-	// set some realistic timeout
-	if( xSemaphoreTake(DebugUARTTxDone, 100) == pdTRUE) {
-		return 1;
-	} else
-		return 0;
-
+	return UART_WaitTXDone( DEBUGUART, 100);
 }
 
 
 
-void uartwrite(char *str)
+void uartwrite( const char *str)
 {
 	PRINT_MESG_UART(str);
 }
 
-void uartwritetwoline(char *str, char *str2)
+void uartwritetwoline(const char *str, const char *str2)
 {
 	PRINT_MESG_UART(str);
 	PRINT_MESG_UART(str2);
@@ -119,7 +91,7 @@ void uartwritetwoline(char *str, char *str2)
 
 
 // add message to uart message queue.
-bool DebugMsg( char * msg)
+bool DebugMsg( const char * msg)
 {
 	struct Debug_msg debugmsg;
 	strncpy( debugmsg.str, msg, MAXDEBUGOUTPUT );
@@ -129,9 +101,9 @@ bool DebugMsg( char * msg)
 bool redraw;
 
 // also handle printing debug messages here.
-char uartWait( char *ch )
+uint8_t uartWait( char *ch )
 {
-	if(HAL_UART_Receive_IT(&huart2, (uint8_t *)ch, 1) != HAL_OK) {
+	if(!UART_Receive(DEBUGUART, (uint8_t *)ch, 1)) {
 		return 0;
 	}
 
@@ -141,7 +113,8 @@ char uartWait( char *ch )
 
 	while ( 1 )
 	{
-		if( xSemaphoreTake(DebugUARTRxDone, 0) == pdTRUE) {
+		if ( UART_WaitRXDone( DEBUGUART, 0 ) )
+		{
 			return 1;
 		}
 
@@ -180,12 +153,12 @@ static void DebugTask(void *pvParameters)
 
 	while (1) {
 		// just to be on safe side then.
-		int read = uartWait(&ch);
+		volatile uint8_t read = uartWait(&ch);
 
 		if ( redraw )
 		{
 			// we received debug output during keyboard wait, resend prompt and current imput to help.
-			uartwrite("x1b[k");
+			uartwrite("\x1b[k");
 			uartwrite(DEBUGPROMPT);
 			uartwrite(str);
 		}
@@ -270,8 +243,8 @@ static void DebugTask(void *pvParameters)
 
 				char *s=str;
 
-				if (*(s += strspn(s, " ")) != '\0') {
-					size_t tknlen = strcspn(s, " ");
+				if (*(s += strspn(s, " ")) != '\0') { // find the first non space, and move string pointer to it. Check if we have reached end of string.
+					size_t tknlen = strcspn(s, " ");  // if not at end of string, find the next space, getting the span of token.
 					if ( tknlen < TOKENLENGTH )
 					{
 						strncpy(tkn1, s, tknlen);
@@ -320,23 +293,34 @@ static void DebugTask(void *pvParameters)
 
 				bool badcmd = false;
 
-
 				if ( strcmp(tkn1, "shutdown") == 0 )
 				{
-					uartwrite("Current state of shutdown switches:\r\n");
+					if ( strcmp(tkn2, "closed")  == 0 || strcmp(tkn2, "on")  == 0 || strcmp(tkn2, "true")  == 0|| strcmp(tkn2, "enabled") == 0 )
+					{
+						uartwrite("Setting shutdown circuit closed.\r\n");
+						ShutdownCircuitSet(true);
+					}
+					else if ( strcmp(tkn2, "open")  == 0 ||strcmp(tkn2, "off") == 0 || strcmp(tkn2, "false") == 0 || strcmp(tkn2, "disabled") == 0 )
+					{
+						uartwrite("Setting shutdown circuit open.\r\n");
+						ShutdownCircuitSet(false);
+					} else
+					{
+						uartwrite("Current state of shutdown switches:\r\n");
 
-					uartwritetwoline("BOTS         ", CarState.Shutdown.BOTS?"Closed":"Open");
-					uartwritetwoline("Inertia      ", CarState.Shutdown.InertiaSwitch?"Closed":"Open");
-					uartwritetwoline("BSPD After   ", CarState.Shutdown.BSPDAfter?"Closed":"Open");
-					uartwritetwoline("BSPD Before  ", CarState.Shutdown.BSPDBefore?"Closed":"Open");
-					uartwritetwoline("Cockpit      ", CarState.Shutdown.CockpitButton?"Closed":"Open");
-					uartwritetwoline("Left         ", CarState.Shutdown.LeftButton?"Closed":"Open");
-					uartwritetwoline("Right        ", CarState.Shutdown.RightButton?"Closed":"Open");
-					uartwritetwoline("BMS          ", CarState.Shutdown.BMS?"Closed":"Open"); // BMSReason
-					uartwritetwoline("IMD          ", CarState.Shutdown.IMD?"Closed":"Open");
-					uartwritetwoline("AIR          ", CarState.Shutdown.AIROpen?"Closed":"Open");
+						uartwritetwoline("ECU          ", ShutdownCircuitState()?"Closed":"Open");
+						uartwritetwoline("BOTS         ", CarState.Shutdown.BOTS?"Closed":"Open");
+						uartwritetwoline("Inertia      ", CarState.Shutdown.InertiaSwitch?"Closed":"Open");
+						uartwritetwoline("BSPD After   ", CarState.Shutdown.BSPDAfter?"Closed":"Open");
+						uartwritetwoline("BSPD Before  ", CarState.Shutdown.BSPDBefore?"Closed":"Open");
+						uartwritetwoline("Cockpit      ", CarState.Shutdown.CockpitButton?"Closed":"Open");
+						uartwritetwoline("Left         ", CarState.Shutdown.LeftButton?"Closed":"Open");
+						uartwritetwoline("Right        ", CarState.Shutdown.RightButton?"Closed":"Open");
+						uartwritetwoline("BMS          ", CarState.Shutdown.BMS?"Closed":"Open"); // BMSReason
+						uartwritetwoline("IMD          ", CarState.Shutdown.IMD?"Closed":"Open");
+						uartwritetwoline("AIR          ", CarState.Shutdown.AIROpen?"Closed":"Open");
+					}
 				} else
-
 				if ( strcmp(tkn1, "fanpwm") == 0 )
 				{
 					if ( tokens != 3 )
@@ -356,7 +340,6 @@ static void DebugTask(void *pvParameters)
 						}
 					}
 				} else
-
 				if ( strcmp(tkn1, "power") == 0 )
 				{
 					DevicePower device = None;
@@ -548,10 +531,6 @@ static void DebugTask(void *pvParameters)
 
 int initDebug( void )
 {
-	MX_USART2_UART_Init();
-
-	DebugUARTTxDone = xSemaphoreCreateBinary();
-	DebugUARTRxDone = xSemaphoreCreateBinary();
 
 	DebugQueue = xQueueCreateStatic( DebugQUEUE_LENGTH,
 							  DebugITEMSIZE,

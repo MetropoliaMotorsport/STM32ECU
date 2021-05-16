@@ -110,13 +110,11 @@ bool processBMSError(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
                       9 : str := 'Accumulator Undervoltage';
                       10 : str := 'IVT MOD timeout';
 				*/
-
         	} else
         	{
          		CarState.Shutdown.BMS = true;
          		CarState.Shutdown.BMSReason = 0;
         	}
-
 
             return true;
         } else // bad data.

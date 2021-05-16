@@ -8,6 +8,7 @@
 #include "ecumain.h"
 #include "output.h"
 #include "timerecu.h"
+#include "debug.h"
 
 #include "queue.h"
 
@@ -171,7 +172,6 @@ void OutputTask(void *argument)
 					toggleOutputMetal(msg.output);
 				} else if ( msg.state > On )
 				{
-
 					Output[msg.output].output = msg.output;
 
 					int ontime = 0;
@@ -221,7 +221,6 @@ void OutputTask(void *argument)
 					{
 						vTaskResume(xBlinkHandle[msg.output]);
 					}
-
 				} else if ( msg.state == On )
 				{
 					HAL_GPIO_WritePin(getGpioPort(msg.output), getGpioPin(msg.output), On);

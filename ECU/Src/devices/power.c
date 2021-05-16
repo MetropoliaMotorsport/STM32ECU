@@ -5,6 +5,8 @@
  *      Author: Visa
  */
 
+// TODO use 24v detect line to reset power state if LV drops.
+
 #include "ecumain.h"
 #include "limits.h"
 #include "task.h"
@@ -14,7 +16,6 @@
 #include "adcecu.h"
 
 TaskHandle_t PowerTaskHandle = NULL;
-
 
 #define POWERSTACK_SIZE 128*6
 #define POWERTASKNAME  "PowerTask"
@@ -120,18 +121,15 @@ void PowerTask(void *argument)
 						   &powernodesOnline, /* Stores the notified value. */
 						   0 );
 
-		if( xResult == pdPASS )
+		if ( powernodesOnline == PNodeAllBit ) // all expecter power nodes reported in. // TODO automate
 		{
-			if ( powernodesOnline == PNodeAllBit ) // all expecter power nodes reported in. // TODO automate
-			{
-				DeviceState.PowerNodes = OPERATIONAL;
-				PNodeWaitStr[0] = 0;
-			} else
-			{
-				DeviceState.PowerNodes = INERROR; // haven't seen all needed.
-				setPowerNodeStr( powernodesOnline );
-				strcpy(PNodeWaitStr, getPNodeStr());
-			}
+			DeviceState.PowerNodes = OPERATIONAL;
+			PNodeWaitStr[0] = 0;
+		} else
+		{
+			DeviceState.PowerNodes = INERROR; // haven't seen all needed.
+			setPowerNodeStr( powernodesOnline );
+			strcpy(PNodeWaitStr, getPNodeStr());
 		}
 
 		sendPowerNodeReq(); // process pending power requests.
@@ -154,13 +152,13 @@ int setRunningPower( bool HV, bool buzzer )
 	if ( ( HVR && HV ) || CarState.TestHV )
 	{
 // request HV on.
-		ShutdownCircuitSet( true );
+	//	ShutdownCircuitSet( true );
 		setDevicePower( Buzzer, buzzer );
 		return 1;
 //		return CANSendPDM(10,buzzer); // send PDM message anyway as it's being monitored for HV state in SIM even though has no effect
 	} else
 	{
-		ShutdownCircuitSet( false );
+	//	ShutdownCircuitSet( false );
 		return 0;
 //	    return CANSendPDM(0,buzzer);
 	}

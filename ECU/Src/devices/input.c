@@ -24,6 +24,7 @@ typedef struct ButtonData {
 	uint32_t count; // how many times has it been pressed.
 	bool pressed; // has button been pressed since last check.
 	bool held; // is button being held down currently, for e.g. scrolling.
+	bool first;
 	// define the hardware button for passing button data including reading it
 } ButtonData;
 
@@ -34,8 +35,8 @@ static volatile ButtonData Input[NO_INPUTS] = {
 		{ DI3_GPIO_Port, DI3_Pin}, //1  pin 17
 		{ DI4_GPIO_Port, DI4_Pin}, //2  pin 24
 		{ DI5_GPIO_Port, DI5_Pin}, //3  pin 25
-		{ DI6_GPIO_Port, DI6_Pin}, //4  pin 34 pin Also potential PWM Pin.
-		{ NULL,0},//{ DI7_GPIO_Port, DI7_Pin}, //5 pin 33 being used for PWM.
+		{ NULL, 0}, //4  pin 34 pin Also potential PWM Pin.
+		{ DI7_GPIO_Port, DI7_Pin},//{ DI7_GPIO_Port, DI7_Pin}, //5 pin 33 being used for PWM.
 		{ DI8_GPIO_Port, DI8_Pin}, //6
 		{ DI10_GPIO_Port, DI10_Pin}, //7
 		{ DI11_GPIO_Port, DI11_Pin}, //8
@@ -131,16 +132,28 @@ void InputTask(void *argument)
 			if ( Input[i].statecount == 0 ) Input[i].statecount = 0xFFFFFFFF; // don't allow wrap;
 			else if ( Input[i].statecount == 3 ) // button held for long enough to count as a change of state, register it.
 			{
-				if ( curstate )
+				if ( Input[i].first = true )
 				{
-					Input[i].pressed = true;
-					Input[i].lastpressed=gettimer();
-					Input[i].count++;
-					// add button press to queue here.
-
+					 Input[i].first = false;
 				} else
 				{
-					Input[i].lastreleased=gettimer();
+					char str[40];
+					if ( curstate )
+					{
+						snprintf(str, 40, "Button %d pressed\n\r", i );
+						DebugMsg(str);
+
+						Input[i].pressed = true;
+						Input[i].lastpressed=gettimer();
+						Input[i].count++;
+						// add button press to queue here.
+
+					} else
+					{
+						snprintf(str, 40, "Button %d released\n\r", i );
+						DebugMsg(str);
+						Input[i].lastreleased=gettimer();
+					}
 				}
 			} else if ( Input[i].statecount > 3 )
 			{
@@ -417,6 +430,7 @@ void resetButton( uint8_t i )
 	Input[i].count = 0;
 	Input[i].pressed = false;
 	Input[i].held = false;
+	Input[i].first = false;
 }
 
 
@@ -593,6 +607,7 @@ void InputTimerCallback( void )
  */
 void resetInput( void )
 {
+	// TODO send flag to reset input task itself.
 	{
 		for ( int i=0; i < NO_INPUTS; i++)
 		{

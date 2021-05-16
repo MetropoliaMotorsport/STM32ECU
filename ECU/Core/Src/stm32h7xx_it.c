@@ -66,7 +66,6 @@ extern ADC_HandleTypeDef hadc3;
 extern COMP_HandleTypeDef hcomp1;
 extern FDCAN_HandleTypeDef hfdcan1;
 extern FDCAN_HandleTypeDef hfdcan2;
-extern DMA_HandleTypeDef hdma_i2c3_tx;
 extern I2C_HandleTypeDef hi2c2;
 extern I2C_HandleTypeDef hi2c3;
 extern I2C_HandleTypeDef hi2c4;
@@ -76,6 +75,7 @@ extern TIM_HandleTypeDef htim8;
 extern TIM_HandleTypeDef htim16;
 extern DMA_HandleTypeDef hdma_usart2_tx;
 extern DMA_HandleTypeDef hdma_usart2_rx;
+extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 extern TIM_HandleTypeDef htim17;
 
@@ -263,20 +263,6 @@ void DMA1_Stream1_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles DMA1 stream2 global interrupt.
-  */
-void DMA1_Stream2_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Stream2_IRQn 0 */
-
-  /* USER CODE END DMA1_Stream2_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_i2c3_tx);
-  /* USER CODE BEGIN DMA1_Stream2_IRQn 1 */
-
-  /* USER CODE END DMA1_Stream2_IRQn 1 */
-}
-
-/**
   * @brief This function handles FDCAN1 interrupt 0.
   */
 void FDCAN1_IT0_IRQHandler(void)
@@ -314,6 +300,7 @@ void EXTI9_5_IRQHandler(void)
   /* USER CODE END EXTI9_5_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
 
@@ -346,6 +333,20 @@ void I2C2_ER_IRQHandler(void)
   /* USER CODE BEGIN I2C2_ER_IRQn 1 */
 
   /* USER CODE END I2C2_ER_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USART1 global interrupt.
+  */
+void USART1_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART1_IRQn 0 */
+
+  /* USER CODE END USART1_IRQn 0 */
+  HAL_UART_IRQHandler(&huart1);
+  /* USER CODE BEGIN USART1_IRQn 1 */
+
+  /* USER CODE END USART1_IRQn 1 */
 }
 
 /**

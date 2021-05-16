@@ -12,7 +12,7 @@
 
 #define MAXDEBUGOUTPUT 40
 
-bool DebugMsg( char * msg);
+bool DebugMsg( const char * msg);
 
 int initDebug( void );
 

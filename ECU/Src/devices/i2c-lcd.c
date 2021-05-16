@@ -40,7 +40,7 @@ volatile static uint32_t lcderrorcount = 0;
 
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-	if ( hi2c->Instance == I2C3 ){ //I2C3
+	if ( hi2c->Instance == I2C3 || hi2c->Instance == I2C4 ){ // LCD could be on either I2C3 or I2C4
 		readytosend = true;
 		sendbufferpos = 0;
 		inerror = false;
@@ -227,12 +227,11 @@ int lcd_init (I2C_HandleTypeDef *i2chandle)
 	HAL_I2C_DeInit(lcdi2c);
 
 	MX_I2C3_Init();
+	MX_I2C4_Init();
 
 	if ( HAL_I2C_IsDeviceReady(lcdi2c, (uint16_t)(SLAVE_ADDRESS_LCD<<1), 2, 1) != HAL_OK) // HAL_ERROR or HAL_BUSY or HAL_TIMEOUT
 	{
-
 		return 1; // No ACK received at that address
-
 	}
 
 	vTaskDelay(1);
@@ -247,7 +246,7 @@ int lcd_init (I2C_HandleTypeDef *i2chandle)
 	lcd_send_data(0x00); // disable internal VDD regulator (2.8V I/O). data(0x5C) = enable regulator (5V I/O)
 	lcd_send_cmd(0x28); //function set (fundamental command set)
 	// not turning display off means it doesn't blink on re-init, so is silent error.
-	//lcd_send_cmd(0x08); //display off, cursor off, blink off
+//	lcd_send_cmd(0x08); //display off, cursor off, blink off
 	lcd_send_cmd(0x2A); //function set (extended command set)
 	lcd_send_cmd(0x79); //OLED command set enabled
 	lcd_send_cmd(0xD5); //set display clock divide ratio/oscillator frequency
@@ -272,7 +271,7 @@ int lcd_init (I2C_HandleTypeDef *i2chandle)
 	lcd_send_cmd(0x78); //OLED command set disabled
 	lcd_send_cmd(0x28); //function set (fundamental command set)
 	// don't clear display, w're writing the whole thing anyway
-//	lcd_send_cmd(0x01); //clear display
+	lcd_send_cmd(0x01); //clear display
 	lcd_send_cmd(0x80); //set DDRAM address to 0x00
 	lcd_send_cmd(0x0C); //display ON
 
@@ -397,7 +396,7 @@ int lcd_dosend( void )
 
 		// Send whole screen buffer rather than try to update piece by piece for simplicity.
 
-		HAL_StatusTypeDef transmitstatus =  HAL_I2C_Master_Transmit_IT(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, LCDBUFSIZE+3);
+		volatile HAL_StatusTypeDef transmitstatus =  HAL_I2C_Master_Transmit_IT(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, LCDBUFSIZE+3);
 
 		if ( transmitstatus != HAL_OK )
 		{

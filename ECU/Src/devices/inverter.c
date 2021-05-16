@@ -10,6 +10,7 @@
 // 1041 ( 411h )  49 0 175 0<- trigger message
 
 #include "ecumain.h"
+#include "limits.h"
 #include "eeprom.h"
 #include "errors.h"
 #include "inverter.h"
@@ -144,21 +145,42 @@ void InvTask(void *argument)
 
 	uint8_t watchdogBit = registerWatchdogBit("InvTask");
 
+	uint32_t invexpected = 0;
+
+	// TODO move to inverter file.
+	//calculate the inverter expected messages to match number of motors,
+	for ( int i=0;i<MOTORCOUNT;i++)
+	{
+		invexpected += (0x111 << i *3); // three message flags per motor, status,
+	}
+
 	while( 1 )
 	{
+		// TODO change to a single element queue.
 		if ( xQueueReceive(InvQueue,&msg,0) ) // queue to receive requested operational state.
 		{
 			// check if allowable state.
 			RequestedState = msg.state;
 		}
 
-		// check for data received.
-//		for ( int i=0;i<MOTORCOUNT;i++)
-//		{
-//			receiveINVStatus(&invState.Inverter[i]);
-//			receiveINVSpeed(&invState.Inverter[i]);
-//			receiveINVTorque(&invState.Inverter[i]);
-//		}
+		BaseType_t xResult;
+		uint32_t InvReceived = 0;
+		xResult = xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
+						   ULONG_MAX,        /* Clear all bits on exit. */
+						   &InvReceived, /* Stores the notified value. */
+						   0 );
+
+		// TODO improve.
+		if( xResult == pdPASS )
+		{
+			if ( InvReceived == invexpected ) // 4 inverters
+			{
+				DeviceState.Inverter = OPERATIONAL;
+			} else
+			{
+				DeviceState.Inverter = INERROR; // haven't seen all needed.
+			}
+		}
 
 		DeviceStatus lowest=OPERATIONAL;
 		DeviceStatus highest=OFFLINE;
