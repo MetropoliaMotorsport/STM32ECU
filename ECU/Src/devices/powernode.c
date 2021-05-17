@@ -285,6 +285,15 @@ bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 	}
 }
 
+void setAllPowerActualOff( void )
+{
+	for ( int i = 0; DevicePowerList[i].device != None; i++ )
+	{
+		if ( DevicePowerList[i].actualstate == true );
+//		DevicePowerList[i].waiting = false;
+		DevicePowerList[i].actualstate = false;
+	}
+}
 
 bool setActualDevicePower( uint8_t nodeid, uint8_t channel, bool state )
 {
@@ -618,13 +627,15 @@ bool setNodeDevicePower( DevicePower device, bool state, bool reset )
 		{
 			DevicePowerList[i].actualstate = state;
 			DevicePowerList[i].waiting = false;
-		} else
-
+		}
+		else
+		{
 			// check if we're already in the expected state.
 			if ( DevicePowerList[i].expectedstate != DevicePowerList[i].actualstate )
 				DevicePowerList[i].waiting = true;
 			else
 				DevicePowerList[i].waiting = false;
+		}
 
 		for ( int j=0;PowerRequests[j].nodeid != 0;j++) // search though the list of power nodes
 		{

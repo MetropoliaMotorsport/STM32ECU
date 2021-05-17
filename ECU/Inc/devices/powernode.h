@@ -47,6 +47,7 @@ bool getNodeDeviceExpectedPower(DevicePower device );
 bool setNodeDevicePower( DevicePower device, bool state, bool reset );
 int getPowerDeviceIndex( DevicePower device );
 
+void setAllPowerActualOff( void );
 
 uint32_t powerErrorOccurred( DevicePower device );
 

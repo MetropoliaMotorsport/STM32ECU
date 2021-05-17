@@ -8,8 +8,7 @@
 #ifndef POWERLOSS_H_
 #define POWERLOSS_H_
 
-extern volatile bool powerlost;
-
+void resetPowerLost( void );
 int initPowerLossHandling( void );
 
 #endif /* EEPROM_H_ */

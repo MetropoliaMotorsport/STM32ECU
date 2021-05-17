@@ -50,9 +50,8 @@ void LogError( char *message )
 		xQueueSendToBack(ERRORQueue,&error,0); // send it to error state handler queue for display to user.
 
 		lcd_send_stringline( 3, message, 2);
-
-		DebugMsg( message ); // also send it to UART output immediately.
 	}
+	DebugMsg( message ); // also send it to UART output immediately.
 }
 
 void SetErrorLogging( bool log )

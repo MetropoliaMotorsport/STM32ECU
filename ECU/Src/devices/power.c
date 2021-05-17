@@ -11,6 +11,7 @@
 #include "limits.h"
 #include "task.h"
 #include "power.h"
+#include "powerloss.h"
 #include "powernode.h"
 #include "errors.h"
 #include "adcecu.h"
@@ -73,13 +74,31 @@ void PowerTask(void *argument)
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTime = xTaskGetTickCount();
 
+	bool resetLV = false;
+
+	resetPowerLost();
+	xQueueReset(PowerErrorQueue);
+
 	while( 1 )
 	{
 		while ( xQueueReceive(PowerErrorQueue,&errormsg,0) )
 		{
-			snprintf(str, MAXDEBUGOUTPUT, "Power err: %d %lu", errormsg.nodeid, errormsg.error);
-			LogError( str );
+			if ( errormsg.error == 0xFFFF )
+			{
+				LogError("Power err: LV Down");
+				resetLV = true;
+
+				setAllPowerActualOff();
+			} else
+			{
+
+				snprintf(str, MAXDEBUGOUTPUT, "Power err: %d %lu", errormsg.nodeid, errormsg.error);
+				LogError( str );
+			}
 		}
+
+		if ( resetLV )
+			resetPowerLost();
 
 		// clear command queue
 		while ( xQueueReceive(PowerQueue,&msg,0) )
@@ -344,7 +363,10 @@ bool PowerLogError( uint8_t nodeid, uint32_t errorcode)
 	msg.nodeid = nodeid;
 	msg.error = errorcode;
 
-	return ( xQueueSend(PowerErrorQueue, &msg, 0) );
+	if ( xPortIsInsideInterrupt() )
+		return xQueueSendFromISR(PowerErrorQueue, &msg, NULL );
+	else
+		return ( xQueueSend(PowerErrorQueue, &msg, 0) );
 }
 
 int initPower( void )

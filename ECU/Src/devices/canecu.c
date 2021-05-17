@@ -10,6 +10,7 @@
 #include "canecu.h"
 #include "adcecu.h"
 #include "errors.h"
+#include "uartecu.h"
 
 #include "output.h"
 #include "timerecu.h"
@@ -22,6 +23,8 @@
 
 #include "fdcan.h"
 
+#include "semphr.h"
+
 #ifdef ONECAN
 	#define sharedCAN
 #endif
@@ -32,6 +35,7 @@ FDCAN_HandleTypeDef * hfdcan2p = NULL;
 
 int cancount;
 
+SemaphoreHandle_t CANBufferUpdating;
 
 #define CANTXSTACK_SIZE 128*4
 #define CANTXTASKNAME  "CANTxTask"
@@ -69,10 +73,77 @@ uint8_t CANRxQueueStorageArea[ CANTxQUEUE_LENGTH * CANITEMSIZE ];
 
 QueueHandle_t CANTxQueue, CANRxQueue;
 
+#if defined( __ICCARM__ )
+  #define DMA_BUFFER \
+      _Pragma("location=\".dma_buffer\"")
+#else
+  #define DMA_BUFFER \
+      __attribute__((section(".dma_buffer")))
+#endif
+
+// ADC conversion buffer, should be aligned in memory for faster DMA?
+DMA_BUFFER ALIGN_32BYTES (static uint8_t CANTxBuffer1[1024]);
+DMA_BUFFER ALIGN_32BYTES (static uint8_t CANTxBuffer2[1024]);
+
+static uint8_t * CANTxBuffer;
+
+static uint16_t CANTxBufferPos;
+static uint8_t * CurCANTxBuffer;
+static uint32_t CANTxLastsend;
 
 bool processCan1Message( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
 bool processCan2Message( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
 void processCanTimeouts( void );
+
+void UART_CANBufferAdd(const can_msg * msg )
+{
+	xSemaphoreTake(CANBufferUpdating, portMAX_DELAY);
+
+
+	if ( msg->id > 0x80 )
+	{
+		volatile int i=0;
+	}
+	// r1xxxDbbbbbbbb
+
+	if ( CANTxBuffer - CurCANTxBuffer < 1000 )
+	{
+		CANTxBuffer += snprintf((char*)CANTxBuffer, 15, "t%1d%03X%1lu", msg->bus, msg->id, msg->dlc);
+		memcpy(CANTxBuffer, msg->data, msg->dlc);
+		CANTxBuffer += msg->dlc;
+		CANTxBuffer[0]= '\n';
+		CANTxBuffer += 1;
+	}
+
+	xSemaphoreGive(CANBufferUpdating);
+//	UART_Transmit(UART2, canstr, len+msg.dlc+1);
+}
+
+void UART_CANBufferTransmit( void )
+{
+	if ( CANTxBuffer - CurCANTxBuffer > 1000 || gettimer() != CANTxLastsend ) // buffer if nearly full.
+	{
+		CANTxLastsend = gettimer();
+
+		if ( CANTxBuffer - CurCANTxBuffer > 0 )
+		{
+			UART_Transmit(UART1, CurCANTxBuffer, CANTxBuffer - CurCANTxBuffer );
+
+			if ( CurCANTxBuffer == CANTxBuffer1 )
+			{
+				CANTxBuffer = CANTxBuffer2;
+				CurCANTxBuffer = CANTxBuffer2;
+			}
+			else
+			{
+				CANTxBuffer = CANTxBuffer1;
+				CurCANTxBuffer = CANTxBuffer1;
+			}
+		}
+
+	}
+}
+
 
 void CANTxTask(void *argument)
 {
@@ -121,9 +192,12 @@ void CANTxTask(void *argument)
 			waittick = cycletick-curtick+CYCLETIME;
 		}
 
+		UART_CANBufferTransmit();
 
 		if ( xQueueReceive(CANTxQueue,&msg,waittick) )
 		{
+			UART_CANBufferAdd(&msg);
+
 			if ( msg.bus == bus1)
 			{
 				hfdcanp = &hfdcan1;
@@ -1318,10 +1392,14 @@ void resetCAN( void )
 
 int initCAN( void )
 {
+	CANTxBuffer = CANTxBuffer1;
+	CurCANTxBuffer = CANTxBuffer1;
 
 	CanTimeoutListCount = 0;
 	RegisterResetCommand(resetCAN);
 	resetCAN();
+
+	CANBufferUpdating = xSemaphoreCreateMutex();
 
 	MX_FDCAN1_Init();
 #ifndef ONECAN

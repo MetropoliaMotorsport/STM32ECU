@@ -42,7 +42,7 @@ void ANodeCritTimeout( uint16_t id );
 CANData  AnalogNode1 =  { &DeviceState.AnalogNode1, AnalogNode1_ID, 6, processANode1Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
 CANData  AnalogNode9 =  { &DeviceState.AnalogNode9, AnalogNode9_ID, 4, processANode9Data, NULL, NODETIMEOUT };
 CANData  AnalogNode10 = { &DeviceState.AnalogNode10, AnalogNode10_ID, 6, processANode10Data, NULL, NODETIMEOUT };
-CANData  AnalogNode11=  { &DeviceState.AnalogNode11, AnalogNode11_ID, 7, processANode11Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
+CANData  AnalogNode11=  { &DeviceState.AnalogNode11, AnalogNode11_ID, 8, processANode11Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
 CANData  AnalogNode12 = { &DeviceState.AnalogNode12, AnalogNode12_ID, 4, processANode12Data, NULL, NODETIMEOUT };
 CANData  AnalogNode13 = { &DeviceState.AnalogNode13, AnalogNode13_ID, 4, processANode13Data, NULL, NODETIMEOUT };
 CANData  AnalogNode14 = { &DeviceState.AnalogNode14, AnalogNode14_ID, 6, processANode14Data, NULL, NODETIMEOUT };
@@ -106,7 +106,13 @@ bool processANode10Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 bool processANode11Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
 {
  //   int Val1 = CANRxData[0]*256+CANRxData[1]; // dhab current?
-	int AccelR = CANRxData[4]+CANRxData[5]*256;
+
+	uint16_t BrakeTemp1 = CANRxData[0]+CANRxData[1]*256;
+
+	uint16_t BrakeF =  CANRxData[2]+CANRxData[3]*256;
+	uint16_t BrakeR =  CANRxData[4]+CANRxData[5]*256;
+
+	uint16_t AccelR = CANRxData[6]+CANRxData[7]*256;
 
 	// HPF 20 raw value R ~3300 for 0%
 
@@ -122,8 +128,8 @@ bool processANode11Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 	{
 		xTaskNotify( ADCTaskHandle, ( 0x1 << ANode11Bit ), eSetBits);
 
-        ADCState.BrakeF = CANRxData[2];
-        ADCState.BrakeR = CANRxData[3];
+        ADCState.BrakeF = BrakeF;//CANRxData[2];
+        ADCState.BrakeR = BrakeR;//CANRxData[3];
         ADCState.Torque_Req_R_Percent = getTorqueReqPercR(AccelR);
 
 		return true;
@@ -248,8 +254,6 @@ void setAnalogNodesStr( uint32_t nodesonline ) // any of these missing should ju
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
-
-	return nodesonline;
 }
 
 

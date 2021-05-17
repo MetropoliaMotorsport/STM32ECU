@@ -15,6 +15,17 @@
 #include "semphr.h"
 
 
+#if defined( __ICCARM__ )
+  #define DMA_BUFFER \
+      _Pragma("location=\".dma_buffer\"")
+#else
+  #define DMA_BUFFER \
+      __attribute__((section(".dma_buffer")))
+#endif
+
+// ADC conversion buffer, should be aligned in memory for faster DMA?
+DMA_BUFFER ALIGN_32BYTES (static uint8_t UART1TXBuffer[1024]);
+
 SemaphoreHandle_t UART1TxDone;
 SemaphoreHandle_t UART1RxDone;
 
@@ -61,20 +72,29 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 bool UART_Transmit(UART UART, uint8_t* buffer, uint16_t n)
 {
+	static volatile int err = 0;
 	if ( UART == UART1 )
 	{
-		if(HAL_UART_Transmit_IT(&huart1, buffer, n) != HAL_OK) {
+		memcpy(UART1TXBuffer, buffer, n);
+
+		if(HAL_UART_Transmit_DMA(&huart1, UART1TXBuffer, n) != HAL_OK) {
+			err = 1;
 			return false;
+		} else
+		{
+			err = 0;
+			return true;
 		}
-		return true;
 	}
 
 	if ( UART == UART2 )
 	{
 		if(HAL_UART_Transmit_IT(&huart2, buffer, n) != HAL_OK) {
 			return false;
+		} else
+		{
+			return true;
 		}
-		return true;
 	}
 
 	return false;

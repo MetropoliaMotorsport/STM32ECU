@@ -120,8 +120,10 @@ uint8_t uartWait( char *ch )
 
 		if ( xQueueReceive(DebugQueue,&msg,10) )
 		{
-			uartwrite(msg.str);
 			uartwrite("\r\n");
+			uartwrite(msg.str);
+			// TODO could redraw prompt here instead so it always displays correctly.
+
 			redraw = true;
 		}
 	}
@@ -134,6 +136,206 @@ uint8_t uartWait( char *ch )
 #endif
 
 static char str[40*100] = { 0 };
+
+static void debugFanPWM( const int tokens, const int val1, const int val2 )
+{
+	if ( tokens != 3 )
+	{
+		uartwrite("Please give left and right pwm duty.\r\n");
+	} else
+	{
+		if ( val1 > 255 || val2 > 255 || val1 < 0 || val2 < 0 )
+		{
+			uartwrite("invalid PWM duty cycles given");
+		} else
+		{
+			snprintf(str, 80, "Requesting fan PWMs Left: %4d Right: %4d\r\n", val1, val2);
+			uartwrite(str);
+
+			FanPWMControl( val1, val2 );
+		}
+	}
+}
+
+
+static void debugShutdown( const char *tkn2, const char *tkn3 )
+{
+	if ( strcmp(tkn2, "closed")  == 0 || strcmp(tkn2, "on")  == 0 || strcmp(tkn2, "true")  == 0|| strcmp(tkn2, "enabled") == 0 )
+	{
+		uartwrite("Setting shutdown circuit closed.\r\n");
+		ShutdownCircuitSet(true);
+	}
+	else if ( strcmp(tkn2, "open")  == 0 ||strcmp(tkn2, "off") == 0 || strcmp(tkn2, "false") == 0 || strcmp(tkn2, "disabled") == 0 )
+	{
+		uartwrite("Setting shutdown circuit open.\r\n");
+		ShutdownCircuitSet(false);
+	} else
+	{
+		uartwrite("Current state of shutdown switches:\r\n");
+
+		uartwritetwoline("ECU          ", ShutdownCircuitState()?"Closed":"Open");
+		uartwritetwoline("BOTS         ", CarState.Shutdown.BOTS?"Closed":"Open");
+		uartwritetwoline("Inertia      ", CarState.Shutdown.InertiaSwitch?"Closed":"Open");
+		uartwritetwoline("BSPD After   ", CarState.Shutdown.BSPDAfter?"Closed":"Open");
+		uartwritetwoline("BSPD Before  ", CarState.Shutdown.BSPDBefore?"Closed":"Open");
+		uartwritetwoline("Cockpit      ", CarState.Shutdown.CockpitButton?"Closed":"Open");
+		uartwritetwoline("Left         ", CarState.Shutdown.LeftButton?"Closed":"Open");
+		uartwritetwoline("Right        ", CarState.Shutdown.RightButton?"Closed":"Open");
+		uartwritetwoline("BMS          ", CarState.Shutdown.BMS?"Closed":"Open"); // BMSReason
+		uartwritetwoline("IMD          ", CarState.Shutdown.IMD?"Closed":"Open");
+		uartwritetwoline("AIR          ", CarState.Shutdown.AIROpen?"Closed":"Open");
+	}
+}
+
+
+static void debugPower( const char *tkn2, const char *tkn3 )
+{
+	DevicePower device = None;
+	bool state = false;
+	bool badcmd = false;
+
+	if ( strlen(tkn2) == 0 ) // we need some sub commands, otherwise show help
+	{
+		uartwrite("Power command: Help\r\n");
+	} else if ( strcmp(tkn2, "status") == 0 || strcmp(tkn2, "state") == 0)
+	{
+		uartwrite("Power        Exp Act Err\r\n");
+		uartwrite("------------------------\r\n");
+
+		uint8_t listsize = getDevicePowerListSize();
+
+		for ( int i=1;i<=listsize;i++)
+		{
+			snprintf(str, 80, "%-12s %-4s%-4s%-4d\r\n",
+						getDevicePowerNameLong(i),
+						getNodeDeviceExpectedPower(i)?"On":"Off",
+						getNodeDevicePower(i)?"On":"Off",
+						powerErrorOccurred(i)
+					//    powerErrorOccurred(i)?"Yes":"No"
+			);
+			uartwrite(str);
+		}
+	} else if ( strcmp(tkn2, "all") == 0 )
+	{
+		if ( strcmp(tkn3, "reset") == 0 )
+		{
+			uartwrite("Power error reset for all\r\n");
+			for ( int i=1; i <= AccuFan; i++ )
+				resetDevicePower( i );
+		} else
+		{
+			if ( strcmp(tkn3, "on")  == 0 || strcmp(tkn3, "true")  == 0|| strcmp(tkn3, "enabled") == 0 )
+			{
+				state = true;
+			}
+			else if ( strcmp(tkn3, "off") == 0 || strcmp(tkn3, "false") == 0 || strcmp(tkn3, "disabled") == 0 )
+			{
+				state = false;
+			} else
+			{
+				badcmd = true;
+			}
+
+
+			if ( !badcmd )
+			{
+				uartwrite("Manual power request for all power set ");
+				uartwrite(state? "on":"off");
+				uartwrite("\r\n");
+
+				for ( int i=1; i <= AccuFan; i++ )
+					setDevicePower( i, state );
+
+			} else
+			{
+				badcmd = true;
+			}
+		}
+	}
+	else
+	{
+		if ( strcmp(tkn2, "none") == 0)
+			device = None;
+		else if ( strcmp(tkn2, "buzzer") == 0 )
+			device = Buzzer;
+		else if ( strcmp(tkn2, "back1") == 0 )
+			device = Back1;
+		else if ( strcmp(tkn2, "back2") == 0 )
+			device = Back2;
+		else if ( strcmp(tkn2, "back3") == 0 )
+			device = Back3;
+		else if ( strcmp(tkn2, "telemetry") == 0 )
+			device = Telemetry;
+		else if ( strcmp(tkn2, "front1") == 0 )
+			device = Front1;
+		else if ( strcmp(tkn2, "inverters") == 0 )
+			device = Inverters;
+		else if ( strcmp(tkn2, "ecu") == 0 )
+			device = ECU;
+		else if ( strcmp(tkn2, "front2") == 0 )
+			device = Front2;
+		else if ( strcmp(tkn2, "leftfans") == 0 )
+			device = LeftFans;
+		else if ( strcmp(tkn2, "rightfans") == 0 )
+			device = RightFans;
+		else if ( strcmp(tkn2, "leftpump") == 0 )
+			device = LeftPump;
+		else if ( strcmp(tkn2, "rightpump") == 0 )
+			device = RightPump;
+		else if ( strcmp(tkn2, "ivt") == 0 )
+			device = IVT;
+		else if ( strcmp(tkn2, "current") == 0 )
+			device = Current;
+		else if ( strcmp(tkn2, "tsal") == 0 )
+			device = TSAL;
+		else if ( strcmp(tkn2, "brake") == 0 )
+			device = Brake;
+		else if ( strcmp(tkn2, "accu") == 0 )
+			device = Accu;
+		else if ( strcmp(tkn2, "accufan") == 0 )
+			device = AccuFan;
+
+		if ( strcmp(tkn3, "reset")  == 0 )
+		{
+			uartwrite("Power error reset for ");
+			uartwrite(getDevicePowerNameLong(device));
+			uartwrite("\r\n");
+			resetDevicePower(device);
+		} else
+		{
+			if ( strcmp(tkn3, "on")  == 0 || strcmp(tkn3, "true")  == 0|| strcmp(tkn3, "enabled") == 0 )
+			{
+				state = true;
+			}
+			else if ( strcmp(tkn3, "off") == 0 || strcmp(tkn3, "false") == 0 || strcmp(tkn3, "disabled") == 0 )
+			{
+				state = false;
+			} else
+			{
+				device = None;
+			}
+
+			if ( device != None )
+			{
+				uartwrite("Manual power request for ");
+				uartwrite(getDevicePowerNameLong(device));
+				uartwrite(" set ");
+				uartwrite(state? "on":"off");
+				uartwrite("\r\n");
+				setDevicePower( device, state );
+			} else
+			{
+				badcmd = true;
+			}
+		}
+	}
+
+
+	if ( badcmd )
+	{
+		uartwrite("Invalid power request given: Help\r\n");
+	}
+}
 
 
 static void DebugTask(void *pvParameters)
@@ -158,7 +360,8 @@ static void DebugTask(void *pvParameters)
 		if ( redraw )
 		{
 			// we received debug output during keyboard wait, resend prompt and current imput to help.
-			uartwrite("\x1b[k");
+			uartwrite("\r\n");
+			// uartwrite("\x1b[k");
 			uartwrite(DEBUGPROMPT);
 			uartwrite(str);
 		}
@@ -291,202 +494,23 @@ static void DebugTask(void *pvParameters)
 					val2 = strtol(tkn3, NULL, 10);
 				} else val2 = 0;
 
-				bool badcmd = false;
-
 				if ( strcmp(tkn1, "shutdown") == 0 )
 				{
-					if ( strcmp(tkn2, "closed")  == 0 || strcmp(tkn2, "on")  == 0 || strcmp(tkn2, "true")  == 0|| strcmp(tkn2, "enabled") == 0 )
-					{
-						uartwrite("Setting shutdown circuit closed.\r\n");
-						ShutdownCircuitSet(true);
-					}
-					else if ( strcmp(tkn2, "open")  == 0 ||strcmp(tkn2, "off") == 0 || strcmp(tkn2, "false") == 0 || strcmp(tkn2, "disabled") == 0 )
-					{
-						uartwrite("Setting shutdown circuit open.\r\n");
-						ShutdownCircuitSet(false);
-					} else
-					{
-						uartwrite("Current state of shutdown switches:\r\n");
-
-						uartwritetwoline("ECU          ", ShutdownCircuitState()?"Closed":"Open");
-						uartwritetwoline("BOTS         ", CarState.Shutdown.BOTS?"Closed":"Open");
-						uartwritetwoline("Inertia      ", CarState.Shutdown.InertiaSwitch?"Closed":"Open");
-						uartwritetwoline("BSPD After   ", CarState.Shutdown.BSPDAfter?"Closed":"Open");
-						uartwritetwoline("BSPD Before  ", CarState.Shutdown.BSPDBefore?"Closed":"Open");
-						uartwritetwoline("Cockpit      ", CarState.Shutdown.CockpitButton?"Closed":"Open");
-						uartwritetwoline("Left         ", CarState.Shutdown.LeftButton?"Closed":"Open");
-						uartwritetwoline("Right        ", CarState.Shutdown.RightButton?"Closed":"Open");
-						uartwritetwoline("BMS          ", CarState.Shutdown.BMS?"Closed":"Open"); // BMSReason
-						uartwritetwoline("IMD          ", CarState.Shutdown.IMD?"Closed":"Open");
-						uartwritetwoline("AIR          ", CarState.Shutdown.AIROpen?"Closed":"Open");
-					}
+					debugShutdown(tkn2, tkn3);
 				} else
 				if ( strcmp(tkn1, "fanpwm") == 0 )
 				{
-					if ( tokens != 3 )
-					{
-						uartwrite("Please give left and right pwm duty.\r\n");
-					} else
-					{
-						if ( val1 > 255 || val2 > 255 || val1 < 0 || val2 < 0 )
-						{
-							uartwrite("invalid PWM duty cycles given");
-						} else
-						{
-							snprintf(str, 80, "Requesting fan PWMs Left: %4d Right: %4d\r\n", val1, val2);
-							uartwrite(str);
-
-							FanPWMControl( val1, val2 );
-						}
-					}
+					debugFanPWM(tokens, val1, val2 );
 				} else
 				if ( strcmp(tkn1, "power") == 0 )
 				{
-					DevicePower device = None;
-					bool state = false;
-
-					if ( tokens == 1 ) // we need some sub commands, otherwise show help
-					{
-						uartwrite("Power command: Help\r\n");
-					} else if ( strcmp(tkn2, "status") == 0 || strcmp(tkn2, "state") == 0)
-					{
-						uartwrite("Power        Exp Act Err\r\n");
-						uartwrite("------------------------\r\n");
-
-						uint8_t listsize = getDevicePowerListSize();
-
-						for ( int i=1;i<=listsize;i++)
-						{
-							snprintf(str, 80, "%-12s %-4s%-4s%-4d\r\n",
-										getDevicePowerNameLong(i),
-										getNodeDeviceExpectedPower(i)?"On":"Off",
-										getNodeDevicePower(i)?"On":"Off",
-										powerErrorOccurred(i)
-									//    powerErrorOccurred(i)?"Yes":"No"
-							);
-							uartwrite(str);
-						}
-					} else if ( strcmp(tkn2, "all") == 0 )
-					{
-						if ( strcmp(tkn3, "reset") == 0 )
-						{
-							uartwrite("Power error reset for all\r\n");
-							for ( int i=1; i <= AccuFan; i++ )
-								resetDevicePower( i );
-						} else
-						{
-							if ( strcmp(tkn3, "on")  == 0 || strcmp(tkn3, "true")  == 0|| strcmp(tkn3, "enabled") == 0 )
-							{
-								state = true;
-							}
-							else if ( strcmp(tkn3, "off") == 0 || strcmp(tkn3, "false") == 0 || strcmp(tkn3, "disabled") == 0 )
-							{
-								state = false;
-							} else
-							{
-								badcmd = true;
-							}
-
-
-							if ( !badcmd )
-							{
-								uartwrite("Manual power request for all power set ");
-								uartwrite(state? "on":"off");
-								uartwrite("\r\n");
-
-								for ( int i=1; i <= AccuFan; i++ )
-									setDevicePower( i, state );
-
-							} else
-							{
-								badcmd = true;
-							}
-						}
-					}
-					else
-					{
-						if ( strcmp(tkn2, "none") == 0)
-							device = None;
-						else if ( strcmp(tkn2, "buzzer") == 0 )
-							device = Buzzer;
-						else if ( strcmp(tkn2, "back1") == 0 )
-							device = Back1;
-						else if ( strcmp(tkn2, "back2") == 0 )
-							device = Back2;
-						else if ( strcmp(tkn2, "back3") == 0 )
-							device = Back3;
-						else if ( strcmp(tkn2, "telemetry") == 0 )
-							device = Telemetry;
-						else if ( strcmp(tkn2, "front1") == 0 )
-							device = Front1;
-						else if ( strcmp(tkn2, "inverters") == 0 )
-							device = Inverters;
-						else if ( strcmp(tkn2, "ecu") == 0 )
-							device = ECU;
-						else if ( strcmp(tkn2, "front2") == 0 )
-							device = Front2;
-						else if ( strcmp(tkn2, "leftfans") == 0 )
-							device = LeftFans;
-						else if ( strcmp(tkn2, "rightfans") == 0 )
-							device = RightFans;
-						else if ( strcmp(tkn2, "leftpump") == 0 )
-							device = LeftPump;
-						else if ( strcmp(tkn2, "rightpump") == 0 )
-							device = RightPump;
-						else if ( strcmp(tkn2, "ivt") == 0 )
-							device = IVT;
-						else if ( strcmp(tkn2, "current") == 0 )
-							device = Current;
-						else if ( strcmp(tkn2, "tsal") == 0 )
-							device = TSAL;
-						else if ( strcmp(tkn2, "brake") == 0 )
-							device = Brake;
-						else if ( strcmp(tkn2, "accu") == 0 )
-							device = Accu;
-						else if ( strcmp(tkn2, "accufan") == 0 )
-							device = AccuFan;
-
-						if ( strcmp(tkn3, "reset")  == 0 )
-						{
-							uartwrite("Power error reset for ");
-							uartwrite(getDevicePowerNameLong(device));
-							uartwrite("\r\n");
-							resetDevicePower(device);
-						} else
-						{
-							if ( strcmp(tkn3, "on")  == 0 || strcmp(tkn3, "true")  == 0|| strcmp(tkn3, "enabled") == 0 )
-							{
-								state = true;
-							}
-							else if ( strcmp(tkn3, "off") == 0 || strcmp(tkn3, "false") == 0 || strcmp(tkn3, "disabled") == 0 )
-							{
-								state = false;
-							} else
-							{
-								device = None;
-							}
-
-							if ( device != None )
-							{
-								uartwrite("Manual power request for ");
-								uartwrite(getDevicePowerNameLong(device));
-								uartwrite(" set ");
-								uartwrite(state? "on":"off");
-								uartwrite("\r\n");
-								setDevicePower( device, state );
-							} else
-							{
-								badcmd = true;
-							}
-						}
-					}
-
-
-					if ( badcmd )
-					{
-						uartwrite("Invalid power request given: Help\r\n");
-					}
+					debugPower(tkn2, tkn3);
 				} else
+				if ( strcmp(tkn1, "uarttest") == 0 )
+				{
+					UART_Transmit(UART1, (uint8_t *)"This is a test.", 15);
+				} else
+
 
 				if ( strcmp( str, "stat") == 0 )
 				{
