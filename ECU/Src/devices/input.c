@@ -10,6 +10,7 @@
 #include "timerecu.h"
 #include "configuration.h"
 #include "tim.h"
+#include "debug.h"
 
 // PWM Pin needs capacitor taken off to deactivate low pass filter.
 
@@ -132,7 +133,7 @@ void InputTask(void *argument)
 			if ( Input[i].statecount == 0 ) Input[i].statecount = 0xFFFFFFFF; // don't allow wrap;
 			else if ( Input[i].statecount == 3 ) // button held for long enough to count as a change of state, register it.
 			{
-				if ( Input[i].first = true )
+				if ( Input[i].first == true )
 				{
 					 Input[i].first = false;
 				} else

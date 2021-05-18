@@ -20,6 +20,7 @@
 #include "output.h"
 #include "inverter.h"
 #include "powernode.h"
+#include "timerecu.h"
 
 //#define PRINTDEBUGRUNNING
 
@@ -69,7 +70,7 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	}
 #endif
 
-	if ( DeviceState.Inverter != OFFLINE && DeviceState.Inverter != INERROR )
+	if ( GetInverterState() != OFFLINE && GetInverterState() != INERROR )
 		   returnvalue &= ~(0x1 << InverterReceived);
 		else
 		   returnvalue |= 0x1 << InverterReceived;
@@ -139,7 +140,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	PrintRunning( "Boot" );
 #else
 
-	sprintf(str,"Boot   %8.8s %.3liv",getCurTimeStr(), lcd_geterrors());//, CarState.VoltageBMS);
+	sprintf(str,"Boot   %8.8s %.3liv",getCurTimeStr(), CarState.VoltageBMS); // lcd_geterrors());
 
 	lcd_send_stringline(0,str, 255);
 #endif
@@ -377,7 +378,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 //	if ( errorPower() ) { ReadyToStart += 1; }
 	if ( preoperationstate != 0 ) { ReadyToStart += 2; }
-	if ( DeviceState.Inverter < BOOTUP  ) { ReadyToStart += 4; }
+	if ( GetInverterState() < BOOTUP  ) { ReadyToStart += 4; }
 
 	if ( ReadyToStart == 0 )
 	{

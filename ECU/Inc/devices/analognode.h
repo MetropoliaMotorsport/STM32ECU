@@ -11,17 +11,17 @@
 #include "ecumain.h"
 #include "canecu.h"
 
-#define ANode1Bit  0
-#define ANode9Bit  1
-#define ANode10Bit 2
-#define ANode11Bit 3
-#define ANode12Bit 4
-#define ANode13Bit 5
-#define ANode14Bit 6
-#define ANode15Bit 7
-#define ANode16Bit 8
-#define ANode17Bit 9
-#define ANode18Bit 10
+#define ANode1Bit  (0)
+#define ANode9Bit  (1)
+#define ANode10Bit (2)
+#define ANode11Bit (3)
+#define ANode12Bit (4)
+#define ANode13Bit (5)
+#define ANode14Bit (6)
+#define ANode15Bit (7)
+#define ANode16Bit (8)
+#define ANode17Bit (9)
+#define ANode18Bit (10)
 #define ANodeAllBit ( (0x1 << ANode1Bit ) \
 					+ (0x1 << ANode9Bit)  \
 					+ (0x1 << ANode11Bit) \

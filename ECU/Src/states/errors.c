@@ -155,7 +155,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 	bool allowautoreset = true;
 	bool invertererror = false;
 
-	if ( DeviceState.Inverter == INERROR ) invertererror = true;
+	if ( GetInverterState() == INERROR ) invertererror = true;
 
 	for ( int i=0;i<MOTORCOUNT;i++)
 	{

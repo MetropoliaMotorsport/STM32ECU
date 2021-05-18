@@ -34,6 +34,24 @@ typedef enum DevicePowertype {
 
 } DevicePower;
 
+typedef struct {
+	bool BOTS;
+	bool InertiaSwitch;
+	bool BSPDAfter;
+	bool BSPDBefore;
+	bool CockpitButton;
+	bool LeftButton;
+	bool RightButton;
+
+	bool BMS;
+	uint8_t BMSReason;
+	bool IMD;
+	bool AIROpen;
+
+} ShutdownState;
+
+extern ShutdownState Shutdown;
+
 typedef enum DevicePowerStatetype {
 	DirectPowerCmd,
 	FanPowerCmd,

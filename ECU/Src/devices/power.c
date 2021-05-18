@@ -15,6 +15,7 @@
 #include "powernode.h"
 #include "errors.h"
 #include "adcecu.h"
+#include "inverter.h"
 
 TaskHandle_t PowerTaskHandle = NULL;
 
@@ -41,6 +42,7 @@ uint8_t PowerErrorQueueStorageArea[ PowerErrorQUEUE_LENGTH * PowerErrorITEMSIZE 
 
 QueueHandle_t PowerQueue, PowerErrorQueue;
 
+ShutdownState Shutdown;
 
 // task shall take power handling request, and forward them to nodes.
 // ensure contact is kept with brake light board as brake light is SCS.
@@ -65,7 +67,7 @@ void PowerTask(void *argument)
 	Power_msg msg;
 	Power_Error_msg errormsg;
 
-	char str[MAXDEBUGOUTPUT];
+	char str[MAXERROROUTPUT];
 
 	TickType_t xLastWakeTime;
 
@@ -92,7 +94,7 @@ void PowerTask(void *argument)
 			} else
 			{
 
-				snprintf(str, MAXDEBUGOUTPUT, "Power err: %d %lu", errormsg.nodeid, errormsg.error);
+				snprintf(str, MAXERROROUTPUT, "Power err: %d %lu", errormsg.nodeid, errormsg.error);
 				LogError( str );
 			}
 		}
@@ -133,9 +135,8 @@ void PowerTask(void *argument)
 
 		// check if powernodes received.
 
-		BaseType_t xResult;
 		uint32_t powernodesOnline = 0;
-		xResult = xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
+		xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
 						   ULONG_MAX,        /* Clear all bits on exit. */
 						   &powernodesOnline, /* Stores the notified value. */
 						   0 );
@@ -166,7 +167,7 @@ int setRunningPower( bool HV, bool buzzer )
 #else
 	bool HVR = true;
 
-	if ( DeviceState.Inverter < STOPPED ) HVR = false;
+	if ( GetInverterState() < STOPPED ) HVR = false;
 
 	if ( ( HVR && HV ) || CarState.TestHV )
 	{
@@ -198,15 +199,15 @@ bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is
 {
 
 #ifdef HPF20
-	if ( !CarState.Shutdown.BOTS ) return false;
-	if ( !CarState.Shutdown.BSPDAfter ) return false;
-	if ( !CarState.Shutdown.BSPDBefore ) return false;
-	if ( !CarState.Shutdown.CockpitButton ) return false;
-	if ( !CarState.Shutdown.InertiaSwitch ) return false;
-	if ( !CarState.Shutdown.LeftButton ) return false;
-	if ( !CarState.Shutdown.RightButton ) return false;
-	if ( !CarState.Shutdown.BMS ) return false;
-	if ( !CarState.Shutdown.IMD ) return false;
+	if ( !Shutdown.BOTS ) return false;
+	if ( !Shutdown.BSPDAfter ) return false;
+	if ( !Shutdown.BSPDBefore ) return false;
+	if ( !Shutdown.CockpitButton ) return false;
+	if ( !Shutdown.InertiaSwitch ) return false;
+	if ( !Shutdown.LeftButton ) return false;
+	if ( !Shutdown.RightButton ) return false;
+	if ( !Shutdown.BMS ) return false;
+	if ( !Shutdown.IMD ) return false;
 #endif
 	return true;
 
@@ -217,17 +218,17 @@ char * ShutDownOpenStr( void )
 	static char str[255] = "";
 
 	sprintf(str, "%s%s%s%s%s%s%s%s%s",
-		(!CarState.Shutdown.CockpitButton)?"DRV,":"",
-		(!CarState.Shutdown.LeftButton)?"LFT,":"",
-		(!CarState.Shutdown.RightButton)?"RGT,":"",
-		(!CarState.Shutdown.InertiaSwitch)?"INRT,":"",
+		(!Shutdown.CockpitButton)?"DRV,":"",
+		(!Shutdown.LeftButton)?"LFT,":"",
+		(!Shutdown.RightButton)?"RGT,":"",
+		(!Shutdown.InertiaSwitch)?"INRT,":"",
 
-		(!CarState.Shutdown.BMS)?"BMS,":"",
-		(!CarState.Shutdown.IMD)?"IMD,":"",
+		(!Shutdown.BMS)?"BMS,":"",
+		(!Shutdown.IMD)?"IMD,":"",
 
-		(!CarState.Shutdown.BOTS)?"BOTS,":"",
-		(!CarState.Shutdown.BSPDAfter)?"BSPDA,":"",
-		(!CarState.Shutdown.BSPDBefore)?"BSPDB,":""
+		(!Shutdown.BOTS)?"BOTS,":"",
+		(!Shutdown.BSPDAfter)?"BSPDA,":"",
+		(!Shutdown.BSPDBefore)?"BSPDB,":""
 
 	);
 

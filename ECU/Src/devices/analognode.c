@@ -25,17 +25,17 @@
 #define ANALOGNODECOUNT	11
 
 
-bool processANode1Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processANode9Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processANode10Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processANode11Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processANode12Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processANode13Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processANode14Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processANode15Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processANode16Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processANode17Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processANode18Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode14Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode15Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode16Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode17Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode18Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 void ANodeCritTimeout( uint16_t id );
 
@@ -62,11 +62,11 @@ void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to sa
     SetCriticalError();
 }
 
-bool processANode1Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
  //   int Val1 = CANRxData[0]*256+CANRxData[1]; // dhab current?
-	int AccelL = CANRxData[2]*256+CANRxData[3];
-	int Regen = CANRxData[4]*256+CANRxData [5];
+	int AccelL =  getBEint16(&CANRxData[2]);//CANRxData[2]*256+CANRxData[3];
+	int Regen =  getBEint16(&CANRxData[4]);//CANRxData[4]*256+CANRxData [5];
 
 	if ( DataLength >> 16 == AnalogNode1.dlcsize
 		&& ( AccelL < 4096 )
@@ -87,7 +87,7 @@ bool processANode1Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * data
 }
 
 
-bool processANode9Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode9Bit ), eSetBits);
 
@@ -95,7 +95,7 @@ bool processANode9Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * data
 }
 
 
-bool processANode10Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode10Bit ), eSetBits);
 
@@ -103,16 +103,16 @@ bool processANode10Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 }
 
 
-bool processANode11Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
  //   int Val1 = CANRxData[0]*256+CANRxData[1]; // dhab current?
 
-	uint16_t BrakeTemp1 = CANRxData[0]+CANRxData[1]*256;
+	uint16_t BrakeTemp1 =  getBEint16(&CANRxData[0]);//CANRxData[0]+CANRxData[1]*256;
 
-	uint16_t BrakeF =  CANRxData[2]+CANRxData[3]*256;
-	uint16_t BrakeR =  CANRxData[4]+CANRxData[5]*256;
+	uint16_t BrakeF =  getBEint16(&CANRxData[2]);//CANRxData[2]+CANRxData[3]*256;
+	uint16_t BrakeR =   getBEint16(&CANRxData[4]);//CANRxData[4]+CANRxData[5]*256;
 
-	uint16_t AccelR = CANRxData[6]+CANRxData[7]*256;
+	uint16_t AccelR =  getBEint16(&CANRxData[6]);//CANRxData[6]+CANRxData[7]*256;
 
 	// HPF 20 raw value R ~3300 for 0%
 
@@ -140,7 +140,7 @@ bool processANode11Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 	return true;
 }
 
-bool processANode12Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode12Bit ), eSetBits);
 
@@ -148,42 +148,42 @@ bool processANode12Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 }
 
 
-bool processANode13Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode13Bit ), eSetBits);
 
 	return true;
 }
 
-bool processANode14Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processANode14Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode14Bit ), eSetBits);
 
 	return true;
 }
 
-bool processANode15Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processANode15Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode15Bit ), eSetBits);
 
 	return true;
 }
 
-bool processANode16Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processANode16Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode16Bit ), eSetBits);
 
 	return true;
 }
 
-bool processANode17Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processANode17Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode17Bit ), eSetBits);
 
 	return true;
 }
 
-bool processANode18Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processANode18Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode18Bit ), eSetBits);
 
@@ -194,7 +194,7 @@ bool processANode18Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 char ANodeCritStr[10] = "";
 char ANodeStr[15] = "";
 
-void setAnalogNodesStr( uint32_t nodesonline ) // any of these missing should just be a warning or note.
+void setAnalogNodesStr( const uint32_t nodesonline ) // any of these missing should just be a warning or note.
 {
 	ANodeStr[0] = 0;
 

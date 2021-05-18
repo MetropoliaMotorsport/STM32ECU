@@ -15,7 +15,7 @@
 
 #define LCDBUFFER
 
-#define MAXDEBUGOUTPUT 40
+#define MAXERROROUTPUT       (40)
 
 #define HPF20
 
@@ -321,22 +321,6 @@
 extern volatile uint32_t ADCloops;
 
 typedef struct {
-	bool BOTS;
-	bool InertiaSwitch;
-	bool BSPDAfter;
-	bool BSPDBefore;
-	bool CockpitButton;
-	bool LeftButton;
-	bool RightButton;
-
-	bool BMS;
-	uint8_t BMSReason;
-	bool IMD;
-	bool AIROpen;
-
-} ShutdownState;
-
-typedef struct {
 	uint8_t brake_balance;
 
 	char HighVoltageReady;
@@ -383,8 +367,6 @@ typedef struct {
 	uint8_t Freq_IMD;
 	uint8_t DC_IMD;
 
-	ShutdownState Shutdown;
-
 } CarStateType;
 
 typedef enum DeviceStatustype {
@@ -397,6 +379,7 @@ typedef enum DeviceStatustype {
 } DeviceStatus;
 
 typedef struct {
+	DeviceStatus NONE;
 	DeviceStatus CAN1;
 	DeviceStatus CAN2;
 	bool FrontSpeedSensors;
@@ -407,8 +390,8 @@ typedef struct {
 	uint16_t ADCSanity;
 	DeviceStatus Sensors;
 	DeviceStatus PWM;
-	DeviceStatus Inverter;
-	DeviceStatus Inverters[MOTORCOUNT];
+//	DeviceStatus Inverter;
+//	DeviceStatus Inverters[MOTORCOUNT];
 	DeviceStatus BMS;
 	DeviceStatus IMU;
 	DeviceStatus PDM;
@@ -443,18 +426,19 @@ typedef struct {
 } DeviceStateType;
 
 // helpers
-void swapByteOrder_int16(double *current, const int16_t *rawsignal, size_t length);
-void storeBEint32(uint32_t input, uint8_t Data[4]);
-void storeBEint16(uint16_t input, uint8_t Data[2]);
-void storeLEint32(uint32_t input, uint8_t Data[4]);
-void storeLEint16(uint16_t input, uint8_t Data[2]);
+void storeBEint32(const uint32_t input, uint8_t Data[4]);
+void storeBEint16(const uint16_t input, uint8_t Data[2]);
+void storeLEint32(const uint32_t input, uint8_t Data[4]);
+void storeLEint16(const uint16_t input, uint8_t Data[2]);
 
-uint32_t getLEint32( uint8_t data[4] );
-uint16_t getLEint16( uint8_t data[2] );
-uint32_t getBEint32( uint8_t data[4] );
-uint16_t getBEint16( uint8_t data[2] );
+uint32_t getLEint32( const uint8_t data[4] );
+uint16_t getLEint16( const uint8_t data[2] );
+uint32_t getBEint32( const uint8_t data[4] );
+uint16_t getBEint16( const uint8_t data[2] );
 
-uint8_t getByte(uint32_t input, int8_t returnbyte);
+uint8_t getByte(const uint32_t input, const int8_t returnbyte);
+
+char * getDeviceStatusStr( const DeviceStatus status );
 
 int initECU( void );
 

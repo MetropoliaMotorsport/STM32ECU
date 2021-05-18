@@ -73,10 +73,10 @@ void PDMTimeout( uint16_t id )
 
      */
 
-    CarState.Shutdown.BMS = true;
-    CarState.Shutdown.IMD = true;
-    CarState.Shutdown.BSPDBefore = true;
-    CarState.Shutdown.AIROpen = false;
+    Shutdown.BMS = true;
+    Shutdown.IMD = true;
+    Shutdown.BSPDBefore = true;
+    Shutdown.AIROpen = false;
 }
 
 int receivePDM( void )
@@ -102,20 +102,20 @@ int errorPDM( void )
     }
 #endif
 
-	if ( CarState.Shutdown.BMS )
+	if ( Shutdown.BMS )
 	{
 		returnval +=2;
         blinkOutput(BMSLED,On,0); // ensure potential limp mode blinking disabled.
 		setOutputNOW(BMSLED,On);
 	} else setOutput(BMSLED,Off);
 
-	if ( CarState.Shutdown.IMD )
+	if ( Shutdown.IMD )
 	{
 		returnval +=4;
 		setOutputNOW(IMDLED,On);
 	} else setOutput(IMDLED,Off);
 
-	if ( CarState.Shutdown.BSPDBefore )
+	if ( Shutdown.BSPDBefore )
 	{
 		returnval +=8;
 		setOutputNOW(BSPDLED,On);
@@ -185,12 +185,13 @@ void resetPDM ( void )
 //	PDMCanData.seen = false;
 	DeviceState.PDM = OFFLINE;
 
-	CarState.Shutdown.BMS = true; // these are latched
-	CarState.Shutdown.IMD = true;
-	CarState.Shutdown.BSPDBefore = true;
+//	setShutdown(shtBMS, true);
+	Shutdown.BMS = true; // these are latched
+	Shutdown.IMD = true;
+	Shutdown.BSPDBefore = true;
 
-	CarState.Shutdown.AIROpen = false;
-	CarState.Shutdown.CockpitButton = true;
+	Shutdown.AIROpen = false;
+	Shutdown.CockpitButton = true;
 }
 
 void initPDM( void )

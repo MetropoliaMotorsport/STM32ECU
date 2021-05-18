@@ -10,49 +10,27 @@
 CANData ECUCAN = { NULL, 21, 8, NULL, NULL, 0 };
 
 
-/** deal with endianness for canbus
- * function from https://stackoverflow.com/questions/39622332/reading-big-endian-files-in-little-endian-system
- * not actually being currently used
- */
-void swapByteOrder_int16(double *current, const int16_t *rawsignal, size_t length)
-{
-    for (size_t i = 0; i < length; i++)
-    {
-        int16_t x = rawsignal[2*i];
-        x = (x*1u << 8) | (x*1u >> 8);
-        current[i] = x;
-    }
-}
-
-inline uint32_t getLEint32( uint8_t data[4] )
+inline uint32_t getLEint32( const uint8_t data[4] )
 {
   return (data[3]<<24)+(data[2]<<16)+(data[1]<<8)+data[0];
 }
 
-inline uint16_t getLEint16( uint8_t data[2] )
+inline uint16_t getLEint16( const uint8_t data[2] )
 {
   return (data[1]<<8)+data[0];
 }
 
-inline uint32_t getBEint32( uint8_t data[4] )
+inline uint32_t getBEint32( const uint8_t data[4] )
 {
   return (data[0]<<24)+(data[1]<<16)+(data[2]<<8)+data[3];
 }
 
-inline uint16_t getBEint16( uint8_t data[2] )
+inline uint16_t getBEint16( const uint8_t data[2] )
 {
   return (data[0]<<8)+data[1];
 }
 
-void RearSpeedCalculation( long leftdata, long rightdata )
-{
-/*	CarState.Wheel_Speed_Right_Calculated = Speed_Right_Inverter.data.longint * (1/4194304) * 60; // resolution 4194304 for one revolution
-	CarState.Wheel_Speed_Left_Calculated = Speed_Left_Inverter.data.longint * (1/4194304) * 60;
-	CarState.Wheel_Speed_Rear_Average = (CarState.Wheel_Speed_Right_Calculated  + CarState.Wheel_Speed_Left_Calculated)/2;
-*/
-}
-
-inline uint8_t getByte(uint32_t input, int8_t returnbyte)
+inline uint8_t getByte( const uint32_t input, const int8_t returnbyte )
 {
 	union {
 		uint32_t integer;
@@ -63,7 +41,7 @@ inline uint8_t getByte(uint32_t input, int8_t returnbyte)
 }
 
 
-inline void storeBEint32(uint32_t input, uint8_t Data[4])
+inline void storeBEint32( const uint32_t input, uint8_t Data[4] )
 {
 	Data[0] = getByte(input,3);
 	Data[1] = getByte(input,2);
@@ -72,14 +50,14 @@ inline void storeBEint32(uint32_t input, uint8_t Data[4])
 }
 
 
-inline void storeBEint16(uint16_t input, uint8_t Data[2])
+inline void storeBEint16( const uint16_t input, uint8_t Data[2] )
 {
 	Data[0] = getByte(input,1);
 	Data[1] = getByte(input,0);
 }
 
 
-inline void storeLEint32(uint32_t input, uint8_t Data[4])
+inline void storeLEint32( const uint32_t input, uint8_t Data[4] )
 {
 	Data[0] = getByte(input,0);
 	Data[1] = getByte(input,1);
@@ -88,11 +66,28 @@ inline void storeLEint32(uint32_t input, uint8_t Data[4])
 }
 
 
-inline void storeLEint16(uint16_t input, uint8_t Data[2])
+inline void storeLEint16( const uint16_t input, uint8_t Data[2] )
 {
 	Data[0] = getByte(input,0);
 	Data[1] = getByte(input,1);
 }
+
+
+char * getDeviceStatusStr( const DeviceStatus status )
+{
+	switch ( status )
+	{
+	case INERROR : return "Error";
+	case OFFLINE : return "Offline";
+	case BOOTUP : return "Bootup";
+	case STOPPED : return "Stopped";
+	case PREOPERATIONAL : return "PreOperational";
+	case OPERATIONAL : return "Operational";
+	default:
+		return "BADSTATUS";
+	}
+}
+
 
 int initECU( void )
 {

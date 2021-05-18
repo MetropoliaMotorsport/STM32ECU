@@ -10,7 +10,7 @@
 
 #include "ecumain.h"
 
-#define MAXDEBUGOUTPUT 40
+#define MAXDEBUGOUTPUT (80)
 
 bool DebugMsg( const char * msg);
 

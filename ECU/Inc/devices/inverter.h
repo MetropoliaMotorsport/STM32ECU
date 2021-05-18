@@ -15,6 +15,7 @@ void InverterAllowTorque(bool allow);
 
 typedef struct Inv_msg {
 	DeviceStatus state;
+	uint8_t inverter;
 } Inv_msg;
 
 extern QueueHandle_t InvQueue;
@@ -23,9 +24,10 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	uint8_t InverterNum;
 	bool HighVoltageAllowed;
 	bool HighVoltageAvailable;
-	uint16_t InvState;
-	uint16_t InvBadStatus;
+	DeviceStatus InvStateAct;
+	DeviceStatus InvRequested;
 #ifdef SIEMENS
+	uint16_t InvBadStatus;
 	uint16_t InvStateCheck;
 	uint16_t InvStateCheck3;
 #endif
@@ -40,6 +42,9 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	bool	MCChannel;
 } InverterState;  // define external into realmain?
 
+extern DeviceStatus Inverter;
+extern DeviceStatus InverterStates[MOTORCOUNT];
+
 struct invState {
 	bool AllowTorque;
 	int16_t maxSpeed;
@@ -52,9 +57,12 @@ uint8_t receiveINVStatus( volatile InverterState *Inverter );
 uint8_t receiveINVSpeed( volatile InverterState *Inverter);
 uint8_t receiveINVTorque( volatile InverterState *Inverter);
 
-uint8_t requestINV( uint8_t Inverter );
+void RearSpeedCalculation( long leftdata, long rightdata );
+
+//uint8_t requestINV( uint8_t Inverter );
 uint8_t invError( uint8_t Inverter );
 
+InverterState getInvState(uint8_t inv );
 bool invertersStateCheck( DeviceStatus state );
 
 bool registerInverterCAN( void );

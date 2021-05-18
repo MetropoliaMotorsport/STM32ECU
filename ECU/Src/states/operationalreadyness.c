@@ -156,7 +156,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 		blinkOutput(TSLED,LEDBLINK_FOUR,1); // indicate TS was requested before system ready.
 		return OperationalReadyState; // maintain current state.
 	}
-	else if ( DeviceState.Inverter >= STOPPED  ) // Ready to switch on
+	else if ( GetInverterState() >= STOPPED  ) // Ready to switch on
 	{ 		// everything is ok to continue.
 		return IdleState; // ready to move onto TS activated but not operational state, idle waiting for RTDM activation.
 	}

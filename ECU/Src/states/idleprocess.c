@@ -44,7 +44,7 @@ char OperationalReceive( uint16_t returnvalue )
 
 	// change order, get status from pdo3, and then compare against pdo2?, 2 should be more current being higher priority
 
-	if ( DeviceState.Inverter > OFFLINE )
+	if ( GetInverterState() > OFFLINE )
 		returnvalue &= ~(0x1 << (InverterReceived));
 
 #ifdef HPF19

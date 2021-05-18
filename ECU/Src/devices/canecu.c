@@ -87,7 +87,7 @@ DMA_BUFFER ALIGN_32BYTES (static uint8_t CANTxBuffer2[1024]);
 
 static uint8_t * CANTxBuffer;
 
-static uint16_t CANTxBufferPos;
+//static uint16_t CANTxBufferPos;
 static uint8_t * CurCANTxBuffer;
 static uint32_t CANTxLastsend;
 

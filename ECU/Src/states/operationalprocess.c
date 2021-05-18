@@ -143,7 +143,7 @@ int Startup( uint32_t OperationLoops  )
 
 	vTaskDelay(5);
 
-	if ( DeviceState.Inverter > OFFLINE )
+	if ( GetInverterState() > OFFLINE )
 	{
 		return PreOperationalState;
 	} else if ( CAN_NMT( 0x81, 0x0 ) ) // sent NMT reset packet to can buses if not received inverter status.

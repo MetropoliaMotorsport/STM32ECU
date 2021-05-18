@@ -9,6 +9,7 @@
 #include "output.h"
 #include "timerecu.h"
 #include "debug.h"
+#include "power.h"
 
 #include "queue.h"
 
@@ -378,9 +379,9 @@ void __setLEDs( void )
 {
 	// Check. 10 second delay for IMD led in simulink. IMD Light power off delay. missed earlier, significance?
 
-	setOutput(BMSLED, CarState.Shutdown.BMS);
-	setOutput(IMDLED, CarState.Shutdown.IMD);
-	setOutput(BSPDLED, CarState.Shutdown.BSPDBefore);
+	setOutput(BMSLED, Shutdown.BMS);
+	setOutput(IMDLED, Shutdown.IMD);
+	setOutput(BSPDLED, Shutdown.BSPDBefore);
 }
 
 

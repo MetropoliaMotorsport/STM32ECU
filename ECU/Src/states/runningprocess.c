@@ -25,7 +25,7 @@ uint16_t PrintRunning( char *title )
 {
 	char str[80] = "";
 
-	sprintf(str, "%-6s %8s %3liv", title, getCurTimeStr(), lcd_geterrors());//, CarState.VoltageBMS);
+	sprintf(str, "%-6s %8s %3liv", title, getCurTimeStr(), CarState.VoltageBMS); // lcd_geterrors());
 
 	lcd_send_stringline(0,str, 255);
 
@@ -126,14 +126,14 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	// check data validity, // any critical errors, drop state.
 
-	if  ( !( DeviceState.Inverter == OPERATIONAL
-		  || DeviceState.Inverter == PREOPERATIONAL ) )
+	if  ( !( GetInverterState() == OPERATIONAL
+		  || GetInverterState() == PREOPERATIONAL ) )
 	{
 		Errors.ErrorPlace = 0xE0;
 		return OperationalErrorState;
 	}
 
-	if ( readystate == 0 && DeviceState.Inverter != OPERATIONAL )
+	if ( readystate == 0 && GetInverterState() != OPERATIONAL )
 	{  // an inverter has changed state from operating after reaching it unexpectedly, fault status of some sort.
 		Errors.ErrorPlace = 0xE5;
 		return OperationalErrorState;

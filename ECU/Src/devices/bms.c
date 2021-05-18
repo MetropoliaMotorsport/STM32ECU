@@ -10,6 +10,7 @@
 #include "canecu.h"
 #include "bms.h"
 #include "output.h"
+#include "power.h"
 
 
 // bms operation mode, byte 4   normal mode, data logging.
@@ -95,8 +96,8 @@ bool processBMSError(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
         {
         	if ( CANRxData[0] != 0 ) // In Safestate.
         	{
-        		CarState.Shutdown.BMS = false;
-        		CarState.Shutdown.BMSReason = CANRxData[1];
+        		Shutdown.BMS = false;
+        		Shutdown.BMSReason = CANRxData[1];
                 /*
                       0 : str := 'undefined';
                       1 : str := 'overvoltage';
@@ -112,8 +113,8 @@ bool processBMSError(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 				*/
         	} else
         	{
-         		CarState.Shutdown.BMS = true;
-         		CarState.Shutdown.BMSReason = 0;
+         		Shutdown.BMS = true;
+         		Shutdown.BMSReason = 0;
         	}
 
             return true;

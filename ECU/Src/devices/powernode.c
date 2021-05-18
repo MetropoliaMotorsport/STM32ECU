@@ -120,18 +120,18 @@ int sendPowerNodeErrReset( uint8_t id, uint8_t channel );
 
 void PNode33Timeout( uint16_t id )
 {
-	CarState.Shutdown.BOTS = 0;
-	CarState.Shutdown.InertiaSwitch = 0;
-	CarState.Shutdown.BSPDAfter = 0;
-	CarState.Shutdown.BSPDBefore = 0;
+	Shutdown.BOTS = 0;
+	Shutdown.InertiaSwitch = 0;
+	Shutdown.BSPDAfter = 0;
+	Shutdown.BSPDBefore = 0;
 }
 
 
 void PNode34Timeout( uint16_t id )
 {
-	CarState.Shutdown.CockpitButton = 0; // TODO set to right inputs.
-	CarState.Shutdown.LeftButton = 0;
-	CarState.Shutdown.RightButton = 0;
+	Shutdown.CockpitButton = 0; // TODO set to right inputs.
+	Shutdown.LeftButton = 0;
+	Shutdown.RightButton = 0;
 }
 
 
@@ -152,10 +152,10 @@ bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 		)
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode33Bit ), eSetBits);
-		CarState.Shutdown.BOTS = (CANRxData[0] & (0x1 << 4) );
-		CarState.Shutdown.InertiaSwitch = (CANRxData[0] & (0x1 << 0) );
-		CarState.Shutdown.BSPDAfter = (CANRxData[0] & (0x1 << 2) );
-		CarState.Shutdown.BSPDBefore = (CANRxData[0] & (0x1 << 3) );
+		Shutdown.BOTS = (CANRxData[0] & (0x1 << 4) );
+		Shutdown.InertiaSwitch = (CANRxData[0] & (0x1 << 0) );
+		Shutdown.BSPDAfter = (CANRxData[0] & (0x1 << 2) );
+		Shutdown.BSPDBefore = (CANRxData[0] & (0x1 << 3) );
 //		CarState.I_Telementry =  CANRxData[1];
 //		CarState.I_Front1 =  CANRxData[2];
 		return true;
@@ -179,9 +179,9 @@ bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode34Bit ), eSetBits);
 //		CarState.ShutdownSwitchesClosed = CANRxData[0];
-		CarState.Shutdown.CockpitButton = (CANRxData[0] & (0x1 << 2) ); // TODO set to right inputs.
-		CarState.Shutdown.LeftButton = (CANRxData[0] & (0x1 << 3) );
-		CarState.Shutdown.RightButton = (CANRxData[0] & (0x1 << 4) );
+		Shutdown.CockpitButton = (CANRxData[0] & (0x1 << 2) ); // TODO set to right inputs.
+		Shutdown.LeftButton = (CANRxData[0] & (0x1 << 3) );
+		Shutdown.RightButton = (CANRxData[0] & (0x1 << 4) );
 //		CarState.I_Inverters =  CANRxData[1];
 //		CarState.I_ECU =  CANRxData[2];
 //		CarState.I_Front2 =  CANRxData[3];
@@ -242,9 +242,9 @@ bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 
 		// normal operational status, else assume error.
 		if ( CarState.Freq_IMD >= 5 && CarState.Freq_IMD < 15 )
-			CarState.Shutdown.IMD = true;
+			Shutdown.IMD = true;
 		else
-			CarState.Shutdown.IMD = false;
+			Shutdown.IMD = false;
 
 		DeviceState.BrakeLight = OPERATIONAL;
 
@@ -503,7 +503,7 @@ bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle )
 	}
 
 	char str[40]= "";
-	snprintf(str, 40, "Power Error %d", errorcode);
+	snprintf(str, 40, "Power Error %ul", errorcode);
 	DebugMsg(str);
 
 	if ( channel != 255 ) // received error was assigned a channel.
@@ -815,18 +815,18 @@ uint8_t getDevicePowerListSize( void )
 
 void resetPowerNodes( void )
 {
-	CarState.Shutdown.BOTS = false;
-	CarState.Shutdown.InertiaSwitch = false;
-	CarState.Shutdown.BSPDAfter = false;
-	CarState.Shutdown.BSPDBefore = false;
-	CarState.Shutdown.CockpitButton = false;
-	CarState.Shutdown.LeftButton = false;
-	CarState.Shutdown.RightButton = false;
+	Shutdown.BOTS = false;
+	Shutdown.InertiaSwitch = false;
+	Shutdown.BSPDAfter = false;
+	Shutdown.BSPDBefore = false;
+	Shutdown.CockpitButton = false;
+	Shutdown.LeftButton = false;
+	Shutdown.RightButton = false;
 
-	CarState.Shutdown.BMS = false;
-	CarState.Shutdown.BMSReason = false;
-	CarState.Shutdown.IMD = false;
-	CarState.Shutdown.AIROpen = false;
+	Shutdown.BMS = false;
+	Shutdown.BMSReason = false;
+	Shutdown.IMD = false;
+	Shutdown.AIROpen = false;
 
 // reset errors
 

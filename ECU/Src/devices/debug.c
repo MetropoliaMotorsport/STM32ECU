@@ -7,6 +7,7 @@
 
 #include "debug.h"
 #include "ecumain.h"
+#include "inverter.h"
 
 #include "usart.h"
 #include "power.h"
@@ -135,7 +136,29 @@ uint8_t uartWait( char *ch )
 
 #endif
 
-static char str[40*100] = { 0 };
+static char str[MAXDEBUGOUTPUT] = { 0 };
+
+bool streql( const char * str1, const char * str2 )
+{
+	return ! ( strcmp(str1, str2) );
+}
+
+bool checkOn( const char * tkn )
+{
+	if ( streql(tkn, "closed") || streql(tkn, "on") || streql(tkn, "true") || streql(tkn, "enabled") )
+		return true;
+	else
+		return false;
+}
+
+bool checkOff( const char * tkn )
+{
+	if ( streql(tkn, "closed") || streql(tkn, "on") || streql(tkn, "true") || streql(tkn, "enabled") )
+		return true;
+	else
+		return false;
+}
+
 
 static void debugFanPWM( const int tokens, const int val1, const int val2 )
 {
@@ -157,33 +180,93 @@ static void debugFanPWM( const int tokens, const int val1, const int val2 )
 	}
 }
 
-
-static void debugShutdown( const char *tkn2, const char *tkn3 )
+static void debugInverter( const char *tkn2, const char *tkn3 )
 {
-	if ( strcmp(tkn2, "closed")  == 0 || strcmp(tkn2, "on")  == 0 || strcmp(tkn2, "true")  == 0|| strcmp(tkn2, "enabled") == 0 )
+	if ( streql(tkn2, "state") )
+	{				  // PreOperation  PreOperation
+		uartwrite("-----------------------------------\r\n");
+		uartwrite("Inv  Current State  Requested State\r\n");
+		uartwrite("-----------------------------------\r\n");
+
+
+		for ( int i=0;i<MOTORCOUNT;i++)
+		{
+
+			InverterState invs = getInvState(i);
+			char * str[MAXDEBUGOUTPUT];
+			snprintf(str, MAXDEBUGOUTPUT, "%4d %14s %14s \r\n", i,
+					getDeviceStatusStr(invs.InvStateAct ),
+					getDeviceStatusStr(invs.InvRequested )
+			);
+			uartwrite(str);
+		}
+
+	}
+	else
+	if ( streql(tkn2, "debug") )
+	{
+
+	}
+}
+
+static void debugMotor( const char *tkn2, const char *tkn3 )
+{
+	if ( checkOn( tkn2 )  )
 	{
 		uartwrite("Setting shutdown circuit closed.\r\n");
 		ShutdownCircuitSet(true);
 	}
-	else if ( strcmp(tkn2, "open")  == 0 ||strcmp(tkn2, "off") == 0 || strcmp(tkn2, "false") == 0 || strcmp(tkn2, "disabled") == 0 )
+	else if ( checkOff( tkn2 ) )
 	{
 		uartwrite("Setting shutdown circuit open.\r\n");
 		ShutdownCircuitSet(false);
-	} else
+	}
+	else
 	{
 		uartwrite("Current state of shutdown switches:\r\n");
 
 		uartwritetwoline("ECU          ", ShutdownCircuitState()?"Closed":"Open");
-		uartwritetwoline("BOTS         ", CarState.Shutdown.BOTS?"Closed":"Open");
-		uartwritetwoline("Inertia      ", CarState.Shutdown.InertiaSwitch?"Closed":"Open");
-		uartwritetwoline("BSPD After   ", CarState.Shutdown.BSPDAfter?"Closed":"Open");
-		uartwritetwoline("BSPD Before  ", CarState.Shutdown.BSPDBefore?"Closed":"Open");
-		uartwritetwoline("Cockpit      ", CarState.Shutdown.CockpitButton?"Closed":"Open");
-		uartwritetwoline("Left         ", CarState.Shutdown.LeftButton?"Closed":"Open");
-		uartwritetwoline("Right        ", CarState.Shutdown.RightButton?"Closed":"Open");
-		uartwritetwoline("BMS          ", CarState.Shutdown.BMS?"Closed":"Open"); // BMSReason
-		uartwritetwoline("IMD          ", CarState.Shutdown.IMD?"Closed":"Open");
-		uartwritetwoline("AIR          ", CarState.Shutdown.AIROpen?"Closed":"Open");
+		uartwritetwoline("BOTS         ", Shutdown.BOTS?"Closed":"Open");
+		uartwritetwoline("Inertia      ", Shutdown.InertiaSwitch?"Closed":"Open");
+		uartwritetwoline("BSPD After   ", Shutdown.BSPDAfter?"Closed":"Open");
+		uartwritetwoline("BSPD Before  ", Shutdown.BSPDBefore?"Closed":"Open");
+		uartwritetwoline("Cockpit      ", Shutdown.CockpitButton?"Closed":"Open");
+		uartwritetwoline("Left         ", Shutdown.LeftButton?"Closed":"Open");
+		uartwritetwoline("Right        ", Shutdown.RightButton?"Closed":"Open");
+		uartwritetwoline("BMS          ", Shutdown.BMS?"Closed":"Open"); // BMSReason
+		uartwritetwoline("IMD          ", Shutdown.IMD?"Closed":"Open");
+		uartwritetwoline("AIR          ", Shutdown.AIROpen?"Closed":"Open");
+	}
+}
+
+
+static void debugShutdown( const char *tkn2, const char *tkn3 )
+{
+	if ( checkOn(tkn2) )
+	{
+		uartwrite("Setting shutdown circuit closed.\r\n");
+		ShutdownCircuitSet(true);
+	}
+	else if ( checkOff(tkn2) )
+	{
+		uartwrite("Setting shutdown circuit open.\r\n");
+		ShutdownCircuitSet(false);
+	}
+	else
+	{
+		uartwrite("Current state of shutdown switches:\r\n");
+
+		uartwritetwoline("ECU          ", ShutdownCircuitState()?"Closed":"Open");
+		uartwritetwoline("BOTS         ", Shutdown.BOTS?"Closed":"Open");
+		uartwritetwoline("Inertia      ", Shutdown.InertiaSwitch?"Closed":"Open");
+		uartwritetwoline("BSPD After   ", Shutdown.BSPDAfter?"Closed":"Open");
+		uartwritetwoline("BSPD Before  ", Shutdown.BSPDBefore?"Closed":"Open");
+		uartwritetwoline("Cockpit      ", Shutdown.CockpitButton?"Closed":"Open");
+		uartwritetwoline("Left         ", Shutdown.LeftButton?"Closed":"Open");
+		uartwritetwoline("Right        ", Shutdown.RightButton?"Closed":"Open");
+		uartwritetwoline("BMS          ", Shutdown.BMS?"Closed":"Open"); // BMSReason
+		uartwritetwoline("IMD          ", Shutdown.IMD?"Closed":"Open");
+		uartwritetwoline("AIR          ", Shutdown.AIROpen?"Closed":"Open");
 	}
 }
 
@@ -197,8 +280,10 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 	if ( strlen(tkn2) == 0 ) // we need some sub commands, otherwise show help
 	{
 		uartwrite("Power command: Help\r\n");
-	} else if ( strcmp(tkn2, "status") == 0 || strcmp(tkn2, "state") == 0)
+	}
+	else if ( streql(tkn2, "status") || streql(tkn2, "state") )
 	{
+		uartwrite("------------------------\r\n");
 		uartwrite("Power        Exp Act Err\r\n");
 		uartwrite("------------------------\r\n");
 
@@ -206,7 +291,7 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 
 		for ( int i=1;i<=listsize;i++)
 		{
-			snprintf(str, 80, "%-12s %-4s%-4s%-4d\r\n",
+			snprintf(str, 80, "%-12s %-4s%-4s%-4lu\r\n",
 						getDevicePowerNameLong(i),
 						getNodeDeviceExpectedPower(i)?"On":"Off",
 						getNodeDevicePower(i)?"On":"Off",
@@ -215,23 +300,26 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 			);
 			uartwrite(str);
 		}
-	} else if ( strcmp(tkn2, "all") == 0 )
+	}
+	else if ( streql(tkn2, "all") )
 	{
-		if ( strcmp(tkn3, "reset") == 0 )
+		if ( streql(tkn3, "reset") )
 		{
 			uartwrite("Power error reset for all\r\n");
 			for ( int i=1; i <= AccuFan; i++ )
 				resetDevicePower( i );
-		} else
+		}
+		else
 		{
-			if ( strcmp(tkn3, "on")  == 0 || strcmp(tkn3, "true")  == 0|| strcmp(tkn3, "enabled") == 0 )
+			if ( checkOn( tkn3 ) )
 			{
 				state = true;
 			}
-			else if ( strcmp(tkn3, "off") == 0 || strcmp(tkn3, "false") == 0 || strcmp(tkn3, "disabled") == 0 )
+			else if ( checkOff( tkn3 ) )
 			{
 				state = false;
-			} else
+			}
+			else
 			{
 				badcmd = true;
 			}
@@ -246,7 +334,8 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 				for ( int i=1; i <= AccuFan; i++ )
 					setDevicePower( i, state );
 
-			} else
+			}
+			else
 			{
 				badcmd = true;
 			}
@@ -254,48 +343,48 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 	}
 	else
 	{
-		if ( strcmp(tkn2, "none") == 0)
+		if ( streql(tkn2, "none") )
 			device = None;
-		else if ( strcmp(tkn2, "buzzer") == 0 )
+		else if ( streql(tkn2, "buzzer") )
 			device = Buzzer;
-		else if ( strcmp(tkn2, "back1") == 0 )
+		else if ( streql(tkn2, "back1") )
 			device = Back1;
-		else if ( strcmp(tkn2, "back2") == 0 )
+		else if ( streql(tkn2, "back2") )
 			device = Back2;
-		else if ( strcmp(tkn2, "back3") == 0 )
+		else if ( streql(tkn2, "back3") )
 			device = Back3;
-		else if ( strcmp(tkn2, "telemetry") == 0 )
+		else if ( streql(tkn2, "telemetry") )
 			device = Telemetry;
-		else if ( strcmp(tkn2, "front1") == 0 )
+		else if ( streql(tkn2, "front1") )
 			device = Front1;
-		else if ( strcmp(tkn2, "inverters") == 0 )
+		else if ( streql(tkn2, "inverters") )
 			device = Inverters;
-		else if ( strcmp(tkn2, "ecu") == 0 )
+		else if ( streql(tkn2, "ecu") )
 			device = ECU;
-		else if ( strcmp(tkn2, "front2") == 0 )
+		else if ( streql(tkn2, "front2") )
 			device = Front2;
-		else if ( strcmp(tkn2, "leftfans") == 0 )
+		else if ( streql(tkn2, "leftfans") )
 			device = LeftFans;
-		else if ( strcmp(tkn2, "rightfans") == 0 )
+		else if ( streql(tkn2, "rightfans") )
 			device = RightFans;
-		else if ( strcmp(tkn2, "leftpump") == 0 )
+		else if ( streql(tkn2, "leftpump") )
 			device = LeftPump;
-		else if ( strcmp(tkn2, "rightpump") == 0 )
+		else if ( streql(tkn2, "rightpump") )
 			device = RightPump;
-		else if ( strcmp(tkn2, "ivt") == 0 )
+		else if ( streql(tkn2, "ivt") )
 			device = IVT;
-		else if ( strcmp(tkn2, "current") == 0 )
+		else if ( streql(tkn2, "current") )
 			device = Current;
-		else if ( strcmp(tkn2, "tsal") == 0 )
+		else if ( streql(tkn2, "tsal") )
 			device = TSAL;
-		else if ( strcmp(tkn2, "brake") == 0 )
+		else if ( streql(tkn2, "brake") )
 			device = Brake;
-		else if ( strcmp(tkn2, "accu") == 0 )
+		else if ( streql(tkn2, "accu") )
 			device = Accu;
-		else if ( strcmp(tkn2, "accufan") == 0 )
+		else if ( streql(tkn2, "accufan") )
 			device = AccuFan;
 
-		if ( strcmp(tkn3, "reset")  == 0 )
+		if ( streql(tkn3, "reset")  == 0 )
 		{
 			uartwrite("Power error reset for ");
 			uartwrite(getDevicePowerNameLong(device));
@@ -303,14 +392,15 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 			resetDevicePower(device);
 		} else
 		{
-			if ( strcmp(tkn3, "on")  == 0 || strcmp(tkn3, "true")  == 0|| strcmp(tkn3, "enabled") == 0 )
+			if ( checkOn( tkn3 ) )
 			{
 				state = true;
 			}
-			else if ( strcmp(tkn3, "off") == 0 || strcmp(tkn3, "false") == 0 || strcmp(tkn3, "disabled") == 0 )
+			else if ( checkOff( tkn3 ) )
 			{
 				state = false;
-			} else
+			}
+			else
 			{
 				device = None;
 			}
@@ -323,7 +413,8 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 				uartwrite(state? "on":"off");
 				uartwrite("\r\n");
 				setDevicePower( device, state );
-			} else
+			}
+			else
 			{
 				badcmd = true;
 			}
@@ -494,25 +585,30 @@ static void DebugTask(void *pvParameters)
 					val2 = strtol(tkn3, NULL, 10);
 				} else val2 = 0;
 
-				if ( strcmp(tkn1, "shutdown") == 0 )
+				if ( streql(tkn1, "inverter" ) )
+				{
+					debugInverter( tkn2, tkn3 );
+				}
+				else if ( streql(tkn1, "motor") )
+				{
+					debugMotor(tkn2, tkn3);
+				}
+				else if ( streql(tkn1, "shutdown") )
 				{
 					debugShutdown(tkn2, tkn3);
-				} else
-				if ( strcmp(tkn1, "fanpwm") == 0 )
+				}
+				else if ( streql(tkn1, "fanpwm") )
 				{
 					debugFanPWM(tokens, val1, val2 );
-				} else
-				if ( strcmp(tkn1, "power") == 0 )
+				}
+				else if ( streql(tkn1, "power") )
 				{
 					debugPower(tkn2, tkn3);
-				} else
-				if ( strcmp(tkn1, "uarttest") == 0 )
+				}
+				else if ( streql(tkn1, "uarttest") )
 				{
 					UART_Transmit(UART1, (uint8_t *)"This is a test.", 15);
-				} else
-
-
-				if ( strcmp( str, "stat") == 0 )
+				} else if ( streql( str, "stat") )
 				{
 					// print stats.
 					uartwrite("\r\nStatistics output:\r\n");
@@ -524,7 +620,7 @@ static void DebugTask(void *pvParameters)
 
 				} else
 
-				if ( strcmp( str, "list") == 0 )
+				if ( streql( str, "list") )
 				{
 					// print list.
 					uartwrite("\r\nTask List\r\n");
