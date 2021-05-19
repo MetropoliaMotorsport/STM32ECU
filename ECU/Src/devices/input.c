@@ -431,7 +431,7 @@ void resetButton( uint8_t i )
 	Input[i].count = 0;
 	Input[i].pressed = false;
 	Input[i].held = false;
-	Input[i].first = false;
+	Input[i].first = true;
 }
 
 
