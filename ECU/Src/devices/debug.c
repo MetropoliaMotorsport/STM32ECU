@@ -153,7 +153,7 @@ bool checkOn( const char * tkn )
 
 bool checkOff( const char * tkn )
 {
-	if ( streql(tkn, "closed") || streql(tkn, "on") || streql(tkn, "true") || streql(tkn, "enabled") )
+	if ( streql(tkn, "open") || streql(tkn, "off") || streql(tkn, "false") || streql(tkn, "disabled") )
 		return true;
 	else
 		return false;
@@ -182,7 +182,7 @@ static void debugFanPWM( const int tokens, const int val1, const int val2 )
 
 static void debugInverter( const char *tkn2, const char *tkn3 )
 {
-	if ( streql(tkn2, "state") )
+	if ( streql(tkn2, "state") || streql(tkn2, "status") )
 	{				  // PreOperation  PreOperation
 		uartwrite("-----------------------------------\r\n");
 		uartwrite("Inv  Current State  Requested State\r\n");
@@ -313,7 +313,6 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 			{
 				badcmd = true;
 			}
-
 
 			if ( !badcmd )
 			{
