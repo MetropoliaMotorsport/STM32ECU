@@ -370,7 +370,7 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 		else if ( streql(tkn2, "accufan") )
 			device = AccuFan;
 
-		if ( streql(tkn3, "reset")  == 0 )
+		if ( streql(tkn3, "reset") )
 		{
 			uartwrite("Power error reset for ");
 			uartwrite(getDevicePowerNameLong(device));

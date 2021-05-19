@@ -26,8 +26,7 @@ void resetPowerLost( void )
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp) {
 // send lost power indicator to canbus.
 //	CAN_SendStatus( 50, 100, 0xFFFF ); // TODO send loosing power error, choose message.
-	setOutput(LED2,On);
-	blinkOutput(LED2, On, 1000);
+	blinkOutput(LED2, Timed, 1000);
 	if ( !powerlost )
 		PowerLogError( 0, 0xFFFF);
 	powerlost = true;
