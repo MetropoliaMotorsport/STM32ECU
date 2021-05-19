@@ -21,9 +21,10 @@
 
 bool CheckHV = false;
 
-char OperationalReceive( uint16_t returnvalue )
+uint32_t OperationalReceive( void )
 {
-	if (returnvalue == 0xFF)
+	uint32_t returnvalue = 0;
+/*	if (returnvalue == 0xFF)
 	{ returnvalue =
 #ifdef HPF19
 			(0x1 << FLeftSpeedReceived) + // initialise return value to all devices in error state ( bit set )
@@ -41,6 +42,7 @@ char OperationalReceive( uint16_t returnvalue )
 //				  (0x1 << InverterRReceived);
 #endif
 	}
+	*/
 
 	// change order, get status from pdo3, and then compare against pdo2?, 2 should be more current being higher priority
 
@@ -94,7 +96,8 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		lcd_clear();
 		//lcd_settitle("Ready to activate TS");
 		CarState.HighVoltageReady = false;
-		InverterAllowTorque(false);
+		InverterAllowTorqueAll(false);
+
 		CheckHV = false;
 		HVEnableTimer = 0;
 		TSRequested = 0;
@@ -116,7 +119,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 //		vTaskDelay(5);
 
-	uint8_t received = OperationalReceive( received );
+	uint32_t received = OperationalReceive();
 
 	// check what not received here, only error for inverters
 

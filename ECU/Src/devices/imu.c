@@ -8,17 +8,17 @@
 #include "ecumain.h"
 #include "imu.h"
 
-bool processIMUStatus(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIMUUTC(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIMUInfo(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIMUAccel(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIMUGyro(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIMUDeltaV(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIMUDeltaA(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIMUEuler(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIMUVel(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-//bool processIMUVelAcc(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIMUGPS(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processIMUStatus( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIMUUTC( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIMUInfo( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIMUAccel( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIMUGyro( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIMUDeltaV( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIMUDeltaA( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIMUEuler( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIMUVel( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+//bool processIMUVelAcc( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIMUGPS( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 
 void IMUTimeout( uint16_t id );
@@ -49,7 +49,7 @@ enum { COUNTER_BASE = __COUNTER__ };
 
 IMUData IMUReceived;
 
-bool processIMUStatus(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIMUStatus( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
   )
@@ -65,7 +65,7 @@ bool processIMUStatus(uint8_t CANRxData[8], uint32_t DataLength, CANData * datah
 }
 
 #ifdef IMUNONUSED
-bool processIMUUTC(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIMUUTC( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
   )
@@ -86,7 +86,7 @@ bool processIMUUTC(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahand
 }
 #endif
 
-bool processIMUInfo(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIMUInfo( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
   )
@@ -103,7 +103,7 @@ bool processIMUInfo(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahan
 	return false;
 }
 
-bool processIMUAccel(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIMUAccel( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
   )
@@ -120,7 +120,7 @@ bool processIMUAccel(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 	return false;
 }
 
-bool processIMUGyro(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIMUGyro( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
   )
@@ -136,7 +136,7 @@ bool processIMUGyro(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahan
 	return false;
 }
 
-bool processIMUDeltaV(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIMUDeltaV( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
   )
@@ -152,7 +152,7 @@ bool processIMUDeltaV(uint8_t CANRxData[8], uint32_t DataLength, CANData * datah
 	return false;
 }
 
-bool processIMUDeltaA(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIMUDeltaA( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
   )
@@ -168,7 +168,7 @@ bool processIMUDeltaA(uint8_t CANRxData[8], uint32_t DataLength, CANData * datah
 	return false;
 }
 
-bool processIMUEuler(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIMUEuler( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
   )
@@ -182,7 +182,7 @@ bool processIMUEuler(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 	return false;
 }
 
-bool processIMUVel(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIMUVel( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
   )
@@ -200,7 +200,7 @@ bool processIMUVel(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahand
 }
 
 #ifdef IMUNONUSED
-bool processIMUVelAcc(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIMUVelAcc( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
   )
@@ -217,7 +217,7 @@ bool processIMUVelAcc(uint8_t CANRxData[8], uint32_t DataLength, CANData * datah
 }
 #endif
 
-bool processIMUGPS(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIMUGPS( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
   )
@@ -235,7 +235,7 @@ bool processIMUGPS(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahand
 	return false;
 }
 
-bool processIMUAUTO(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIMUAUTO( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
   )

@@ -20,6 +20,7 @@
 #include "output.h"
 #include "timerecu.h"
 #include "power.h"
+#include "inverter.h"
 
 static int LastOperationalState = 0;
 static int NewOperationalState = 0;

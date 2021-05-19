@@ -15,8 +15,6 @@ typedef enum DevicePowertype {
 	Buzzer,
 	Telemetry,
 	Back1,
-	Back2,
-	Back3,
 	Front1,
 	Inverters,
 	ECU,

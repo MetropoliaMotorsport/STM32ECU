@@ -53,6 +53,7 @@ DMA_BUFFER ALIGN_32BYTES (static uint32_t aADCxConvertedDataADC3[ADC_CONVERTED_D
 
 void ReadADC1(bool half);
 void ReadADC3(bool half);
+int getSteeringAnglePWM( void );
 
 TaskHandle_t ADCTaskHandle = NULL;
 
@@ -130,10 +131,9 @@ void ADCTask(void *argument)
 
 		ADCWaitStr[0] = 0;
 
-		BaseType_t xResult;
 		uint32_t analoguenodesOnline = 0;
 
-		xResult = xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
+		xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
 						   ULONG_MAX,        /* Clear all bits on exit. */
 						   &analoguenodesOnline, /* Stores the notified value. */
 						   0 );
@@ -789,7 +789,6 @@ uint32_t CheckADCSanity( void )
 {
 	uint16_t returnvalue = 0;
 
-	BaseType_t xResult;
 	uint32_t ADCReceived = 0;
 
 	// check adc's are giving values in acceptable range.

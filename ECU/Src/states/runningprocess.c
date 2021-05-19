@@ -92,8 +92,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		allowstop = 0;
 		standstill = 0;
         limpcounter = 0;
-
-		InverterAllowTorque(true);
+		InverterAllowTorqueAll(true);
 
     	if ( CarState.LimpRequest )
     		 CarState.Torque_Req_CurrentMax = LIMPNM;
@@ -122,7 +121,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		return OperationalErrorState;
 	}
 
-	uint8_t received = OperationalReceive( received );
+	uint32_t received = OperationalReceive();
 
 	// check data validity, // any critical errors, drop state.
 

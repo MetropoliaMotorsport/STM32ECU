@@ -27,7 +27,7 @@
 #endif
 
 DeviceStatus GetInverterState( void );
-int8_t InverterStateMachineResponse( volatile InverterState *Inverter);
+int8_t InverterStateMachineResponse( volatile InverterState_t *Inverter);
 
 
 #define INVSTACK_SIZE 128*2
@@ -52,33 +52,50 @@ QueueHandle_t InvQueue;
 
 SemaphoreHandle_t InvUpdating;
 
-struct invState invState;
+InverterState_t InverterState[MOTORCOUNT];
 
-InverterState getInvState(uint8_t inv )
+InverterState_t getInvState(uint8_t inv )
 {
 
 	if ( inv >=0 && inv < MOTORCOUNT )
-		return invState.Inverter[inv];
+		return InverterState[inv];
 	else
 	{
-		InverterState invalidinv = {0};
+		InverterState_t invalidinv = {0};
 		return invalidinv;
 	}
 }
 
-void InverterAllowTorque( bool allow )
+void InverterAllowTorque(uint8_t inv, bool allow )
 {
-	invState.AllowTorque = allow;
+	if ( inv >=0 && inv < MOTORCOUNT )
+		InverterState[inv].AllowTorque = allow;
 };
+
+void InverterAllowTorqueAll( bool allow )
+{
+	for ( int i = 0; i<MOTORCOUNT;i++)
+	{
+		InverterState[i].AllowTorque = allow;
+	}
+}
 
 void InverterSetTorque( vectoradjust *adj, int16_t MaxSpeed )
 {
 	xSemaphoreTake(InvUpdating, portMAX_DELAY);
-	invState.Inverter[RearLeftInverter].Torque_Req = adj->RL;
-	invState.Inverter[FrontLeftInverter].Torque_Req = adj->FL;
-	invState.Inverter[RearRightInverter].Torque_Req = adj->RR;
-	invState.Inverter[FrontRightInverter].Torque_Req = adj->FR;
-	invState.maxSpeed = MaxSpeed; // convert to right value as needed.
+	InverterState[RearLeftInverter].Torque_Req = adj->RL;
+	InverterState[FrontLeftInverter].Torque_Req = adj->FL;
+	InverterState[RearRightInverter].Torque_Req = adj->RR;
+	InverterState[FrontRightInverter].Torque_Req = adj->FR;
+	//InverterState[i].MaxSpeed = MaxSpeed; // convert to right value as needed.
+	xSemaphoreGive(InvUpdating);
+}
+
+void InverterSetTorqueInd( uint8_t inv, int16_t req, int16_t speed )
+{
+	xSemaphoreTake(InvUpdating, portMAX_DELAY);
+	InverterState[inv].Torque_Req = req;
+	InverterState[inv].MaxSpeed = speed; // convert to right value as needed.
 	xSemaphoreGive(InvUpdating);
 }
 
@@ -90,8 +107,8 @@ int InverterGetSpeed( void )
 	// find slowest wheel to define speed.
 	for ( int i = 0; i<MOTORCOUNT;i++)
 	{
-		if (invState.Inverter[i].Speed < speed )
-			speed = invState.Inverter[i].Speed;
+		if (InverterState[i].Speed < speed )
+			speed =InverterState[i].Speed;
 	}
 
 	return speed;
@@ -173,7 +190,7 @@ void InvTask(void *argument)
 		{
 			for ( int i=0;i<MOTORCOUNT;i++)
 			{
-				invState.Inverter[i].InvRequested = msg.state;
+				InverterState[i].InvRequested = msg.state;
 			}
 
 		}
@@ -203,24 +220,24 @@ void InvTask(void *argument)
 		for ( int i=0;i<MOTORCOUNT;i++) // speed is received
 		{
 			// only process inverter state if inverters have been seen and not in error state.
-			if ( invState.Inverter[i].InvStateAct != OFFLINE && InverterStates[i] != OFFLINE )
+			if (InverterState[i].InvStateAct != OFFLINE && InverterStates[i] != OFFLINE )
 			{
 			// run the state machine and get command to match current situation.
-				command = InverterStateMachineResponse( &invState.Inverter[i] );
+				command = InverterStateMachineResponse( &InverterState[i] );
 
 				// maybe store highest too so that operation can continue with only some operating motors if necessary?
-				if ( invState.Inverter[i].InvStateAct < lowest ) lowest = invState.Inverter[i].InvStateAct;
-				if ( invState.Inverter[i].InvStateAct > highest ) highest = invState.Inverter[i].InvStateAct;
+				if (InverterState[i].InvStateAct < lowest ) lowest =InverterState[i].InvStateAct;
+				if (InverterState[i].InvStateAct > highest ) highest =InverterState[i].InvStateAct;
 
 				// only change command if we're not in wanted state to try and transition towards it.
-				if ( invState.Inverter[i].InvStateAct != invState.Inverter[i].InvRequested )
+				if (InverterState[i].InvStateAct !=InverterState[i].InvRequested )
 				{
 #ifdef IVTEnable // Only allow transitions to states requesting HV if it's available, and allowed?.
-					if ( ( invState.Inverter[i].InvRequested > STOPPED && CarState.VoltageINV > 480 && invState.Inverter[i].HighVoltageAllowed) || invState.Inverter[i].InvRequested <= STOPPED )
+					if ( (InverterState[i].InvRequested > STOPPED && CarState.VoltageINV > 480 &&InverterState[i].HighVoltageAllowed) ||InverterState[i].InvRequested <= STOPPED )
 #endif
 					{
-						//InvSend( &invState.Inverter[i], command, 0, 0 );
-						invState.Inverter[i].InvCommand = command;
+						//InvSend( &InverterState[i], command, 0, 0 );
+						InverterState[i].InvCommand = command;
 					}
 				}
 			} else if ( lowest != INERROR ) lowest = OFFLINE;
@@ -240,7 +257,7 @@ void InvTask(void *argument)
 			{
 				for ( int i=0;i<MOTORCOUNT;i++)
 				{
-					InvResetError(&invState.Inverter[i]);
+					InvResetError(&InverterState[i]);
 					// TODO set inverter command for error state?
 				}
 				reseterror = false;
@@ -257,16 +274,16 @@ void InvTask(void *argument)
 			for ( int i=0;i<MOTORCOUNT;i++)
 			{
 				// but only send an actual torque request if both car and inverter state allow it.
-				if ( invState.AllowTorque && Inverter == OPERATIONAL )
+				if ( InverterState[i].AllowTorque && Inverter == OPERATIONAL )
 				{
 					// only allow a negative torque if regen is allowed.
-					if ( !allowregen && invState.Inverter[i].Torque_Req < 0 )
-						InvSend( &invState.Inverter[i], invState.maxSpeed, 0);
+					if ( !allowregen &&InverterState[i].Torque_Req < 0 )
+						InvSend( &InverterState[i], InverterState[i].MaxSpeed, 0);
 					else
-						InvSend( &invState.Inverter[i], invState.maxSpeed, invState.Inverter[i].Torque_Req );
+						InvSend( &InverterState[i], InverterState[i].MaxSpeed,InverterState[i].Torque_Req );
 				} else
 				{
-					InvSend( &invState.Inverter[i], 0, 0 );
+					InvSend( &InverterState[i], 0, 0 );
 				}
 			}
 		}
@@ -348,7 +365,7 @@ bool invertersStateCheck( DeviceStatus state )
 }
 
 
-int8_t InverterStateMachineResponse( volatile InverterState *Inverter ) // returns response to send inverter based on current state.
+int8_t InverterStateMachineResponse( volatile InverterState_t *Inverter ) // returns response to send inverter based on current state.
 {
 	uint16_t TXState;
 
@@ -477,37 +494,36 @@ void resetInv( void )
 {
 	for ( int i=0;i<MOTORCOUNT; i++)
 	{
-//		invState.Inverter[i].InvStateVal = 0xFF;
-		invState.Inverter[i].InvStateAct = OFFLINE;
+		InverterState[i].InvStateAct = OFFLINE;
 #ifdef SIEMENS
-		invState.Inverter[i].InvStateCheck = 0xFF;
-		invState.Inverter[i].InvStateCheck3 = 0xFF;
-		invState.Inverter[i].InvBadStatus = 1;
+		InverterState[i].InvStateCheck = 0xFF;
+		InverterState[i].InvStateCheck3 = 0xFF;
+		InverterState[i].InvBadStatus = 1;
 #endif
-		invState.Inverter[i].Torque_Req = 0;
-		invState.Inverter[i].Speed = 0;
-		invState.Inverter[i].HighVoltageAllowed = false;
-		invState.Inverter[i].InverterNum = i;
-		invState.Inverter[i].MCChannel = false;
-		invState.Inverter[i].InvRequested = BOOTUP;
+		InverterState[i].Torque_Req = 0;
+		InverterState[i].Speed = 0;
+		InverterState[i].HighVoltageAllowed = false;
+		InverterState[i].InverterNum = i;
+		InverterState[i].MCChannel = false;
+		InverterState[i].InvRequested = BOOTUP;
 
 //		InverterStates[i] = OFFLINE;
 
 		Errors.InvAllowReset[i] = 1;
 	}
 
-	invState.Inverter[0].COBID = InverterRL_COBID;
-	invState.Inverter[1].COBID = InverterRR_COBID;
+	InverterState[0].COBID = InverterRL_COBID;
+	InverterState[1].COBID = InverterRR_COBID;
 
-//	invState.Inverter[0].MCChannel = InverterRL_Channel;
-//	invState.Inverter[1].MCChannel = InverterRR_Channel;
+//	InverterState[0].MCChannel = InverterRL_Channel;
+//	InverterState[1].MCChannel = InverterRR_Channel;
 
 #if MOTORCOUNT > 2
-	invState.Inverter[2].COBID = InverterFL_COBID;
-	invState.Inverter[3].COBID = InverterFR_COBID;
+	InverterState[2].COBID = InverterFL_COBID;
+	InverterState[3].COBID = InverterFR_COBID;
 
-//	invState.Inverter[2].MCChannel = InverterFL_Channel;
-//	invState.Inverter[3].MCChannel = InverterFR_Channel;
+//	InverterState[2].MCChannel = InverterFL_Channel;
+//	InverterState[3].MCChannel = InverterFR_Channel;
 #endif
 
 	Errors.InverterError = 0; // reset logged errors.

@@ -75,7 +75,7 @@ uint8_t InputQueueStorageArea[ InputQUEUE_LENGTH * InputITEMSIZE ];
 QueueHandle_t InputQueue;
 
 
-bool receiveCANInput(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
+bool receiveCANInput(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle);
 
 CANData CANButtonInput = { 0, AdcSimInput_ID+2, 8, receiveCANInput, NULL, 0, 0 };
 
@@ -443,7 +443,7 @@ void clearButtons(void)
 	}
 }
 
-bool receiveCANInput(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle)
+bool receiveCANInput( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle)
 {
 	if(CANRxData[0] == 1){
 		Input[StartStop_Input].pressed = 1;  // StartStop_Switch

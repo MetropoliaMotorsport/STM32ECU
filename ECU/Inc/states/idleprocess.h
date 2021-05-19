@@ -9,7 +9,7 @@
 #define IDLEPROCESS_H_
 
 int IdleProcess( uint32_t OperationLoops );
-char OperationalReceive( uint16_t returnvalue );
+uint32_t OperationalReceive( void );
 char OperationalReceiveLoop( void );
 
 #endif /* IDLEPROCESS_H_ */

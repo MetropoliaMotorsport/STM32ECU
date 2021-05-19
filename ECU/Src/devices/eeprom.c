@@ -129,7 +129,7 @@ void EEPROMTask(void *argument)
 }
 
 
-bool GetEEPROMCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool GetEEPROMCmd( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	EEPROMConfigDataTime= gettimer();
 	memcpy(EEPROMConfigdata, CANRxData, 8);

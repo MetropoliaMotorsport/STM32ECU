@@ -12,8 +12,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-bool processNodeErrData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processNodeErrData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 CANData NodeErr = { NULL, NodeErr_ID, 6, processNodeErrData, NULL, 0 };
 CANData NodeAck = { NULL, NodeAck_ID, 8, processNodeAckData, NULL, 0 };
@@ -46,7 +46,7 @@ uint32_t Get_Error(uint8_t errorpage, uint8_t errorbit )
 
 
 // received a node error, process it.
-bool processNodeErrData(uint8_t data[8], uint32_t DataLength, CANData * datahandle )
+bool processNodeErrData( const uint8_t data[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	//  0   1536    6  36   4   0   0   0 112   808.810870 R  //  0b01110000   4, 5, 6 + 4*  132, 133,   switch off.
 
@@ -73,7 +73,7 @@ bool processNodeErrData(uint8_t data[8], uint32_t DataLength, CANData * datahand
 	return true;
 }
 
-bool processNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	// [node ID], [command], [d1], [d2], [d3], [d4], [ack_counter], [command]
 	if ( CANRxData[0] > 30) processPNodeAckData(CANRxData, DataLength, datahandle);

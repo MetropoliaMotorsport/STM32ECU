@@ -192,8 +192,8 @@ static void debugInverter( const char *tkn2, const char *tkn3 )
 		for ( int i=0;i<MOTORCOUNT;i++)
 		{
 
-			InverterState invs = getInvState(i);
-			char * str[MAXDEBUGOUTPUT];
+			InverterState_t invs = getInvState(i);
+			char str[MAXDEBUGOUTPUT];
 			snprintf(str, MAXDEBUGOUTPUT, "%4d %14s %14s \r\n", i,
 					getDeviceStatusStr(invs.InvStateAct ),
 					getDeviceStatusStr(invs.InvRequested )
@@ -209,33 +209,23 @@ static void debugInverter( const char *tkn2, const char *tkn3 )
 	}
 }
 
-static void debugMotor( const char *tkn2, const char *tkn3 )
+static void debugMotor( const char *tkn2, const char *tkn3, const char *tkn4 )
 {
 	if ( checkOn( tkn2 )  )
 	{
-		uartwrite("Setting shutdown circuit closed.\r\n");
-		ShutdownCircuitSet(true);
+		InverterAllowTorqueAll(true);
+
+		uartwrite("Setting torque enabled.\r\n");
 	}
 	else if ( checkOff( tkn2 ) )
 	{
-		uartwrite("Setting shutdown circuit open.\r\n");
-		ShutdownCircuitSet(false);
+		InverterAllowTorqueAll( false );
+		uartwrite("Setting torque disabled.\r\n");
 	}
-	else
+	else if ( streql( tkn2, "req" )  )
 	{
-		uartwrite("Current state of shutdown switches:\r\n");
-
-		uartwritetwoline("ECU          ", ShutdownCircuitState()?"Closed":"Open");
-		uartwritetwoline("BOTS         ", Shutdown.BOTS?"Closed":"Open");
-		uartwritetwoline("Inertia      ", Shutdown.InertiaSwitch?"Closed":"Open");
-		uartwritetwoline("BSPD After   ", Shutdown.BSPDAfter?"Closed":"Open");
-		uartwritetwoline("BSPD Before  ", Shutdown.BSPDBefore?"Closed":"Open");
-		uartwritetwoline("Cockpit      ", Shutdown.CockpitButton?"Closed":"Open");
-		uartwritetwoline("Left         ", Shutdown.LeftButton?"Closed":"Open");
-		uartwritetwoline("Right        ", Shutdown.RightButton?"Closed":"Open");
-		uartwritetwoline("BMS          ", Shutdown.BMS?"Closed":"Open"); // BMSReason
-		uartwritetwoline("IMD          ", Shutdown.IMD?"Closed":"Open");
-		uartwritetwoline("AIR          ", Shutdown.AIROpen?"Closed":"Open");
+		//InverterSetTorqueInd( uint8_t inv, int16_t speed )
+		uartwrite("Setting speed request enabled.\r\n");
 	}
 }
 
@@ -349,10 +339,6 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 			device = Buzzer;
 		else if ( streql(tkn2, "back1") )
 			device = Back1;
-		else if ( streql(tkn2, "back2") )
-			device = Back2;
-		else if ( streql(tkn2, "back3") )
-			device = Back3;
 		else if ( streql(tkn2, "telemetry") )
 			device = Telemetry;
 		else if ( streql(tkn2, "front1") )
@@ -527,11 +513,13 @@ static void DebugTask(void *pvParameters)
 				char tkn1[TOKENLENGTH] = "";
 				char tkn2[TOKENLENGTH] = "";
 				char tkn3[TOKENLENGTH] = "";
+				char tkn4[TOKENLENGTH] = "";
 
 				uint8_t tokens = 0;
 
 				int val1;
 				int val2;
+				int val3;
 
 				// parse the input string into tokens to be processed.
 
@@ -585,13 +573,29 @@ static void DebugTask(void *pvParameters)
 					val2 = strtol(tkn3, NULL, 10);
 				} else val2 = 0;
 
+				if (*(s += strspn(s, " ")) != '\0') {
+					size_t tknlen = strcspn(s, " ");
+					if ( tknlen < TOKENLENGTH )
+					{
+						strncpy(tkn4, s, tknlen);
+						tkn4[tknlen] = '\0';
+						tokens++;
+					}
+				}
+
+				if ( strlen(tkn4)>0 )
+				{
+					val2 = strtol(tkn4, NULL, 10);
+				} else val3 = 0;
+
+
 				if ( streql(tkn1, "inverter" ) )
 				{
 					debugInverter( tkn2, tkn3 );
 				}
 				else if ( streql(tkn1, "motor") )
 				{
-					debugMotor(tkn2, tkn3);
+					debugMotor(tkn2, tkn3, tkn4);
 				}
 				else if ( streql(tkn1, "shutdown") )
 				{

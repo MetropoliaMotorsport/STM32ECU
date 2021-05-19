@@ -99,11 +99,6 @@ void UART_CANBufferAdd(const can_msg * msg )
 {
 	xSemaphoreTake(CANBufferUpdating, portMAX_DELAY);
 
-
-	if ( msg->id > 0x80 )
-	{
-		volatile int i=0;
-	}
 	// r1xxxDbbbbbbbb
 
 	if ( CANTxBuffer - CurCANTxBuffer < 1000 )

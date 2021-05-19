@@ -151,7 +151,8 @@ int PreOperationState( uint32_t OperationLoops  )
     	SetErrorLogging( false );
 		preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
 		CarState.HighVoltageReady = false;
-		InverterAllowTorque(false);
+		InverterAllowTorqueAll(false);
+
 		ReadyToStart = 0xFFFF;
 #ifdef STMADC
 		minmaxADCReset();

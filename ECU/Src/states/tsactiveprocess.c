@@ -35,7 +35,8 @@ int TSActiveProcess( uint32_t OperationLoops )
 		//lcd_settitle("TS Active");
 		prechargetimer = gettimer();
 		CarState.HighVoltageReady = true; // only enable if reading high enough voltage.
-		InverterAllowTorque(false);
+		InverterAllowTorqueAll(false);
+
 		setOutput(TSLED,On);
 		blinkOutput(TSLED,On,0);
 		setOutput(RTDMLED,Off);
@@ -61,7 +62,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 
 	uint8_t ReceiveNonCriticalError = 0;
 
-	uint8_t received = OperationalReceive( received );
+	uint32_t received = OperationalReceive();
 
 	uint32_t curtime = gettimer();
 

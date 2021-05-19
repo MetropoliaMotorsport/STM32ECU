@@ -69,8 +69,6 @@ devicepowerreq DevicePowerList[] =
 		{ AccuFan, 36, 5},
 
 		{ Back1, 37, 3 },
-		{ Back2, 37, 2 },
-		{ Back3, 37, 1 },
 		{ Current, 37, 4 },
 		{ TSAL, 37, 5 }, // essential to be powered, else not compliant.
 
@@ -91,11 +89,11 @@ nodepowerpwmreq nodefanpwmreqs[2] = {0};
 bool queuedfanpwmLeft = false;
 bool queuedfanpwmRight = false;
 
-bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 
 void PNode33Timeout( uint16_t id );
@@ -105,8 +103,8 @@ void PNode36Timeout( uint16_t id ); // critical due to brakelight
 //bool processPNodeTimeout(uint8_t CANRxData[8], uint32_t DataLength );
 
 
-bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle );
-bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processPNodeErr(const uint8_t nodeid, const uint32_t errorcode, const CANData * datahandle );
+bool processPNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, PNode33Timeout, NODETIMEOUT }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
 CANData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, PNode34Timeout, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
@@ -142,7 +140,7 @@ void PNode36Timeout( uint16_t id )
 }
 
 
-bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 
 	if ( DataLength >> 16 == PowerNode33.dlcsize
@@ -167,7 +165,7 @@ bool processPNode33Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 }
 
 
-bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 
 	if ( DataLength >> 16 == PowerNode34.dlcsize
@@ -194,7 +192,7 @@ bool processPNode34Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 }
 
 
-bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle ) // Cooling
+bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle ) // Cooling
 {
 
 	if ( DataLength >> 16 == PowerNode35.dlcsize
@@ -218,7 +216,7 @@ bool processPNode35Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 }
 
 
-bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle ) // Rear
+bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle ) // Rear
 {
 
 	if ( DataLength >> 16 == PowerNode36.dlcsize
@@ -265,7 +263,7 @@ bool processPNode36Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * dat
 }
 
 
-bool processPNode37Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 
 	if ( DataLength >> 16 == PowerNode37.dlcsize
@@ -311,7 +309,7 @@ bool setActualDevicePower( uint8_t nodeid, uint8_t channel, bool state )
 }
 
 
-bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processPNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 
 	if ( CANRxData[1] == 1) // power set ACK
@@ -485,7 +483,7 @@ struct PowerNodeError
 uint8_t PowerNodeErrorCount = 0;
 
 
-bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle )
+bool processPNodeErr( const uint8_t nodeid, const uint32_t errorcode, const CANData * datahandle )
 {
 	uint8_t channel = 255;
 

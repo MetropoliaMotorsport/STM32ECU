@@ -265,7 +265,6 @@ static int HardwareInit( void )
 	initRTC();
 
 	initPower();
-	initPowerLossHandling();
 
 	initConfig();
     initInv();

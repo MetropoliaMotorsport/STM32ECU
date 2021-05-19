@@ -32,8 +32,8 @@ extern CANData PowerNode35;
 extern CANData PowerNode36;
 extern CANData PowerNode37;
 
-bool processPNodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle );
-bool processPNodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processPNodeErr(const uint8_t nodeid, const uint32_t errorcode, const CANData * datahandle );
+bool processPNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 void setPowerNodeStr( uint32_t nodesonline );
 char * getPNodeStr( void );

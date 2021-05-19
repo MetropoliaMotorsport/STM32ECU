@@ -11,7 +11,8 @@
 #include "ecumain.h"
 #include "torquecontrol.h"
 
-void InverterAllowTorque(bool allow);
+void InverterAllowTorque(uint8_t inv, bool allow );
+void InverterAllowTorqueAll( bool allow );
 
 typedef struct Inv_msg {
 	DeviceStatus state;
@@ -33,6 +34,8 @@ typedef struct { // new structure for inverter related data, so that it can be u
 #endif
 	uint16_t InvCommand;
 
+	bool AllowTorque;
+	int16_t MaxSpeed;
 	int16_t Torque_Req;
 	int16_t InvTorque;
 	int16_t InvCurrent;
@@ -40,40 +43,34 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	int32_t Speed;
 	uint16_t COBID;
 	bool	MCChannel;
-} InverterState;  // define external into realmain?
+} InverterState_t;  // define external into realmain?
 
 extern DeviceStatus Inverter;
-extern DeviceStatus InverterStates[MOTORCOUNT];
-
-struct invState {
-	bool AllowTorque;
-	int16_t maxSpeed;
-	InverterState Inverter[MOTORCOUNT];
-};
 
 // these need to be defined in the inverter specific c file
-uint8_t receiveINVNMT( volatile InverterState *Inverter);
-uint8_t receiveINVStatus( volatile InverterState *Inverter );
-uint8_t receiveINVSpeed( volatile InverterState *Inverter);
-uint8_t receiveINVTorque( volatile InverterState *Inverter);
+uint8_t receiveINVNMT( volatile InverterState_t *Inverter);
+uint8_t receiveINVStatus( volatile InverterState_t *Inverter );
+uint8_t receiveINVSpeed( volatile InverterState_t *Inverter);
+uint8_t receiveINVTorque( volatile InverterState_t *Inverter);
 
 void RearSpeedCalculation( long leftdata, long rightdata );
 
 //uint8_t requestINV( uint8_t Inverter );
 uint8_t invError( uint8_t Inverter );
 
-InverterState getInvState(uint8_t inv );
+InverterState_t getInvState(uint8_t inv );
 bool invertersStateCheck( DeviceStatus state );
 
 bool registerInverterCAN( void );
 bool checkStatusCode( uint8_t status );
 DeviceStatus InternalInverterState ( uint16_t Status );
-char InvSend( volatile InverterState *Inverter, int32_t vel, int16_t torque );
-void InvResetError( volatile InverterState *Inverter );
-bool InvStartupCfg( volatile InverterState *Inverter );
+char InvSend( volatile InverterState_t *Inverter, int32_t vel, int16_t torque );
+void InvResetError( volatile InverterState_t *Inverter );
+bool InvStartupCfg( volatile InverterState_t *Inverter );
 
 void InverterSetTorque( vectoradjust *adj, int16_t MaxSpeed );
 int InverterGetSpeed( void );
+void InverterSetTorqueInd( uint8_t inv, int16_t req, int16_t speed );
 
 DeviceStatus GetInverterState( void );
 uint8_t invRequestState( DeviceStatus state );

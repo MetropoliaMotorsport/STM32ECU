@@ -89,7 +89,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		lcd_send_stringscroll(str);
 
 		CarState.HighVoltageReady = false; // no high voltage allowed in this state.
-		InverterAllowTorque(false); // immiedietly stop allowing torque request.
+		InverterAllowTorqueAll( false );  // immedietly stop allowing torque request.
 
 		ShutdownCircuitSet( false );
 

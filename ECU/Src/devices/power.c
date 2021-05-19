@@ -349,9 +349,6 @@ char * getDevicePowerNameLong( DevicePower device )
 	case Accu: return "Accu";
 	case AccuFan: return "AccuFan";
 	case Back1: return "Back1";
-	case Back2: return "Back2";
-	case Back3: return "Back3";
-
 	}
 	return "Error";
 }
@@ -399,6 +396,8 @@ int initPower( void )
 						  POWERTASKPRIORITY,
 						  xPOWERStack,
 						  &xPOWERTaskBuffer );
+
+	initPowerLossHandling();
 
 	return 0;
 }

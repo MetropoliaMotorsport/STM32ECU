@@ -21,18 +21,18 @@ uint8_t LastIVTU2[6] = {0,0,0,0,0,0};
 uint8_t LastIVTU3[6] = {0,0,0,0,0,0};
 uint8_t LastIVTW[6] = {0,0,0,0,0,0};
 
-bool processIVTData(uint8_t * CANRxData, uint32_t DataLength, uint16_t field );
+bool processIVTData( const uint8_t * CANRxData, const uint32_t DataLength, const uint16_t field );
 
-bool processIVTMsgData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processIVTMsgData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
-bool processIVTIData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIVTU1Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle);
-bool processIVTU2Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIVTU3Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIVTTData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIVTWData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIVTAsData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
-bool processIVTWhData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processIVTIData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIVTU1Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle);
+bool processIVTU2Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIVTU3Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIVTTData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIVTWData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIVTAsData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIVTWhData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 
 void IVTTimeout( uint16_t id );
@@ -62,7 +62,7 @@ uint8_t processIVT(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field )
 
 
 // IVTWh = 0x528
-bool processIVTIData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIVTIData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -71,7 +71,7 @@ bool processIVTIData(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 	} else return true;
 }
 
-bool processIVTU1Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIVTU1Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -79,7 +79,7 @@ bool processIVTU1Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datah
 	} else return true;
 }
 
-bool processIVTU2Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIVTU2Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -87,7 +87,7 @@ bool processIVTU2Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datah
 	} else return true;
 }
 
-bool processIVTU3Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIVTU3Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -95,7 +95,7 @@ bool processIVTU3Data(uint8_t CANRxData[8], uint32_t DataLength, CANData * datah
 	} else return true;
 }
 
-bool processIVTTData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIVTTData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -103,7 +103,7 @@ bool processIVTTData(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 	} else return true;
 }
 
-bool processIVTWData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIVTWData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -111,7 +111,7 @@ bool processIVTWData(uint8_t CANRxData[8], uint32_t DataLength, CANData * dataha
 	} else return true;
 }
 
-bool processIVTAsData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIVTAsData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -119,7 +119,7 @@ bool processIVTAsData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datah
 	} else return true;
 }
 
-bool processIVTWhData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIVTWhData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	if ( DeviceState.IVTEnabled )
 	{
@@ -129,7 +129,7 @@ bool processIVTWhData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datah
 
 
 
-bool processIVTData(uint8_t * CANRxData, uint32_t DataLength, uint16_t field )
+bool processIVTData( const uint8_t * CANRxData, const uint32_t DataLength, const uint16_t field )
 {
 //	static uint8_t receiveerror[8] = {0,0,0,0,0,0,0,0};
 	if ( DeviceState.IVTEnabled )
@@ -311,7 +311,7 @@ int requestIVT( void )
 }
 
 
-bool processIVTMsgData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processIVTMsgData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	return true;
 }

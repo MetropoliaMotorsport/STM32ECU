@@ -18,7 +18,7 @@ static uint8_t ECUConfigdata[8] = {0};
 static bool	   ECUConfignewdata = false;
 static uint32_t ECUConfigDataTime = 0;
 
-bool GetConfigCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool GetConfigCmd( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 CANData ECUConfig = { NULL, 0x21, 8, GetConfigCmd, NULL, 0 };
 
@@ -53,7 +53,7 @@ void ConfigReset( void )
 }
 
 
-bool GetConfigCmd(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool GetConfigCmd( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	if ( ( CANRxData[0] >= 8 && CANRxData[0] <= 11 ) || ( CANRxData[0] == 30 ) ) // eeprom command.
 	{

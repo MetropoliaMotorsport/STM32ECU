@@ -12,12 +12,12 @@
 #include <stdio.h>
 #include <time.h>
 
-bool processTimeData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processTimeData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 CANData  Memorator = { &DeviceState.Memorator, MEMORATOR_ID, 3, processTimeData, NULL, 1000 }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
 
 
-bool processTimeData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processTimeData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 
 	if ( ! isRTCSet() ) // only set time once?
