@@ -91,12 +91,15 @@ void uartwritetwoline(const char *str, const char *str2)
 }
 
 
-// add message to uart message queue.
+// Add message to uart message queue. Might be called from ISR so add a check.
 bool DebugMsg( const char * msg)
 {
 	struct Debug_msg debugmsg;
 	strncpy( debugmsg.str, msg, MAXDEBUGOUTPUT );
-	return xQueueSendToBack(DebugQueue,&debugmsg,0); // send it to error state handler queue for display to user.
+	if ( xPortIsInsideInterrupt() )
+		return xQueueSendFromISR( DebugQueue, &debugmsg, 0 );
+	else
+		return xQueueSendToBack( DebugQueue, &debugmsg, 0); // send it to error state handler queue for display to user.
 }
 
 bool redraw;
@@ -203,29 +206,37 @@ static void debugInverter( const char *tkn2, const char *tkn3 )
 
 	}
 	else
-	if ( streql(tkn2, "debug") )
+	if ( streql(tkn2, "startup") )
 	{
-
+		uartwrite("Sending inverter startup\r\n");
+		for ( int i=0;i<MOTORCOUNT;i++)
+		{
+		//	InvStartupCfg( &InverterState[i] );
+		}
 	}
 }
 
-static void debugMotor( const char *tkn2, const char *tkn3, const char *tkn4 )
+static void debugMotor( const char *tkn2, const char *tkn3, const int32_t speed )
 {
 	if ( checkOn( tkn2 )  )
 	{
+		CarState.HighVoltageReady = true;
+		invRequestState( OPERATIONAL );
 		InverterAllowTorqueAll(true);
 
 		uartwrite("Setting torque enabled.\r\n");
 	}
 	else if ( checkOff( tkn2 ) )
 	{
+		CarState.HighVoltageReady = false;
 		InverterAllowTorqueAll( false );
+		invRequestState( BOOTUP );
 		uartwrite("Setting torque disabled.\r\n");
 	}
 	else if ( streql( tkn2, "req" )  )
 	{
-		//InverterSetTorqueInd( uint8_t inv, int16_t speed )
-		uartwrite("Setting speed request enabled.\r\n");
+		InverterSetTorqueInd( 1, 0, speed);
+		uartwrite("Setting speed request.\r\n");
 	}
 }
 
@@ -584,7 +595,7 @@ static void DebugTask(void *pvParameters)
 
 				if ( strlen(tkn4)>0 )
 				{
-					val2 = strtol(tkn4, NULL, 10);
+					val3 = strtol(tkn4, NULL, 10);
 				} else val3 = 0;
 
 
@@ -594,7 +605,7 @@ static void DebugTask(void *pvParameters)
 				}
 				else if ( streql(tkn1, "motor") )
 				{
-					debugMotor(tkn2, tkn3, tkn4);
+					debugMotor(tkn2, tkn3, val3);
 				}
 				else if ( streql(tkn1, "shutdown") )
 				{

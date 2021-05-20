@@ -413,7 +413,7 @@ int PreOperationState( uint32_t OperationLoops  )
 #ifdef HPF19 // unsue on expected HPF20 behaviour yet.
 			if ( !CarState.TestHV )	NMTReset();
 #else
-			if ( !CarState.TestHV )	NMTReset();
+//			if ( !CarState.TestHV )	NMTReset();
 #endif
 		}
 

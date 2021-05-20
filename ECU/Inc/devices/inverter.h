@@ -21,17 +21,15 @@ typedef struct Inv_msg {
 
 extern QueueHandle_t InvQueue;
 
+#define ERRORTYPE1RESET  (5500)
+#define ERRORTYPE2RESET  (150)
+
 typedef struct { // new structure for inverter related data, so that it can be used as general pointer.
 	uint8_t InverterNum;
 	bool HighVoltageAllowed;
 	bool HighVoltageAvailable;
 	DeviceStatus InvStateAct;
 	DeviceStatus InvRequested;
-#ifdef SIEMENS
-	uint16_t InvBadStatus;
-	uint16_t InvStateCheck;
-	uint16_t InvStateCheck3;
-#endif
 	uint16_t InvCommand;
 
 	bool AllowTorque;
@@ -39,6 +37,10 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	int16_t Torque_Req;
 	int16_t InvTorque;
 	int16_t InvCurrent;
+	uint32_t errortime;
+	uint8_t errortype;
+	uint32_t latchedStatus1;
+	uint16_t latchedStatus2;
 
 	int32_t Speed;
 	uint16_t COBID;

@@ -11,6 +11,7 @@
 #include "adcecu.h"
 #include "errors.h"
 #include "uartecu.h"
+#include "debug.h"
 
 #include "output.h"
 #include "timerecu.h"
@@ -57,7 +58,7 @@ TaskHandle_t CANRxTaskHandle = NULL;
 /* The queue is to be created to hold a maximum of 10 uint64_t
 variables. */
 #define CANTxQUEUE_LENGTH    32
-#define CANRxQUEUE_LENGTH    32
+#define CANRxQUEUE_LENGTH    128
 #define CANITEMSIZE			sizeof( struct can_msg )
 
 #define CANTxITEMSIZE		CANITEMSIZE
@@ -189,6 +190,12 @@ void CANTxTask(void *argument)
 
 		UART_CANBufferTransmit();
 
+		// ensure we can actually send a message
+		while ( HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) < 2 && HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2) < 2 )
+		{
+			DebugMsg("waiting free can spot.");
+		}
+
 		if ( xQueueReceive(CANTxQueue,&msg,waittick) )
 		{
 			UART_CANBufferAdd(&msg);
@@ -209,12 +216,12 @@ void CANTxTask(void *argument)
 
 			if ( HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) < 1 )
 			{
+				DebugMsg("CAN Tx Buffer full");
 				// return error, can fifo full.
 			//	Error_Handler();
 			} else
 			if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcanp, &TxHeader, msg.data) != HAL_OK)
 			{
-
 				if ( pCANSendError != NULL )
 					(*pCANSendError)++;
 		//		return 1;
@@ -398,7 +405,7 @@ int getNMTstate(volatile CANData *data )
   return 0;
 }
 
-char CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
+uint8_t CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 {
 	can_msg msg;
 
@@ -418,7 +425,7 @@ char CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 }
 
 
-char CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
+uint8_t CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 {
 	can_msg msg;
 	msg.id = id;
@@ -436,7 +443,7 @@ char CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 }
 
 
-char sendSDO( enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub, uint32_t data)
+uint8_t CANSendSDO( enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub, uint32_t data)
 {
 
 	uint8_t msg[8];
@@ -495,6 +502,15 @@ char CAN_NMTSyncRequest( void )
 	return 1;
 	// send to both buses.
 }
+
+#ifdef ALTSDO
+uint8_t CANSendSDO( uint16_t cod_id, uint16_t  idx,  uint8_t sub, uint32_t data )
+{
+	uint8_t CANTxData[8] = { 0x2, idx, idx >> 8, sub, data, data >>8, data>>16, data>>24 };
+
+	CAN2Send( cob_id, 8, CANTxData ); // return values.
+}
+#endif
 
 uint8_t CANSendPDM( uint8_t highvoltage, uint8_t buzz )
 {
@@ -1056,11 +1072,18 @@ int RegisterCan1Message(CANData * CanMessage)
 {
 	if ( CanMessage != NULL && CanMessage->id != 0)
 	{
-		if (! RegisterCanTimeout( CanMessage) )
-			return 1;
+		if ( CanBUS1Messages[CanMessage->id] != NULL)
+		{
+			DebugMsg("Tried to add a duplicate CAN id!");
+		}
+		else
+		{
+			if (! RegisterCanTimeout( CanMessage) )
+				return 1;
 
-		CanBUS1Messages[CanMessage->id] = CanMessage;
-		CANBUS1MessageCount++;
+			CanBUS1Messages[CanMessage->id] = CanMessage;
+			CANBUS1MessageCount++;
+		}
 		return 0;
 	} else return 1;
 }
@@ -1072,11 +1095,19 @@ int RegisterCan2Message(CANData * CanMessage)
 #else
 	if ( CanMessage != NULL && CanMessage->id != 0)
 	{
-		if (! RegisterCanTimeout( CanMessage) )
-			return 1;
+		if ( CanBUS2Messages[CanMessage->id] != NULL)
+			{
+				DebugMsg("Tried to add a duplicate CAN id!");
+			}
+			else
+			{
+				if (! RegisterCanTimeout( CanMessage) )
+					return 1;
 
-		CanBUS2Messages[CanMessage->id] = CanMessage;
-		CANBUS2MessageCount++;
+				CanBUS2Messages[CanMessage->id] = CanMessage;
+				CANBUS2MessageCount++;
+			}
+			return 0;
 		return 0;
 	} else return 1;
 #endif

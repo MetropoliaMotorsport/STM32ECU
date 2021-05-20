@@ -115,7 +115,7 @@ void HardFault_Handler(void)
 #endif
 	// send cause of error state.
 	ConfigReset();
-	CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
+//	CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
 	blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
     blinkOutput(TSOFFLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
 	blinkOutput(RTDMLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);

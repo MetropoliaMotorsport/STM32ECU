@@ -11,7 +11,7 @@
 #include "power.h"
 
 
-bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processPDMData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 void PDMTimeout( uint16_t id );
 
 
@@ -21,7 +21,7 @@ CANData PDMCanData = { &DeviceState.PDM, PDM_ID, 8, processPDMData, PDMTimeout, 
 //	0x520,0,8 -> BMS_relay_status
 //	0x520,8,8 -> IMD_relay_status
 //	0x520,16,8 -> BSPD_relay_status
-bool processPDMData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle )
+bool processPDMData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 #ifdef PDM
 	if ( DataLength == FDCAN_DLC_BYTES_8
