@@ -501,7 +501,7 @@ bool processPNodeErr( const uint8_t nodeid, const uint32_t errorcode, const CAND
 	}
 
 	char str[40]= "";
-	snprintf(str, 40, "Power Error %ul", errorcode);
+	snprintf(str, 40, "Power Error %lu", errorcode);
 	DebugMsg(str);
 
 	if ( channel != 255 ) // received error was assigned a channel.
@@ -516,7 +516,7 @@ bool processPNodeErr( const uint8_t nodeid, const uint32_t errorcode, const CAND
 					PowerRequests[i].error[channel]++;
 				setActualDevicePower( nodeid, channel, false );
 				// keep a count of how many times an error has occurred.
-				// send some kind of notification to power task
+		//		blinkOutput(LED, blinkingrate, time)
 			}
 		}
 

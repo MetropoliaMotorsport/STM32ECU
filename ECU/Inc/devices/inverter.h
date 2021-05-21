@@ -26,6 +26,8 @@ typedef struct { // new structure for inverter related data, so that it can be u
 
 	bool HighVoltageAvailable;
 
+	DeviceStatus Device;
+
 	DeviceStatus InvState;
 	DeviceStatus InvRequested;
 	uint16_t InvCommand;

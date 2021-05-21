@@ -32,22 +32,21 @@ uint16_t PrintRunning( char *title )
 	int Torque = ADCState.Torque_Req_R_Percent/10;
 	if ( Torque > 99 ) Torque = 99;
 // TODO, show hard braking.
-	sprintf(str,"%2linm(%2d%%) APPS:%c",
-//	sprintf(str,"%2linm(%2d%%,%2liac) APPS:%c",
+	sprintf(str,"%2linm(%2d%%) APPS:%c%c",
 			(CarState.Torque_Req*1000+15384-1)/15384,
 			Torque, //CarState.Torque_Req,
 			(CarState.APPSstatus > 0)?'_':'A',
 			getBrakeHigh() ?' ':'H');
 	lcd_send_stringline(1,str, 255);
 
-	CarState.ActualSpeed = InverterGetSpeed();
+	int32_t ActualSpeed = InverterGetSpeed();
 
 	char angdir = ' ';
 
 	if ( ADCState.SteeringAngle < 0) angdir = 'L';
 	if ( ADCState.SteeringAngle > 0) angdir = 'R';
 
-	sprintf(str,"Spd:%3likmh Ang:%3d%c", (CarState.ActualSpeed), abs(ADCState.SteeringAngle), angdir);
+	sprintf(str,"Spd:%3likmh Ang:%3d%c", (ActualSpeed), abs(ADCState.SteeringAngle), angdir);
 	lcd_send_stringline(2,str, 255);
 	return 0;
 }

@@ -166,7 +166,7 @@ int setRunningPower( bool HV, bool buzzer )
 
 	if ( GetInverterState() < STOPPED ) HVR = false;
 
-	if ( ( HVR && HV ) || CarState.TestHV )
+	if ( ( HVR && HV ) )
 	{
 // request HV on.
 	//	ShutdownCircuitSet( true );

@@ -218,7 +218,7 @@ void InvTask(void *argument)
 
 	}
 
-	TickType_t lastseen[INVERTERCOUNT];
+	TickType_t lastseen[MOTORCOUNT];
 
 	xTaskGetTickCount();
 
@@ -239,12 +239,20 @@ void InvTask(void *argument)
 						   &InvReceived, /* Stores the notified value. */
 						   0 );
 
-
 		for ( int i=0; i<MOTORCOUNT; i++) // speed is received
 		{
 			if ( ( ( InvReceived & invexpected[i] ) == invexpected[i] ) && RDOExpected == RDOReceived ) // everything received for inverter i
 			{
+				lastseen[i] = xTaskGetTickCount();
+				InverterState[i].Device = OPERATIONAL;
 				HandleInverter( &InverterState[i]);
+			} else
+			if ( lastseen[i] > INVERTERTIMEOUT && InverterState[i].Device != OFFLINE ) //
+			{
+				char str[40];
+				snprintf(str, 40, "Inverter %d Timeout", i);
+				DebugMsg(str);
+				InverterState[i].Device = OFFLINE;
 			}
 		}
 
@@ -265,34 +273,34 @@ DeviceStatus InternalInverterState ( uint16_t Status ) // status 104, failed to 
 	// establish current state machine position from return status.
 	if ( ( Status & 0b01001111 ) == 0b01000000) // 64
 	{ // Switch on disabled
-		return BOOTUP; //1;
+		return BOOTUP;
 	}
 	else if ( ( Status & 0b01101111 ) == 0b00100001 ) // 49
 	{ // Ready to switch on
-		return STOPPED;//2;
+		return STOPPED;
 	}
 	else if ( ( Status & 0b01101111 ) == 0b00100011 ) // 51
 	{ // Switched on. HV?
-		return PREOPERATIONAL;//3;
+		return PREOPERATIONAL;
 	}
 	else if ( ( Status & 0b01101111 ) == 0b00100111 ) // 55
 	{ // Operation enabled.
-		return OPERATIONAL;//4;
+		return OPERATIONAL;
 	}
 	else if ( ( ( Status & 0b01101111 ) == 0b00000111 )
 			 || ( ( Status & 0b00011111 ) == 0b00010011 ) )
 	{ // Quick Stop Active
-		return INERROR; // -1;
+		return INERRORSTOPPING;
 	}
 	else if  ( ( ( Status & 0b01001111 ) == 0b00001111 )
 			 || ( ( Status & 0b01001111 ) == 0b00001001 ) )
 	{ // fault reaction active, will move to fault status next
-		return INERROR; // -2;
+		return INERRORSTOPPING;
 	}
 	else if  ( ( ( Status & 0b01001111 ) == 0b00001000 )
 			 || ( ( Status & 0b00001000 ) == 0b00001000 ) )
 	{ // fault status
-		return INERROR;//-99;
+		return INERROR;
 		// send reset
 	} else
 	{ // unknown state
@@ -429,15 +437,10 @@ void resetInv( void )
 	for ( int i=0;i<MOTORCOUNT; i++)
 	{
 		InverterState[i].InvState = OFFLINE;
+		InverterState[i].Device = OFFLINE;
 		InverterState[i].InvCommand = 0x80;
-#ifdef SIEMENS
-		InverterState[i].InvStateCheck = 0xFF;
-		InverterState[i].InvStateCheck3 = 0xFF;
-		InverterState[i].InvBadStatus = 1;
-#endif
 		InverterState[i].Torque_Req = 0;
 		InverterState[i].Speed = 0;
-//		InverterState[i].HighVoltageAllowed = false;
 		InverterState[i].Motor = i;
 		InverterState[i].MCChannel = false;
 		InverterState[i].InvRequested = BOOTUP;
@@ -445,16 +448,14 @@ void resetInv( void )
 		InverterState[i].AllowRegen = false;
 		InverterState[i].AllowTorque = false;
 
-//		InverterStates[i] = OFFLINE;
-
 		Errors.InvAllowReset[i] = 1;
 	}
 
 	InverterState[0].COBID = InverterRL_COBID;
 	InverterState[1].COBID = InverterRR_COBID;
 
-//	InverterState[0].MCChannel = InverterRL_Channel;
-	InverterState[1].MCChannel = true;;
+	InverterState[0].MCChannel = InverterRL_Channel;
+	InverterState[1].MCChannel = InverterRR_Channel;
 
 #if MOTORCOUNT > 2
 	InverterState[2].COBID = InverterFL_COBID;

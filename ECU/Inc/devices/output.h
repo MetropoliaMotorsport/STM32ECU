@@ -57,6 +57,7 @@ typedef enum output {
 	TSLED=1,
 	TSOFFLED=17, // 0
 	RTDMLED=6,
+	ERRORLED=2,
 	LED1=12,
 	LED2=13,
 	LED3=14,

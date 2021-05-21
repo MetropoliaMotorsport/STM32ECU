@@ -349,11 +349,6 @@ typedef struct {
 	int32_t VoltageAIRPDM;
 	int32_t Power;
 
-	int32_t ActualSpeed;
-
-//	int32_t Wheel_Speed_Rear_Average;
-//	int32_t Wheel_Speed_Average;
-
 	uint8_t I_BrakeLight;
 	uint8_t I_Buzzers;
 	uint8_t I_IVT;
@@ -366,6 +361,7 @@ typedef struct {
 
 typedef enum DeviceStatustype {
 	INERROR,
+	INERRORSTOPPING,
 	OFFLINE,
 	STOPPED,
 	BOOTUP,
@@ -386,7 +382,6 @@ typedef struct {
 	DeviceStatus Sensors;
 	DeviceStatus PWM;
 //	DeviceStatus Inverter;
-//	DeviceStatus Inverters[MOTORCOUNT];
 	DeviceStatus BMS;
 	DeviceStatus IMU;
 	DeviceStatus PDM;
