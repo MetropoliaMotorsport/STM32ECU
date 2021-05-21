@@ -172,7 +172,7 @@ void setCurConfig(void)
 	CarState.Torque_Req_CurrentMax = CarState.Torque_Req_Max;
 }
 
-char * GetPedalProfile( uint8_t profile , bool shortform )
+char * GetPedalProfile( uint8_t profile, bool shortform )
 {
 	switch ( profile )
 	{
@@ -363,15 +363,15 @@ bool DoMenu()
 		doMenuBoolEdit( MenuLines[4], "LimpDisable", (selection==3), &inedit, &getEEPROMBlock(0)->LimpMode);
 		doMenuBoolEdit( MenuLines[5], "Fans", (selection==4), &inedit, &getEEPROMBlock(0)->Fans);
 
-		doMenuBoolEdit( MenuLines[6], "TestHV", (selection==5), &inedit, &CarState.TestHV);
+//		doMenuBoolEdit( MenuLines[6], "TestHV", (selection==5), &inedit, &CarState.TestHV);
 
 //		sprintf(MenuLines[3], "%cAccel: %s", (selection==2) ? '>' :' ', GetPedalProfile(CarState.PedalProfile, false));
 
-		lcd_send_stringline( 0, MenuLines[0], 5 );
+		lcd_send_stringline( 0, MenuLines[0], 4 );
 
 		for ( int i=0;i<3;i++)
 		{
-			 lcd_send_stringline( i+1, MenuLines[i+top+1], 5 );
+			 lcd_send_stringline( i+1, MenuLines[i+top+1], 4 );
 		}
 		return true;
 	}
@@ -449,7 +449,7 @@ int CheckConfigurationRequest( void )
 					break;
 				case 3 :
 					// toggle HV force loop.
-					if ( CarState.TestHV )
+/*					if ( CarState.TestHV )
 					{
 						CarState.TestHV = 0;
 						testingactive = 0;
@@ -460,7 +460,7 @@ int CheckConfigurationRequest( void )
 						CarState.TestHV = 1;
 						testingactive = 1;
 						CAN_ConfigRequest( 3, 1 );
-					}
+					} */
 					break;
 
 				default : // unknown request.

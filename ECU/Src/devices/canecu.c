@@ -38,7 +38,7 @@ int cancount;
 
 SemaphoreHandle_t CANBufferUpdating;
 
-#define CANTXSTACK_SIZE 128*4
+#define CANTXSTACK_SIZE 128*8
 #define CANTXTASKNAME  "CANTxTask"
 #define CANTXTASKPRIORITY 1
 StaticTask_t xCANTXTaskBuffer;
@@ -47,7 +47,7 @@ StackType_t xCANTXStack[ CANTXSTACK_SIZE ];
 TaskHandle_t CANTxTaskHandle = NULL;
 
 
-#define CANRXSTACK_SIZE 128*16
+#define CANRXSTACK_SIZE 128*12
 #define CANRXTASKNAME  "CANRxTask"
 #define CANRXTASKPRIORITY 1
 StaticTask_t xCANRXTaskBuffer;
@@ -58,7 +58,7 @@ TaskHandle_t CANRxTaskHandle = NULL;
 /* The queue is to be created to hold a maximum of 10 uint64_t
 variables. */
 #define CANTxQUEUE_LENGTH    32
-#define CANRxQUEUE_LENGTH    128
+#define CANRxQUEUE_LENGTH    256
 #define CANITEMSIZE			sizeof( struct can_msg )
 
 #define CANTxITEMSIZE		CANITEMSIZE
@@ -278,7 +278,7 @@ void CANRxTask(void *argument)
 				if ( !processCan1Message(&RxHeader, msg.data) )
 				switch ( msg.id )
 				{
-					default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
+					default :
 #ifdef HPF20
 						blinkOutput(LED7, BlinkVeryFast, 1);
 #endif
@@ -289,7 +289,7 @@ void CANRxTask(void *argument)
 				if ( !processCan2Message(&RxHeader, msg.data) )
 				switch ( msg.id )
 				{
-					default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
+					default :
 #ifdef HPF20
 						blinkOutput(LED7, BlinkVeryFast, 1);
 #endif
@@ -1096,18 +1096,17 @@ int RegisterCan2Message(CANData * CanMessage)
 	if ( CanMessage != NULL && CanMessage->id != 0)
 	{
 		if ( CanBUS2Messages[CanMessage->id] != NULL)
-			{
-				DebugMsg("Tried to add a duplicate CAN id!");
-			}
-			else
-			{
-				if (! RegisterCanTimeout( CanMessage) )
-					return 1;
+		{
+			DebugMsg("Tried to add a duplicate CAN id!");
+		}
+		else
+		{
+			if (! RegisterCanTimeout( CanMessage) )
+				return 1;
 
-				CanBUS2Messages[CanMessage->id] = CanMessage;
-				CANBUS2MessageCount++;
-			}
-			return 0;
+			CanBUS2Messages[CanMessage->id] = CanMessage;
+			CANBUS2MessageCount++;
+		}
 		return 0;
 	} else return 1;
 #endif

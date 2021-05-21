@@ -29,10 +29,10 @@
 #endif
 
 DeviceStatus GetInverterState( void );
-int8_t getInverterControlWord( const InverterState_t *Inverter);
+int8_t getInverterControlWord( const InverterState_t *Inverter );
 void InvInternalResetRDO( void );
 
-extern volatile uint32_t RDOReceived, RDOExpected;
+bool InvStartupState( InverterState_t *Inverter, const uint8_t * CANRxData[8] );
 
 #define INVSTACK_SIZE 128*2
 #define INVTASKNAME  "InvTask"
@@ -170,29 +170,26 @@ void HandleInverter( InverterState_t * Inverter )
 		}
 	}
 
-	if ( RDOExpected == RDOReceived ) // this confirms inverter is online and in our control
+	// initial testing, use maximum possible error reset period regardless of error.
+	if ( Inverter->InvState == INERROR )
 	{
-		// initial testing, use maximum possible error reset period regardless of error.
-		if ( Inverter->InvState == INERROR )
+		if ( Inverter->AllowReset && xTaskGetTickCount() - Inverter->errortime > ERRORTYPE1RESETTIME )
 		{
-			if ( Inverter->AllowReset && xTaskGetTickCount() - Inverter->errortime > ERRORTYPE1RESETTIME )
-			{
 
-				InvResetError(Inverter);
-				Inverter->errortime = xTaskGetTickCount();
-				Inverter->InvRequested = BOOTUP;
-				Inverter->InvState = OFFLINE;
+			InvResetError(Inverter);
+			Inverter->errortime = xTaskGetTickCount();
+			Inverter->InvRequested = BOOTUP;
+			Inverter->InvState = OFFLINE;
 #ifdef INVDEBUG
-				char str[40];
-				snprintf(str, 40, "Inverter Reset sent to Inv[%d]", inv);
-				DebugMsg(str);
+			char str[40];
+			snprintf(str, 40, "Inverter Reset sent to Inv[%d]", inv);
+			DebugMsg(str);
 #endif
-			} else
-			{
-				xSemaphoreTake(InvUpdating, portMAX_DELAY);
-				InvSend( Inverter );
-				xSemaphoreGive(InvUpdating);
-			}
+		} else
+		{
+			xSemaphoreTake(InvUpdating, portMAX_DELAY);
+			InvSend( Inverter );
+			xSemaphoreGive(InvUpdating);
 		}
 	}
 }
@@ -222,6 +219,30 @@ void InvTask(void *argument)
 
 	xTaskGetTickCount();
 
+
+	bool INVReady = false;
+
+	// inverters should be shutdown at startup.
+	if ( getDevicePower(Inverters) )
+	{
+		if ( !setDevicePower( Inverters, false ) )
+			DebugMsg("Error requesting power off for inverters.");
+	}
+
+//	while ( !getDevicePower(Inverters) )
+	{
+		vTaskDelay(CYCLETIME);
+	}
+
+	vTaskDelay(CYCLETIME*10); // wait a few cycles for power to be off.
+
+	if (!setDevicePower( Inverters, true ) )
+	{
+			DebugMsg("Error requesting power off for inverters.");
+	}
+
+	DebugMsg("Waiting setup");
+
 	while( 1 )
 	{
 		// TODO change to a single element queue.
@@ -241,7 +262,17 @@ void InvTask(void *argument)
 
 		for ( int i=0; i<MOTORCOUNT; i++) // speed is received
 		{
-			if ( ( ( InvReceived & invexpected[i] ) == invexpected[i] ) && RDOExpected == RDOReceived ) // everything received for inverter i
+			if( InverterState[i].SetupState > 0 )
+			{
+				uint8_t Blank = {0};
+		///		InvStartupState(&InverterState[i], &Blank);
+			}
+
+#ifdef INV
+			else
+			if ( ( ( InvReceived & invexpected[i] ) == invexpected[i] )
+				&& ( InverterState[i].SetupState == 0xFF )
+				)// everything received for inverter i
 			{
 				lastseen[i] = xTaskGetTickCount();
 				InverterState[i].Device = OPERATIONAL;
@@ -253,7 +284,9 @@ void InvTask(void *argument)
 				snprintf(str, 40, "Inverter %d Timeout", i);
 				DebugMsg(str);
 				InverterState[i].Device = OFFLINE;
+				InverterState[i].SetupState = 0;
 			}
+#endif
 		}
 
 		setWatchdogBit(watchdogBit);
@@ -432,7 +465,7 @@ uint8_t invRequestState( DeviceStatus state )
 
 void resetInv( void )
 {
-	InvInternalResetRDO();
+//	InvInternalResetRDO();
 
 	for ( int i=0;i<MOTORCOUNT; i++)
 	{

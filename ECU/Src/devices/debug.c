@@ -28,7 +28,7 @@ typedef struct Debug_msg {
 
 #define DEBUGUART    UART2
 
-#define DEBUGSTACK_SIZE 128*6
+#define DEBUGSTACK_SIZE 128*8
 #define DEBUGTASKNAME  "DebugTask"
 #define DEBUGTASKPRIORITY 1
 StaticTask_t xDEBUGTaskBuffer;
@@ -36,7 +36,7 @@ StackType_t xDEBUGStack[ DEBUGSTACK_SIZE ];
 
 TaskHandle_t DebugTaskHandle = NULL;
 
-#define DebugQUEUE_LENGTH    20
+#define DebugQUEUE_LENGTH    30
 #define DebugITEMSIZE		sizeof( Debug_msg )
 
 /* The variable used to hold the queue's data structure. */

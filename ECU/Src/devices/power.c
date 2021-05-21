@@ -258,6 +258,7 @@ int ShutdownCircuitState( void )
 	return HAL_GPIO_ReadPin(Shutdown_GPIO_Port, Shutdown_Pin);
 }
 
+// request a power state for a device.
 bool setDevicePower( DevicePower device, bool state )
 {
 	Power_msg msg;
@@ -269,6 +270,12 @@ bool setDevicePower( DevicePower device, bool state )
 
 }
 
+bool getDevicePower( DevicePower device)
+{
+	return getNodeDevicePower( device );
+}
+
+// reset a device's power channel
 bool resetDevicePower( DevicePower device )
 {
 	Power_msg msg;
@@ -279,6 +286,7 @@ bool resetDevicePower( DevicePower device )
 
 }
 
+// directly set the current power state of device.
 bool setPowerState( DevicePowerState devicestate, bool enabled )
 {
 	Power_msg msg;

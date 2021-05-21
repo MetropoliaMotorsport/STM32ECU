@@ -28,6 +28,8 @@ typedef struct { // new structure for inverter related data, so that it can be u
 
 	DeviceStatus Device;
 
+	uint8_t SetupState;
+
 	DeviceStatus InvState;
 	DeviceStatus InvRequested;
 	uint16_t InvCommand;

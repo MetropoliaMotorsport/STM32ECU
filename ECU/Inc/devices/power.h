@@ -92,6 +92,7 @@ bool CheckShutdown( void );
 char * ShutDownOpenStr( void );
 
 // power node control commands
+bool getDevicePower( DevicePower device );
 bool setDevicePower( DevicePower device, bool enabled );
 bool resetDevicePower( DevicePower device );
 

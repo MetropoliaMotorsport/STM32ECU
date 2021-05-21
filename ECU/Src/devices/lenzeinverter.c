@@ -26,30 +26,32 @@ bool processINVValues2( const uint8_t CANRxData[8], const uint32_t DataLength, c
 bool processINVEmergency( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processINVNMT( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
-bool processRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processAPPCRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
-bool processAPPCOnline( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+
+//bool processAPPCOnline( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processAPPCError( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+
 
 bool getInvSDOSet( void );
 
-volatile uint32_t RDOReceived, RDOExpected;
-
 //		{ TimeoutFunction, ID, DLC, receivefunction, timeout, index.
 CANData InverterCANErr[MOTORCOUNT]= {
-		{ NULL, InverterRL_COBID+COBERR_ID, 8, processINVError, NULL, 0, 0 },
-		{ NULL, InverterRR_COBID+COBERR_ID, 8, processINVError, NULL, 0, 1 },
+		{ NULL, InverterRL_COBID+COBERR_ID + ( InverterRL_Channel * LENZE_MOTORB_OFFSET ), 8, processINVError, NULL, 0, 0 },
+		{ NULL, InverterRR_COBID+COBERR_ID + ( InverterRR_Channel * LENZE_MOTORB_OFFSET ), 8, processINVError, NULL, 0, 1 },
 #if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID+COBERR_ID, 8, processINVError, NULL, 0, 2 },
-		{ NULL, InverterFR_COBID+COBERR_ID, 8, processINVError, NULL, 0, 3 }
+		{ NULL, InverterFL_COBID+COBERR_ID + ( InverterFL_Channel * LENZE_MOTORB_OFFSET ), 8, processINVError, NULL, 0, 2 },
+		{ NULL, InverterFR_COBID+COBERR_ID + ( InverterFR_Channel * LENZE_MOTORB_OFFSET ), 8, processINVError, NULL, 0, 3 }
 #endif
 };
 
 CANData InverterCANNMT[MOTORCOUNT] = {
-		{ NULL, InverterRL_COBID+COBNMT_ID, 2, processINVNMT, NULL, 0, 0 },
-		{ NULL, InverterRR_COBID+COBNMT_ID, 2, processINVNMT, NULL, 0, 1 },
+		{ NULL, InverterRL_COBID+COBNMT_ID + ( InverterRL_Channel * 0x100 ), 2, processINVNMT, NULL, 0, 0 },
+		{ NULL, InverterRR_COBID+COBNMT_ID + ( InverterRR_Channel * 0x100 ), 2, processINVNMT, NULL, 0, 1 },
 #if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID+COBNMT_ID, 2, processINVNMT, NULL, 0, 2 },
-		{ NULL, InverterFR_COBID+COBNMT_ID, 2, processINVNMT, NULL, 0, 3 }
+		{ NULL, InverterFL_COBID+COBNMT_ID + ( InverterFL_Channel * 0x100 ), 2, processINVNMT, NULL, 0, 2 },
+		{ NULL, InverterFR_COBID+COBNMT_ID + ( InverterFR_Channel * 0x100 ), 2, processINVNMT, NULL, 0, 3 }
 #endif
 };
 
@@ -83,30 +85,40 @@ CANData InverterCANMotorValues2[MOTORCOUNT] = { // speed
 #endif
 };
 
+/*
 CANData InverterCANAPPCStatus[INVERTERCOUNT] = { // torque
-		{ NULL, Inverter1_NodeID+COBTPDO1_ID, 8, processAPPCOnline, NULL, 0, 0 },
+		{ NULL, Inverter1_NodeID+COBTPDO1_ID+LENZE_APPC_OFFSET, 8, processAPPCOnline, NULL, 0, 0 },
 #if INVERTERCOUNT > 1
-		{ NULL, Inverter2_NodeID+COBTPDO1_ID, 8, processAPPCOnline, NULL, 0, 1 }
+		{ NULL, Inverter2_NodeID+COBTPDO1_ID+LENZE_APPC_OFFSET, 8, processAPPCOnline, NULL, 0, 1 }
 #endif
 };
+*/
+
 
 // use APPC RDO1 sending as trigger to signify online.
 CANData InverterCANMotorRDO[MOTORCOUNT] = { // torque
-		{ NULL, InverterRL_COBID+LENZE_RDO_ID + ( InverterRL_Channel * LENZE_MOTORB_OFFSET ), 8, processRDO, NULL, 0, 0 },
-		{ NULL, InverterRR_COBID+LENZE_RDO_ID + ( InverterRR_Channel * LENZE_MOTORB_OFFSET ), 8, processRDO, NULL, 0, 1 },
+		{ NULL, InverterRL_COBID+LENZE_RDO_ID + ( InverterRL_Channel * LENZE_MOTORB_OFFSET ), 8, processINVRDO, NULL, 0, 0 },
+		{ NULL, InverterRR_COBID+LENZE_RDO_ID + ( InverterRR_Channel * LENZE_MOTORB_OFFSET ), 8, processINVRDO, NULL, 0, 1 },
 #if INVERTERCOUNT > 1
-		{ NULL, InverterFL_COBID+LENZE_RDO_ID + ( InverterFL_Channel * LENZE_MOTORB_OFFSET ), 8, processRDO, NULL, 0, 2 },
-		{ NULL, InverterFR_COBID+LENZE_RDO_ID + ( InverterFR_Channel * LENZE_MOTORB_OFFSET ), 8, processRDO, NULL, 0, 3 },
+		{ NULL, InverterFL_COBID+LENZE_RDO_ID + ( InverterFL_Channel * LENZE_MOTORB_OFFSET ), 8, processINVRDO, NULL, 0, 2 },
+		{ NULL, InverterFR_COBID+LENZE_RDO_ID + ( InverterFR_Channel * LENZE_MOTORB_OFFSET ), 8, processINVRDO, NULL, 0, 3 },
 #endif
 };
 
-// use APPC RDO1 sending as trigger to signify online.
 CANData InverterCANAPPCRDO[INVERTERCOUNT] = { // torque
-		{ NULL, Inverter1_NodeID+LENZE_RDO_ID+LENZE_APPC_OFFSET, 8, processRDO, NULL, 0, 4 },
+		{ NULL, Inverter1_NodeID+LENZE_RDO_ID+LENZE_APPC_OFFSET, 8, processAPPCRDO, NULL, 0, 0 },
 #if INVERTERCOUNT > 1
-		{ NULL, Inverter2_NodeID+LENZE_RDO_ID+LENZE_APPC_OFFSET, 8, processRDO, NULL, 0, 5 }
+		{ NULL, Inverter2_NodeID+LENZE_RDO_ID+LENZE_APPC_OFFSET, 8, processAPPCRDO, NULL, 0, 1 }
 #endif
 };
+
+CANData InverterCANAPPCErr[INVERTERCOUNT]= {
+		{ NULL, InverterRL_COBID+COBERR_ID+LENZE_APPC_OFFSET + ( InverterRL_Channel * 0x100 ), 8, processAPPCError, NULL, 0, 0 },
+#if MOTORCOUNT > 2
+		{ NULL, InverterFL_COBID+COBERR_ID+LENZE_APPC_OFFSET + ( InverterFL_Channel * 0x100 ), 8, processAPPCError, NULL, 0, 1 },
+#endif
+};
+
 
 
 // two per MC
@@ -168,30 +180,6 @@ uint8_t InvSend( volatile InverterState_t *Inverter )
 	}
 
 	return 0;
-}
-
-
-bool InvStartupCfg( volatile InverterState_t *Inverter )
-{
-	if ( Inverter->MCChannel == false )
-	{
-//		DebugMsg("Sending inverter sdo setup.");
-		// TODO verify correct way this ID should be calculated.
-		CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234);
- // set sdo to 10ms cycle
-//		vTaskDelay(1);
-
- // set SDO's to sync   0x1801-1806  = lenze TPDO 2 through 7
-		CANSendSDO(bus0, Inverter->COBID, 0x1801, 2, 1);
-		CANSendSDO(bus0, Inverter->COBID, 0x1802, 2, 1);
-		CANSendSDO(bus0, Inverter->COBID, 0x1803, 2, 1);
-
-		CANSendSDO(bus0, Inverter->COBID, 0x1804, 2, 1);
-		CANSendSDO(bus0, Inverter->COBID, 0x1805, 2, 1);
-		CANSendSDO(bus0, Inverter->COBID, 0x1806, 2, 1);
-	}
-
-	return true;
 }
 
 
@@ -418,7 +406,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 			// new error bits
 			if ( InverterState[inv].latchedStatus1 != latchedStatus1 )
 			{
-				uint32_t newbits = ~(InverterState[inv].latchedStatus1 & latchedStatus1 );
+				uint32_t newbits = (InverterState[inv].latchedStatus1 ^ latchedStatus1 );
 
 				for ( int i=0;i<32;i++)
 				{
@@ -431,7 +419,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 
 			if ( InverterState[inv].latchedStatus2 != latchedStatus2 )
 			{
-				uint32_t newbits = ~(InverterState[inv].latchedStatus2 & latchedStatus2 );
+				uint32_t newbits = (InverterState[inv].latchedStatus2 ^ latchedStatus2 );
 
 				for ( int i=0;i<9;i++) // only 9 current valid error bits instatus2
 				{
@@ -477,12 +465,9 @@ bool processINVValues1( const uint8_t CANRxData[8], const uint32_t DataLength, c
 		return true;
 	} else // bad data.
 	{
-//		Inverter->InvStateCheck = 0xFE;
-
 #ifdef errorLED
 		blinkOutput(IMDLED_Output,LEDBLINK_FOUR,255);
 #endif
-
 		return false;
 	}
 }
@@ -513,33 +498,138 @@ bool processINVValues2( const uint8_t CANRxData[8], const uint32_t DataLength, c
 	}
 }
 
-bool processAPPCOnline( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
+bool processAPPCError( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-//	volatile InverterState_t *Inverter = &InverterState[datahandle->index];
-	if ( RDOExpected != RDOReceived)
-	{
-#ifdef DEBUGAPPCSDO
-		if ( RDOReceived == 0)
-			DebugMsg("Lenze inverter found on BUS.");
-#endif
-		InvStartupCfg( &InverterState[datahandle->index] );
-	}
 	return true;
 }
 
 
-bool processRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
+bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxData[8] )
 {
-	uint32_t bitset=(0x1 << datahandle->index);
-#ifdef DEBUGAPPCSDO
-	if (!( RDOExpected & bitset ) )
+	char str[40];
+	snprintf(str, 40, "[%2X %2X %2X %2X]", CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3]);
+	DebugMsg(str);
+
+	 // set SDO's to sync   0x1800-1806  = lenze TPDO 1 through 7
+	if ( Inverter->MCChannel == false )
 	{
-		char str[40];
-		snprintf(str, 40, "Lenze inverter received RDO%d", datahandle->index);
-		DebugMsg(str);
+		// state gets moved by reply.
+		switch ( Inverter->SetupState )
+		{
+		case 0:
+			break;
+
+		case 1:
+			DebugMsg("State 1");
+			CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234);
+			Inverter->SetupState = 2;
+			break;
+
+
+		case 2:
+		{
+			DebugMsg("State 2");
+			uint8_t RDODone[8] = { 0x60, 0x04, 0x40, 0x01, 0, 0, 0, 0};
+
+			if ( memcmp(RDODone, CANRxData, 4) == 0 )
+			{
+				char str[40];
+				snprintf(str, 40, "Lenze inverter %d rcv APPC SDO.", Inverter->Motor);
+				DebugMsg(str);
+				Inverter->SetupState = 3; // start the setup state machine
+				CANSendSDO(bus0, Inverter->COBID, 0x1800, 2, 1);
+			}
+			break;
+		}
+
+
+		case 3:
+		case 4:
+		case 5:
+		case 6:
+		case 7:
+		case 8:
+		{
+			uint8_t RDODone[8] = { 0x60, Inverter->SetupState-3, 0x18, 0x02 };
+			if ( memcmp(RDODone, CANRxData, 8) == 0 )
+			{
+				char str[40];
+				snprintf(str, 40, "Lenze inverter %d rcv SDO.", Inverter->Motor);
+				DebugMsg(str);
+				if ( Inverter->SetupState < 9)
+				{
+					CANSendSDO(bus0, Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1);
+					Inverter->SetupState++;
+				}
+				else
+				{
+					DebugMsg("Inverters Ready to use");
+					Inverter->SetupState = 0xFF; // Done!
+				}
+			}
+			break;
+		}
+
+		default:
+			Inverter->SetupState = 0;
+		}
 	}
-#endif
-	RDOExpected+=(0x1 << datahandle->index);
+
+
+	return true;
+}
+
+
+
+bool processAPPCRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
+{
+	if ( InverterState[datahandle->index].SetupState > 0)
+	{
+		InvStartupState( &InverterState[datahandle->index], CANRxData );
+	}
+
+	return true;
+}
+
+
+
+
+bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
+{
+//	uint32_t bitset=(0x1 << datahandle->index);
+
+	if ( InverterState[datahandle->index].SetupState > 0)
+	{
+
+		uint8_t INVREBOOT[8] = {0x40, 0x56, 0x1F, 0x01 };
+
+		// check if APPC has just restarted
+		if ( memcmp(INVREBOOT, CANRxData, 8) == 0 )
+		{
+			InverterState[datahandle->index].SetupState = 0;
+			return true;
+		} else
+			InvStartupState( &InverterState[datahandle->index], CANRxData );
+	}
+	else
+	{
+		uint8_t RDODone[8] = { 0xC1 };
+
+		if ( memcmp(RDODone, CANRxData, 8) == 0 )
+		{
+			if ( !InverterState[datahandle->index].MCChannel )
+			{
+			//	if ( CanRxData[] )  // 0x1801
+	#ifdef DEBUGAPPCSDO
+				char str[40];
+				snprintf(str, 40, "Lenze inverter %d at startup.", datahandle->index);
+				DebugMsg(str);
+	#endif
+				InverterState[datahandle->index].SetupState = 1; // start the setup state machine
+				InvStartupState(&InverterState[datahandle->index], &CANRxData);
+			}
+		}
+	}
 
 	return true;
 }
@@ -555,24 +645,7 @@ void SpeedCalculation( int32_t leftdata )
 
 uint32_t getInvExpected( uint8_t inv )
 {
-
 	return (0b111 << (inv * 3)); // three message flags per motor, status, vals1, vals2
-
-}
-
-void InvInternalResetRDO( void )
-{
-	RDOReceived = 0; // no SDO's been sent yet.
-
-	for ( int i=0; i < MOTORCOUNT; i++ )
-	{
-		RDOExpected+=(0x1 << i);
-	}
-
-	for ( int i=MOTORCOUNT; i < ( MOTORCOUNT + INVERTERCOUNT ); i++ )
-	{
-		RDOExpected+=(0x1 << i);
-	}
 }
 
 bool registerInverterCAN( void )
@@ -595,12 +668,7 @@ bool registerInverterCAN( void )
 		RegisterCan2Message(&InverterCANMotorRDO[i]);
 	}
 
-	for( int i=0;i<INVERTERCOUNT;i++)
-	{
-		// TPDO 1 - actual values from device
-		RegisterCan2Message(&InverterCANAPPCStatus[i]);
-		RegisterCan2Message(&InverterCANAPPCRDO[i]);
-	}
+	RegisterCan2Message(&InverterCANAPPCRDO[0]);
 
 	return true;
 }
