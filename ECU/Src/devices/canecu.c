@@ -190,11 +190,11 @@ void CANTxTask(void *argument)
 
 		UART_CANBufferTransmit();
 
-		// ensure we can actually send a message
-		while ( HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) < 2 && HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2) < 2 )
-		{
-			DebugMsg("waiting free can spot.");
-		}
+		// ensure we can actually send a message -- bad, would leave messages potentially in buffer when no longer relevant.
+//		while ( HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) < 2 && HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2) < 2 )
+//		{
+//			DebugMsg("waiting free can spot.");
+//		}
 
 		if ( xQueueReceive(CANTxQueue,&msg,waittick) )
 		{

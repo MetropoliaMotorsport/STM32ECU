@@ -107,7 +107,6 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-	CarState.HighVoltageReady = 0; // no high voltage allowed in this state.
 #ifdef HPF20
 	ShutdownCircuitSet( false ); // ensure shutdown circuit is open if we end up in a hard fault.
 #else

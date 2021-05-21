@@ -64,9 +64,8 @@ void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to sa
 
 bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
- //   int Val1 = CANRxData[0]*256+CANRxData[1]; // dhab current?
-	int AccelL =  getBEint16(&CANRxData[2]);//CANRxData[2]*256+CANRxData[3];
-	int Regen =  getBEint16(&CANRxData[4]);//CANRxData[4]*256+CANRxData [5];
+	int AccelL = getBEint16(&CANRxData[2]);
+	int Regen = getBEint16(&CANRxData[4]);
 
 	if ( DataLength >> 16 == AnalogNode1.dlcsize
 		&& ( AccelL < 4096 )
@@ -81,6 +80,7 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 		return true;
 	} else // bad data.
 	{
+		xTaskNotify( ADCTaskHandle, ( ( 0x1 << 16 ) << ANode1Bit ), eSetBits); // mark some bad data received.
 		return false;
 	}
 	return true;
@@ -105,14 +105,12 @@ bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
- //   int Val1 = CANRxData[0]*256+CANRxData[1]; // dhab current?
+	uint16_t BrakeTemp1 = getBEint16(&CANRxData[0]);
 
-	uint16_t BrakeTemp1 =  getBEint16(&CANRxData[0]);//CANRxData[0]+CANRxData[1]*256;
+	uint16_t BrakeF = getBEint16(&CANRxData[2]);
+	uint16_t BrakeR = getBEint16(&CANRxData[4]);
 
-	uint16_t BrakeF =  getBEint16(&CANRxData[2]);//CANRxData[2]+CANRxData[3]*256;
-	uint16_t BrakeR =   getBEint16(&CANRxData[4]);//CANRxData[4]+CANRxData[5]*256;
-
-	uint16_t AccelR =  getBEint16(&CANRxData[6]);//CANRxData[6]+CANRxData[7]*256;
+	uint16_t AccelR = getBEint16(&CANRxData[6]);
 
 	// HPF 20 raw value R ~3300 for 0%
 
@@ -128,18 +126,21 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	{
 		xTaskNotify( ADCTaskHandle, ( 0x1 << ANode11Bit ), eSetBits);
 
-        ADCState.BrakeF = BrakeF;//CANRxData[2];
-        ADCState.BrakeR = BrakeR;//CANRxData[3];
+        ADCState.BrakeF = BrakeF;
+        ADCState.BrakeR = BrakeR;
         ADCState.Torque_Req_R_Percent = getTorqueReqPercR(AccelR);
 
 		return true;
 	} else // bad data.
 	{
+		xTaskNotify( ADCTaskHandle, ( ( 0x1 << 16 ) << ANode11Bit ), eSetBits); // mark some bad data received.
 		return false;
 	}
 	return true;
 }
 
+// rest of sensors are currently logging data not currently used by ECU ( suspension position sensors, wheel temps, etc. )
+// only define so that driver can be informed if they are not online at startup.
 bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode12Bit ), eSetBits);
@@ -270,7 +271,7 @@ char * getAnalogNodesStr( void )
 }
 
 
-void setAnalogNodesCriticalStr( uint32_t nodesonline ) // 1 = APPS1 + regen. 11 = APPS2 + brakes  Only lack of these should prevent startup.
+void setAnalogNodesCriticalStr( const uint32_t nodesonline ) // 1 = APPS1 + regen. 11 = APPS2 + brakes  Only lack of these should prevent startup.
 {
 	ANodeCritStr[0] = 0;
 
@@ -311,7 +312,7 @@ void setAnalogNodesCriticalStr( uint32_t nodesonline ) // 1 = APPS1 + regen. 11 
 #define ERR_INVALID_CONFIG_ID		65
 
 
-bool processANodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle )
+bool processANodeErr( const uint8_t nodeid, const uint32_t errorcode, const CANData * datahandle )
 {
 	// acknowledge error received.
 

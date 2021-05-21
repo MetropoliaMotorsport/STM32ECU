@@ -323,11 +323,6 @@ extern volatile uint32_t ADCloops;
 typedef struct {
 	uint8_t brake_balance;
 
-	char HighVoltageReady;
-	bool TestHV;
-
-	uint16_t COBID;
-
 	uint8_t  TorqueVectoring;
 
 	int32_t Torque_Req;

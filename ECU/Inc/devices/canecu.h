@@ -20,7 +20,7 @@
 #define BMSVOLT_ID				BMSBASE_ID+3 // 0xB is voltage.
 #define FLSpeed_COBID			0x71 // 112 // 0x70 orig
 #define FLSpeed_BUS				CAN1
-#define FRSpeed_COBID			0x70 // 113  // 0x71 orig
+#define FRSpeed_COBID			0x70 // 113 // 0x71 orig
 #define FRSpeed_BUS				CAN1
 
 #define PDM_ID					0x520
@@ -53,32 +53,21 @@
 #define CANB0					(2)
 #define CANB1					(1)
 
-#ifdef ONECAN
 
-	#define IVT_BUS					CANB1
-	#define BMS_BUS					CANB1
-	#define PDM_BUS					CANB1
+#define IVT_BUS					CANB0
+#define BMS_BUS					CANB1
+#define PDM_BUS
 
-	#define INV1_BUS				CANB1
-	#define INV2_BUS				CANB1
-#else
-
-	#define IVT_BUS					CANB0
-	#define BMS_BUS					CANB1
-	#define PDM_BUS
-
-	#define INV1_BUS				CANB0
-	#define INV2_BUS				CANB0
-#endif
-
+#define INV1_BUS				CANB0
+#define INV2_BUS				CANB0
 
 
 #define COBERR_ID				(0x80)
 #define COBNMT_ID				(0x700)
 
-#define COBTPDO1_ID				(0x180) // lenze 1
-#define COBTPDO2_ID				(0x280) // lenze 4
-#define COBTPDO3_ID				(0x380) // lenze 7
+#define COBTPDO1_ID				(0x180)
+#define COBTPDO2_ID				(0x280)
+#define COBTPDO3_ID				(0x380)
 #define COBTPDO4_ID				(0x480)
 
 #define COBRPDO1_ID				(0x200)
@@ -91,7 +80,7 @@
 
 #define Inverter_BUS			CANB0
 
-#define ECU_CAN_ID				0x20 // send +1
+#define ECU_CAN_ID				(0x20) // send +1
 
 // brake temp sensors 0x1a - first two bytes.
 
@@ -139,29 +128,12 @@ typedef volatile struct CanDataType {
 	TimeoutHandler doTimeout;
 	uint32_t timeout;
 	uint8_t  index;
-	bool	 CanOpen;
 	uint32_t time;
 	uint16_t error;
 	uint16_t receiveerr;
 	bool	 errorsent;
 } CANData;
 
-// CANBus
-
-volatile struct CanState {
-#ifndef HPF20
-	volatile struct CANData FLeftSpeedERR;
-	volatile struct CANData FRightSpeedERR;
-
-	volatile struct CANData FLeftSpeedPDO1;
-	volatile struct CANData FRightSpeedPDO1;
-
-	volatile struct CANData FLeftSpeedNMT;
-	volatile struct CANData FRightSpeedNMT;
-#endif
-} CanState;
-
-//canbus
 
 int getNMTstate(volatile CANData *data );
 

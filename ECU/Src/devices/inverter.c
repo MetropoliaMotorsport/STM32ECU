@@ -18,6 +18,8 @@
 #include "torquecontrol.h"
 #include "watchdog.h"
 #include "power.h"
+#include "debug.h"
+#include "power.h"
 
 #ifdef SIEMENS
 	#include "siemensinverter.h"
@@ -27,8 +29,10 @@
 #endif
 
 DeviceStatus GetInverterState( void );
-int8_t InverterStateMachineResponse( InverterState_t *Inverter);
+int8_t getInverterControlWord( const InverterState_t *Inverter);
+void InvInternalResetRDO( void );
 
+extern volatile uint32_t RDOReceived, RDOExpected;
 
 #define INVSTACK_SIZE 128*2
 #define INVTASKNAME  "InvTask"
@@ -56,7 +60,6 @@ InverterState_t InverterState[MOTORCOUNT];
 
 InverterState_t getInvState(uint8_t inv )
 {
-
 	if ( inv >=0 && inv < MOTORCOUNT )
 		return InverterState[inv];
 	else
@@ -144,15 +147,55 @@ bool checkStatusCode( uint8_t status )
 	}
 }
 
-
-void StopMotors( void )
-{
-
-
-}
-
 DeviceStatus Inverter;
 DeviceStatus InverterStates[MOTORCOUNT];
+
+
+void HandleInverter( InverterState_t * Inverter )
+{
+	// only process inverter state if inverters have been seen and not in error state.
+	if (Inverter->InvState != OFFLINE && InverterStates[Inverter->Motor] != OFFLINE )
+	{
+	// run the state machine response and get command to match current situation.
+		command = getInverterControlWord( Inverter );
+
+		// only change command if we're not in wanted state to try and transition towards it.
+		if (Inverter->InvState != Inverter->InvRequested && Inverter->InvState > INERROR )
+		{
+			// check if we've got voltage available for moving up states, otherwise stay up.
+	//		if ( InverterState[i-Inverter->.MCChannel].HighVoltageAvailable > 40 )
+			{
+				Inverter->InvCommand = command;
+			}
+		}
+	}
+
+	if ( RDOExpected == RDOReceived ) // this confirms inverter is online and in our control
+	{
+		// initial testing, use maximum possible error reset period regardless of error.
+		if ( Inverter->InvState == INERROR )
+		{
+			if ( Inverter->AllowReset && xTaskGetTickCount() - Inverter->errortime > ERRORTYPE1RESETTIME )
+			{
+
+				InvResetError(Inverter);
+				Inverter->errortime = xTaskGetTickCount();
+				Inverter->InvRequested = BOOTUP;
+				Inverter->InvState = OFFLINE;
+#ifdef INVDEBUG
+				char str[40];
+				snprintf(str, 40, "Inverter Reset sent to Inv[%d]", inv);
+				DebugMsg(str);
+#endif
+			} else
+			{
+				xSemaphoreTake(InvUpdating, portMAX_DELAY);
+				InvSend( Inverter );
+				xSemaphoreGive(InvUpdating);
+			}
+		}
+	}
+}
 
 // task to manage inverter state.
 void InvTask(void *argument)
@@ -161,57 +204,23 @@ void InvTask(void *argument)
 
 	Inv_msg msg;
 
-	bool reseterror = false;
-
-	bool allowregen = false;
-
-	TickType_t xLastWakeTime;
-
 	Inverter = OFFLINE;
 
-	// Initialise the xLastWakeTime variable with the current time.
-	xLastWakeTime = xTaskGetTickCount();
+	TickType_t xLastWakeTime = xTaskGetTickCount();
 
 	uint8_t watchdogBit = registerWatchdogBit("InvTask");
 
-	uint32_t invexpected = 0;
+	uint32_t invexpected[MOTORCOUNT];
 
-	// TODO move to inverter file.
-	//calculate the inverter expected messages to match number of motors,
-	for ( int i=0;i<MOTORCOUNT;i++)
+	for ( int i=0; i<MOTORCOUNT; i++)
 	{
-		uint32_t invexpectedbits = (0b111 << (i * 3));
-		invexpected += invexpectedbits; // three message flags per motor, status, vals1, vals2
+		invexpected[i] = getInvExpected(i);
+
 	}
 
-	uint32_t InvReceived = 0;
-	xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
-					   ULONG_MAX,        /* Clear all bits on exit. */
-					   &InvReceived, /* Stores the notified value. */
-					   0 );
+	TickType_t lastseen[INVERTERCOUNT];
 
-	vTaskDelay(100); // allow a bit of time at startup to listen for bus activity responding to sync.
-
-	volatile int count = 0;
-
-	while ( InvReceived == invexpected || count > 10 )
-	{
-		xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
-						   ULONG_MAX,        /* Clear all bits on exit. */
-						   &InvReceived, /* Stores the notified value. */
-						   0 );
-		count++;
-	}
-
-//	if ( InvReceived == invexpected ) // 4 inverters
-	{
-	#ifdef LENZE
-		for ( int i=0;i<MOTORCOUNT;i++)
-		{
-			InvStartupCfg( &InverterState[i] );
-		}
-	#endif
-	}
+	xTaskGetTickCount();
 
 	while( 1 )
 	{
@@ -222,7 +231,6 @@ void InvTask(void *argument)
 			{
 				InverterState[i].InvRequested = msg.state;
 			}
-
 		}
 
 		uint32_t InvReceived = 0;
@@ -231,95 +239,14 @@ void InvTask(void *argument)
 						   &InvReceived, /* Stores the notified value. */
 						   0 );
 
-		// TODO improve.
 
-		if ( InvReceived == invexpected ) // 4 inverters
+		for ( int i=0; i<MOTORCOUNT; i++) // speed is received
 		{
-			Inverter = OPERATIONAL;
-		} else
-		{
-			Inverter = INERROR; // haven't seen all needed.
-		}
-
-		DeviceStatus lowest=OPERATIONAL;
-		DeviceStatus highest=INERROR;
-
-		// TODO determine when to run inverter config on first detection. - done by detecting APPC traffic in canbus response.
-
-		// quick bodge to allow operation on test bench for now..
-		CarState.VoltageINV = 130;
-
-//		if ( !invertersinerror )
-		for ( int i=0;i<MOTORCOUNT;i++) // speed is received
-		{
-			// only process inverter state if inverters have been seen and not in error state.
-			if (InverterState[i].InvStateAct != OFFLINE && InverterStates[i] != OFFLINE )
+			if ( ( ( InvReceived & invexpected[i] ) == invexpected[i] ) && RDOExpected == RDOReceived ) // everything received for inverter i
 			{
-			// run the state machine and get command to match current situation.
-				command = InverterStateMachineResponse( &InverterState[i] );
-
-				// maybe store highest too so that operation can continue with only some operating motors if necessary?
-				if (InverterState[i].InvStateAct < lowest ) lowest = InverterState[i].InvStateAct;
-				if (InverterState[i].InvStateAct > highest ) highest = InverterState[i].InvStateAct;
-
-				// only change command if we're not in wanted state to try and transition towards it.
-				if (InverterState[i].InvStateAct != InverterState[i].InvRequested && InverterState[i].InvStateAct > INERROR )
-				{
-					// check if we've got voltage available for moving up states, otherwise stay up.
-			//		if ( InverterState[i-InverterState[i].MCChannel].HighVoltageAvailable > 40 )
-					{
-						InverterState[i].InvCommand = command;
-					}
-				}
+				HandleInverter( &InverterState[i]);
 			}
-			// store lowest known inverter state as global state, or error if not in operational state.
-
-			Inverter = lowest;
 		}
-
-		// ensure requests aren't modified mid send.
-		xSemaphoreTake(InvUpdating, portMAX_DELAY);
-
-		bool allowReset = true;
-
-		// process actual request if inverters are online.
-		for ( int i=0;i<MOTORCOUNT;i++)
-		{
-			// initial testing, use maximum possible error reset period.
-			if ( InverterState[i].InvStateAct == INERROR )
-			{
-				if ( allowReset && xTaskGetTickCount() - InverterState[i].errortime > ERRORTYPE1RESET )
-				{
-					char str[40];
-					snprintf(str, 40, "Inverter Reset sent to Inv[%d]", i);
-					InvResetError(&InverterState[i]);
-					InverterState[i].errortime = xTaskGetTickCount();
-					InverterState[i].InvRequested = BOOTUP;
-					InverterState[i].InvStateAct = OFFLINE;
-					InverterState[i].InvCommand =
-					DebugMsg(str);
-				} else
-				{
-					// send do nothing;
-					InvSend( &InverterState[i], 0, 0);
-				}
-			} else
-				// but only send an actual torque request if both car and inverter state allow it.
-			if ( InverterState[i].AllowTorque && InverterState[i].InvStateAct == OPERATIONAL )
-			{
-				// only allow a negative torque if Regen is allowed.
-				if ( !allowregen && InverterState[i].Torque_Req < 0 )
-					InvSend( &InverterState[i], InverterState[i].MaxSpeed, 0);
-				else
-					InvSend( &InverterState[i], InverterState[i].MaxSpeed,InverterState[i].Torque_Req );
-			} else // otherwise just send state request.
-			{
-				InvSend( &InverterState[i], 0, 0 );
-			}
-			vTaskDelay(1); // give a bit of time to clear buffer.
-
-		}
-		xSemaphoreGive(InvUpdating);
 
 		setWatchdogBit(watchdogBit);
 		// only allow one command per cycle. Switch to syncing with main task to not go out of sync?
@@ -330,7 +257,7 @@ void InvTask(void *argument)
 	vTaskDelete(NULL);
 }
 
-	// fail process, inverters go from 31->33h->60h->68h  when no HV supplied and request startup.
+// fail process, inverters go from 31->33h->60h->68h  when no HV supplied and request startup.
 // states 3->1 ( stop )->-99 ( error )
 
 DeviceStatus InternalInverterState ( uint16_t Status ) // status 104, failed to turn on HV 200, failure of encoders/temp
@@ -380,37 +307,30 @@ DeviceStatus GetInverterState( void )
 	return Inverter;
 }
 
-bool invertersStateCheck( DeviceStatus state )
+bool invertersStateCheck( const DeviceStatus state )
 {
 	if ( Inverter == state ) return true;
 	else return false;
 }
 
 
-int8_t InverterStateMachineResponse( InverterState_t *Inverter ) // returns response to send inverter based on current state.
+int8_t getInverterControlWord( const InverterState_t *Inverter ) // returns response to send inverter based on current state.
 {
 	uint16_t TXState;
 
 	DeviceStatus State;
 
-	bool HighVoltageAllowed;//, ReadyToDriveAllowed; //, TsLED, RtdmLED;
-
-	State = Inverter->InvStateAct;
-	HighVoltageAllowed = Inverter->HighVoltageAllowed;
-
-	// first check for fault status, and issue reset.
+	State = Inverter->InvState;
 
 	TXState = 0; // default  do nothing state.
 	// process regular state machine sequence
 	switch ( State )
 	{
 		case OFFLINE : // state 0: Not ready to switch on, no can message. Internal state only at startup.
-			HighVoltageAllowed = false;  // High Voltage is not allowed
 			TXState=0b10000000; // send bit 128 reset message to enter state 1 in case in fault. - fault reset.
 			break;
 
 		case BOOTUP : // State 1: Switch on Disabled.
-			HighVoltageAllowed = false;
 			TXState = 0b00000110; // send 0110 shutdown message to request move to State 2.
 			break;
 
@@ -418,9 +338,8 @@ int8_t InverterStateMachineResponse( InverterState_t *Inverter ) // returns resp
 			 // We are ready to turn on, so allow high voltage.
 			// we are in state 2, process.
 			// process shutdown request here, to move to move to state 1.
-			if ( CarState.HighVoltageReady )
+			if ( getPowerHVReady() )
 			{  // TS enable button pressed and both inverters are marked HV ready proceed to state 3.
-				HighVoltageAllowed = true;
 #ifdef LENZE
 				TXState = 0b00001111; // Lenze doesn't want to go to pre operational from stopped, have to skip straight to operational.
 #else
@@ -428,22 +347,19 @@ int8_t InverterStateMachineResponse( InverterState_t *Inverter ) // returns resp
 #endif
 			} else
 			{
-				HighVoltageAllowed = false;
 				TXState = 0b00000110; // no change, continue to request State 2.
 			}
 			break;
 
 		case PREOPERATIONAL : // State 3: Switched on   <---- check this case.
-			  // we are powered on, so allow high voltage.
-			if ( CarState.HighVoltageReady )// IdleState ) <-
+			  // we are powered on, so allow high voltage if available
+			if ( getPowerHVReady() )// IdleState ) <-
 			{  // TS enable button has been pressed, proceed to request power on if all inverters on.
-				HighVoltageAllowed = true;
 				TXState = 0b00001111; // Request Enable operation, State 4.
 			}
-			else if ( !CarState.HighVoltageReady )
+			else if ( !getPowerHVReady() )
 			{ // return to switched on state.
-				HighVoltageAllowed = false;
-				TXState = 0b00000110; // 0b00000000; // request Disable Voltage, drop to ready state., alternately Quick Stop 0b00000010
+				TXState = 0b00000110; // 0b00000000; // request Disable Voltage, drop to ready state.
 			}
 			else
 			{  // no change, continue to request State 3.
@@ -453,21 +369,19 @@ int8_t InverterStateMachineResponse( InverterState_t *Inverter ) // returns resp
 
 		case OPERATIONAL : // State 4: Operation Enable
 			 // we are powered on, so allow high voltage.
-	/*		if ( CarState.HighVoltageReady ) //  && OperationalState == TSActiveState)
+			if ( getPowerHVReady() && !Inverter->AllowTorque )
 			{ // no longer in RTDM mode, but still got HV, so drop to idle.
-				HighVoltageAllowed = 1;
 				TXState = 0b00000111; // request state 3: Switched on.
 			}
-			else */
-			if ( !CarState.HighVoltageReady )
-			{ // full motor stop has been requested
-				HighVoltageAllowed = false; // drop back to ready to switch on.
+			else
+			if ( !getPowerHVReady() )
+			{   // full motor stop has been requested
+				// drop back to ready to switch on.
 				TXState = 0b00000110;//0b00000000; // request Disable Voltage., alternately Quick Stop 0b00000010 - test to see if any difference in behaviour.
 			}
 			else
 			{ // no change, continue to request operation.
 				TXState = 0b00001111;
-				HighVoltageAllowed = true;
 			}
 			break;
 
@@ -479,15 +393,11 @@ int8_t InverterStateMachineResponse( InverterState_t *Inverter ) // returns resp
 
 		case INERROR:
 		default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
-			HighVoltageAllowed = false;
 			//TXState = 0b10000000; // 128
 			TXState = 0b00000000; // 0 don't transmit any command for error, deal with it seperately.
 			break;
 		}
 
-	//  offset 0 length 32: power
-
-	Inverter->HighVoltageAllowed = true;// HighVoltageAllowed;
 	return TXState;
 }
 
@@ -514,9 +424,11 @@ uint8_t invRequestState( DeviceStatus state )
 
 void resetInv( void )
 {
+	InvInternalResetRDO();
+
 	for ( int i=0;i<MOTORCOUNT; i++)
 	{
-		InverterState[i].InvStateAct = OFFLINE;
+		InverterState[i].InvState = OFFLINE;
 		InverterState[i].InvCommand = 0x80;
 #ifdef SIEMENS
 		InverterState[i].InvStateCheck = 0xFF;
@@ -525,10 +437,13 @@ void resetInv( void )
 #endif
 		InverterState[i].Torque_Req = 0;
 		InverterState[i].Speed = 0;
-		InverterState[i].HighVoltageAllowed = false;
-		InverterState[i].InverterNum = i;
+//		InverterState[i].HighVoltageAllowed = false;
+		InverterState[i].Motor = i;
 		InverterState[i].MCChannel = false;
 		InverterState[i].InvRequested = BOOTUP;
+
+		InverterState[i].AllowRegen = false;
+		InverterState[i].AllowTorque = false;
 
 //		InverterStates[i] = OFFLINE;
 

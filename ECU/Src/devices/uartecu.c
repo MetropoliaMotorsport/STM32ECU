@@ -72,17 +72,17 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 bool UART_Transmit(UART UART, uint8_t* buffer, uint16_t n)
 {
-	static volatile int err = 0;
+//	static volatile int err = 0; // TODO need to maybe setup a send transmit queue for UART1 if its to be used as a canbus relay.
 	if ( UART == UART1 )
 	{
 		memcpy(UART1TXBuffer, buffer, n);
 
 		if(HAL_UART_Transmit_DMA(&huart1, UART1TXBuffer, n) != HAL_OK) {
-			err = 1;
+//			err = 1;
 			return false;
 		} else
 		{
-			err = 0;
+//			err = 0;
 			return true;
 		}
 	}

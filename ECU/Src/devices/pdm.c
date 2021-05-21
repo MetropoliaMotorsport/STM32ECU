@@ -173,7 +173,7 @@ int sendPDM( bool buzzer )
 		//if ( ! CarState.Inverters[i].HighVoltageAllowed) HVR = false;
 	} // HVR will be false if any of the inverters are not in true state.
 
-	if ( ( HVR && CarState.HighVoltageReady ) || CarState.TestHV )
+	if ( HVR && getPowerHVReady() )
 		return CANSendPDM(10,buzzer);
 	else
 		return CANSendPDM(0,buzzer);

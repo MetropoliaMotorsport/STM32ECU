@@ -117,7 +117,6 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 		lcd_clear();
 		lcd_settitle("Readying Devices");
 		received = 0xFFFF;
-		CarState.HighVoltageReady = false; // no high voltage allowed in this state.
 	}
 
 	CAN_SendStatus(1, OperationalReadyState, received );

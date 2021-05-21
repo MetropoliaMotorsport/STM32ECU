@@ -22,6 +22,9 @@
 #define ANode16Bit (8)
 #define ANode17Bit (9)
 #define ANode18Bit (10)
+
+#define ANodeBADDataShift (16)
+
 #define ANodeAllBit ( (0x1 << ANode1Bit ) \
 					+ (0x1 << ANode9Bit)  \
 					+ (0x1 << ANode11Bit) \
@@ -48,12 +51,12 @@ extern CANData AnalogNode16;
 extern CANData AnalogNode17;
 extern CANData AnalogNode18;
 
-bool processANodeErr(uint8_t nodeid, uint32_t errorcode, CANData * datahandle );
-bool processANodeAckData(uint8_t CANRxData[8], uint32_t DataLength, CANData * datahandle );
+bool processANodeErr( const uint8_t nodeid, const uint32_t errorcode, const CANData * datahandle );
+bool processANodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
-void setAnalogNodesStr( uint32_t nodesonline );
+void setAnalogNodesStr( const uint32_t nodesonline );
 
-void setAnalogNodesCriticalStr( uint32_t nodesonline );
+void setAnalogNodesCriticalStr( const uint32_t nodesonline );
 
 char * getAnalogNodesCriticalStr( void );
 

@@ -95,7 +95,6 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 		lcd_clear();
 		//lcd_settitle("Ready to activate TS");
-		CarState.HighVoltageReady = false;
 		InverterAllowTorqueAll(false);
 
 		CheckHV = false;

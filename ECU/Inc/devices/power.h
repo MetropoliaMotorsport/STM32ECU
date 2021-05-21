@@ -78,26 +78,31 @@ typedef struct Power_Error_msg {
 } Power_Error_msg;
 
 int setRunningPower( bool HV, bool buzzer );
-int errorPower( void );
-bool CheckShutdown( void );
-char * ShutDownOpenStr( void );
 
+int errorPower( void );
+
+// log an error in power system.
 bool PowerLogError( uint8_t nodeid, uint32_t errorcode);
 
+// shutdown circuit commands
 void ShutdownCircuitSet( bool state );
 int ShutdownCircuitCurrent( void );
 int ShutdownCircuitState( void );
+bool CheckShutdown( void );
+char * ShutDownOpenStr( void );
 
+// power node control commands
 bool setDevicePower( DevicePower device, bool enabled );
 bool resetDevicePower( DevicePower device );
 
+// get strings for messages/displays.
 char * getDevicePowerNameLong( DevicePower device );
-
 char * getPNodeWait( void );
 
-int initPower( void );
-
+bool getPowerHVReady( void );
 void FanPWMControl( uint8_t leftduty, uint8_t rightduty );
+
+int initPower( void );
 
 extern TaskHandle_t PowerTaskHandle;
 

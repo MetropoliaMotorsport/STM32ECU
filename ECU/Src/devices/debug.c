@@ -198,7 +198,7 @@ static void debugInverter( const char *tkn2, const char *tkn3 )
 			InverterState_t invs = getInvState(i);
 			char str[MAXDEBUGOUTPUT];
 			snprintf(str, MAXDEBUGOUTPUT, "%4d %14s %14s \r\n", i,
-					getDeviceStatusStr(invs.InvStateAct ),
+					getDeviceStatusStr(invs.InvState ),
 					getDeviceStatusStr(invs.InvRequested )
 			);
 			uartwrite(str);
@@ -220,7 +220,6 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t speed 
 {
 	if ( checkOn( tkn2 )  )
 	{
-		CarState.HighVoltageReady = true;
 		invRequestState( OPERATIONAL );
 		InverterAllowTorqueAll(true);
 
@@ -228,7 +227,6 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t speed 
 	}
 	else if ( checkOff( tkn2 ) )
 	{
-		CarState.HighVoltageReady = false;
 		InverterAllowTorqueAll( false );
 		invRequestState( BOOTUP );
 		uartwrite("Setting torque disabled.\r\n");

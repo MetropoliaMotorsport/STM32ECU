@@ -88,7 +88,6 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		sprintf(str,"Loc:%.2X Code:%.4X", Errors.ErrorPlace, Errors.ErrorReason);
 		lcd_send_stringscroll(str);
 
-		CarState.HighVoltageReady = false; // no high voltage allowed in this state.
 		InverterAllowTorqueAll( false );  // immedietly stop allowing torque request.
 
 		ShutdownCircuitSet( false );

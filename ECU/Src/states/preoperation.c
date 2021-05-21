@@ -150,7 +150,6 @@ int PreOperationState( uint32_t OperationLoops  )
     	// the user can see operational state.
     	SetErrorLogging( false );
 		preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
-		CarState.HighVoltageReady = false;
 		InverterAllowTorqueAll(false);
 
 		ReadyToStart = 0xFFFF;

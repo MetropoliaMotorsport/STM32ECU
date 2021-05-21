@@ -126,10 +126,7 @@ void PowerTask(void *argument)
 
 #else
  // on PDM only fans and HV are controlled.
-			if ( device == hv )
-			{
 
-			}
 #endif
 		}
 
@@ -184,7 +181,7 @@ int setRunningPower( bool HV, bool buzzer )
 	}
 
 	if ( ( ADCState.BrakeF > 5 ) ||      // ensure brake light power turned on if any indication brakes are being pressed.
-		 ( ADCState.BrakeR > 5 ) || 		// TODO find minimum values to trigger on.
+		 ( ADCState.BrakeR > 5 ) || 		// TODO find suitable minimum values to trigger on.
 		 ( ADCState.Regen_Percent > 5) )
 	{
 		setDevicePower( Brake,  true);
@@ -297,7 +294,6 @@ bool setPowerState( DevicePowerState devicestate, bool enabled )
 
 void resetPower( void )
 {
-	CarState.HighVoltageReady = 0;
 	setRunningPower( false, false ); // send high voltage off request to PDM.
 }
 
@@ -353,6 +349,11 @@ char * getDevicePowerNameLong( DevicePower device )
 	return "Error";
 }
 
+
+bool getPowerHVReady( void )
+{
+	return true; // TODO implement rather than dummy.
+}
 
 bool PowerLogError( uint8_t nodeid, uint32_t errorcode)
 {
