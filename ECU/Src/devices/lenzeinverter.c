@@ -520,7 +520,6 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 			break;
 
 		case 1:
-			DebugMsg("State 1");
 			CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234);
 			Inverter->SetupState = 2;
 			break;
@@ -528,14 +527,15 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 
 		case 2:
 		{
-			DebugMsg("State 2");
 			uint8_t RDODone[8] = { 0x60, 0x04, 0x40, 0x01, 0, 0, 0, 0};
 
 			if ( memcmp(RDODone, CANRxData, 4) == 0 )
 			{
+#ifdef PRINTSTATE
 				char str[40];
 				snprintf(str, 40, "Lenze inverter %d rcv APPC SDO.", Inverter->Motor);
 				DebugMsg(str);
+#endif
 				Inverter->SetupState = 3; // start the setup state machine
 				CANSendSDO(bus0, Inverter->COBID, 0x1800, 2, 1);
 			}
@@ -549,13 +549,16 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		case 6:
 		case 7:
 		case 8:
+		case 9:
 		{
 			uint8_t RDODone[8] = { 0x60, Inverter->SetupState-3, 0x18, 0x02 };
 			if ( memcmp(RDODone, CANRxData, 8) == 0 )
 			{
+#ifdef PRINTSTATE
 				char str[40];
 				snprintf(str, 40, "Lenze inverter %d rcv SDO.", Inverter->Motor);
 				DebugMsg(str);
+#endif
 				if ( Inverter->SetupState < 9)
 				{
 					CANSendSDO(bus0, Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1);
@@ -566,7 +569,9 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 					DebugMsg("Inverters Ready to use");
 					Inverter->SetupState = 0xFF; // Done!
 				}
-			}
+			} else
+				Inverter->SetupState = 0xFE;
+
 			break;
 		}
 

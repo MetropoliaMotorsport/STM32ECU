@@ -262,31 +262,24 @@ void InvTask(void *argument)
 
 		for ( int i=0; i<MOTORCOUNT; i++) // speed is received
 		{
-			if( InverterState[i].SetupState > 0 )
+			if( InverterState[i].SetupState  == 0xFF )
 			{
-				uint8_t Blank = {0};
-		///		InvStartupState(&InverterState[i], &Blank);
+				if ( ( ( InvReceived & invexpected[i] ) == invexpected[i] )
+					&& ( InverterState[i].SetupState == 0xFF )
+					)// everything received for inverter i
+				{
+					lastseen[i] = xTaskGetTickCount();
+					InverterState[i].Device = OPERATIONAL;
+				} else
+				if ( lastseen[i] > INVERTERTIMEOUT && InverterState[i].Device != OFFLINE ) //
+				{
+					char str[40];
+					snprintf(str, 40, "Inverter %d Timeout", i);
+					DebugMsg(str);
+					InverterState[i].Device = OFFLINE;
+			//		InverterState[i].SetupState = 0;
+				}
 			}
-
-#ifdef INV
-			else
-			if ( ( ( InvReceived & invexpected[i] ) == invexpected[i] )
-				&& ( InverterState[i].SetupState == 0xFF )
-				)// everything received for inverter i
-			{
-				lastseen[i] = xTaskGetTickCount();
-				InverterState[i].Device = OPERATIONAL;
-				HandleInverter( &InverterState[i]);
-			} else
-			if ( lastseen[i] > INVERTERTIMEOUT && InverterState[i].Device != OFFLINE ) //
-			{
-				char str[40];
-				snprintf(str, 40, "Inverter %d Timeout", i);
-				DebugMsg(str);
-				InverterState[i].Device = OFFLINE;
-				InverterState[i].SetupState = 0;
-			}
-#endif
 		}
 
 		setWatchdogBit(watchdogBit);
