@@ -2,6 +2,11 @@
  * watchdog.c
  *
  *      Author: Visa
+ *
+ *      Last resort, if something like a stack overflow happens
+ *      and critical thread stops running, should reboot the board
+ *      and allow indicating to driver an error happened.
+ *
  */
 
 #include "ecumain.h"

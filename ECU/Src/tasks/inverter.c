@@ -162,8 +162,9 @@ void HandleInverter( InverterState_t * Inverter )
 		// only change command if we're not in wanted state to try and transition towards it.
 		if (Inverter->InvState != Inverter->InvRequested && Inverter->InvState > INERROR )
 		{
+			if ( Inverter->Motor == 1 )
 			// check if we've got voltage available for moving up states, otherwise stay up.
-	//		if ( InverterState[i-Inverter->.MCChannel].HighVoltageAvailable > 40 )
+		//	if ( InverterState[i-Inverter->.MCChannel].HighVoltageAvailable > 40 )
 			{
 				Inverter->InvCommand = command;
 			}
@@ -173,26 +174,28 @@ void HandleInverter( InverterState_t * Inverter )
 	// initial testing, use maximum possible error reset period regardless of error.
 	if ( Inverter->InvState == INERROR )
 	{
-		if ( Inverter->AllowReset && xTaskGetTickCount() - Inverter->errortime > ERRORTYPE1RESETTIME )
+		if ( xTaskGetTickCount() - Inverter->errortime > ERRORTYPE1RESETTIME )
 		{
 
 			InvResetError(Inverter);
 			Inverter->errortime = xTaskGetTickCount();
 			Inverter->InvRequested = BOOTUP;
-			Inverter->InvState = OFFLINE;
 #ifdef INVDEBUG
 			char str[40];
 			snprintf(str, 40, "Inverter Reset sent to Inv[%d]", inv);
 			DebugMsg(str);
 #endif
-		} else
-		{
-			xSemaphoreTake(InvUpdating, portMAX_DELAY);
-			InvSend( Inverter );
-			xSemaphoreGive(InvUpdating);
+			InvSend( Inverter, true);
 		}
 	}
+	else
+	{
+//			xSemaphoreTake(InvUpdating, portMAX_DELAY);
+		InvSend( Inverter, false );
+//			xSemaphoreGive(InvUpdating);
+	}
 }
+
 
 // task to manage inverter state.
 void InvTask(void *argument)
@@ -243,6 +246,8 @@ void InvTask(void *argument)
 
 	DebugMsg("Waiting setup");
 
+	uint32_t InvReceived = 0;
+
 	while( 1 )
 	{
 		// TODO change to a single element queue.
@@ -254,15 +259,9 @@ void InvTask(void *argument)
 			}
 		}
 
-		uint32_t InvReceived = 0;
-		xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
-						   ULONG_MAX,        /* Clear all bits on exit. */
-						   &InvReceived, /* Stores the notified value. */
-						   0 );
-
 		for ( int i=0; i<MOTORCOUNT; i++) // speed is received
 		{
-			if( InverterState[i].SetupState  == 0xFF )
+			if( InverterState[i].SetupState == 0xFF )
 			{
 				if ( ( ( InvReceived & invexpected[i] ) == invexpected[i] )
 					&& ( InverterState[i].SetupState == 0xFF )
@@ -270,21 +269,41 @@ void InvTask(void *argument)
 				{
 					lastseen[i] = xTaskGetTickCount();
 					InverterState[i].Device = OPERATIONAL;
+					HandleInverter(&InverterState[i]);
 				} else
 				if ( lastseen[i] > INVERTERTIMEOUT && InverterState[i].Device != OFFLINE ) //
 				{
-					char str[40];
-					snprintf(str, 40, "Inverter %d Timeout", i);
-					DebugMsg(str);
-					InverterState[i].Device = OFFLINE;
-			//		InverterState[i].SetupState = 0;
+					if ( InverterState[i].Device != OFFLINE )
+					{
+						char str[40];
+						snprintf(str, 40, "Inverter %d Timeout", i);
+						DebugMsg(str);
+						InverterState[i].Device = OFFLINE;
+					}
+					InverterState[i].SetupState = 0;
 				}
+			} else
+			{
+				if ( InverterState[i].SetupState != 0xFF && InverterState[i].SetupState > 0
+					&& xTaskGetTickCount() - InverterState[i].SetupStartTime > 1000)
+				{
+					DebugMsg("Resettting startup state machine.");
+					// for some reason inverter SDO state machine failed, try to reset it once.
+					InverterState[i].SetupState = 0; // start the setup state machine
+				}
+
 			}
 		}
 
 		setWatchdogBit(watchdogBit);
 		// only allow one command per cycle. Switch to syncing with main task to not go out of sync?
-		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
+	//	vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
+
+		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY ); // wait for main cycle.
+		xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
+						   ULONG_MAX,        /* Clear all bits on exit. */
+						   &InvReceived, /* Stores the notified value. */
+						   6 );
 	}
 
 	// clear up if somehow get here.
@@ -426,8 +445,9 @@ int8_t getInverterControlWord( const InverterState_t *Inverter ) // returns resp
 	//	case -99 : //99 Fault
 
 		case INERROR:
+			TXState = 0b10000000; // 128
 		default : // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
-			//TXState = 0b10000000; // 128
+
 			TXState = 0b00000000; // 0 don't transmit any command for error, deal with it seperately.
 			break;
 		}
@@ -464,7 +484,7 @@ void resetInv( void )
 	{
 		InverterState[i].InvState = OFFLINE;
 		InverterState[i].Device = OFFLINE;
-		InverterState[i].InvCommand = 0x80;
+		InverterState[i].InvCommand = 0x0;
 		InverterState[i].Torque_Req = 0;
 		InverterState[i].Speed = 0;
 		InverterState[i].Motor = i;

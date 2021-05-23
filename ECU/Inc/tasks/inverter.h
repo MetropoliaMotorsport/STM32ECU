@@ -29,6 +29,7 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	DeviceStatus Device;
 
 	uint8_t SetupState;
+	uint32_t SetupStartTime;
 
 	DeviceStatus InvState;
 	DeviceStatus InvRequested;
@@ -76,7 +77,7 @@ int initInv( void );
 
 // internal functions.
 uint32_t getInvExpected(  uint8_t inv );
-uint8_t InvSend( volatile InverterState_t *Inverter );
+uint8_t InvSend( volatile InverterState_t *Inverter, bool reset );
 void InvResetError( volatile InverterState_t *Inverter );
 bool InvStartupCfg( volatile InverterState_t *Inverter );
 

@@ -29,6 +29,7 @@ extern volatile CarStateType CarState;
 extern volatile DeviceStateType DeviceState;
 
 extern EventGroupHandle_t xStartupSync;
+extern EventGroupHandle_t xCycleSync;
 
 typedef void (ResetCommand)( void );
 

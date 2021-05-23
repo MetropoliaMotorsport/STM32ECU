@@ -150,6 +150,13 @@ void OutputTask(void *argument)
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT( OutputQueue );
 
+	// T 11.9.5Indicators according to T 11.9.1 with safe state “illuminated”
+	// (e.g. absence of failures is not actively indicated) must be illuminated
+	// for 1 s to 3 s for visible check after power cycling the LVMS.
+
+	blinkOutput(IMDLED, Timed, 2000);
+	blinkOutput(BMSLED, Timed, 2000);
+
 	TickType_t xLastWakeTime;
 
 	// Initialise the xLastWakeTime variable with the current time.

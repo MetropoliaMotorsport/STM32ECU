@@ -176,8 +176,6 @@ int TestingProcess( uint32_t OperationLoops  )
 	return TestingState;
 }
 
-
-
 int OperationalProcess( void )
 {
 	// initialise loop timer variable.
@@ -186,8 +184,6 @@ int OperationalProcess( void )
 	static uint16_t loopoverrun = 0;
 
 	cancount = 0;
-
-	CAN_NMTSyncRequest();
 
 	if ( NewOperationalState != OperationalState ) // state has changed.
 	{

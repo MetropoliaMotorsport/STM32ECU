@@ -130,7 +130,7 @@ void InvResetError( volatile InverterState_t *Inverter )
 	CAN2Send(LENZE_RPDO1_ID + Inverter->COBID + ( Inverter->MCChannel * 0x200 ), 8, msg);
 }
 
-uint8_t InvSend( volatile InverterState_t *Inverter )
+uint8_t InvSend( volatile InverterState_t *Inverter, bool reset )
 {
 	uint8_t msg1[8] = {0};
 	uint8_t msg2[8] = {0};
@@ -141,7 +141,8 @@ uint8_t InvSend( volatile InverterState_t *Inverter )
 
 	if ( Inverter->AllowTorque )
 	{
-		vel = Inverter->Speed * 0x4000; // rpm multiplied out.
+		vel = Inverter->MaxSpeed * 0x4000; // rpm multiplied out.
+
 		if ( Inverter->Torque_Req < 0 && !Inverter->AllowRegen )
 			torque = 0;
 		else
@@ -149,12 +150,15 @@ uint8_t InvSend( volatile InverterState_t *Inverter )
 	}
 
     // store values for primary request.
-    storeLEint16(Inverter->InvCommand, &msg1[0]);
+	if ( !reset )
+		storeLEint16(Inverter->InvCommand, &msg1[0]);
+	else
+		storeLEint16(0x80, &msg1[0]);
     storeLEint32(vel, &msg1[2]);
     storeLEint16(torque, &msg1[6]);
 
     // secondary values, what units are these in? they presumably need multiplying up. by 16?
-#ifdef BENCHTEST
+#ifndef BENCHTEST
     storeLEint16(0, &msg2[0]);
     storeLEint16(0, &msg2[2]);
     storeLEint16(0, &msg2[4]); // max power
@@ -392,8 +396,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 	uint32_t latchedStatus1 = getLEint32(&CANRxData[2]);
 	uint16_t latchedStatus2 = getLEint16(&CANRxData[6]);
 
-	if ( true ) // ( CANRxData[1]==22 || CANRxData[1]==6 )
-	//	 checkStatusCode(CANRxData[0])
+	if ( InverterState[inv].SetupState == 0xFF ) // only process once inverter PrivateCan control taken.
 	{
 		volatile DeviceStatus curinvState = InternalInverterState(status);
 
@@ -507,7 +510,7 @@ bool processAPPCError( const uint8_t CANRxData[8], const uint32_t DataLength, co
 bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxData[8] )
 {
 	char str[40];
-	snprintf(str, 40, "[%2X %2X %2X %2X]", CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3]);
+	snprintf(str, 40, "[%2X %2X %2X %2X state ]", CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState);
 	DebugMsg(str);
 
 	 // set SDO's to sync   0x1800-1806  = lenze TPDO 1 through 7
@@ -517,13 +520,14 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		switch ( Inverter->SetupState )
 		{
 		case 0:
+			DebugMsg("called in state 0");
 			break;
 
 		case 1:
 			CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234);
 			Inverter->SetupState = 2;
-			break;
-
+			Inverter->SetupStartTime = xTaskGetTickCount();
+			return true;
 
 		case 2:
 		{
@@ -538,10 +542,11 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 #endif
 				Inverter->SetupState = 3; // start the setup state machine
 				CANSendSDO(bus0, Inverter->COBID, 0x1800, 2, 1);
+				return true;
 			}
 			break;
-		}
 
+		}
 
 		case 3:
 		case 4:
@@ -567,19 +572,27 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				else
 				{
 					DebugMsg("Inverters Ready to use");
-					Inverter->SetupState = 0xFF; // Done!
-				}
-			} else
-				Inverter->SetupState = 0xFE;
 
+					InvSend(Inverter, true);
+					Inverter->SetupState = 0xFF; // Done!
+					InvSend(&InverterState[Inverter->Motor+1], true);
+					InverterState[Inverter->Motor+1].SetupState = 0xFF; // set the other inverter as configured too.
+				}
+				return true;
+			}
 			break;
 		}
 
 		default:
 			Inverter->SetupState = 0;
+			InverterState[Inverter->Motor+1].SetupState = 0;
 		}
 	}
 
+
+
+//	Inverter->SetupState = 0;
+//	InverterState[Inverter->Motor+1].SetupState = 0;
 
 	return true;
 }
@@ -603,7 +616,7 @@ bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const
 {
 //	uint32_t bitset=(0x1 << datahandle->index);
 
-	if ( InverterState[datahandle->index].SetupState > 0)
+	if ( InverterState[datahandle->index].SetupState > 0 && InverterState[datahandle->index].SetupState < 0xFE)
 	{
 
 		uint8_t INVREBOOT[8] = {0x40, 0x56, 0x1F, 0x01 };
@@ -618,20 +631,23 @@ bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const
 	}
 	else
 	{
-		uint8_t RDODone[8] = { 0xC1 };
-
-		if ( memcmp(RDODone, CANRxData, 8) == 0 )
+		if ( InverterState[datahandle->index].SetupState == 0 )
 		{
-			if ( !InverterState[datahandle->index].MCChannel )
+			uint8_t RDODone[8] = { 0xC1 };
+
+			if ( memcmp(RDODone, CANRxData, 8) == 0 )
 			{
-			//	if ( CanRxData[] )  // 0x1801
-	#ifdef DEBUGAPPCSDO
-				char str[40];
-				snprintf(str, 40, "Lenze inverter %d at startup.", datahandle->index);
-				DebugMsg(str);
-	#endif
-				InverterState[datahandle->index].SetupState = 1; // start the setup state machine
-				InvStartupState(&InverterState[datahandle->index], &CANRxData);
+				if ( !InverterState[datahandle->index].MCChannel )
+				{
+				//	if ( CanRxData[] )  // 0x1801
+		#ifdef DEBUGAPPCSDO
+					char str[40];
+					snprintf(str, 40, "Lenze inverter %d at startup.", datahandle->index);
+					DebugMsg(str);
+		#endif
+					InverterState[datahandle->index].SetupState = 1; // start the setup state machine
+					InvStartupState(&InverterState[datahandle->index], &CANRxData);
+				}
 			}
 		}
 	}

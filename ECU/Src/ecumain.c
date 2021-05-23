@@ -4,9 +4,6 @@
  *  Created on: 14 Mar 2019
  *      Author: Visa Harvey
  *
- *
- *      -- use interrupt for sending torque request?
- *      -- semaphores for can receive?
  */
 
 /**
@@ -105,13 +102,15 @@ volatile DeviceStateType DeviceState;
 
 #define MAINTASKSTACK_SIZE 128*12
 #define MAINTASKTASKNAME  "MainTaskTask"
-#define MAINTASKTASKPRIORITY 1
+#define MAINTASKTASKPRIORITY 4
 StaticTask_t xMAINTASKTaskBuffer;
 StackType_t xMAINTASKStack[ MAINTASKSTACK_SIZE ];
 
 TaskHandle_t MainTaskTaskHandle = NULL;
 
 EventGroupHandle_t xStartupSync;
+
+EventGroupHandle_t xCycleSync;
 
 /* USER CODE BEGIN 1 */
 /* Functions needed when configGENERATE_RUN_TIME_STATS is on */
@@ -159,12 +158,17 @@ void MainTask(void *argument)
 #endif
 
 	xEventGroupSync( xStartupSync, 1, 1, 100 );
+
 	while(1)
 	{
 		TickType_t startloop = xLastWakeTime;
 		OperationalProcess();
 		setWatchdogBit(watchdogBit);
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
+
+		xEventGroupSync( xCycleSync, 1, 1, 0 );
+		CAN_NMTSyncRequest(); // send sync at end of loop. set up a syncronisation group.
+
 		if (xLastWakeTime - startloop > CYCLETIME )
 			DebugMsg("Long process loop!");
 	}
@@ -294,9 +298,6 @@ static int HardwareInit( void )
 	initADC();
 
 	lcd_send_stringscroll("Enable LEDS");
-#ifdef POWERLOSSDETECT
-    initPowerLossHandling()
-#endif
 
 #ifdef EEPROMSTORAGE
     initEEPROM();
@@ -307,18 +308,6 @@ static int HardwareInit( void )
 	// should also read in defaults for calibrations, power levels etc.
 
 // initButtons was here moved later, during startup sequence inputs were being triggered early
-
-//	  uint16_t volatile * const power = (uint16_t *) PWR_D3CR;
-
-#ifdef TEST
-	char str[20];
-	i = 0;
-	while ( 1 ) {
-		sprintf(str,"%.8d", i);
-		lcd_send_stringpos(0,0,str);
-		i++;
-	}
-#endif
 
 #ifdef SCROLLTEST
 	char str[20];
@@ -370,6 +359,7 @@ int realmain(void)
 	initWatchdog();
 
     xStartupSync = xEventGroupCreate();
+    xCycleSync = xEventGroupCreate();
 
 	MainTaskTaskHandle = xTaskCreateStatic(
 						  MainTask,
