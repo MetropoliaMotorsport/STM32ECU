@@ -297,13 +297,10 @@ void InvTask(void *argument)
 
 		setWatchdogBit(watchdogBit);
 		// only allow one command per cycle. Switch to syncing with main task to not go out of sync?
-	//	vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 
 		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY ); // wait for main cycle.
-		xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
-						   ULONG_MAX,        /* Clear all bits on exit. */
-						   &InvReceived, /* Stores the notified value. */
-						   6 );
+		// after synced, send current state for next cycle. Higher priority task, so should be received first.
+		xTaskNotifyWait( pdFALSE, ULONG_MAX,  &InvReceived, 0 ); // TODO wait was 6, verify if still received as expected.
 	}
 
 	// clear up if somehow get here.

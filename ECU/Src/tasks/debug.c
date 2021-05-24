@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "ecumain.h"
 #include "inverter.h"
+#include "input.h"
 
 #include "usart.h"
 #include "power.h"
@@ -436,13 +437,6 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 	}
 }
 
-#define KEY_UP ('A'<<8)
-#define KEY_DOWN ('B'<<8)
-#define KEY_LEFT ('C'<<8)
-#define KEY_RIGHT ('D'<<8)
-#define KEY_ESC (27)
-#define KEY_BKSP (8)
-
 //run a small state machine on incoming uart charecters to seperate escape co
 uint16_t processUARTchar( const uint8_t ch, uint8_t * state )
 {
@@ -507,6 +501,50 @@ void debugConfig( void )
 
 	UARTwrite("Running config menu.\r\n");
 
+	if ( ConfigInput( 0xFFFF ) )
+	{
+
+		while ( !quit ) {
+			// just to be on safe side then.
+			volatile uint16_t read = uartWait((char*)&ch);
+
+			read = processUARTchar( (uint8_t) ch, &state );
+
+			if ( read == 0 )
+				continue;
+
+			ConfigInput( read );
+
+			if ( read == 'q' )
+				quit = true;
+			else if ( read == KEY_LEFT )
+				UARTprintf("Left\r\n");
+			else if ( read == KEY_RIGHT )
+				UARTprintf("Right\r\n");
+			else if ( read == KEY_UP )
+				UARTprintf("Up\r\n");
+			else if ( read == KEY_DOWN )
+				UARTprintf("Down\r\n");
+			else if ( read == KEY_ENTER )
+				UARTprintf("Enter\r\n");
+			else
+				UARTwritech(ch);
+
+		}
+	}
+
+	UARTwrite("Done.\r\n");
+}
+
+void debugESCCodeInput( void )
+{
+	bool quit = false;
+
+	uint8_t state = 0;
+	uint16_t ch = 0;
+
+	UARTwrite("Reading keys.\r\n");
+
 	while ( !quit ) {
 		// just to be on safe side then.
 		volatile uint16_t read = uartWait((char*)&ch);
@@ -533,6 +571,7 @@ void debugConfig( void )
 
 	UARTwrite("Done.\r\n");
 }
+
 
 
 static void DebugTask(void *pvParameters)
@@ -694,6 +733,11 @@ static void DebugTask(void *pvParameters)
 				} else val3 = 0;
 
 
+				if ( streql(tkn1, "esckey" ) )
+				{
+					debugESCCodeInput();
+				} else
+
 				if ( streql(tkn1, "config" ) )
 				{
 					debugConfig();
@@ -740,6 +784,22 @@ static void DebugTask(void *pvParameters)
 					vTaskList( str );
 					UARTwrite(str);
 					UARTwrite("\r\n");
+				} else
+
+				if ( streql(tkn1, "help" ) )
+				{
+					UARTwrite("\r\ECU Debug Help.\r\n\r\n");
+
+					UARTwrite("List of available commands:\r\n");
+
+					UARTwrite("power state|device on|off");
+					UARTwrite("fanpwm <leftduty> <rightduty>");
+					UARTwrite("shutdown state|on|off");
+					UARTwrite("motor");
+					UARTwrite("inverter");
+					UARTwrite("config");
+					UARTwrite("esckey");
+
 				} else
 
 				{

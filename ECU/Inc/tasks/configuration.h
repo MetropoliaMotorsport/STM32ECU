@@ -2,7 +2,7 @@
  * configuration.h
  *
  *  Created on: 13 Apr 2019
- *      Author: drago
+ *      Author: Visa
  */
 
 #ifndef CONFIGURATION_H_
@@ -15,6 +15,8 @@ void setCurConfig(void);
 
 void ConfigReset( void );
 bool checkConfigReset( void );
+
+bool ConfigInput( uint16_t input);
 
 bool initConfig( void );
 

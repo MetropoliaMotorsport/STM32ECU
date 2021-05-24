@@ -116,6 +116,7 @@ void InputTask(void *argument)
 
 			bool curstate = HAL_GPIO_ReadPin(Input[i].port, Input[i].pin );
 
+#define BUTTONPULLUP
 #ifndef BUTTONPULLUP
 			curstate = !curstate;
 #else

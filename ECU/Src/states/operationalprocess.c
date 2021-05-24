@@ -142,21 +142,7 @@ int Startup( uint32_t OperationLoops  )
 
 	vTaskDelay(5);
 
-	if ( GetInverterState() > OFFLINE )
-	{
-		return PreOperationalState;
-	} /* else if ( CAN_NMT( 0x81, 0x0 ) ) // sent NMT reset packet to can buses if not received inverter status.
-	{ // 0x81 orig, reset.
-	 // NMT sent, enter wait and configure state.
-		return PreOperationalState;
-
-	}*/ else
-	{
-	 // error sending NMT
-		return OperationalErrorState;
-	}
-
-	 return PreOperationalState;
+	return PreOperationalState;
 }
 
 

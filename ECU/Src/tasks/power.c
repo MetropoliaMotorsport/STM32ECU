@@ -133,10 +133,6 @@ void PowerTask(void *argument)
 		// check if powernodes received.
 
 		uint32_t powernodesOnline = 0;
-		xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
-						   ULONG_MAX,        /* Clear all bits on exit. */
-						   &powernodesOnline, /* Stores the notified value. */
-						   0 );
 
 		if ( powernodesOnline == PNodeAllBit ) // all expecter power nodes reported in. // TODO automate
 		{
@@ -151,7 +147,9 @@ void PowerTask(void *argument)
 
 		sendPowerNodeReq(); // process pending power requests.
 
-		vTaskDelayUntil( &xLastWakeTime, xFrequency );
+		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY ); // wait for main cycle.
+		xTaskNotifyWait( pdFALSE, ULONG_MAX, &powernodesOnline, 0 );
+
 	}
 
 	vTaskDelete(NULL);

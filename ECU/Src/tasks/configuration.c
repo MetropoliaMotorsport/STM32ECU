@@ -2,7 +2,7 @@
  * configuration.c
  *
  *  Created on: 13 Apr 2019
- *      Author: drago
+ *      Author: Visa
  */
 
 #include "ecumain.h"
@@ -260,14 +260,14 @@ void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * edit
 }
 
 
-bool DoMenu()
+bool DoMenu( uint16_t input )
 {
 	static bool inmenu = false;
 	static int8_t selection = 0;
 	static int8_t top = 0;
 	static bool inedit = false;
 
-#define menusize	(6)
+#define menusize	(5)
 
 	static char MenuLines[menusize+1][21] = { 0 };
 
@@ -275,7 +275,7 @@ bool DoMenu()
 
 	if ( inmenu )
 	{
-		if ( selection == 0 && CheckButtonPressed(Config_Input) )
+		if ( selection == 0 && input == KEY_ENTER ) // CheckButtonPressed(Config_Input) )
 		{
 			inmenu = false;
 			inedit = false;
@@ -287,6 +287,11 @@ bool DoMenu()
 
 		if ( !inedit )
 		{
+			if ( input == KEY_DOWN )
+				selection += 1;
+			if ( input == KEY_UP )
+				selection -= 1;
+
 			selection+=GetUpDownPressed(); // allow position adjustment if not editing item.
 
 			if ( selection <  0) selection=0;
@@ -319,7 +324,7 @@ bool DoMenu()
 
 	if ( !inmenu )
 	{
-		if ( CheckButtonPressed(Config_Input) )
+	//	if ( CheckButtonPressed(Config_Input) )
 		{
 			inmenu = true;
 			GetUpDownPressed(); // clear any queued actions.
@@ -331,75 +336,93 @@ bool DoMenu()
 
 }
 
+// Add message to uart message queue. Might be called from ISR so add a check.
+bool ConfigInput( uint16_t input)
+{
+	ConfigInput_msg confmsg;
+
+	confmsg.msgval = input;
+
+	if ( xPortIsInsideInterrupt() )
+		return xQueueSendFromISR( ConfigInputQueue, &confmsg, 0 );
+	else
+		return xQueueSendToBack( ConfigInputQueue, &confmsg, 0); // send it to error state handler queue for display to user.
+}
+
 
 // checks if device initial values appear OK.
 bool ConfigTask( void )
 {
+	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY ); // ensure that tasks don't start before all initialisation done.
+
+	ConfigInput_msg confinp;
+
+	uint8_t configstate = 0;
 
 	while ( 1 )
 	{
-		vTaskDelay(10);
-	}
-
-	if ( !EEPROMBusy() )
-	{
-		DoMenu();
-	}
-
-	char str[40];
-
-	snprintf(str, 40, "Conf: %dnm %s %c %s", CarState.Torque_Req_Max, GetPedalProfile(CarState.PedalProfile, true), (!CarState.LimpDisable)?'T':'F', (CarState.FanPowered)?"Fan":""  );
-	lcd_send_stringline(3,str, 255);
-
-
-	// check if new can data received.
-	if ( ECUConfignewdata )
-	{
-		ECUConfignewdata = false;
-
-		if ( ECUConfigdata[0] != 0)
+		if ( xQueueReceive(ConfigInputQueue,&confinp,10) )
 		{
 
-	//		returnvalue = ReceivingConfig;
-			switch ( ECUConfigdata[0] )
-			{
-#ifdef STMADC
-				case 1 : // send ADC
-					CAN_SendADC(ADC_Data,0);
-					break;
-#endif
-				case 2 :
-					CAN_SendADCminmax();
-					break;
-				case 3 :
-					// toggle HV force loop.
-/*					if ( CarState.TestHV )
-					{
-						CarState.TestHV = 0;
-						testingactive = 0;
-						CAN_ConfigRequest(3, 0 );
-					}
-					else
-					{
-						CarState.TestHV = 1;
-						testingactive = 1;
-						CAN_ConfigRequest( 3, 1 );
-					} */
-					break;
-
-				default : // unknown request.
-					break;
-			}
+			if ( confinp.msgval == 0xFFFF )
+			configstate = 1;
 		} else
 		{
-// deal with local data.
+			confinp.msgval = 0;
 		}
-		// not transferring data.
 
-		// config data packet received, process.
+		switch ( configstate )
+		{
+		case 0 : break;
+
+		case 1:
+			if ( !EEPROMBusy() )
+			{
+				if ( !DoMenu(confinp.msgval) )
+					configstate = 0;
+			}
+
+			char str[40];
+
+			snprintf(str, 40, "Conf: %dnm %s %c %s", CarState.Torque_Req_Max, GetPedalProfile(CarState.PedalProfile, true), (!CarState.LimpDisable)?'T':'F', (CarState.FanPowered)?"Fan":""  );
+			lcd_send_stringline(3,str, 255);
+
+			// check if new can data received.
+			if ( ECUConfignewdata )
+			{
+				ECUConfignewdata = false;
+
+				if ( ECUConfigdata[0] != 0)
+				{
+					switch ( ECUConfigdata[0] )
+					{
+		#ifdef STMADC
+						case 1 : // send ADC
+							CAN_SendADC(ADC_Data,0);
+							break;
+		#endif
+						case 2 :
+							CAN_SendADCminmax();
+							break;
+						case 3 :
+							// toggle HV.
+							break;
+
+						default : // unknown request.
+							break;
+					}
+				} else
+				{
+		// deal with local data.
+				}
+			}
+
+			break;
+		}
 	}
 
-	return true; // return if config changed.
+	// clean up if we somehow get here.
+	vTaskDelete(NULL);
 }
 
 

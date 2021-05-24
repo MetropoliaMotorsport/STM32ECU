@@ -11,6 +11,15 @@
 #include "ecu.h"
 #include "queue.h"
 
+
+#define KEY_UP ('A'<<8)
+#define KEY_DOWN ('B'<<8)
+#define KEY_LEFT ('C'<<8)
+#define KEY_RIGHT ('D'<<8)
+#define KEY_ENTER ('\r')
+#define KEY_ESC (27)
+#define KEY_BKSP (8)
+
 //#define Debouncetime 10000 // only allow one button press every 20ms? No longer being used, Tim7 used instead.
 
 /*
