@@ -14,11 +14,6 @@
 #define EEPROM_ADDRESS             0xA0    /* EEPROM M24128 Address  */
 #define EEPROM_PAGESIZE            32     /* EEPROM M24128 used     */
 
-//#define EEPROM_DATAVERSION		   0x01
-//#define EEPROM_LONG_TIMEOUT        1000    /* Long Timeout 1s */
-//#define EEPROM_TIMING              0x00D00E28
-
-
 #define EEPROMVERSIONSTR		("MMECUV0.1")
 
 typedef enum EEPROM_cmd { send, receive, read, write } EEPROM_cmd;
@@ -98,7 +93,7 @@ typedef struct eepromdatastruct {
 
 // 503 - 16 blocks. allocate 50 blocks : 128 blocks total
 
-int initEEPROM( void );
+bool initEEPROM( void );
 
 bool checkversion(char * data);
 

@@ -14,15 +14,6 @@
 // freeRTOS
 #include "semphr.h"
 
-
-#if defined( __ICCARM__ )
-  #define DMA_BUFFER \
-      _Pragma("location=\".dma_buffer\"")
-#else
-  #define DMA_BUFFER \
-      __attribute__((section(".dma_buffer")))
-#endif
-
 // ADC conversion buffer, should be aligned in memory for faster DMA?
 DMA_BUFFER ALIGN_32BYTES (static uint8_t UART1TXBuffer[1024]);
 

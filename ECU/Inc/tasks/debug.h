@@ -12,7 +12,9 @@
 
 #define MAXDEBUGOUTPUT (80)
 
+// print a message to debug output.
 bool DebugMsg( const char * msg);
+bool DebugPrintf( const char * format, ... );
 
 int initDebug( void );
 

@@ -24,7 +24,7 @@ typedef struct ButtonData {
 	uint32_t lastreleased; // when was button last let go.
 	uint32_t count; // how many times has it been pressed.
 	bool pressed; // has button been pressed since last check.
-	bool held; // is button being held down currently, for e.g. scrolling.
+	uint32_t held; // is button being held down currently, for e.g. scrolling.
 	bool first;
 	// define the hardware button for passing button data including reading it
 } ButtonData;
@@ -124,7 +124,7 @@ void InputTask(void *argument)
 			if ( curstate != Input[i].state) // current state of button has changed reset duration count.
 			{
 				Input[i].statecount = 0;
-				Input[i].held = false;
+				Input[i].held = 0;
 				Input[i].state = curstate;
 			}
 
@@ -160,11 +160,13 @@ void InputTask(void *argument)
 			{
 				if ( curstate )
 				{
-					Input[i].held = true;
+					Input[i].held +=1; // add one for each cycle held.
 				}
 			}
 
 		}
+
+		// TODO add a reset procedure via long button press as another last resort.
 
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 	}

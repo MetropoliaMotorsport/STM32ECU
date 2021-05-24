@@ -13,10 +13,9 @@ CANData ECUConfig;
 int CheckConfigurationRequest( void );
 void setCurConfig(void);
 
-
 void ConfigReset( void );
 bool checkConfigReset( void );
 
-int initConfig( void );
+bool initConfig( void );
 
 #endif /* CONFIGURATION_H_ */

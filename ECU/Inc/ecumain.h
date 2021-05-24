@@ -22,6 +22,22 @@
 
 #include "canecu.h"
 
+#if defined( __ICCARM__ )
+  #define DMA_BUFFER \
+      _Pragma("location=\".dma_buffer\"")
+#else
+  #define DMA_BUFFER \
+      __attribute__((section(".dma_buffer")))
+#endif
+
+#if defined( __ICCARM__ )
+  #define RAM_D1 \
+      _Pragma("location=\".dma_buffer\"")
+#else
+  #define RAM_D1 \
+      __attribute__((section(".dma_buffer")))
+#endif
+
 extern CANData ECUCAN;
 
 extern volatile CarStateType CarState;
@@ -34,41 +50,6 @@ extern EventGroupHandle_t xCycleSync;
 typedef void (ResetCommand)( void );
 
 int RegisterResetCommand( ResetCommand Handler );
-
-/*
-#include "output.h"
-#include "input.h"
-
-#include "preoperation.h"
-#include "operationreadyness.h"
-#include "operationalprocess.h"
-#include "idleprocess.h"
-#include "tsactiveprocess.h"
-#include "runningprocess.h"
-#include "configuration.h"
-#include "errors.h"
-
-#include "timerecu.h"
-#include "dwt_delay.h"
-#include "interrupts.h"
-#include "sickencoder.h"
-#include "pdm.h"
-#include "ivt.h"
-#include "inverter.h"
-#include "bms.h"
-#include "adcecu.h"
-#include "lcd.h"
-#include "eeprom.h"
-#include "memorator.h"
-#include "power.h"
-#include "analognode.h"
-#include "powernode.h"
-#include "node.h"
-#include "imu.h"
-#include "torquecontrol.h"
-#include "watchdog.h"
-#include "brake.h"
-*/
 
 int realmain(void);
 

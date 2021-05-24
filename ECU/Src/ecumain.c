@@ -297,8 +297,6 @@ static int HardwareInit( void )
 
 	initADC();
 
-	lcd_send_stringscroll("Enable LEDS");
-
 #ifdef EEPROMSTORAGE
     initEEPROM();
 #endif

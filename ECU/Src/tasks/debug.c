@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-typedef struct Debug_msg {
+typedef struct Debug_msg{
 	char str[MAXDEBUGOUTPUT];
 	//uint32_t msgval;
 } Debug_msg;
@@ -32,18 +32,14 @@ typedef struct Debug_msg {
 #define DEBUGTASKNAME  "DebugTask"
 #define DEBUGTASKPRIORITY 1
 StaticTask_t xDEBUGTaskBuffer;
-StackType_t xDEBUGStack[ DEBUGSTACK_SIZE ];
+RAM_D1 StackType_t xDEBUGStack[ DEBUGSTACK_SIZE ];
 
 TaskHandle_t DebugTaskHandle = NULL;
 
 #define DebugQUEUE_LENGTH    30
 #define DebugITEMSIZE		sizeof( Debug_msg )
 
-/* The variable used to hold the queue's data structure. */
 static StaticQueue_t DebugStaticQueue;
-
-/* The array to use as the queue's storage area.  This must be at least
-uxQueueLength * uxItemSize bytes. */
 uint8_t DebugQueueStorageArea[ DebugQUEUE_LENGTH * DebugITEMSIZE ];
 
 QueueHandle_t DebugQueue;
@@ -51,7 +47,8 @@ QueueHandle_t DebugQueue;
 
 #define DEBUGPROMPT    "DebugCmd: "
 
-int PRINT_MESG_UART(const char * format, ... )
+
+int UARTprintf(const char * format, ... )
 {
 	va_list ap;
 	uint8_t buffer [128];
@@ -67,7 +64,8 @@ int PRINT_MESG_UART(const char * format, ... )
 	return UART_WaitTXDone( DEBUGUART, 100);
 }
 
-int uartwritech( const char ch)
+
+int UARTwritech( const char ch)
 {
 	if(!UART_Transmit(DEBUGUART, (uint8_t *)&ch, 1)) {
 		return 0;
@@ -78,16 +76,16 @@ int uartwritech( const char ch)
 
 
 
-void uartwrite( const char *str)
+void UARTwrite( const char *str)
 {
-	PRINT_MESG_UART(str);
+	UARTprintf(str);
 }
 
-void uartwritetwoline(const char *str, const char *str2)
+void UARTwritetwoline(const char *str, const char *str2)
 {
-	PRINT_MESG_UART(str);
-	PRINT_MESG_UART(str2);
-	PRINT_MESG_UART("\r\n");
+	UARTprintf(str);
+	UARTprintf(str2);
+	UARTprintf("\r\n");
 }
 
 
@@ -96,6 +94,22 @@ bool DebugMsg( const char * msg)
 {
 	struct Debug_msg debugmsg;
 	strncpy( debugmsg.str, msg, MAXDEBUGOUTPUT );
+	if ( xPortIsInsideInterrupt() )
+		return xQueueSendFromISR( DebugQueue, &debugmsg, 0 );
+	else
+		return xQueueSendToBack( DebugQueue, &debugmsg, 0); // send it to error state handler queue for display to user.
+}
+
+// print a message to debug output using printf format.
+bool DebugPrintf( const char * format, ... )
+{
+	va_list ap;
+
+	struct Debug_msg debugmsg;
+	va_start(ap, format);
+	vsnprintf ((char*)debugmsg.str, MAXDEBUGOUTPUT, format, ap);
+	va_end(ap);
+
 	if ( xPortIsInsideInterrupt() )
 		return xQueueSendFromISR( DebugQueue, &debugmsg, 0 );
 	else
@@ -124,8 +138,8 @@ uint8_t uartWait( char *ch )
 
 		if ( xQueueReceive(DebugQueue,&msg,10) )
 		{
-			uartwrite("\r\n");
-			uartwrite(msg.str);
+			UARTwrite("\r\n");
+			UARTwrite(msg.str);
 			// TODO could redraw prompt here instead so it always displays correctly.
 
 			redraw = true;
@@ -167,16 +181,16 @@ static void debugFanPWM( const int tokens, const int val1, const int val2 )
 {
 	if ( tokens != 3 )
 	{
-		uartwrite("Please give left and right pwm duty.\r\n");
+		UARTwrite("Please give left and right pwm duty.\r\n");
 	} else
 	{
 		if ( val1 > 255 || val2 > 255 || val1 < 0 || val2 < 0 )
 		{
-			uartwrite("invalid PWM duty cycles given");
+			UARTwrite("invalid PWM duty cycles given");
 		} else
 		{
 			snprintf(str, 80, "Requesting fan PWMs Left: %4d Right: %4d\r\n", val1, val2);
-			uartwrite(str);
+			UARTwrite(str);
 
 			FanPWMControl( val1, val2 );
 		}
@@ -187,9 +201,9 @@ static void debugInverter( const char *tkn2, const char *tkn3 )
 {
 	if ( streql(tkn2, "state") || streql(tkn2, "status") )
 	{				  // PreOperation  PreOperation
-		uartwrite("-----------------------------------\r\n");
-		uartwrite("Inv  Current State  Requested State\r\n");
-		uartwrite("-----------------------------------\r\n");
+		UARTwrite("-----------------------------------\r\n");
+		UARTwrite("Inv  Current State  Requested State\r\n");
+		UARTwrite("-----------------------------------\r\n");
 
 
 		for ( int i=0;i<MOTORCOUNT;i++)
@@ -201,14 +215,14 @@ static void debugInverter( const char *tkn2, const char *tkn3 )
 					getDeviceStatusStr(invs.InvState ),
 					getDeviceStatusStr(invs.InvRequested )
 			);
-			uartwrite(str);
+			UARTwrite(str);
 		}
 
 	}
 	else
 	if ( streql(tkn2, "startup") )
 	{
-		uartwrite("Sending inverter startup\r\n");
+		UARTwrite("Sending inverter startup\r\n");
 		for ( int i=0;i<MOTORCOUNT;i++)
 		{
 		//	InvStartupCfg( &InverterState[i] );
@@ -223,18 +237,18 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t speed 
 		invRequestState( OPERATIONAL );
 		InverterAllowTorqueAll(true);
 
-		uartwrite("Setting torque enabled.\r\n");
+		UARTwrite("Setting torque enabled.\r\n");
 	}
 	else if ( checkOff( tkn2 ) )
 	{
 		InverterAllowTorqueAll( false );
 		invRequestState( BOOTUP );
-		uartwrite("Setting torque disabled.\r\n");
+		UARTwrite("Setting torque disabled.\r\n");
 	}
 	else if ( streql( tkn2, "req" )  )
 	{
 		InverterSetTorqueInd( 1, 0, speed);
-		uartwrite("Setting speed request.\r\n");
+		UARTwrite("Setting speed request.\r\n");
 	}
 }
 
@@ -243,29 +257,29 @@ static void debugShutdown( const char *tkn2, const char *tkn3 )
 {
 	if ( checkOn(tkn2) )
 	{
-		uartwrite("Setting shutdown circuit closed.\r\n");
+		UARTwrite("Setting shutdown circuit closed.\r\n");
 		ShutdownCircuitSet(true);
 	}
 	else if ( checkOff(tkn2) )
 	{
-		uartwrite("Setting shutdown circuit open.\r\n");
+		UARTwrite("Setting shutdown circuit open.\r\n");
 		ShutdownCircuitSet(false);
 	}
 	else
 	{
-		uartwrite("Current state of shutdown switches:\r\n");
+		UARTwrite("Current state of shutdown switches:\r\n");
 
-		uartwritetwoline("ECU          ", ShutdownCircuitState()?"Closed":"Open");
-		uartwritetwoline("BOTS         ", Shutdown.BOTS?"Closed":"Open");
-		uartwritetwoline("Inertia      ", Shutdown.InertiaSwitch?"Closed":"Open");
-		uartwritetwoline("BSPD After   ", Shutdown.BSPDAfter?"Closed":"Open");
-		uartwritetwoline("BSPD Before  ", Shutdown.BSPDBefore?"Closed":"Open");
-		uartwritetwoline("Cockpit      ", Shutdown.CockpitButton?"Closed":"Open");
-		uartwritetwoline("Left         ", Shutdown.LeftButton?"Closed":"Open");
-		uartwritetwoline("Right        ", Shutdown.RightButton?"Closed":"Open");
-		uartwritetwoline("BMS          ", Shutdown.BMS?"Closed":"Open"); // BMSReason
-		uartwritetwoline("IMD          ", Shutdown.IMD?"Closed":"Open");
-		uartwritetwoline("AIR          ", Shutdown.AIROpen?"Closed":"Open");
+		UARTwritetwoline("ECU          ", ShutdownCircuitState()?"Closed":"Open");
+		UARTwritetwoline("BOTS         ", Shutdown.BOTS?"Closed":"Open");
+		UARTwritetwoline("Inertia      ", Shutdown.InertiaSwitch?"Closed":"Open");
+		UARTwritetwoline("BSPD After   ", Shutdown.BSPDAfter?"Closed":"Open");
+		UARTwritetwoline("BSPD Before  ", Shutdown.BSPDBefore?"Closed":"Open");
+		UARTwritetwoline("Cockpit      ", Shutdown.CockpitButton?"Closed":"Open");
+		UARTwritetwoline("Left         ", Shutdown.LeftButton?"Closed":"Open");
+		UARTwritetwoline("Right        ", Shutdown.RightButton?"Closed":"Open");
+		UARTwritetwoline("BMS          ", Shutdown.BMS?"Closed":"Open"); // BMSReason
+		UARTwritetwoline("IMD          ", Shutdown.IMD?"Closed":"Open");
+		UARTwritetwoline("AIR          ", Shutdown.AIROpen?"Closed":"Open");
 	}
 }
 
@@ -278,13 +292,13 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 
 	if ( strlen(tkn2) == 0 ) // we need some sub commands, otherwise show help
 	{
-		uartwrite("Power command: Help\r\n");
+		UARTwrite("Power command: Help\r\n");
 	}
 	else if ( streql(tkn2, "status") || streql(tkn2, "state") )
 	{
-		uartwrite("------------------------\r\n");
-		uartwrite("Power        Exp Act Err\r\n");
-		uartwrite("------------------------\r\n");
+		UARTwrite("------------------------\r\n");
+		UARTwrite("Power        Exp Act Err\r\n");
+		UARTwrite("------------------------\r\n");
 
 		uint8_t listsize = getDevicePowerListSize();
 
@@ -297,14 +311,14 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 						powerErrorOccurred(i)
 					//    powerErrorOccurred(i)?"Yes":"No"
 			);
-			uartwrite(str);
+			UARTwrite(str);
 		}
 	}
 	else if ( streql(tkn2, "all") )
 	{
 		if ( streql(tkn3, "reset") )
 		{
-			uartwrite("Power error reset for all\r\n");
+			UARTwrite("Power error reset for all\r\n");
 			for ( int i=1; i <= AccuFan; i++ )
 				resetDevicePower( i );
 		}
@@ -325,9 +339,9 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 
 			if ( !badcmd )
 			{
-				uartwrite("Manual power request for all power set ");
-				uartwrite(state? "on":"off");
-				uartwrite("\r\n");
+				UARTwrite("Manual power request for all power set ");
+				UARTwrite(state? "on":"off");
+				UARTwrite("\r\n");
 
 				for ( int i=1; i <= AccuFan; i++ )
 					setDevicePower( i, state );
@@ -380,9 +394,9 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 
 		if ( streql(tkn3, "reset") )
 		{
-			uartwrite("Power error reset for ");
-			uartwrite(getDevicePowerNameLong(device));
-			uartwrite("\r\n");
+			UARTwrite("Power error reset for ");
+			UARTwrite(getDevicePowerNameLong(device));
+			UARTwrite("\r\n");
 			resetDevicePower(device);
 		} else
 		{
@@ -401,11 +415,11 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 
 			if ( device != None )
 			{
-				uartwrite("Manual power request for ");
-				uartwrite(getDevicePowerNameLong(device));
-				uartwrite(" set ");
-				uartwrite(state? "on":"off");
-				uartwrite("\r\n");
+				UARTwrite("Manual power request for ");
+				UARTwrite(getDevicePowerNameLong(device));
+				UARTwrite(" set ");
+				UARTwrite(state? "on":"off");
+				UARTwrite("\r\n");
 				setDevicePower( device, state );
 			}
 			else
@@ -418,8 +432,106 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 
 	if ( badcmd )
 	{
-		uartwrite("Invalid power request given: Help\r\n");
+		UARTwrite("Invalid power request given: Help\r\n");
 	}
+}
+
+#define KEY_UP ('A'<<8)
+#define KEY_DOWN ('B'<<8)
+#define KEY_LEFT ('C'<<8)
+#define KEY_RIGHT ('D'<<8)
+#define KEY_ESC (27)
+#define KEY_BKSP (8)
+
+//run a small state machine on incoming uart charecters to seperate escape co
+uint16_t processUARTchar( const uint8_t ch, uint8_t * state )
+{
+
+	// didn't receive a char, skip.
+	if ( ch == 0 )
+	{
+		return ch; // nothing to do this loop, return untouched.
+	}
+
+	// 27/91/67 = left
+	// 27/91/68 = right
+	// ch 8 == backspace.
+	switch ( *state )
+	{
+	case 0 :
+		if ( ch == 27 ) // escape code
+		{
+			*state = 1;
+			return 0;
+		}
+
+		break;
+
+	case 1 :
+		if ( ch == 91) // [
+		{
+			*state = 2;
+			return 0;
+		}  else
+		{
+			*state = 0;
+			break;
+		}
+
+	case 2 :
+		switch ( ch<<8 )
+		{
+		case KEY_LEFT :
+		case KEY_RIGHT :
+		case KEY_UP :
+		case KEY_DOWN :
+			*state = 0;
+			uint16_t retch = ch << 8;
+			return retch;
+		}
+		state = 0;
+		return 0;
+		break;
+	}
+
+	return ch;
+
+}
+
+void debugConfig( void )
+{
+	bool quit = false;
+
+	uint8_t state = 0;
+	uint16_t ch = 0;
+
+	UARTwrite("Running config menu.\r\n");
+
+	while ( !quit ) {
+		// just to be on safe side then.
+		volatile uint16_t read = uartWait((char*)&ch);
+
+		read = processUARTchar( (uint8_t) ch, &state );
+
+		if ( read == 0 )
+			continue;
+
+		if ( read == 'q' )
+			quit = true;
+		else if ( read == KEY_LEFT )
+			UARTprintf("Left\r\n");
+		else if ( read == KEY_RIGHT )
+			UARTprintf("Right\r\n");
+		else if ( read == KEY_UP )
+			UARTprintf("Up\r\n");
+		else if ( read == KEY_DOWN )
+			UARTprintf("Down\r\n");
+		else
+			UARTwritech(ch);
+
+	}
+
+	UARTwrite("Done.\r\n");
 }
 
 
@@ -427,28 +539,27 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	int inputpos = 0;
-	uartwrite("\r\nBooting ECU...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU...\r\n\r\n");
 
 	redraw = false;
 
-	uartwrite(DEBUGPROMPT);
+	UARTwrite(DEBUGPROMPT);
 
 	char ch = 0;
 
-	bool esc = false;
+	uint8_t escstate = false;
 
 	while (1) {
 		// just to be on safe side then.
-		volatile uint8_t read = uartWait(&ch);
+		volatile uint16_t read = uartWait(&ch);
 
 		if ( redraw )
 		{
 			// we received debug output during keyboard wait, resend prompt and current imput to help.
-			uartwrite("\r\n");
+			UARTwrite("\r\n");
 			// uartwrite("\x1b[k");
-			uartwrite(DEBUGPROMPT);
-			uartwrite(str);
+			UARTwrite(DEBUGPROMPT);
+			UARTwrite(str);
 		}
 
 		// didn't receive a char, skip.
@@ -457,7 +568,7 @@ static void DebugTask(void *pvParameters)
 			continue; // nothing to do this loop, return to start.
 		}
 
-		inputpos += read;
+		read = processUARTchar( ch, &escstate );
 
 		bool endline = false;
 
@@ -465,50 +576,36 @@ static void DebugTask(void *pvParameters)
 		// 27/91/67 = left
 		// 91/68 = right
 		// ch 8 == backspace.
-		if ( esc )
+
+		if ( read == 0 )
 		{
-			if ( ch == 79 ) // f key
-				continue;
-				// ch == 80 = F1
-				// ch == 81 = f2 ...
-			if ( ch == 91)
-				continue;
-			if ( ch == 68 ) // left
-			{}
-			if ( ch == 67 ) // right
-			{}
-			esc = false;
-			continue;
-		} else
-		if ( ch == 27 )
-		{
-			esc = true;
-			continue;
-		} else
-		if ( ch == 8 )
+			continue; // nothing to do this loop, return to start.
+		}
+
+		if ( read == 8 )
 		{
 			if ( charcount > 0 )
 			{
 				str[charcount] = 0;
 				--charcount;
-				uartwritech(ch);
-				uartwritech(' ');
-				uartwritech(ch);
+				UARTwritech(read);
+				UARTwritech(' ');
+				UARTwritech(read);
 			}
 		} else
-		if ( !( ch == '\n' || ch == '\r') )
+		if ( !( read == '\n' || read == '\r') )
 		{
-			if ( ch >= 32) // only process printable charecters.
+			if ( read >= 32) // only process printable charecters.
 			{
-				str[charcount] = ch;
+				str[charcount] = read;
 				str[charcount+1] = 0;
-				uartwritech(ch);
+				UARTwritech(read);
 				++charcount;
 			}
 		} else
 		{
 			endline = true;
-			uartwrite("\r\n");
+			UARTwrite("\r\n");
 		}
 
 #define TOKENLENGTH   12
@@ -597,6 +694,10 @@ static void DebugTask(void *pvParameters)
 				} else val3 = 0;
 
 
+				if ( streql(tkn1, "config" ) )
+				{
+					debugConfig();
+				} else
 				if ( streql(tkn1, "inverter" ) )
 				{
 					debugInverter( tkn2, tkn3 );
@@ -623,28 +724,28 @@ static void DebugTask(void *pvParameters)
 				} else if ( streql( str, "stat") )
 				{
 					// print stats.
-					uartwrite("\r\nStatistics output:\r\n");
+					UARTwrite("\r\nStatistics output:\r\n");
 					vTaskGetRunTimeStats( str ); // fills ringbuffer, need to split into multiple transmissions
 
-					uartwrite(str);
+					UARTwrite(str);
 
-					uartwrite("\r\n");
+					UARTwrite("\r\n");
 
 				} else
 
 				if ( streql( str, "list") )
 				{
 					// print list.
-					uartwrite("\r\nTask List\r\n");
+					UARTwrite("\r\nTask List\r\n");
 					vTaskList( str );
-					uartwrite(str);
-					uartwrite("\r\n");
+					UARTwrite(str);
+					UARTwrite("\r\n");
 				} else
 
 				{
-					uartwrite("Unknown command: ");
-					uartwrite(tkn1);
-					uartwrite("\r\n");
+					UARTwrite("Unknown command: ");
+					UARTwrite(tkn1);
+					UARTwrite("\r\n");
 				}
 
 			}
@@ -652,7 +753,7 @@ static void DebugTask(void *pvParameters)
 			charcount = 0;
 			str[0] = 0;
 			// print prompt to request further input.
-			uartwrite(DEBUGPROMPT);
+			UARTwrite(DEBUGPROMPT);
 
 		}
 	}

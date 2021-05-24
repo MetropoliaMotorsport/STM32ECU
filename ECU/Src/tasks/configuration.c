@@ -14,6 +14,31 @@
 #include "eeprom.h"
 #include "adcecu.h"
 
+// ADC conversion buffer, should be aligned in memory for faster DMA?
+typedef struct {
+	uint32_t msgval;
+} ConfigInput_msg;
+// this is input of human time input, very unlikely to be able to manage
+// more than 2 inputs before processed.
+
+#define ConfigInputQUEUE_LENGTH    2
+#define ConfigInputITEMSIZE		sizeof( ConfigInput_msg )
+
+static StaticQueue_t ConfigInputStaticQueue;
+uint8_t ConfigInputQueueStorageArea[ ConfigInputQUEUE_LENGTH * ConfigInputITEMSIZE ];
+
+QueueHandle_t ConfigInputQueue;
+
+
+#define ConfigSTACK_SIZE 128*8
+#define ConfigTASKNAME  "ConfigTask"
+#define ConfigTASKPRIORITY 1
+StaticTask_t xConfigTaskBuffer;
+RAM_D1 StackType_t xConfigStack[ ConfigSTACK_SIZE ];
+
+TaskHandle_t ConfigTaskHandle = NULL;
+
+
 static uint8_t ECUConfigdata[8] = {0};
 static bool	   ECUConfignewdata = false;
 static uint32_t ECUConfigDataTime = 0;
@@ -24,12 +49,6 @@ CANData ECUConfig = { NULL, 0x21, 8, GetConfigCmd, NULL, 0 };
 
 static bool configReset = false;
 
-
-int initConfig( void )
-{
-	RegisterCan1Message(&ECUConfig);
-	return 0;
-}
 
 bool checkConfigReset( void )
 {
@@ -72,8 +91,6 @@ bool GetConfigCmd( const uint8_t CANRxData[8], const uint32_t DataLength, const 
 
 void setCurConfig(void)
 {
-#ifndef HPF19
-
 //	EEPROMdata
 
 	if ( DeviceState.EEPROM == ENABLED )
@@ -92,82 +109,6 @@ void setCurConfig(void)
 		CarState.Torque_Req_Max = 5;
 		CarState.FanPowered = true;
 	}
-
-
-#else
-	SetupNormalTorque();
-	CarState.LimpDisable = 0;
-	CarState.DrivingMode = ADCState.DrivingMode;
-
-	switch ( ADCState.DrivingMode )
-	{
-		case 1: // 5nm  5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    64,    65,   0
-			CarState.Torque_Req_Max = 5;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
-#endif
-			break;
-		case 2: // 10nm
-			CarState.Torque_Req_Max = 25;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
-#endif
-			break;
-		case 3: // 15nm
-			CarState.Torque_Req_Max = 25;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 1;
-#endif
-			break;
-		case 4: // 20nm
-			CarState.Torque_Req_Max = 35;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
-#endif
-			break;
-		case 5: // 25nm
-			CarState.Torque_Req_Max = 35;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 1;
-#endif
-			break;
-		case 6: // 30nm
-			CarState.Torque_Req_Max = 65;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
-#endif
-			#ifdef EEPROM
-				SetupTorque(0);
-			#else
-				SetupLargeLowRangeTorque();
-			#endif
-			break;
-		case 7: // 65nm Track
-			CarState.Torque_Req_Max = 65;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 1;
-#endif
-
-		#ifdef EEPROM
-			SetupTorque(0);
-		#else
-			SetupLargeLowRangeTorque();
-		#endif
-			break;
-		case 8: // 65nm Accel
-			CarState.Torque_Req_Max = 65;
-			CarState.LimpDisable = 1;
-			#ifdef EEPROM
-				SetupTorque(0);
-			#else
-				SetupLowTravelTorque();
-			#endif
-
-			break;
-
-	}
-
-#endif
 
 	CarState.Torque_Req_CurrentMax = CarState.Torque_Req_Max;
 }
@@ -392,43 +333,26 @@ bool DoMenu()
 
 
 // checks if device initial values appear OK.
-int CheckConfigurationRequest( void )
+bool ConfigTask( void )
 {
 
-	char str[40] = "";
-
-//	static int configstart = 0;
-	int returnvalue = 0;
-
-	static bool initialconfig = true;
-
-	static uint8_t testingactive = 0;
-
-	if ( initialconfig )
+	while ( 1 )
 	{
-		if ( !SetupADCInterpolationTables(getEEPROMBlock(0)) )
-		{
-				// bad config.
-		}
-		// TODO move to better place. setup default ADC lookup tables.
-		initialconfig = false; // call interpolation table setup once only.
-		CarState.Torque_Req_Max = 0;
-		CarState.Torque_Req_CurrentMax = 0;
+		vTaskDelay(10);
 	}
-
 
 	if ( !EEPROMBusy() )
 	{
 		DoMenu();
 	}
 
-	sprintf(str,"Conf: %dnm %s %c %s", CarState.Torque_Req_Max, GetPedalProfile(CarState.PedalProfile, true), (!CarState.LimpDisable)?'T':'F', (CarState.FanPowered)?"Fan":""  );
+	char str[40];
+
+	snprintf(str, 40, "Conf: %dnm %s %c %s", CarState.Torque_Req_Max, GetPedalProfile(CarState.PedalProfile, true), (!CarState.LimpDisable)?'T':'F', (CarState.FanPowered)?"Fan":""  );
 	lcd_send_stringline(3,str, 255);
 
-	// check for config change messages. - broken?
 
-	// data receive block [ block sequence[2], data size[1] ]
-
+	// check if new can data received.
 	if ( ECUConfignewdata )
 	{
 		ECUConfignewdata = false;
@@ -475,10 +399,47 @@ int CheckConfigurationRequest( void )
 		// config data packet received, process.
 	}
 
-	// if can config request testing mode, send acknowledgement, then return 10;
+	return true; // return if config changed.
+}
 
-	if ( testingactive ) returnvalue = TestingState;
 
-	return returnvalue; // return a requested driving state, or that in middle of config?
+bool doPedalCalibration( void )
+{
+
+
+
+}
+
+
+bool initConfig( void )
+{
+	RegisterCan1Message(&ECUConfig);
+
+	ConfigInputQueue = xQueueCreateStatic( ConfigInputQUEUE_LENGTH,
+											ConfigInputITEMSIZE,
+											ConfigInputQueueStorageArea,
+											&ConfigInputStaticQueue );
+
+	vQueueAddToRegistry(ConfigInputQueue, "Config Input" );
+
+	if ( !SetupADCInterpolationTables(getEEPROMBlock(0)) )
+	{
+			// bad config, fall back to some kind of of default, force recalibration of pedal?
+		doPedalCalibration();
+	}
+
+	CarState.Torque_Req_Max = 0;
+	CarState.Torque_Req_CurrentMax = 0;
+
+	ConfigTaskHandle = xTaskCreateStatic(
+						  ConfigTask,
+						  ConfigTASKNAME,
+						  ConfigSTACK_SIZE,
+						  ( void * ) 1,
+						  ConfigTASKPRIORITY,
+						  xConfigStack,
+						  &xConfigTaskBuffer );
+
+	return true;
 }
 

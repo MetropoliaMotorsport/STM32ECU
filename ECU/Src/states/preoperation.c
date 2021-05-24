@@ -282,55 +282,43 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	}
 
-	// check if received configuration requests, or mode change -> testing state.
-	switch ( CheckConfigurationRequest() ) // allows RequestState to be set to zero to prevent mode changing mid config, or request a different mode.
+
+	if ( CheckButtonPressed(Config_Input) )
 	{
-		case TestingState :
-			RequestState = TestingState; // Testing state requested from Configuration.
-			break;
-/*
-		case LimpState :
-			RequestState = LimpState; // Limpmode state requested from Configuration, set as requested next state.
-			break; */
+	//	DoConfig(); // right now, this won't return till done anyway, so the cycle will go out of window whilst in config for now.
+	}
 
-		case ReceivingData :
-			RequestState = PreOperationalState; // don't allow leaving pre operation whilst
-												// in middle of processing a configuration / testing request.
-			break;
-		case 0:
-		default:
-			RequestState = OperationalReadyState; // nothing happening in config, assume normal operation.
-			static bool showbrakebal = false;
+	// TODO this variable is going to be done away with.
+	RequestState = OperationalReadyState; // nothing happening in config, assume normal operation.
+	static bool showbrakebal = false;
 
-			static bool showadc = false;
+	static bool showadc = false;
 
-			switch ( GetLeftRightPressed() )
-			{
-				case -1 : showbrakebal = !showbrakebal; break;
-				case 1 : showadc = !showadc; break;
-			}
+	switch ( GetLeftRightPressed() )
+	{
+		case -1 : showbrakebal = !showbrakebal; break;
+		case 1 : showadc = !showadc; break;
+	}
 
-			switch ( GetUpDownPressed() )
-			{
-				case -1 : showbrakebal = !showbrakebal; break;
-				case 1 : showadc = !showadc; break;
-			}
+	switch ( GetUpDownPressed() )
+	{
+		case -1 : showbrakebal = !showbrakebal; break;
+		case 1 : showadc = !showadc; break;
+	}
 
-			if ( showbrakebal ) PrintBrakeBalance( );
+	if ( showbrakebal ) PrintBrakeBalance( );
 
 #ifdef ADC
-			if ( showadc )
-			{
-				sprintf(str,"A1 %.5lu %.5lu %.5lu", ADC_Data[0], ADC_Data[1], ADC_Data[2]);
-				lcd_send_stringline(1,str, 255);
+	if ( showadc )
+	{
+		sprintf(str,"A1 %.5lu %.5lu %.5lu", ADC_Data[0], ADC_Data[1], ADC_Data[2]);
+		lcd_send_stringline(1,str, 255);
 
-				sprintf(str,"A3 %.5lu %.5lu %.5lu", ADC_Data[3], ADC_Data[4], ADC_Data[5]);
-				lcd_send_stringline(2,str, 255);
-			}
+		sprintf(str,"A3 %.5lu %.5lu %.5lu", ADC_Data[3], ADC_Data[4], ADC_Data[5]);
+		lcd_send_stringline(2,str, 255);
+	}
 #endif
 
-			// do nothing
-	}
 
 	setRunningPower( false, false );
 
@@ -349,16 +337,16 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	doVectoring(Torque_Req, &adj);
 
-	for ( int i=0;i<MOTORCOUNT;i++){
-		// TODO send inverter torque request
-		//CarState.Inverters[i].Torque_Req = Torque_Req;
-	}
 
 #ifdef TORQUEVECTOR
 		TorqueVectorProcess( Torque_Req );
 #endif
 
-	if ( CarState.APPSstatus ) setOutput(RTDMLED,On); else setOutput(RTDMLED,Off);
+
+	if ( CarState.APPSstatus )
+		setOutput(RTDMLED,On);
+	else
+		setOutput(RTDMLED,Off);
 
 	// Check startup requirements.
 

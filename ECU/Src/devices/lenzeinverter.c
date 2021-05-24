@@ -510,7 +510,7 @@ bool processAPPCError( const uint8_t CANRxData[8], const uint32_t DataLength, co
 bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxData[8] )
 {
 	char str[40];
-	snprintf(str, 40, "[%2X %2X %2X %2X state ]", CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState);
+	snprintf(str, 40, "[%2X %2X %2X %2X state %d]", CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState);
 	DebugMsg(str);
 
 	 // set SDO's to sync   0x1800-1806  = lenze TPDO 1 through 7

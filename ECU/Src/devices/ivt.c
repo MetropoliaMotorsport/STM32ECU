@@ -131,7 +131,6 @@ bool processIVTWhData( const uint8_t CANRxData[8], const uint32_t DataLength, co
 
 bool processIVTData( const uint8_t * CANRxData, const uint32_t DataLength, const uint16_t field )
 {
-//	static uint8_t receiveerror[8] = {0,0,0,0,0,0,0,0};
 	if ( DeviceState.IVTEnabled )
 	{
 		long value = CANRxData[2]*16777216+ CANRxData[3]*65536+ CANRxData[4]*256+ CANRxData[5];
@@ -213,8 +212,6 @@ bool processIVTData( const uint8_t * CANRxData, const uint32_t DataLength, const
 					DeviceState.IVT = OPERATIONAL;
 					break;
 			}
-
-		//	receiveerror = 0;
 
 			switch ( field ) // set state data.
 			{

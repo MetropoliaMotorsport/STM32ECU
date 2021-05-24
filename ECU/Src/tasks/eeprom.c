@@ -13,13 +13,13 @@
 #include "i2c-lcd.h"
 #include "timerecu.h"
 #include "lcd.h"
-#include "stm32h7xx_hal.h"
+//#include "stm32h7xx_hal.h"
 #include "tim.h"
 
 uint16_t Memory_Address;
 volatile int Remaining_Bytes;
 
-union { // EEPROMU
+typedef union { // EEPROMU
 	uint8_t buffer[4096];
 	struct {
 		char version[32]; // block 0  32 bytes
@@ -38,7 +38,9 @@ union { // EEPROMU
 		uint8_t reserved2[32*14]; // block 110-123  448 bytes
 		uint8_t errorlogs[32*4]; // block 124-127  128 bytes
 	};
-} EEPROMdata;
+} EEPROMdataType;
+
+DMA_BUFFER EEPROMdataType EEPROMdata;
 
 volatile bool eepromwritinginprogress = false;
 volatile bool eepromreceivedone = false;
@@ -55,7 +57,8 @@ void SetDataType( char * str, uint8_t datatype );
 
 #define BUFSIZE (4096)
 
-static uint8_t Buffer[BUFSIZE];
+// Stick buffer in DMA compatible memory.
+DMA_BUFFER ALIGN_32BYTES (static uint8_t Buffer[BUFSIZE]);
 
 static char datatype[20] = "";
 
@@ -264,8 +267,6 @@ int DoEEPROM( void )
 
 						ReceiveInProgress = false;
 
-
-
 						BufferPos+=EEPROMConfigdata[3];
 
 						if ( checkversion((char *)Buffer) ) // received data has valid header.
@@ -442,16 +443,16 @@ int EEPROMReceive( void )
 		ReceiveInProgress = true;
 		returnvalue = ReceivingData;
 
-		sprintf(str,"DataGet: %s %.4lu", datatype, TransferSize);
+		snprintf(str,40,"DataGet: %s %.4lu", datatype, TransferSize);
 
 		strpad(str, 20, true);
 
-		CAN_SendStatus(ReceivingData,ReceiveAck,0); // TODO move ack to receive loop with timer to see message?
+		CAN_SendStatus(ReceivingData,ReceiveAck,0);
 
 		lcd_send_stringline(3,str, 1);
 	} else
 	{
-		// TODO error, invalid receive size.
+		LogError("EEPROM: Inv Rcv Size");
 	}
 	return returnvalue;
 }
@@ -487,12 +488,10 @@ int EEPROMSend( void )
     BufferPos = 0;
 
 	if ( TransferSize > 0 ){
-		uint8_t CANTxData[8] = { 8, TransferSize>>8,TransferSize, EEPROMConfigdata[1], 0, 0, 0, 0};
+		uint8_t CANTxData[8] = { 8, TransferSize>>8, TransferSize, EEPROMConfigdata[1], 0, 0, 0, 0};
 		CAN1Send(0x21, 8, CANTxData); // inform client that about to send data with data send packet.
 
 		char str[40];
-
-//		strncpy(str, datatype, 20);
 
 		sprintf(str,"Send: %s %.4lu", datatype, TransferSize);
 
@@ -571,8 +570,7 @@ void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *I2cHandle)
   */
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 {
-  /* Turn LED2 on: Transfer in reception process is correct */
-//	  toggleOutput(40);
+	// MemRX type HAL library call only done on eeprom, so if here, set it done.
 	eepromreceivedone = true;
 }
 
@@ -607,13 +605,12 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 
 int startupReadEEPROM( void )
 {
-	// TODO could be optimised to only read necessary block.
+	// block writing to eeprom, only reading at init to prevent potential corruptin.
+	HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 1);
 
-	vTaskDelay(100); // Allow time for EEPROM chip to initialise itself before start trying to access.
+	vTaskDelay(100); // Allow some time for EEPROM chip to initialise itself before start trying to access.
 	HAL_I2CEx_ConfigAnalogFilter(&hi2c2,I2C_ANALOGFILTER_ENABLE);
 
-	HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 1); // block writing to eeprom, only reading at init.
-	vTaskDelay(1);
 //#define READFULLEEPROM
 #ifdef READFULLEEPROM
 
@@ -680,7 +677,7 @@ int readEEPROMAddr( uint16_t address, uint16_t size )
 	if(HAL_I2C_Mem_Read_IT(&hi2c2 , (uint16_t)EEPROM_ADDRESS, address, I2C_MEMADD_SIZE_16BIT, (uint8_t*)&EEPROMdata.buffer[address], size)!= HAL_OK)
 	{
 	/* Reading process Error */
-	   return 1;// Error_Handler(); // failed to read data for some reason.
+	   return 1; // Error_Handler(); // failed to read data for some reason.
 	}
 
 	while ( !eepromreceivedone ) // 4 sec read timeout so will still startup regardless.
@@ -740,7 +737,7 @@ void commitEEPROM( void ) // progress EEPROM writing by sending next block over 
 
 				if(HAL_I2C_Mem_Write_IT(&hi2c2 , (uint16_t)EEPROM_ADDRESS, Memory_Address, I2C_MEMADD_SIZE_16BIT, (uint8_t*)(EEPROMdata.buffer + Memory_Address), EEPROM_PAGESIZE)!= HAL_OK)
 				{
-					Error_Handler(); //error here is not a hard error, don't hang code.
+					Error_Handler(); //TODO error here is not a hard error, don't hang code.
 				}
 				errorcount = 0;
 				Remaining_Bytes -= EEPROM_PAGESIZE;
@@ -885,29 +882,34 @@ bool stopEEPROM( void )
 
 
 
-int initEEPROM( void )
+bool initEEPROM( void )
 {
 	lcd_send_stringscroll("Load EEPRom");
 
-	 MX_I2C2_Init();
-	 int eepromstatus = startupReadEEPROM();
-	 switch ( eepromstatus )
-	 {
-		 case 0 :
-				lcd_send_stringscroll("EEPRom Read");
-				DeviceState.EEPROM = ENABLED;
-				break;
-		 case 1 :
-				lcd_send_stringscroll("EEPRom Bad Data");
-				lcd_send_stringscroll("  Load New Data");
-				DeviceState.EEPROM = ERROR;
-				HAL_Delay(3000); // ensure message can be seen.
-				break;
-		 default :
-				lcd_send_stringscroll("EEPRom Read Fail");
-				DeviceState.EEPROM = DISABLED;
-				HAL_Delay(3000); // ensure message can be seen.
-	 };
+	bool EEPROMInitok = true;
+
+	MX_I2C2_Init();
+	int eepromstatus = startupReadEEPROM();
+
+	switch ( eepromstatus )
+	{
+	case 0 :
+		lcd_send_stringscroll("EEPRom Read");
+		DeviceState.EEPROM = ENABLED;
+		break;
+	case 1 :
+		lcd_send_stringscroll("EEPRom Bad Data");
+		lcd_send_stringscroll("  Load New Data");
+		DeviceState.EEPROM = ERROR;
+		HAL_Delay(3000); // ensure message can be seen.
+		EEPROMInitok = false;
+		break;
+	default :
+		lcd_send_stringscroll("EEPRom Read Fail");
+		DeviceState.EEPROM = DISABLED;
+		HAL_Delay(3000); // ensure message can be seen.
+		EEPROMInitok = false;
+	};
 
 	EEPROMQueue = xQueueCreateStatic( EEPROMQUEUE_LENGTH,
 							  EEPROMITEMSIZE,
@@ -925,6 +927,6 @@ int initEEPROM( void )
 						  xEEPROMStack,
 						  &xEEPROMTaskBuffer );
 
-	return 0;
+	return EEPROMInitok;
 }
 
