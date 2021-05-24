@@ -48,6 +48,7 @@ uint16_t PrintRunning( char *title )
 
 	sprintf(str,"Spd:%3likmh Ang:%3d%c", (ActualSpeed), abs(ADCState.SteeringAngle), angdir);
 	lcd_send_stringline(2,str, 255);
+
 	return 0;
 }
 

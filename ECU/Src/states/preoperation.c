@@ -282,6 +282,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	}
 
+	lcd_send_stringline(3, getConfStr(), 255);
 
 	if ( CheckButtonPressed(Config_Input) )
 	{

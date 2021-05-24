@@ -16,6 +16,7 @@ void setCurConfig(void);
 void ConfigReset( void );
 bool checkConfigReset( void );
 
+char * getConfStr( void); // gets current short configuration line for display.
 bool ConfigInput( uint16_t input);
 
 bool initConfig( void );

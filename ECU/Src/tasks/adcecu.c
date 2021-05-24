@@ -76,6 +76,7 @@ char ADCWaitStr[20] = "";
 
 char * getADCWait( void)
 {
+	// TODO add a mutex
 	if ( ADCWaitStr[0] == 0 ) return NULL;
 	else return ADCWaitStr;
 }

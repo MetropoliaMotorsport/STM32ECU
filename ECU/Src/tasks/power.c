@@ -53,6 +53,7 @@ char PNodeWaitStr[20] = "";
 
 char * getPNodeWait( void)
 {
+	// TODO add a mutex
 	if ( PNodeWaitStr[0] == 0 ) return NULL;
 	else return PNodeWaitStr;
 }

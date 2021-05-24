@@ -9,6 +9,7 @@
 #include "ecumain.h"
 #include "inverter.h"
 #include "input.h"
+#include "configuration.h"
 
 #include "usart.h"
 #include "power.h"
@@ -21,7 +22,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-typedef struct Debug_msg{
+typedef struct Debug_msg {
 	char str[MAXDEBUGOUTPUT];
 	//uint32_t msgval;
 } Debug_msg;

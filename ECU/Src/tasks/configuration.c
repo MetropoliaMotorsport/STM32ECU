@@ -135,7 +135,7 @@ char * GetPedalProfile( uint8_t profile, bool shortform )
 
 
 void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editing,
-		volatile uint8_t * value, const uint8_t * validvalues )
+		volatile uint8_t * value, const uint8_t * validvalues, uint16_t input )
 {
 	char str[LCDCOLUMNS+1] = "";
 
@@ -146,7 +146,8 @@ void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editi
 
 	if ( selected  )
 	{
-		if ( CheckButtonPressed(Config_Input) )
+		if ( input == KEY_ENTER )
+	//	if ( CheckButtonPressed(Config_Input) )
 		{
 			*editing = !*editing;
 			GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
@@ -157,7 +158,16 @@ void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editi
 		{
 			display[LCDCOLUMNS-1-5] = '<';
 			display[LCDCOLUMNS-1] = '>';
-			int change = GetLeftRightPressed();
+
+			int change = 0;
+
+			if ( input == KEY_LEFT )
+				change+=1;
+
+			if ( input == KEY_RIGHT )
+				change-=1;
+
+		//	int change = GetLeftRightPressed();
 			int position = 0;
 
 			// find current value position. will default to first item if an invalid value was given.
@@ -186,7 +196,7 @@ void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editi
 
 
 void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * editing,
-		volatile uint8_t * value )
+		volatile uint8_t * value, uint16_t input )
 {
 	char str[LCDCOLUMNS+1] = "";
 
@@ -197,10 +207,11 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 
 	if ( selected  )
 	{
-		if ( CheckButtonPressed(Config_Input) )
+		if ( input == KEY_ENTER )
+	//	if ( CheckButtonPressed(Config_Input) )
 		{
 			*editing = !*editing;
-			GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
+	//		GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
 		}
 
 
@@ -208,7 +219,17 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 		{
 			display[LCDCOLUMNS-1-10] = '<';
 			display[LCDCOLUMNS-1] = '>';
-			int change = GetLeftRightPressed();
+
+
+//			int change = GetLeftRightPressed();
+			int change = 0;
+
+			if ( input == KEY_LEFT )
+				change+=1;
+
+			if ( input == KEY_RIGHT )
+				change-=1;
+
 			int max = 0;
 
 			for ( max=0; GetPedalProfile(max, false)!=NULL;max++);
@@ -226,7 +247,7 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 
 
 void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * editing,
-		volatile bool * value )
+		volatile bool * value, uint16_t input )
 {
 	char str[LCDCOLUMNS+1] = "";
 
@@ -237,10 +258,11 @@ void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * edit
 
 	if ( selected  )
 	{
-		if ( CheckButtonPressed(Config_Input) )
+		if ( input == KEY_ENTER )
+	//	if ( CheckButtonPressed(Config_Input) )
 		{
 			*editing = !*editing;
-			GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
+	//		GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
 		}
 
 
@@ -248,7 +270,16 @@ void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * edit
 		{
 			display[LCDCOLUMNS-1-6] = '<';
 			display[LCDCOLUMNS-1] = '>';
-			int change = GetLeftRightPressed();
+
+			int change = 0;
+
+			if ( input == KEY_LEFT || input == KEY_RIGHT )
+			{
+				change = 1;
+				input = 0;
+			}
+
+//			int change = GetLeftRightPressed();
 			if ( change != 0 )
 				*value= !*value;
 		}
@@ -288,11 +319,17 @@ bool DoMenu( uint16_t input )
 		if ( !inedit )
 		{
 			if ( input == KEY_DOWN )
+			{
 				selection += 1;
+				input = 0;
+			}
 			if ( input == KEY_UP )
+			{
 				selection -= 1;
+				input = 0;
+			}
 
-			selection+=GetUpDownPressed(); // allow position adjustment if not editing item.
+//			selection+=GetUpDownPressed(); // allow position adjustment if not editing item.
 
 			if ( selection <  0) selection=0;
 			if ( selection > menusize-1) selection=menusize-1;
@@ -304,10 +341,10 @@ bool DoMenu( uint16_t input )
 		strcpy(MenuLines[0], "Config Menu:");
 
 		sprintf(MenuLines[1], "%cBack & Save", (selection==0) ? '>' :' ');
-		doMenuIntEdit( MenuLines[2], "Max Nm", (selection==1), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals );
-		doMenuPedalEdit( MenuLines[3], "Accel", (selection==2), &inedit, &getEEPROMBlock(0)->PedalProfile );
-		doMenuBoolEdit( MenuLines[4], "LimpDisable", (selection==3), &inedit, &getEEPROMBlock(0)->LimpMode);
-		doMenuBoolEdit( MenuLines[5], "Fans", (selection==4), &inedit, &getEEPROMBlock(0)->Fans);
+		doMenuIntEdit( MenuLines[2], "Max Nm", (selection==1), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input );
+		doMenuPedalEdit( MenuLines[3], "Accel", (selection==2), &inedit, &getEEPROMBlock(0)->PedalProfile, input );
+		doMenuBoolEdit( MenuLines[4], "LimpDisable", (selection==3), &inedit, &getEEPROMBlock(0)->LimpMode, input);
+		doMenuBoolEdit( MenuLines[5], "Fans", (selection==4), &inedit, &getEEPROMBlock(0)->Fans, input);
 
 //		doMenuBoolEdit( MenuLines[6], "TestHV", (selection==5), &inedit, &CarState.TestHV);
 
@@ -324,12 +361,10 @@ bool DoMenu( uint16_t input )
 
 	if ( !inmenu )
 	{
-	//	if ( CheckButtonPressed(Config_Input) )
-		{
-			inmenu = true;
-			GetUpDownPressed(); // clear any queued actions.
-			return true;
-		}
+
+		inmenu = true;
+//			GetUpDownPressed(); // clear any queued actions.
+		return true;
 	}
 
 	return false;
@@ -337,7 +372,7 @@ bool DoMenu( uint16_t input )
 }
 
 // Add message to uart message queue. Might be called from ISR so add a check.
-bool ConfigInput( uint16_t input)
+bool ConfigInput( uint16_t input )
 {
 	ConfigInput_msg confmsg;
 
@@ -350,8 +385,18 @@ bool ConfigInput( uint16_t input)
 }
 
 
+char ConfStr[40] = "";
+
+char * getConfStr( void )
+{
+	// TODO add a mutex
+	if ( ConfStr[0] == 0 ) return NULL;
+	else return ConfStr;
+}
+
+
 // checks if device initial values appear OK.
-bool ConfigTask( void )
+void ConfigTask(void *argument)
 {
 	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY ); // ensure that tasks don't start before all initialisation done.
 
@@ -361,9 +406,9 @@ bool ConfigTask( void )
 
 	while ( 1 )
 	{
-		if ( xQueueReceive(ConfigInputQueue,&confinp,10) )
+		 // config menu does not need to run very real time.
+		if ( xQueueReceive(ConfigInputQueue,&confinp,50) )
 		{
-
 			if ( confinp.msgval == 0xFFFF )
 			configstate = 1;
 		} else
@@ -381,11 +426,6 @@ bool ConfigTask( void )
 				if ( !DoMenu(confinp.msgval) )
 					configstate = 0;
 			}
-
-			char str[40];
-
-			snprintf(str, 40, "Conf: %dnm %s %c %s", CarState.Torque_Req_Max, GetPedalProfile(CarState.PedalProfile, true), (!CarState.LimpDisable)?'T':'F', (CarState.FanPowered)?"Fan":""  );
-			lcd_send_stringline(3,str, 255);
 
 			// check if new can data received.
 			if ( ECUConfignewdata )
@@ -419,6 +459,12 @@ bool ConfigTask( void )
 
 			break;
 		}
+
+		snprintf(ConfStr, 40, "Conf: %dnm %s %c %s", CarState.Torque_Req_Max,
+				GetPedalProfile(CarState.PedalProfile, true),
+				(!CarState.LimpDisable)?'T':'F',
+				(CarState.FanPowered)?"Fan":""  );
+
 	}
 
 	// clean up if we somehow get here.
@@ -428,9 +474,7 @@ bool ConfigTask( void )
 
 bool doPedalCalibration( void )
 {
-
-
-
+	return false;
 }
 
 
