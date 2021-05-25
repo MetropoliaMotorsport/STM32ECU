@@ -167,7 +167,6 @@ void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editi
 			if ( input == KEY_RIGHT )
 				change-=1;
 
-		//	int change = GetLeftRightPressed();
 			int position = 0;
 
 			// find current value position. will default to first item if an invalid value was given.
@@ -220,8 +219,6 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 			display[LCDCOLUMNS-1-10] = '<';
 			display[LCDCOLUMNS-1] = '>';
 
-
-//			int change = GetLeftRightPressed();
 			int change = 0;
 
 			if ( input == KEY_LEFT )
@@ -259,12 +256,9 @@ void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * edit
 	if ( selected  )
 	{
 		if ( input == KEY_ENTER )
-	//	if ( CheckButtonPressed(Config_Input) )
 		{
 			*editing = !*editing;
-	//		GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
 		}
-
 
 		if ( *editing )
 		{
@@ -279,7 +273,6 @@ void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * edit
 				input = 0;
 			}
 
-//			int change = GetLeftRightPressed();
 			if ( change != 0 )
 				*value= !*value;
 		}
@@ -290,6 +283,150 @@ void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * edit
 	memcpy(&display[LCDCOLUMNS-1-5], str, len);
 }
 
+uint16_t APPSL_min;
+uint16_t APPSL_max;
+uint16_t APPSR_min;
+uint16_t APPSR_max;
+uint16_t REG_min;
+uint16_t REG_max;
+
+// values to define sane input range on APPS ADC's
+
+#define ADCMAXTHRESH (0.95)
+#define ADCMINTHRESH (0.5)
+
+void setMin( uint16_t * min, uint16_t minval)
+{
+	if ( minval < *min ) *min = minval;
+}
+
+void setMax( uint16_t * max, uint16_t maxval)
+{
+	if ( maxval > *max ) *max = maxval;
+}
+
+bool doPedalCalibration( uint16_t input )
+{
+	char str[21];
+
+	bool baddata = false;
+
+	int APPSL = getTorqueReqPercL(ADCState.APPSL)/10;
+	if ( APPSL > 99 ) APPSL = 99;
+
+	int APPSR = getTorqueReqPercR(ADCState.APPSR)/10;
+	if ( APPSR > 99 ) APPSR = 99;
+
+	int REGEN = getBrakeTravelPerc(ADCState.APPSR)/10;
+	if ( APPSR > 99 ) APPSR = 99;
+
+	if ( ADCState.APPSL > (UINT16_MAX*ADCMAXTHRESH)
+		|| ADCState.APPSL < (UINT16_MAX*ADCMINTHRESH)
+		)
+	{
+		lcd_send_stringline(1, "APPSL not sane", MENUPRIORITY);
+		baddata = true;
+	}
+
+	if ( ADCState.APPSR > (UINT16_MAX*ADCMINTHRESH)
+		|| ADCState.APPSR < (UINT16_MAX*ADCMINTHRESH)
+		)
+	{
+		lcd_send_stringline(2, "APPSR not sane", MENUPRIORITY);
+		baddata = true;
+	}
+
+	if ( ADCState.Regen > (UINT16_MAX*ADCMINTHRESH)
+		|| ADCState.Regen < (UINT16_MAX*ADCMINTHRESH)
+		)
+	{
+		lcd_send_stringline(3, "Regen not sane", MENUPRIORITY);
+		baddata = true;
+	}
+
+	if ( baddata )
+	{
+		lcd_send_stringline(0, "APPS Calib <close>", MENUPRIORITY);
+
+		if ( input == KEY_ENTER)
+			return false;
+		else
+			return true;
+	} else
+		lcd_send_stringline( 0, "APPS Calib <save>", MENUPRIORITY );
+
+
+	setMin(&APPSL_min, ADCState.APPSL);
+	setMin(&APPSR_min, ADCState.APPSR);
+	setMin(&REG_min, ADCState.Regen);
+
+	setMin(&APPSL_max, ADCState.APPSL);
+	setMin(&APPSR_max, ADCState.APPSR);
+	setMin(&REG_max, ADCState.Regen);
+
+	int32_t APPSL_close = abs(APPSL_max-APPSL_min) < 1000;
+	int32_t APPSR_close = abs(APPSR_max-APPSR_min) < 1000;
+	int32_t REG_close = abs(REG_max-REG_min) < 1000;
+
+	if ( APPSL_close || APPSR_close )
+	{
+		lcd_send_stringline(1, "Press APPS Pedal", MENUPRIORITY-1);
+	} else
+	if ( REG_close )
+	{
+		lcd_send_stringline(1, "Press Brake Pedal", MENUPRIORITY-1);
+	} else
+	{
+		snprintf( str, 21, "Cur L%2d%%  R%2d%%  B%2d%%", APPSL, APPSR, REGEN );
+
+		lcd_send_stringline(1,str, MENUPRIORITY);
+
+		snprintf( str, 21, "Mn %5d %5d %5d", APPSL_min, APPSR_min, REG_min );
+
+		lcd_send_stringline(2,str, MENUPRIORITY);
+
+		snprintf( str, 21, "Mx %5d %5d %5d", APPSL_max, APPSR_max, REG_max );
+
+		lcd_send_stringline(3,str, MENUPRIORITY);
+	}
+
+	if ( input == KEY_ENTER)
+	{
+
+		eepromdata * data = getEEPROMBlock();
+
+		if ( APPSL_max == 0 || APPSR_max == 0 )
+		{
+
+		} else
+		{
+			data->ADCTorqueReqLInput[0] = APPSL_min;
+			data->ADCTorqueReqLInput[1] = APPSL_max;
+
+			data->ADCTorqueReqRInput[0] = APPSR_min;
+			data->ADCTorqueReqRInput[1] = APPSR_max;
+
+			// store new APPS calibration to memory.
+		}
+
+		if ( REG_max == 0 )
+		{
+
+		} else
+		{
+			data->ADCBrakeTravelInput[0] = REG_min;
+			data->ADCBrakeTravelInput[1] = REG_max;
+			// store new Regen calibration to memory.
+		}
+
+
+
+		return false;
+	}
+	else
+		return true;
+
+}
 
 bool DoMenu( uint16_t input )
 {
@@ -297,12 +434,13 @@ bool DoMenu( uint16_t input )
 	static int8_t selection = 0;
 	static int8_t top = 0;
 	static bool inedit = false;
+	static bool incalib = false;
 
-#define menusize	(5)
+#define menusize	(6)
 
 	static char MenuLines[menusize+1][21] = { 0 };
 
-	const uint8_t torquevals[] = {0,5,10,25,65,0}; // zero terminate so function can find end.
+	const uint8_t torquevals[] = {0,5,10,25,65,0}; // zero terminated so function can find end.
 
 	if ( inmenu )
 	{
@@ -311,9 +449,36 @@ bool DoMenu( uint16_t input )
 			inmenu = false;
 			inedit = false;
 
+			lcd_send_stringline( 1, "", MENUPRIORITY );
+			lcd_send_stringline( 2, "Saving settings.", MENUPRIORITY );
+			lcd_send_stringline( 3, "", MENUPRIORITY );
+
 			writeEEPROMCurConf(); // enqueue write the data to eeprom.
 
 			return false;
+		}
+
+		if ( !incalib && selection == 5 && input == KEY_ENTER ) // CheckButtonPressed(Config_Input) )
+		{
+			incalib = true;
+			input = 0;
+
+			APPSL_min = UINT16_MAX;
+			APPSL_max = 0;
+			APPSR_min = UINT16_MAX;
+			APPSR_max = 0;
+			REG_min = UINT16_MAX;
+			REG_max = 0;
+		}
+
+		if ( incalib )
+		{
+			if ( !doPedalCalibration(input) )
+			{
+				incalib = false;
+			}
+			else
+				return true;
 		}
 
 		if ( !inedit )
@@ -328,8 +493,6 @@ bool DoMenu( uint16_t input )
 				selection -= 1;
 				input = 0;
 			}
-
-//			selection+=GetUpDownPressed(); // allow position adjustment if not editing item.
 
 			if ( selection <  0) selection=0;
 			if ( selection > menusize-1) selection=menusize-1;
@@ -346,15 +509,17 @@ bool DoMenu( uint16_t input )
 		doMenuBoolEdit( MenuLines[4], "LimpDisable", (selection==3), &inedit, &getEEPROMBlock(0)->LimpMode, input);
 		doMenuBoolEdit( MenuLines[5], "Fans", (selection==4), &inedit, &getEEPROMBlock(0)->Fans, input);
 
+		sprintf(MenuLines[6], "%cAPPS Calib", (selection==5) ? '>' :' ');
+
 //		doMenuBoolEdit( MenuLines[6], "TestHV", (selection==5), &inedit, &CarState.TestHV);
 
 //		sprintf(MenuLines[3], "%cAccel: %s", (selection==2) ? '>' :' ', GetPedalProfile(CarState.PedalProfile, false));
 
-		lcd_send_stringline( 0, MenuLines[0], 4 );
+		lcd_send_stringline( 0, MenuLines[0], MENUPRIORITY );
 
 		for ( int i=0;i<3;i++)
 		{
-			 lcd_send_stringline( i+1, MenuLines[i+top+1], 4 );
+			 lcd_send_stringline( i+1, MenuLines[i+top+1], MENUPRIORITY );
 		}
 		return true;
 	}
@@ -363,7 +528,7 @@ bool DoMenu( uint16_t input )
 	{
 
 		inmenu = true;
-//			GetUpDownPressed(); // clear any queued actions.
+
 		return true;
 	}
 
@@ -407,7 +572,7 @@ void ConfigTask(void *argument)
 	while ( 1 )
 	{
 		 // config menu does not need to run very real time.
-		if ( xQueueReceive(ConfigInputQueue,&confinp,50) )
+		if ( xQueueReceive(ConfigInputQueue,&confinp,20) )
 		{
 			if ( confinp.msgval == 0xFFFF )
 			configstate = 1;
@@ -471,13 +636,6 @@ void ConfigTask(void *argument)
 	vTaskDelete(NULL);
 }
 
-
-bool doPedalCalibration( void )
-{
-	return false;
-}
-
-
 bool initConfig( void )
 {
 	RegisterCan1Message(&ECUConfig);
@@ -492,7 +650,7 @@ bool initConfig( void )
 	if ( !SetupADCInterpolationTables(getEEPROMBlock(0)) )
 	{
 			// bad config, fall back to some kind of of default, force recalibration of pedal?
-		doPedalCalibration();
+//		doPedalCalibration();
 	}
 
 	CarState.Torque_Req_Max = 0;

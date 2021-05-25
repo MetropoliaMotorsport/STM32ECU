@@ -8,6 +8,9 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
+// priority level of config menu LCD output.
+#define MENUPRIORITY  (4)
+
 CANData ECUConfig;
 
 int CheckConfigurationRequest( void );

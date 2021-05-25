@@ -83,6 +83,9 @@ struct  {
 	uint16_t Torque_Req_L_Percent;
 	uint16_t Torque_Req_R_Percent;
 	uint16_t Regen_Percent;
+	uint16_t APPSL;
+	uint16_t APPSR;
+	uint16_t Regen;
 
 	uint8_t DrivingMode;
 } ADCState;

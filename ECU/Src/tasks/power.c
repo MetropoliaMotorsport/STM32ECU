@@ -70,17 +70,14 @@ void PowerTask(void *argument)
 
 	char str[MAXERROROUTPUT];
 
-	TickType_t xLastWakeTime;
-
     const TickType_t xFrequency = 10;
-
-	// Initialise the xLastWakeTime variable with the current time.
-	xLastWakeTime = xTaskGetTickCount();
 
 	bool resetLV = false;
 
 	resetPowerLost();
 	xQueueReset(PowerErrorQueue);
+
+	uint32_t powernodesOnline = 0;
 
 	while( 1 )
 	{
@@ -132,8 +129,6 @@ void PowerTask(void *argument)
 		}
 
 		// check if powernodes received.
-
-		uint32_t powernodesOnline = 0;
 
 		if ( powernodesOnline == PNodeAllBit ) // all expecter power nodes reported in. // TODO automate
 		{
@@ -212,6 +207,8 @@ bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is
 char * ShutDownOpenStr( void )
 {
 	static char str[255] = "";
+
+	// TODO move these into actual order of SDC.
 
 	sprintf(str, "%s%s%s%s%s%s%s%s%s",
 		(!Shutdown.CockpitButton)?"DRV,":"",

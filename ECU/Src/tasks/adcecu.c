@@ -92,12 +92,10 @@ void ADCTask(void *argument)
 	xADC1 = xSemaphoreCreateBinary();
 	xADC3 = xSemaphoreCreateBinary();
 #endif
-	TickType_t xLastWakeTime;
-
-	// Initialise the xLastWakeTime variable with the current time.
-	xLastWakeTime = xTaskGetTickCount();
 
 	DeviceState.ADC = OPERATIONAL;
+
+	uint32_t analoguenodesOnline = 0;
 
 	while( 1 )
 	{
@@ -132,13 +130,6 @@ void ADCTask(void *argument)
 
 		ADCWaitStr[0] = 0;
 
-		uint32_t analoguenodesOnline = 0;
-
-		xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
-						   ULONG_MAX,        /* Clear all bits on exit. */
-						   &analoguenodesOnline, /* Stores the notified value. */
-						   0 );
-
 		if ( analoguenodesOnline == ANodeAllBit ) // all expecter power nodes reported in. // TODO automate
 		{
 			DeviceState.Sensors = OPERATIONAL;
@@ -160,7 +151,14 @@ void ADCTask(void *argument)
 
 		DeviceState.ADCSanity = CheckADCSanity();
 
-		vTaskDelayUntil( &xLastWakeTime, CYCLETIME ); // use task sync instead?
+
+		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY ); // wait for main cycle.
+//		xTaskNotifyWait( pdFALSE, ULONG_MAX, &powernodesOnline, 0 );
+
+		xTaskNotifyWait( pdFALSE, ULONG_MAX, &analoguenodesOnline, 0 );
+
+
+	//	vTaskDelayUntil( &xLastWakeTime, CYCLETIME ); // use task sync instead?
 	}
 
 	vTaskDelete(NULL);

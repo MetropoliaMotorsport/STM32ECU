@@ -57,6 +57,9 @@ void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to sa
 	ADCState.Torque_Req_L_Percent=0;
 	ADCState.Torque_Req_R_Percent=0;
 	ADCState.Regen_Percent=0;
+	ADCState.APPSL=0;
+	ADCState.APPSR=0;
+	ADCState.Regen=0;
     ADCState.BrakeF = APPSBrakeHard;
     ADCState.BrakeR = APPSBrakeHard;
     SetCriticalError();
@@ -76,6 +79,8 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 
         ADCState.Torque_Req_L_Percent = getTorqueReqPercL(AccelL*16);
         ADCState.Regen_Percent = getBrakeTravelPerc(Regen*16);
+		ADCState.APPSL = AccelL;
+		ADCState.Regen = Regen;
 
 		return true;
 	} else // bad data.
@@ -129,6 +134,7 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
         ADCState.BrakeF = BrakeF;
         ADCState.BrakeR = BrakeR;
         ADCState.Torque_Req_R_Percent = getTorqueReqPercR(AccelR);
+		ADCState.APPSL = AccelR;
 
 		return true;
 	} else // bad data.

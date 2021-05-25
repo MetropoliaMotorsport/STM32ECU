@@ -502,36 +502,40 @@ void debugConfig( void )
 
 	UARTwrite("Running config menu.\r\n");
 
-	if ( ConfigInput( 0xFFFF ) )
+	while ( !quit )
 	{
+		// just to be on safe side then.
+		volatile uint16_t read = uartWait((char*)&ch);
 
-		while ( !quit ) {
-			// just to be on safe side then.
-			volatile uint16_t read = uartWait((char*)&ch);
+		read = processUARTchar( (uint8_t) ch, &state );
 
-			read = processUARTchar( (uint8_t) ch, &state );
+		if ( read == 0 )
+			continue;
 
-			if ( read == 0 )
-				continue;
-
-			ConfigInput( read );
-
-			if ( read == 'q' )
-				quit = true;
-			else if ( read == KEY_LEFT )
-				UARTprintf("Left\r\n");
-			else if ( read == KEY_RIGHT )
-				UARTprintf("Right\r\n");
-			else if ( read == KEY_UP )
-				UARTprintf("Up\r\n");
-			else if ( read == KEY_DOWN )
-				UARTprintf("Down\r\n");
-			else if ( read == KEY_ENTER )
-				UARTprintf("Enter\r\n");
-			else
-				UARTwritech(ch);
-
+		if ( read == 'q' )
+			quit = true;
+		else if ( read == KEY_LEFT )
+			UARTprintf("Left\r\n");
+		else if ( read == KEY_RIGHT )
+			UARTprintf("Right\r\n");
+		else if ( read == KEY_UP )
+			UARTprintf("Up\r\n");
+		else if ( read == KEY_DOWN )
+			UARTprintf("Down\r\n");
+		else if ( read == KEY_ENTER )
+		{
+			UARTprintf("Enter\r\n");
 		}
+		else if ( read == 'c' )
+		{
+			ConfigInput( 0xFFFF );
+			read = 0;
+		}
+		else
+			UARTwritech(ch);
+
+		ConfigInput( read );
+
 	}
 
 	UARTwrite("Done.\r\n");
