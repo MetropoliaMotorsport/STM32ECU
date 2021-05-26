@@ -393,7 +393,7 @@ bool doPedalCalibration( uint16_t input )
 	if ( input == KEY_ENTER)
 	{
 
-		eepromdata * data = getEEPROMBlock();
+		eepromdata * data = getEEPROMBlock(0);
 
 		if ( APPSL_max == 0 || APPSR_max == 0 )
 		{

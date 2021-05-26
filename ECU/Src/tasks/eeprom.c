@@ -517,7 +517,7 @@ uint8_t * getEEPROMBuffer()
 }
 
 
-eepromdata * getEEPROMBlock(int block )
+eepromdata * getEEPROMBlock( int block )
 {
 
 	/*		if ( activeblock==1 )

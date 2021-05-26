@@ -59,7 +59,7 @@ TaskHandle_t ADCTaskHandle = NULL;
 
 #define ADCSTACK_SIZE 128*2
 #define ADCTASKNAME  "ADCTask"
-#define ADCTASKPRIORITY 10
+#define ADCTASKPRIORITY 3
 StaticTask_t xADCTaskBuffer;
 StackType_t xADCStack[ ADCSTACK_SIZE ];
 

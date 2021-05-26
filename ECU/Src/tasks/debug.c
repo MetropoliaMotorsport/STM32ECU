@@ -10,6 +10,7 @@
 #include "inverter.h"
 #include "input.h"
 #include "configuration.h"
+#include "freertosstats.h"
 
 #include "usart.h"
 #include "power.h"
@@ -83,6 +84,17 @@ void UARTwrite( const char *str)
 	UARTprintf(str);
 }
 
+void UARTwriteRaw( const char *str)
+{
+	if ( !UART_Transmit(DEBUGUART, (uint8_t*)str, strlen(str)) )
+	{
+		return 0;
+	}
+
+	return UART_WaitTXDone( DEBUGUART, 100);
+}
+
+
 void UARTwritetwoline(const char *str, const char *str2)
 {
 	UARTprintf(str);
@@ -155,7 +167,7 @@ uint8_t uartWait( char *ch )
 
 #endif
 
-static char str[MAXDEBUGOUTPUT] = { 0 };
+static char str[40*50] = { 0 };
 
 bool streql( const char * str1, const char * str2 )
 {
@@ -578,7 +590,6 @@ void debugESCCodeInput( void )
 }
 
 
-
 static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
@@ -770,13 +781,13 @@ static void DebugTask(void *pvParameters)
 				else if ( streql(tkn1, "uarttest") )
 				{
 					UART_Transmit(UART1, (uint8_t *)"This is a test.", 15);
-				} else if ( streql( str, "stat") )
+				} else if ( streql( str, "stats") )
 				{
 					// print stats.
 					UARTwrite("\r\nStatistics output:\r\n");
-					vTaskGetRunTimeStats( str ); // fills ringbuffer, need to split into multiple transmissions
+					vTaskGetRunTimeStatsNoDyn( str );
 
-					UARTwrite(str);
+					UARTwriteRaw(str);
 
 					UARTwrite("\r\n");
 
@@ -786,8 +797,9 @@ static void DebugTask(void *pvParameters)
 				{
 					// print list.
 					UARTwrite("\r\nTask List\r\n");
-					vTaskList( str );
-					UARTwrite(str);
+					UARTwrite("Name            Stat    Prio    StackF  TaskNo\r\n");
+					vTaskListNoDyn( str );
+					UARTwriteRaw(str);
 					UARTwrite("\r\n");
 				} else
 

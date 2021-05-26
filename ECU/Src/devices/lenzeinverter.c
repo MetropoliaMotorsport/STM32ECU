@@ -509,6 +509,8 @@ bool processAPPCError( const uint8_t CANRxData[8], const uint32_t DataLength, co
 
 bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxData[8] )
 {
+	static
+
 	char str[40];
 	snprintf(str, 40, "[%2X %2X %2X %2X state %d]", CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState);
 	DebugMsg(str);
@@ -619,7 +621,7 @@ bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const
 	if ( InverterState[datahandle->index].SetupState > 0 && InverterState[datahandle->index].SetupState < 0xFE)
 	{
 
-		uint8_t INVREBOOT[8] = {0x40, 0x56, 0x1F, 0x01 };
+		uint8_t INVREBOOT[8] = {0x43, 0x56, 0x1F, 0x01 };
 
 		// check if APPC has just restarted
 		if ( memcmp(INVREBOOT, CANRxData, 8) == 0 )
