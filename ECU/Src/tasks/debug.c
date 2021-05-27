@@ -88,10 +88,10 @@ void UARTwriteRaw( const char *str)
 {
 	if ( !UART_Transmit(DEBUGUART, (uint8_t*)str, strlen(str)) )
 	{
-		return 0;
+		return;
 	}
 
-	return UART_WaitTXDone( DEBUGUART, 100);
+	UART_WaitTXDone( DEBUGUART, 100);
 }
 
 
@@ -784,7 +784,8 @@ static void DebugTask(void *pvParameters)
 				} else if ( streql( str, "stats") )
 				{
 					// print stats.
-					UARTwrite("\r\nStatistics output:\r\n");
+					UARTwrite("\r\nRuntime statistics output:\r\n");
+					UARTwrite("Taskname        Runtime         Percentage\r\n");
 					vTaskGetRunTimeStatsNoDyn( str );
 
 					UARTwriteRaw(str);

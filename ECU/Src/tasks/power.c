@@ -70,8 +70,6 @@ void PowerTask(void *argument)
 
 	char str[MAXERROROUTPUT];
 
-    const TickType_t xFrequency = 10;
-
 	bool resetLV = false;
 
 	resetPowerLost();

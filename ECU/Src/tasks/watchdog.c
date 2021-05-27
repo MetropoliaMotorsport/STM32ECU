@@ -179,7 +179,7 @@ int initWatchdog( void )
 
 	debugAllocate = xSemaphoreCreateMutex();
 
-#ifdef _WATCHDOG
+#ifdef WATCHDOG
 
 	volatile uint8_t resetflag = __HAL_RCC_GET_FLAG(RCC_FLAG_WWDG1RST);
 

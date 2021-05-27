@@ -202,13 +202,13 @@ void InvTask(void *argument)
 {
 	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY ); // ensure that tasks don't start before all initialisation done.
 
+	uint8_t watchdogBit = registerWatchdogBit("InvTask");
+
 	Inv_msg msg;
 
 	Inverter = OFFLINE;
 
 	TickType_t xLastWakeTime = xTaskGetTickCount();
-
-	uint8_t watchdogBit = registerWatchdogBit("InvTask");
 
 	uint32_t invexpected[MOTORCOUNT];
 
@@ -235,9 +235,14 @@ void InvTask(void *argument)
 //	while ( !getDevicePower(Inverters) )
 	{
 		vTaskDelay(CYCLETIME);
+		setWatchdogBit(watchdogBit);
 	}
 
-	vTaskDelay(CYCLETIME*10); // wait a few cycles for power to be off.
+	for ( int i=0;i<10;i++ )
+	{
+		vTaskDelay(CYCLETIME); // wait a few cycles for power to be off.
+		setWatchdogBit(watchdogBit);
+	}
 
 	if (!setDevicePower( Inverters, true ) )
 	{

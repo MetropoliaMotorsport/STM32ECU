@@ -648,7 +648,7 @@ bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const
 					DebugMsg(str);
 		#endif
 					InverterState[datahandle->index].SetupState = 1; // start the setup state machine
-					InvStartupState(&InverterState[datahandle->index], &CANRxData);
+					InvStartupState(&InverterState[datahandle->index], CANRxData);
 				}
 			}
 		}

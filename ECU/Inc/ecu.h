@@ -32,7 +32,7 @@
 	#define USEIMU
 	#define PWMSTEERING
 	#define LENZE
-	#define MOTORCOUNT		(2)
+	#define MOTORCOUNT		(4)
 	#define MEMORATAR
 #endif
 
