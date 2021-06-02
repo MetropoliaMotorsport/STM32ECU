@@ -9,7 +9,8 @@
 #define ECU_H_
 
 
-#define MATLAB
+//#define MATLAB
+#define OLDTORQUE
 
 // Calibration settings for pedals.
 
