@@ -137,14 +137,14 @@ bool UART_WaitRXDone( UART UART, uint32_t wait )
 	{
 		if( xSemaphoreTake(UART1RxDone, 0) == pdTRUE) {
 			return true;
-		}
+		} else return false;
 	}
 
 	if ( UART == UART2 )
 	{
 		if( xSemaphoreTake(UART2RxDone, 0) == pdTRUE) {
 			return true;
-		}
+		} else return false;
 	}
 
 	return false;

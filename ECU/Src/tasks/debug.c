@@ -244,7 +244,7 @@ static void debugInverter( const char *tkn2, const char *tkn3 )
 	}
 }
 
-static void debugMotor( const char *tkn2, const char *tkn3, const int32_t speed )
+static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor, const int32_t value )
 {
 	if ( checkOn( tkn2 )  )
 	{
@@ -259,10 +259,15 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t speed 
 		invRequestState( BOOTUP );
 		UARTwrite("Setting torque disabled.\r\n");
 	}
-	else if ( streql( tkn2, "req" )  )
+	else if ( streql( tkn2, "speed" )  )
 	{
-		InverterSetTorqueInd( 1, 0, speed);
+		InverterSetTorqueInd( motor, 0, value);
 		UARTwrite("Setting speed request.\r\n");
+	}
+	else if ( streql( tkn2, "torque" )  )
+	{
+		InverterSetTorqueInd( motor, value, 0);
+		UARTwrite("Setting torque request.\r\n");
 	}
 }
 
@@ -764,7 +769,7 @@ static void DebugTask(void *pvParameters)
 				}
 				else if ( streql(tkn1, "motor") )
 				{
-					debugMotor(tkn2, tkn3, val3);
+					debugMotor(tkn2, tkn3, val3, val4);
 				}
 				else if ( streql(tkn1, "shutdown") )
 				{

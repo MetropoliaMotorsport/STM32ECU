@@ -104,7 +104,7 @@ void InverterSetTorqueInd( uint8_t inv, int16_t req, int16_t speed )
 
 int InverterGetSpeed( void )
 {
-	// TODO implement properly.
+	// TODO implement conversion for gear ratio..
 	int32_t speed = 0;
 
 	// find slowest wheel to define speed.
@@ -305,7 +305,7 @@ void InvTask(void *argument)
 
 		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY ); // wait for main cycle.
 		// after synced, send current state for next cycle. Higher priority task, so should be received first.
-		xTaskNotifyWait( pdFALSE, ULONG_MAX,  &InvReceived, 0 ); // TODO wait was 6, verify if still received as expected.
+		xTaskNotifyWait( pdFALSE, ULONG_MAX,  &InvReceived, 0 );
 	}
 
 	// clear up if somehow get here.

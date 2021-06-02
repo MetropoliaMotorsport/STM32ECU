@@ -5,8 +5,6 @@
  *      Author: Visa
  */
 
-// TODO use 24v detect line to reset power state if LV drops.
-
 #include "ecumain.h"
 #include "limits.h"
 #include "task.h"

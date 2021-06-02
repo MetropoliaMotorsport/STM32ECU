@@ -117,7 +117,7 @@ void UART_CANBufferAdd(const can_msg * msg )
 
 void UART_CANBufferTransmit( void )
 {
-	if ( CANTxBuffer - CurCANTxBuffer > 1000 || gettimer() != CANTxLastsend ) // buffer if nearly full.
+	if ( CANTxBuffer - CurCANTxBuffer > 1000 || gettimer() != CANTxLastsend ) // buffer is nearly full or 1ms has ticked over
 	{
 		CANTxLastsend = gettimer();
 
@@ -241,13 +241,18 @@ void CANRxTask(void *argument)
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT( CANRxQueue );
 
-	can_msg msg;
+	can_msg msg, uartmsg;
 
 	uint8_t watchdogBit = registerWatchdogBit("CANTxTask");
 
 	portTickType cycletick = xTaskGetTickCount();
 
 	portTickType waittick = CYCLETIME;
+
+	bool transmitUARTCan = false;
+
+	uint8_t uartrxstate = 0;
+	uint8_t uartin[7] = {0}; // zero out array to ensure it ends in 0, for string termination.
 
 	while( 1 )
 	{
@@ -266,6 +271,73 @@ void CANRxTask(void *argument)
 		{
 			waittick = cycletick-curtick+CYCLETIME;
 		}
+
+		// move uart can to own task? add an init state to wait for a go command for syncing at startup.
+		// r1xxxDbbbbbbbb
+
+		switch ( uartrxstate )
+		{
+		case 0 :
+			// try and setup receive of header
+			if ( UART_Receive( UART1, uartin, 6) )
+			{
+				uartrxstate = 1;
+			} else
+				uartrxstate = 99;
+			break;
+
+		case 1 :
+			// wait for header
+			if ( UART_WaitRXDone( UART1, 0 ) )
+			{
+				if ( uartin[0] == 't' )
+				{
+					if ( uartin[1] == '1' )
+						uartmsg.bus = 1;
+					else if ( uartin[1] == '2' )
+						uartmsg.bus = 2;
+					else
+					{
+						uartrxstate = 99;
+						break;
+						// tx error of some sort to reset.
+					}
+
+					// convert the last number first, then set to zero so strtoul can be used on the id.
+					uartmsg.dlc = strtoul((char *)&uartin[5], NULL, 10);
+					uartin[5] = 0;
+
+					uartmsg.id = strtoul((char *)&uartin[2], NULL, 16);
+
+					if ( UART_Receive( UART1, uartmsg.data, uartmsg.dlc) )
+					{
+						uartrxstate = 2; // we've got header, wait for data.
+					} else
+						uartrxstate = 99; // error
+
+				} else if ( uartin[0] == 's' )
+				{
+					// sync message.
+					uartrxstate = 0;
+				}
+
+			}
+			break;
+		case 2 : // wait for data
+			if ( UART_WaitRXDone( UART1, 0 ) )
+			{
+				// got packet, throw it out onto the bus?, and into RX queue
+				xQueueSend( CANRxQueue, &uartmsg, 0 );
+				if ( transmitUARTCan )
+					xQueueSend( CANTxQueue, &uartmsg, 0 ); // also send uart received packet out onto real bus.
+				uartrxstate = 0;
+			}
+		case 99 : // error.
+		default :
+			// cancel any receive, reset state
+			uartrxstate = 0;
+		}
+
 
 		if( xQueueReceive(CANRxQueue,&msg,waittick) )
 		{

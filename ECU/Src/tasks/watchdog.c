@@ -157,8 +157,10 @@ static void WatchdogTask(void *pvParameters)
 			if ( activeBits > 0 )
 			{
 				volatile int watchdognotkicked = 1;
+				char str[40] = "";
+				snprintf(str, 40, "Watchdog kicked bits: %4X", uxBits);
+				DebugMsg(str);
 			}
-//			HAL_WWDG_Refresh(&hwwdg1);
 		}
 
 		xEventGroupClearBits(xWatchdog, 0xFF );

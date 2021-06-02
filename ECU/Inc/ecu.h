@@ -296,8 +296,8 @@
 #define BMSVoltageErrorBit		11
 
 #define InverterReceived		0
-#define FLeftSpeedReceived		2 // TODO fix conflict?
-#define FRightSpeedReceived		3
+//#define FLeftSpeedReceived		2
+//#define FRightSpeedReceived		3
 #define PedalADCReceived		4
 #define BMSReceived				5
 #define PDMReceived				6
