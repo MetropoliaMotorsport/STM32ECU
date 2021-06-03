@@ -113,9 +113,9 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	uint16_t BrakeTemp1 = getBEint16(&CANRxData[0]);
 
 	uint16_t BrakeF = getBEint16(&CANRxData[2]);
-	uint16_t BrakeR = getBEint16(&CANRxData[4]);
+	uint16_t BrakeR = getBEint16(&CANRxData[6]);
 
-	uint16_t AccelR = getBEint16(&CANRxData[6]);
+	uint16_t AccelR = getBEint16(&CANRxData[4]);
 
 	// HPF 20 raw value R ~3300 for 0%
 
@@ -134,7 +134,7 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
         ADCState.BrakeF = BrakeF;
         ADCState.BrakeR = BrakeR;
         ADCState.Torque_Req_R_Percent = getTorqueReqPercR(AccelR);
-		ADCState.APPSL = AccelR;
+		ADCState.APPSR = AccelR;
 
 		return true;
 	} else // bad data.

@@ -26,12 +26,6 @@
 
 static uint16_t DevicesOnline( uint16_t returnvalue )
 {
-// external devices ECU expects to be present on CAN
-//	InverterOnline
-//	PDMOnline
-//	FLeftSpeedOnline
-//	FRightSpeedOnline
-//	PedalsADC = 1;
 	if ( returnvalue == 0xFFFF ) // first loop, set what devices expecting.
 	{
 		 returnvalue =
@@ -111,19 +105,6 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	return returnvalue; // should be 0 when everything ready.
 }
 
-
-int NMTReset( void )
-{
-	// SetSensors
-	// send NMT reset message incase a node had sent bootup message before ECU saw it.
-
-	 if ( CAN_NMT( 0x82, 0x0 ) )  //0x81 reset nodes, 0x82 reset comms. // 0x0 being sent, not correct protocol
-	 {
-//		 return OperationalErrorState;
-	 }
-
-	return 0;
-}
 
 // get external hardware upto state to allow entering operational state on request.
 int PreOperationState( uint32_t OperationLoops  )
@@ -284,42 +265,71 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	lcd_send_stringline(3, getConfStr(), 255);
 
-	if ( CheckButtonPressed(Config_Input) )
-	{
-	//	DoConfig(); // right now, this won't return till done anyway, so the cycle will go out of window whilst in config for now.
-	}
-
 	// TODO this variable is going to be done away with.
 	RequestState = OperationalReadyState; // nothing happening in config, assume normal operation.
-	static bool showbrakebal = false;
 
-	static bool showadc = false;
+	ReadyToStart = 0;
 
-	switch ( GetLeftRightPressed() )
+	if ( !inConfig() )
 	{
-		case -1 : showbrakebal = !showbrakebal; break;
-		case 1 : showadc = !showadc; break;
-	}
+		if ( CheckButtonPressed(Config_Input) )
+		{
+			UARTprintf("Enter Config\r\n");
+			ConfigInput( 0xFFFF );
+		}
 
-	switch ( GetUpDownPressed() )
+		static bool showbrakebal = false;
+
+		static bool showadc = false;
+
+		switch ( GetLeftRightPressed() )
+		{
+			case -1 : showbrakebal = !showbrakebal; break;
+			case 1 : showadc = !showadc; break;
+		}
+
+		switch ( GetUpDownPressed() )
+		{
+			case -1 : showbrakebal = !showbrakebal; break;
+			case 1 : showadc = !showadc; break;
+		}
+
+		if ( showbrakebal ) PrintBrakeBalance( );
+
+	#ifdef ADC
+		if ( showadc )
+		{
+			sprintf(str,"A1 %.5lu %.5lu %.5lu", ADC_Data[0], ADC_Data[1], ADC_Data[2]);
+			lcd_send_stringline(1,str, 255);
+
+			sprintf(str,"A3 %.5lu %.5lu %.5lu", ADC_Data[3], ADC_Data[4], ADC_Data[5]);
+			lcd_send_stringline(2,str, 255);
+		}
+	#endif
+	} else
 	{
-		case -1 : showbrakebal = !showbrakebal; break;
-		case 1 : showadc = !showadc; break;
+		ReadyToStart += 1; // being in config means not ready to start.
+		// process config input.
+
+		if ( CheckButtonPressed(Config_Input) )
+		{
+			UARTprintf("Enter\r\n");
+			ConfigInput( KEY_ENTER );
+		}
+
+		switch ( GetLeftRightPressed() )
+		{
+			case -1 : ConfigInput( KEY_LEFT ); break;
+			case 1 : ConfigInput( KEY_RIGHT ); break;
+		}
+
+		switch ( GetUpDownPressed() )
+		{
+			case -1 : ConfigInput( KEY_UP ); break;
+			case 1 : ConfigInput( KEY_DOWN ); break;
+		}
+
 	}
-
-	if ( showbrakebal ) PrintBrakeBalance( );
-
-#ifdef ADC
-	if ( showadc )
-	{
-		sprintf(str,"A1 %.5lu %.5lu %.5lu", ADC_Data[0], ADC_Data[1], ADC_Data[2]);
-		lcd_send_stringline(1,str, 255);
-
-		sprintf(str,"A3 %.5lu %.5lu %.5lu", ADC_Data[3], ADC_Data[4], ADC_Data[5]);
-		lcd_send_stringline(2,str, 255);
-	}
-#endif
-
 
 	setRunningPower( false, false );
 
@@ -338,20 +348,12 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	doVectoring(Torque_Req, &adj);
 
-
-#ifdef TORQUEVECTOR
-		TorqueVectorProcess( Torque_Req );
-#endif
-
-
 	if ( CarState.APPSstatus )
 		setOutput(RTDMLED,On);
 	else
 		setOutput(RTDMLED,Off);
 
 	// Check startup requirements.
-
-	ReadyToStart = 0;
 
 	if ( !CheckShutdown() )
 	{
@@ -384,11 +386,6 @@ int PreOperationState( uint32_t OperationLoops  )
 			{
 				OperationLoops = 0;
 
-				for ( int i=0;i<MOTORCOUNT;i++){
-					// TODO send inverter torque requset
-					//CarState.Inverters[i].Torque_Req = 0;
-				}
-
 				setOutput(RTDMLED,Off);
 				return OperationalReadyState; // normal operational state on request
 
@@ -398,11 +395,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	{ // hardware not ready for active state
 		if ( OperationLoops == 50 ) // 0.5 seconds, send reset nmt, try to get inverters online if not online at startup.
 		{
-#ifdef HPF19 // unsue on expected HPF20 behaviour yet.
-			if ( !CarState.TestHV )	NMTReset();
-#else
-//			if ( !CarState.TestHV )	NMTReset();
-#endif
+
 		}
 
 		if ( CheckActivationRequest() == 1 )

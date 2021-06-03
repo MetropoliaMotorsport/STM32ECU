@@ -244,8 +244,11 @@ static void debugInverter( const char *tkn2, const char *tkn3 )
 	}
 }
 
-static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor, const int32_t value )
+static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor, const int32_t value1  )
 {
+
+	static int32_t speed[4] = {0};
+	static int32_t torque[4] = {0};
 	if ( checkOn( tkn2 )  )
 	{
 		invRequestState( OPERATIONAL );
@@ -261,13 +264,22 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 	}
 	else if ( streql( tkn2, "speed" )  )
 	{
-		InverterSetTorqueInd( motor, 0, value);
-		UARTwrite("Setting speed request.\r\n");
+		if ( value1 >= 0 )
+			speed[motor] = value1;
+		InverterSetTorqueInd( motor, torque[motor], speed[motor]);
+		UARTwrite("Setting speed request, keeping previous torque.\r\n");
 	}
 	else if ( streql( tkn2, "torque" )  )
 	{
-		InverterSetTorqueInd( motor, value, 0);
-		UARTwrite("Setting torque request.\r\n");
+		if ( value1 >= 0 )
+			torque[motor] = value1;
+		InverterSetTorqueInd( motor, torque[motor], speed[motor]);
+		UARTwrite("Setting torque request, keeping previous speed.\r\n");
+	}
+
+	for ( int i=0;i<MOTORCOUNT;i++)
+	{
+		UARTprintf("Current Params motor:%2d   speed:%5d torque:%5d\r\n", i, speed[i], torque[i]);
 	}
 }
 
@@ -679,12 +691,14 @@ static void DebugTask(void *pvParameters)
 				char tkn2[TOKENLENGTH] = "";
 				char tkn3[TOKENLENGTH] = "";
 				char tkn4[TOKENLENGTH] = "";
+				char tkn5[TOKENLENGTH] = "";
 
 				uint8_t tokens = 0;
 
 				int val1;
 				int val2;
 				int val3;
+				int val4;
 
 				// parse the input string into tokens to be processed.
 
@@ -729,6 +743,7 @@ static void DebugTask(void *pvParameters)
 					{
 						strncpy(tkn3, s, tknlen);
 						tkn3[tknlen] = '\0';
+						s += tknlen;
 						tokens++;
 					}
 				}
@@ -744,6 +759,7 @@ static void DebugTask(void *pvParameters)
 					{
 						strncpy(tkn4, s, tknlen);
 						tkn4[tknlen] = '\0';
+						s += tknlen;
 						tokens++;
 					}
 				}
@@ -752,6 +768,23 @@ static void DebugTask(void *pvParameters)
 				{
 					val3 = strtol(tkn4, NULL, 10);
 				} else val3 = 0;
+
+
+				if (*(s += strspn(s, " ")) != '\0') {
+					size_t tknlen = strcspn(s, " ");
+					if ( tknlen < TOKENLENGTH )
+					{
+						strncpy(tkn5, s, tknlen);
+						tkn5[tknlen] = '\0';
+						tokens++;
+					}
+				}
+
+				if ( strlen(tkn5)>0 )
+				{
+					val4 = strtol(tkn5, NULL, 10);
+				} else val4 = 0;
+
 
 
 				if ( streql(tkn1, "esckey" ) )
@@ -769,7 +802,7 @@ static void DebugTask(void *pvParameters)
 				}
 				else if ( streql(tkn1, "motor") )
 				{
-					debugMotor(tkn2, tkn3, val3, val4);
+					debugMotor(tkn2, tkn3, val2, val3);
 				}
 				else if ( streql(tkn1, "shutdown") )
 				{

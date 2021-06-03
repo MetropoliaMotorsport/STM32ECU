@@ -13,6 +13,7 @@
 #include "lcd.h"
 #include "eeprom.h"
 #include "adcecu.h"
+#include "semphr.h"
 
 // ADC conversion buffer, should be aligned in memory for faster DMA?
 typedef struct {
@@ -305,39 +306,32 @@ void setMax( uint16_t * max, uint16_t maxval)
 	if ( maxval > *max ) *max = maxval;
 }
 
+
+
 bool doPedalCalibration( uint16_t input )
 {
 	char str[21];
 
 	bool baddata = false;
 
-	int APPSL = getTorqueReqPercL(ADCState.APPSL)/10;
-	if ( APPSL > 99 ) APPSL = 99;
-
-	int APPSR = getTorqueReqPercR(ADCState.APPSR)/10;
-	if ( APPSR > 99 ) APPSR = 99;
-
-	int REGEN = getBrakeTravelPerc(ADCState.APPSR)/10;
-	if ( APPSR > 99 ) APPSR = 99;
-
 	if ( ADCState.APPSL > (UINT16_MAX*ADCMAXTHRESH)
-		|| ADCState.APPSL < (UINT16_MAX*ADCMINTHRESH)
+		|| ADCState.APPSL < 0 // (UINT16_MAX*ADCMINTHRESH)
 		)
 	{
 		lcd_send_stringline(1, "APPSL not sane", MENUPRIORITY);
 		baddata = true;
 	}
 
-	if ( ADCState.APPSR > (UINT16_MAX*ADCMINTHRESH)
-		|| ADCState.APPSR < (UINT16_MAX*ADCMINTHRESH)
+	if ( ADCState.APPSR > (UINT16_MAX*ADCMAXTHRESH)
+		|| ADCState.APPSR < 0 //  (UINT16_MAX*ADCMINTHRESH)
 		)
 	{
 		lcd_send_stringline(2, "APPSR not sane", MENUPRIORITY);
 		baddata = true;
 	}
 
-	if ( ADCState.Regen > (UINT16_MAX*ADCMINTHRESH)
-		|| ADCState.Regen < (UINT16_MAX*ADCMINTHRESH)
+	if ( ADCState.Regen > (UINT16_MAX*ADCMAXTHRESH)
+		|| ADCState.Regen < 0 //(UINT16_MAX*ADCMINTHRESH)
 		)
 	{
 		lcd_send_stringline(3, "Regen not sane", MENUPRIORITY);
@@ -360,23 +354,37 @@ bool doPedalCalibration( uint16_t input )
 	setMin(&APPSR_min, ADCState.APPSR);
 	setMin(&REG_min, ADCState.Regen);
 
-	setMin(&APPSL_max, ADCState.APPSL);
-	setMin(&APPSR_max, ADCState.APPSR);
-	setMin(&REG_max, ADCState.Regen);
+	setMax(&APPSL_max, ADCState.APPSL);
+	setMax(&APPSR_max, ADCState.APPSR);
+	setMax(&REG_max, ADCState.Regen);
 
-	int32_t APPSL_close = abs(APPSL_max-APPSL_min) < 1000;
-	int32_t APPSR_close = abs(APPSR_max-APPSR_min) < 1000;
-	int32_t REG_close = abs(REG_max-REG_min) < 1000;
+	int32_t APPSL_close = abs(APPSL_max-APPSL_min) < 100 ? 1 : 0;
+	int32_t APPSR_close = abs(APPSR_max-APPSR_min) < 100 ? 1 : 0;
+	int32_t REG_close = abs(REG_max-REG_min) < 100 ? 1 : 0;
 
 	if ( APPSL_close || APPSR_close )
 	{
-		lcd_send_stringline(1, "Press APPS Pedal", MENUPRIORITY-1);
+		lcd_send_stringline(1, "", MENUPRIORITY-1);
+		lcd_send_stringline(2, "Press APPS & Brake", MENUPRIORITY-1);
+
+		lcd_send_stringline(3, "", MENUPRIORITY-1);
 	} else
 	if ( REG_close )
 	{
-		lcd_send_stringline(1, "Press Brake Pedal", MENUPRIORITY-1);
+		lcd_send_stringline(1, "", MENUPRIORITY-1);
+		lcd_send_stringline(2, "Press Brake", MENUPRIORITY-1);
+		lcd_send_stringline(3, "", MENUPRIORITY-1);
 	} else
 	{
+		int APPSL = 100.0/(APPSL_max-APPSL_min) * (ADCState.APPSL-APPSL_min);
+		if ( APPSL > 99 ) APPSL = 99;
+
+		int APPSR = 100.0/(APPSR_max-APPSR_min) * (ADCState.APPSR-APPSR_min);
+		if ( APPSR > 99 ) APPSR = 99;
+
+		int REGEN = 100.0/(REG_max-REG_min) * (ADCState.Regen-REG_min);
+		if ( APPSR > 99 ) APPSR = 99;
+
 		snprintf( str, 21, "Cur L%2d%%  R%2d%%  B%2d%%", APPSL, APPSR, REGEN );
 
 		lcd_send_stringline(1,str, MENUPRIORITY);
@@ -418,8 +426,6 @@ bool doPedalCalibration( uint16_t input )
 			data->ADCBrakeTravelInput[1] = REG_max;
 			// store new Regen calibration to memory.
 		}
-
-
 
 		return false;
 	}
@@ -508,6 +514,7 @@ bool DoMenu( uint16_t input )
 		doMenuPedalEdit( MenuLines[3], "Accel", (selection==2), &inedit, &getEEPROMBlock(0)->PedalProfile, input );
 		doMenuBoolEdit( MenuLines[4], "LimpDisable", (selection==3), &inedit, &getEEPROMBlock(0)->LimpMode, input);
 		doMenuBoolEdit( MenuLines[5], "Fans", (selection==4), &inedit, &getEEPROMBlock(0)->Fans, input);
+//		doMenuIntEdit( MenuLines[2], "Fan Max", (selection==1), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input );
 
 		sprintf(MenuLines[6], "%cAPPS Calib", (selection==5) ? '>' :' ');
 
@@ -559,6 +566,13 @@ char * getConfStr( void )
 	else return ConfStr;
 }
 
+SemaphoreHandle_t xInConfig = NULL;
+StaticSemaphore_t xInConfigBuffer;
+
+bool inConfig( void )
+{
+	return uxSemaphoreGetCount( xInConfig );
+}
 
 // checks if device initial values appear OK.
 void ConfigTask(void *argument)
@@ -575,7 +589,10 @@ void ConfigTask(void *argument)
 		if ( xQueueReceive(ConfigInputQueue,&confinp,20) )
 		{
 			if ( confinp.msgval == 0xFFFF )
-			configstate = 1;
+			{
+				xSemaphoreTake(xInConfig, 0);
+				configstate = 1;
+			}
 		} else
 		{
 			confinp.msgval = 0;
@@ -589,7 +606,10 @@ void ConfigTask(void *argument)
 			if ( !EEPROMBusy() )
 			{
 				if ( !DoMenu(confinp.msgval) )
+				{
 					configstate = 0;
+					xSemaphoreGive(xInConfig);
+				}
 			}
 
 			// check if new can data received.
@@ -652,6 +672,8 @@ bool initConfig( void )
 			// bad config, fall back to some kind of of default, force recalibration of pedal?
 //		doPedalCalibration();
 	}
+
+    xInConfig = xSemaphoreCreateBinaryStatic( &xInConfigBuffer );
 
 	CarState.Torque_Req_Max = 0;
 	CarState.Torque_Req_CurrentMax = 0;
