@@ -162,9 +162,9 @@ void HandleInverter( InverterState_t * Inverter )
 		// only change command if we're not in wanted state to try and transition towards it.
 		if (Inverter->InvState != Inverter->InvRequested && Inverter->InvState > INERROR )
 		{
-			if ( Inverter->Motor == 1 )
+//			if ( Inverter->Motor == 1 )
 			// check if we've got voltage available for moving up states, otherwise stay up.
-		//	if ( InverterState[i-Inverter->.MCChannel].HighVoltageAvailable > 40 )
+			if ( Inverter->HighVoltageAvailable )
 			{
 				Inverter->InvCommand = command;
 			}

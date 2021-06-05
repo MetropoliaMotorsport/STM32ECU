@@ -358,9 +358,9 @@ bool doPedalCalibration( uint16_t input )
 	setMax(&APPSR_max, ADCState.APPSR);
 	setMax(&REG_max, ADCState.Regen);
 
-	int32_t APPSL_close = abs(APPSL_max-APPSL_min) < 100 ? 1 : 0;
-	int32_t APPSR_close = abs(APPSR_max-APPSR_min) < 100 ? 1 : 0;
-	int32_t REG_close = abs(REG_max-REG_min) < 100 ? 1 : 0;
+	int32_t APPSL_close = abs(APPSL_max-APPSL_min) < 500 ? 1 : 0;
+	int32_t APPSR_close = abs(APPSR_max-APPSR_min) < 500 ? 1 : 0;
+	int32_t REG_close = abs(REG_max-REG_min) < 500 ? 1 : 0;
 
 	if ( APPSL_close || APPSR_close )
 	{
@@ -387,15 +387,15 @@ bool doPedalCalibration( uint16_t input )
 
 		snprintf( str, 21, "Cur L%2d%%  R%2d%%  B%2d%%", APPSL, APPSR, REGEN );
 
-		lcd_send_stringline(1,str, MENUPRIORITY);
+		lcd_send_stringline(1,str, MENUPRIORITY-1);
 
 		snprintf( str, 21, "Mn %5d %5d %5d", APPSL_min, APPSR_min, REG_min );
 
-		lcd_send_stringline(2,str, MENUPRIORITY);
+		lcd_send_stringline(2,str, MENUPRIORITY-1);
 
 		snprintf( str, 21, "Mx %5d %5d %5d", APPSL_max, APPSR_max, REG_max );
 
-		lcd_send_stringline(3,str, MENUPRIORITY);
+		lcd_send_stringline(3,str, MENUPRIORITY-1);
 	}
 
 	if ( input == KEY_ENTER)
@@ -482,6 +482,10 @@ bool DoMenu( uint16_t input )
 			if ( !doPedalCalibration(input) )
 			{
 				incalib = false;
+
+				// set the current pedal calibration after calibration exited.
+
+				SetupADCInterpolationTables(getEEPROMBlock(0));
 			}
 			else
 				return true;

@@ -307,9 +307,18 @@ bool processAPPCStatus( const uint8_t CANRxData[8], const uint32_t DataLength, c
 	if ( InvInputVoltage > 5 && InvInputVoltage < 640 )
 	{
 		if ( InvInputVoltage > 60 )
+		{
 			InverterState[inv].HighVoltageAvailable = true;
+			// ensure that both motors on inverter are updated.
+			if ( !InverterState[inv].MCChannel )
+				InverterState[inv+1].HighVoltageAvailable = true;
+		}
 		else
+		{
 			InverterState[inv].HighVoltageAvailable = false;
+			if ( !InverterState[inv].MCChannel )
+				InverterState[inv+1].HighVoltageAvailable = false;
+		}
 
 		return true;
 	} else // bad data.
@@ -414,7 +423,11 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 				for ( int i=0;i<32;i++)
 				{
 					if ( newbits & ( 0x1 << i ) )
-						DebugMsg(LenzeErrorBitTypeStatus1Str(i));
+					{
+						char str[40] = "";
+						snprintf(str, 40, "Inv%d %s", inv, LenzeErrorBitTypeStatus1Str(i));
+						DebugMsg(str);
+					}
 				}
 
 				InverterState[inv].latchedStatus1 = latchedStatus1;
@@ -427,7 +440,11 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 				for ( int i=0;i<9;i++) // only 9 current valid error bits instatus2
 				{
 					if ( newbits & ( 0x1 << i ) )
-						DebugMsg(LenzeErrorBitTypeStatus2Str(i));
+					{
+						char str[40] = "";
+						snprintf(str, 40, "Inv%d %s", inv, LenzeErrorBitTypeStatus2Str(i));
+						DebugMsg(str);
+					}
 				}
 
 				InverterState[inv].latchedStatus2 = latchedStatus2;
