@@ -205,7 +205,7 @@ uint16_t TorqueVectorProcess( int torquerequest )
 		CarState.Torque_Req_L = Right;  // wheels wrong way round? , swapped for now, was + left before.
 		CarState.Torque_Req_R = Left; // check and fix properly if inverters configured wrong way round.
 
-#elseif
+#else
 
 		if ( CarState.TorqueVectoringMode > 0  )
 		{
