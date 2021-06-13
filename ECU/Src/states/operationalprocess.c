@@ -138,7 +138,7 @@ int Startup( uint32_t OperationLoops  )
 	CAN_NMT(0x81,FRSpeed_COBID);
 #endif
 
-	ShutdownCircuitSet( false );
+	ShutdownCircuitSet( true ); // as requested for testing.
 
 	vTaskDelay(5);
 

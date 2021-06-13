@@ -12,19 +12,15 @@
 #include "errors.h"
 #include "uartecu.h"
 #include "debug.h"
-
 #include "output.h"
 #include "timerecu.h"
 #include "power.h"
-
 #include "queue.h"
 #include "watchdog.h"
-
 #include "ecumain.h"
-
 #include "fdcan.h"
-
 #include "semphr.h"
+#include "taskpriorities.h"
 
 #ifdef ONECAN
 	#define sharedCAN
@@ -40,7 +36,6 @@ SemaphoreHandle_t CANBufferUpdating;
 
 #define CANTXSTACK_SIZE 128*8
 #define CANTXTASKNAME  "CANTxTask"
-#define CANTXTASKPRIORITY 1
 StaticTask_t xCANTXTaskBuffer;
 StackType_t xCANTXStack[ CANTXSTACK_SIZE ];
 
@@ -49,7 +44,6 @@ TaskHandle_t CANTxTaskHandle = NULL;
 
 #define CANRXSTACK_SIZE 128*12
 #define CANRXTASKNAME  "CANRxTask"
-#define CANRXTASKPRIORITY 1
 StaticTask_t xCANRXTaskBuffer;
 StackType_t xCANRXStack[ CANRXSTACK_SIZE ];
 

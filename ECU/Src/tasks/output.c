@@ -10,12 +10,11 @@
 #include "timerecu.h"
 #include "debug.h"
 #include "power.h"
-
+#include "taskpriorities.h"
 #include "queue.h"
 
 #define OUTPUTSTACK_SIZE 128*6
 #define OUTPUTTASKNAME  "OutputTask"
-#define OUTPUTTASKPRIORITY 1
 StaticTask_t xOUTPUTTaskBuffer;
 StackType_t xOUTPUTStack[ OUTPUTSTACK_SIZE ];
 
@@ -87,7 +86,7 @@ OutputType Output[OUTPUTCount] = {
 };
 #endif
 
-#define BLINKSTACK_SIZE 32
+#define BLINKSTACK_SIZE 64
 
 StaticTask_t xBlinkTaskBuffer[OUTPUTCount];
 

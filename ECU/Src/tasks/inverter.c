@@ -20,6 +20,7 @@
 #include "power.h"
 #include "debug.h"
 #include "power.h"
+#include "taskpriorities.h"
 
 #ifdef SIEMENS
 	#include "siemensinverter.h"
@@ -36,7 +37,6 @@ bool InvStartupState( InverterState_t *Inverter, const uint8_t * CANRxData[8] );
 
 #define INVSTACK_SIZE 128*2
 #define INVTASKNAME  "InvTask"
-#define INVTASKPRIORITY 3
 StaticTask_t xINVTaskBuffer;
 StackType_t xINVStack[ INVSTACK_SIZE ];
 
@@ -170,7 +170,7 @@ void HandleInverter( InverterState_t * Inverter )
 			}
 		}
 	}
-
+#define INVDEBUG
 	// initial testing, use maximum possible error reset period regardless of error.
 	if ( Inverter->InvState == INERROR )
 	{
@@ -182,10 +182,10 @@ void HandleInverter( InverterState_t * Inverter )
 			Inverter->InvRequested = BOOTUP;
 #ifdef INVDEBUG
 			char str[40];
-			snprintf(str, 40, "Inverter Reset sent to Inv[%d]", inv);
+			snprintf(str, 40, "Inverter Reset sent to Inv[%d]", Inverter->Motor);
 			DebugMsg(str);
 #endif
-			InvSend( Inverter, true);
+		//	InvSend( Inverter, true);
 		}
 	}
 	else
@@ -208,8 +208,6 @@ void InvTask(void *argument)
 
 	Inverter = OFFLINE;
 
-	TickType_t xLastWakeTime = xTaskGetTickCount();
-
 	uint32_t invexpected[MOTORCOUNT];
 
 	for ( int i=0; i<MOTORCOUNT; i++)
@@ -222,9 +220,6 @@ void InvTask(void *argument)
 
 	xTaskGetTickCount();
 
-
-	bool INVReady = false;
-
 	// inverters should be shutdown at startup.
 	if ( getDevicePower(Inverters) )
 	{
@@ -232,7 +227,7 @@ void InvTask(void *argument)
 			DebugMsg("Error requesting power off for inverters.");
 	}
 
-//	while ( !getDevicePower(Inverters) )
+	while ( !getDevicePower(Inverters) )
 	{
 		vTaskDelay(CYCLETIME);
 		setWatchdogBit(watchdogBit);
@@ -244,7 +239,7 @@ void InvTask(void *argument)
 		setWatchdogBit(watchdogBit);
 	}
 
-	if (!setDevicePower( Inverters, true ) )
+	//if (!setDevicePower( Inverters, true ) )
 	{
 			DebugMsg("Error requesting power off for inverters.");
 	}
@@ -276,16 +271,25 @@ void InvTask(void *argument)
 					InverterState[i].Device = OPERATIONAL;
 					HandleInverter(&InverterState[i]);
 				} else
-				if ( lastseen[i] > INVERTERTIMEOUT && InverterState[i].Device != OFFLINE ) //
 				{
-					if ( InverterState[i].Device != OFFLINE )
+					if ( InverterState[i].Device == OPERATIONAL )
 					{
 						char str[40];
-						snprintf(str, 40, "Inverter %d Timeout", i);
+						snprintf(str, 40, "Inv[%d] not received exp.", i);
 						DebugMsg(str);
-						InverterState[i].Device = OFFLINE;
 					}
-					InverterState[i].SetupState = 0;
+
+					if ( lastseen[i] > INVERTERTIMEOUT && InverterState[i].Device != OFFLINE ) //
+					{
+						if ( InverterState[i].Device != OFFLINE )
+						{
+							char str[40];
+							snprintf(str, 40, "Inverter %d Timeout", i);
+							DebugMsg(str);
+							InverterState[i].Device = OFFLINE;
+						}
+						InverterState[i].SetupState = 0;
+					}
 				}
 			} else
 			{
@@ -296,7 +300,6 @@ void InvTask(void *argument)
 					// for some reason inverter SDO state machine failed, try to reset it once.
 					InverterState[i].SetupState = 0; // start the setup state machine
 				}
-
 			}
 		}
 

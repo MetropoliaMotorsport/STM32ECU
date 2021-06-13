@@ -15,6 +15,7 @@
 #include "wwdg.h"
 #include "event_groups.h"
 #include "semphr.h"
+#include "taskpriorities.h"
 
 #define MAXWATCHDOGTASKS			10
 #define MAXWATCHDOGTASKNAMELENGTH 	20

@@ -38,6 +38,7 @@
 #include "configuration.h"
 #include "operationalprocess.h"
 #include "uartecu.h"
+#include "taskpriorities.h"
 
 #include "dma.h"
 #include "gpio.h"
@@ -102,7 +103,6 @@ volatile DeviceStateType DeviceState;
 
 #define MAINTASKSTACK_SIZE 128*12
 #define MAINTASKTASKNAME  "MainTaskTask"
-#define MAINTASKTASKPRIORITY 4
 StaticTask_t xMAINTASKTaskBuffer;
 StackType_t xMAINTASKStack[ MAINTASKSTACK_SIZE ];
 
@@ -163,11 +163,11 @@ void MainTask(void *argument)
 	{
 		TickType_t startloop = xLastWakeTime;
 		OperationalProcess();
-		setWatchdogBit(watchdogBit);
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
-
+		setWatchdogBit(watchdogBit);
 		xEventGroupSync( xCycleSync, 1, 1, 0 );
-		CAN_NMTSyncRequest(); // send sync at end of loop. set up a syncronisation group.
+		// send sync at end of loop. set up a syncronisation group.
+		CAN_NMTSyncRequest();
 
 		if (xLastWakeTime - startloop > CYCLETIME )
 			DebugMsg("Long process loop!");
@@ -328,6 +328,7 @@ static int HardwareInit( void )
 	vTaskDelay(200);
 
 	lcd_endscroll();
+
 	return returnval;
 }
 

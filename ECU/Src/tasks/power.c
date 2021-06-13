@@ -14,12 +14,12 @@
 #include "errors.h"
 #include "adcecu.h"
 #include "inverter.h"
+#include "taskpriorities.h"
 
 TaskHandle_t PowerTaskHandle = NULL;
 
 #define POWERSTACK_SIZE 128*6
 #define POWERTASKNAME  "PowerTask"
-#define POWERTASKPRIORITY 1
 StaticTask_t xPOWERTaskBuffer;
 StackType_t xPOWERStack[ POWERSTACK_SIZE ];
 
@@ -74,9 +74,19 @@ void PowerTask(void *argument)
 	xQueueReset(PowerErrorQueue);
 
 	uint32_t powernodesOnline = 0;
+	uint32_t lastpowernodesOnline = 0;
+	uint32_t count = 0;
 
 	while( 1 )
 	{
+		lastpowernodesOnline = powernodesOnline;
+		// read the values from last cycle.
+		xTaskNotifyWait( pdFALSE, ULONG_MAX, &powernodesOnline, 0 );
+
+		// block and wait for main cycle.
+		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY );
+
+		count++;
 		while ( xQueueReceive(PowerErrorQueue,&errormsg,0) )
 		{
 			if ( errormsg.error == 0xFFFF )
@@ -126,7 +136,7 @@ void PowerTask(void *argument)
 
 		// check if powernodes received.
 
-		if ( powernodesOnline == PNodeAllBit ) // all expecter power nodes reported in. // TODO automate
+		if ( powernodesOnline == PNodeAllBit ) // all expected power nodes reported in. // TODO automate
 		{
 			DeviceState.PowerNodes = OPERATIONAL;
 			PNodeWaitStr[0] = 0;
@@ -137,11 +147,14 @@ void PowerTask(void *argument)
 			strcpy(PNodeWaitStr, getPNodeStr());
 		}
 
+		if ( lastpowernodesOnline != powernodesOnline )
+		{
+			char str[40];
+			snprintf(str, 40, "Powernodes diff %d.", count);
+			DebugMsg(str);
+		}
+
 		sendPowerNodeReq(); // process pending power requests.
-
-		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY ); // wait for main cycle.
-		xTaskNotifyWait( pdFALSE, ULONG_MAX, &powernodesOnline, 0 );
-
 	}
 
 	vTaskDelete(NULL);

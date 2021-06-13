@@ -16,6 +16,7 @@
 #include "power.h"
 #include "powernode.h"
 #include "uartecu.h"
+#include "taskpriorities.h"
 
 // freeRTOS
 #include "semphr.h"
@@ -33,7 +34,6 @@ typedef struct Debug_msg {
 
 #define DEBUGSTACK_SIZE 128*8
 #define DEBUGTASKNAME  "DebugTask"
-#define DEBUGTASKPRIORITY 1
 StaticTask_t xDEBUGTaskBuffer;
 RAM_D1 StackType_t xDEBUGStack[ DEBUGSTACK_SIZE ];
 
@@ -211,7 +211,7 @@ static void debugFanPWM( const int tokens, const int val1, const int val2 )
 	}
 }
 
-static void debugInverter( const char *tkn2, const char *tkn3 )
+static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 {
 	if ( streql(tkn2, "state") || streql(tkn2, "status") )
 	{				  // PreOperation  PreOperation
@@ -225,9 +225,10 @@ static void debugInverter( const char *tkn2, const char *tkn3 )
 
 			InverterState_t invs = getInvState(i);
 			char str[MAXDEBUGOUTPUT];
-			snprintf(str, MAXDEBUGOUTPUT, "%4d %14s %14s \r\n", i,
+			snprintf(str, MAXDEBUGOUTPUT, "%4d %14s %14s HV:%s\r\n", i,
 					getDeviceStatusStr(invs.InvState ),
-					getDeviceStatusStr(invs.InvRequested )
+					getDeviceStatusStr(invs.InvRequested ),
+					invs.HighVoltageAvailable ? "Y" : "N"
 			);
 			UARTwrite(str);
 		}
@@ -241,6 +242,17 @@ static void debugInverter( const char *tkn2, const char *tkn3 )
 		{
 		//	InvStartupCfg( &InverterState[i] );
 		}
+	}
+	else
+	if ( streql(tkn2, "reset") )
+	{
+		UARTprintf("Sending inverter reset to %d\r\n", val2);
+		if ( val2 < 0 || val2 > MOTORCOUNT-1)
+		{
+			UARTwrite("Invalid inverter given.\r\n");
+		}
+	//	else
+//		InvReset(&InverterState[val2]);
 	}
 }
 
@@ -798,7 +810,7 @@ static void DebugTask(void *pvParameters)
 				} else
 				if ( streql(tkn1, "inverter" ) )
 				{
-					debugInverter( tkn2, tkn3 );
+					debugInverter( tkn2, tkn3, val2 );
 				}
 				else if ( streql(tkn1, "motor") )
 				{
@@ -852,9 +864,11 @@ static void DebugTask(void *pvParameters)
 					UARTwrite("fanpwm <leftduty> <rightduty>");
 					UARTwrite("shutdown state|on|off");
 					UARTwrite("motor");
-					UARTwrite("inverter");
+					UARTwrite("inverter reset");
 					UARTwrite("config");
 					UARTwrite("esckey");
+					UARTwrite("list");
+					UARTwrite("stats");
 
 				} else
 

@@ -11,6 +11,7 @@
 #include "configuration.h"
 #include "tim.h"
 #include "debug.h"
+#include "taskpriorities.h"
 
 // PWM Pin needs capacitor taken off to deactivate low pass filter.
 
@@ -93,7 +94,6 @@ volatile uint32_t PWMtime;
 
 #define INPUTSTACK_SIZE 128*2
 #define INPUTTASKNAME  "InputTask"
-#define INPUTTASKPRIORITY 1
 StaticTask_t xINPUTTaskBuffer;
 StackType_t xINPUTStack[ INPUTSTACK_SIZE ];
 

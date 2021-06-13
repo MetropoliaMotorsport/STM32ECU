@@ -33,8 +33,8 @@
 #define LENZE_APPC_OFFSET			(31)
 #define LENZE_MOTORB_OFFSET			(63)
 
-#define Inverter1_NodeID			(1)
-#define Inverter2_NodeID			(2)
+#define Inverter1_NodeID			(2)
+#define Inverter2_NodeID			(0xE)
 
 // define which wheel is which, allows to keep the order same within arrays without being concerned about order of connection.
 

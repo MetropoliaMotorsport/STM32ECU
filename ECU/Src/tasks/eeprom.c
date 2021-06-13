@@ -15,6 +15,7 @@
 #include "lcd.h"
 //#include "stm32h7xx_hal.h"
 #include "tim.h"
+#include "taskpriorities.h"
 
 uint16_t Memory_Address;
 volatile int Remaining_Bytes;
@@ -65,7 +66,6 @@ static char datatype[20] = "";
 
 #define EEPROMSTACK_SIZE 128*2
 #define EEPROMTASKNAME  "EEPROMTask"
-#define EEPROMTASKPRIORITY 1
 StaticTask_t xEEPROMTaskBuffer;
 StackType_t xEEPROMStack[ EEPROMSTACK_SIZE ];
 

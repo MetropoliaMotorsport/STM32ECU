@@ -80,6 +80,7 @@ uint32_t getInvExpected(  uint8_t inv );
 uint8_t InvSend( volatile InverterState_t *Inverter, bool reset );
 void InvResetError( volatile InverterState_t *Inverter );
 bool InvStartupCfg( volatile InverterState_t *Inverter );
+void InvReset( volatile InverterState_t *Inverter );
 
 extern TaskHandle_t InvTaskHandle;
 

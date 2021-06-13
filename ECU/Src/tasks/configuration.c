@@ -14,6 +14,7 @@
 #include "eeprom.h"
 #include "adcecu.h"
 #include "semphr.h"
+#include "taskpriorities.h"
 
 // ADC conversion buffer, should be aligned in memory for faster DMA?
 typedef struct {
@@ -33,7 +34,6 @@ QueueHandle_t ConfigInputQueue;
 
 #define ConfigSTACK_SIZE 128*8
 #define ConfigTASKNAME  "ConfigTask"
-#define ConfigTASKPRIORITY 1
 StaticTask_t xConfigTaskBuffer;
 RAM_D1 StackType_t xConfigStack[ ConfigSTACK_SIZE ];
 

@@ -14,6 +14,7 @@
 #include "semphr.h"
 
 #include "i2c.h"
+#include "taskpriorities.h"
 
 static int lcd_updatedisplay( void );
 static int lcd_printscroll( void );
@@ -48,7 +49,6 @@ static uint32_t LinePriorityTime[4] = {0};
 
 #define LCDSTACK_SIZE 128*8
 #define LCDTASKNAME  "LCDTask"
-#define LCDTASKPRIORITY 1
 StaticTask_t xLCDTaskBuffer;
 StackType_t xLCDStack[ LCDSTACK_SIZE ];
 

@@ -130,6 +130,16 @@ void InvResetError( volatile InverterState_t *Inverter )
 	CAN2Send(LENZE_RPDO1_ID + Inverter->COBID + ( Inverter->MCChannel * 0x200 ), 8, msg);
 }
 
+
+void InvReset( volatile InverterState_t *Inverter )
+{
+	uint8_t msg[8] = {0};
+	msg[0] = 0x81;
+	msg[0] = Inverter->COBID;
+
+	CAN2Send(0x0, 2, msg);
+}
+
 uint8_t InvSend( volatile InverterState_t *Inverter, bool reset )
 {
 	uint8_t msg1[8] = {0};

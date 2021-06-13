@@ -15,6 +15,7 @@
 #include "semphr.h"
 #include "analognode.h"
 #include <limits.h>
+#include "taskpriorities.h"
 
 #define UINTOFFSET	360
 
@@ -59,7 +60,6 @@ TaskHandle_t ADCTaskHandle = NULL;
 
 #define ADCSTACK_SIZE 128*2
 #define ADCTASKNAME  "ADCTask"
-#define ADCTASKPRIORITY 3
 StaticTask_t xADCTaskBuffer;
 StackType_t xADCStack[ ADCSTACK_SIZE ];
 
@@ -96,9 +96,27 @@ void ADCTask(void *argument)
 	DeviceState.ADC = OPERATIONAL;
 
 	uint32_t analoguenodesOnline = 0;
+	uint32_t lastanaloguenodesOnline = 0;
+	uint32_t count = 0;
 
 	while( 1 )
 	{
+		lastanaloguenodesOnline = analoguenodesOnline;
+		// read the values from last cycle.
+		xTaskNotifyWait( pdFALSE, ULONG_MAX, &analoguenodesOnline, 0 );
+
+		// block and wait for main cycle.
+		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY );
+
+		count++;
+
+		if ( lastanaloguenodesOnline != analoguenodesOnline )
+		{
+			char str[40];
+			snprintf(str, 40, "Analogue diff %d.", count);
+			DebugMsg(str);
+		}
+
 #ifdef STMADC
 		// start the adc reads and then wait on their incoming queues.
 		if ( HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t *)aADCxConvertedData, ADC_CONVERTED_DATA_BUFFER_SIZE)  != HAL_OK)
@@ -150,15 +168,6 @@ void ADCTask(void *argument)
 		}
 
 		DeviceState.ADCSanity = CheckADCSanity();
-
-
-		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY ); // wait for main cycle.
-//		xTaskNotifyWait( pdFALSE, ULONG_MAX, &powernodesOnline, 0 );
-
-		xTaskNotifyWait( pdFALSE, ULONG_MAX, &analoguenodesOnline, 0 );
-
-
-	//	vTaskDelayUntil( &xLastWakeTime, CYCLETIME ); // use task sync instead?
 	}
 
 	vTaskDelete(NULL);
