@@ -38,52 +38,42 @@ void setDriveMode(void)
 	{
 
 
-		case 1: // 5nm  5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    64,    65,   0
+		case 1: // 5, 25, 25, 30, 30, 65, 65, 65
 			CarState.Torque_Req_Max = 5;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
-#endif
 			break;
-		case 2: // 10nm
+		case 2: // 25nm
 			CarState.Torque_Req_Max = 25;
 			break;
-		case 3: // 15nm
-			CarState.Torque_Req_Max = 35;
-
+		case 3: // 25nm with Torque Vectoring
+			CarState.Torque_Req_Max = 25;
+			#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 1;
+			#endif
 			break;
-		case 4: // 20nm
+		case 4: // 30nm
+			CarState.Torque_Req_Max = 30;
+			SetupLargeLowRangeTorque();
+			break;
+		case 5: // 30nm with Torque Vectoring
+			CarState.Torque_Req_Max = 30;
+			#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 1;
+			#endif
+			break;
+		case 6: // 65nm
 			CarState.Torque_Req_Max = 65;
 			SetupLargeLowRangeTorque();
 			break;
-		case 5: // 25nm
-			CarState.Torque_Req_Max = 65;
-			CarState.LimpDisable = 1;
-			SetupLowTravelTorque();
-			break;
-		case 6: // 30nm
-			CarState.Torque_Req_Max = 25;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 1;
-			CarState.TorqueVectoringMode = 1;
-#endif
-
-			break;
 		case 7: // 65nm Track
-			CarState.Torque_Req_Max = 25;
-#ifdef TORQUEVECTOR
+			CarState.Torque_Req_Max = 65;
+			#ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 1;
-			CarState.TorqueVectoringMode = 2;
-
-#endif
+			#endif
 			SetupLargeLowRangeTorque();
 			break;
 		case 8: // 65nm Accel
-			CarState.Torque_Req_Max = 25;
-#ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 1;
-			CarState.TorqueVectoringMode = 3;
-
-#endif
+			CarState.Torque_Req_Max = 65;
+			SetupLowTravelTorque();
 			break;
 
 	}
