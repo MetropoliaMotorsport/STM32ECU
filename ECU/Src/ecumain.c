@@ -273,6 +273,8 @@ static int HardwareInit( void )
 	initConfig();
 #ifdef INVERTERS
 	initInv();
+#else
+	DebugMsg("Inverters disabled.");
 #endif
 
 	initIMU();
