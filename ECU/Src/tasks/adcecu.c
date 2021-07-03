@@ -81,6 +81,14 @@ char * getADCWait( void)
 	else return ADCWaitStr;
 }
 
+uint32_t analoguenodesOnline = 0;
+uint32_t lastanaloguenodesOnline = 0;
+
+uint32_t getAnalogueNodesOnline( void )
+{
+	return analoguenodesOnline;
+}
+
 // Task shall monitor analogue node timeouts, and read data from local ADC/PWM to get all analogue values ready for main loop.
 void ADCTask(void *argument)
 {
@@ -95,9 +103,9 @@ void ADCTask(void *argument)
 
 	DeviceState.ADC = OPERATIONAL;
 
-	uint32_t analoguenodesOnline = 0;
-	uint32_t lastanaloguenodesOnline = 0;
 	uint32_t count = 0;
+
+	uint32_t lastseenall = 0;
 
 	while( 1 )
 	{
@@ -152,14 +160,15 @@ void ADCTask(void *argument)
 		{
 			DeviceState.Sensors = OPERATIONAL;
 			ADCWaitStr[0] = 0;
+			lastseenall = gettimer();
 		} else
 		{
-			if ( analoguenodesOnline > 0 )
-				DeviceState.Sensors = INERROR;
-			else
-				DeviceState.Sensors = OFFLINE;
-			setAnalogNodesStr( analoguenodesOnline );
-			strcpy(ADCWaitStr, getAnalogNodesStr());
+			if ( gettimer() - lastseenall > NODETIMEOUT && DeviceState.Sensors > OFFLINE)
+			{
+				DeviceState.Sensors = INERROR; // haven't seen all needed.
+				setAnalogNodesStr( analoguenodesOnline );
+				strcpy(ADCWaitStr, getAnalogNodesStr());
+			}
 		}
 
 		if ( analoguenodesOnline == AnodeCriticalBit )

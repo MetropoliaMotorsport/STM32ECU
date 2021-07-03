@@ -271,7 +271,10 @@ static int HardwareInit( void )
 	initPower();
 
 	initConfig();
-    initInv();
+#ifdef INVERTERS
+	initInv();
+#endif
+
 	initIMU();
 #ifdef PDM
 	initPDM();

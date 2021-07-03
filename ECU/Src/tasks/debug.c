@@ -326,6 +326,78 @@ static void debugShutdown( const char *tkn2, const char *tkn3 )
 	}
 }
 
+static void debugSensors( const char *tkn2 )
+{
+	{
+		UARTwrite("Current state of sensors:\r\n");
+
+#if 0
+		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline() ;
+		// anode 1
+		if ( AnalogueNodesOnline & ( 0x1 << ANode1Bit ) )
+		{
+			sprintf(str, "Anode1: TorqueR: %lu Regen: %d AppsL: %lu\r\n", ADCState.APPSL, ADCState.Regen);
+			UARTwrite(str);
+		}
+
+		if ( AnalogueNodesOnline & ( 0x1 << ANode9Bit ) )
+		{
+			sprintf(str, "Anode9: ");
+			UARTwrite(str);
+		}
+
+		if ( AnalogueNodesOnline & ( 0x1 << ANode10Bit ) )
+		{
+			sprintf(str, "Anode10: ");
+			UARTwrite(str);
+		}
+
+		if ( AnalogueNodesOnline & ( 0x1 << ANode11Bit ) )
+		{
+			sprintf(str, "Anode11: ");
+			UARTwrite(str);
+		}
+
+		if ( AnalogueNodesOnline & ( 0x1 << ANode12Bit ) )
+		{
+			sprintf(str, "Anode12: ");
+			UARTwrite(str);
+		}
+
+		if ( AnalogueNodesOnline & ( 0x1 << ANode13Bit ) )
+		{
+			sprintf(str, "Anode13: ");
+			UARTwrite(str);
+		}
+
+		if ( AnalogueNodesOnline & ( 0x1 << ANode14Bit ) )
+		{
+			sprintf(str, "Anode14: ");
+			UARTwrite(str);
+		}
+
+		if ( AnalogueNodesOnline & ( 0x1 << ANode15Bit ) )
+		{
+			sprintf(str, "Anode15: ");
+			UARTwrite(str);
+		}
+
+		if ( AnalogueNodesOnline & ( 0x1 << ANode16Bit ) )
+		{
+			sprintf(str, "Anode16: ");
+			UARTwrite(str);
+		}
+
+		if ( AnalogueNodesOnline & ( 0x1 << ANode17Bit ) )
+		{
+			sprintf(str, "Anode17: ");
+			UARTwrite(str);
+		}
+#endif
+
+	}
+}
+
 
 static void debugPower( const char *tkn2, const char *tkn3 )
 {
@@ -828,6 +900,10 @@ static void DebugTask(void *pvParameters)
 				{
 					debugPower(tkn2, tkn3);
 				}
+				else if ( streql(tkn1, "sensors") )
+				{
+					debugSensors(tkn2);
+				}
 				else if ( streql(tkn1, "uarttest") )
 				{
 					UART_Transmit(UART1, (uint8_t *)"This is a test.", 15);
@@ -865,6 +941,7 @@ static void DebugTask(void *pvParameters)
 					UARTwrite("shutdown state|on|off");
 					UARTwrite("motor");
 					UARTwrite("inverter reset");
+					UARTwrite("sensors");
 					UARTwrite("config");
 					UARTwrite("esckey");
 					UARTwrite("list");

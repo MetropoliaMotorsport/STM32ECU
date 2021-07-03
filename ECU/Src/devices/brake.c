@@ -17,7 +17,7 @@ bool getBrakeLow( void )
 
 uint8_t getBrakeHigh( void )
 {
-	return ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPSBrakeHard;
+	return ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPSBrakeHard; // TODO add regen sensor.
 }
 
 uint8_t getBrake( void )

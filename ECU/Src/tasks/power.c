@@ -15,6 +15,7 @@
 #include "adcecu.h"
 #include "inverter.h"
 #include "taskpriorities.h"
+#include "debug.h"
 
 TaskHandle_t PowerTaskHandle = NULL;
 
@@ -76,6 +77,8 @@ void PowerTask(void *argument)
 	uint32_t powernodesOnline = 0;
 	uint32_t lastpowernodesOnline = 0;
 	uint32_t count = 0;
+
+	uint32_t lastseenall = 0;
 
 	while( 1 )
 	{
@@ -140,17 +143,25 @@ void PowerTask(void *argument)
 		{
 			DeviceState.PowerNodes = OPERATIONAL;
 			PNodeWaitStr[0] = 0;
+			lastseenall = gettimer();
 		} else
 		{
-			DeviceState.PowerNodes = INERROR; // haven't seen all needed.
-			setPowerNodeStr( powernodesOnline );
-			strcpy(PNodeWaitStr, getPNodeStr());
+			// allow some timeout before declaring error, but only after we've actually already got online.
+
+			if ( gettimer() - lastseenall > PDMTIMEOUT && DeviceState.PowerNodes > OFFLINE)
+			{
+				DeviceState.PowerNodes = INERROR; // haven't seen all needed.
+				setPowerNodeStr( powernodesOnline );
+				strcpy(PNodeWaitStr, getPNodeStr());
+			}
+
+			// brake powernode should be a priority as priority signal.
 		}
 
 		if ( lastpowernodesOnline != powernodesOnline )
 		{
 			char str[40];
-			snprintf(str, 40, "Powernodes diff %d.", count);
+			snprintf(str, 40, "Powernodes diff %lu", count);
 			DebugMsg(str);
 		}
 

@@ -151,7 +151,7 @@ uint8_t InvSend( volatile InverterState_t *Inverter, bool reset )
 
 	if ( Inverter->AllowTorque )
 	{
-		vel = Inverter->MaxSpeed * 0x4000; // rpm multiplied out.
+		vel = Inverter->MaxSpeed * 0x4000; //*16; // TODO add gear ratio, rpm multiplied out.  div by 16
 
 		if ( Inverter->Torque_Req < 0 && !Inverter->AllowRegen )
 			torque = 0;
