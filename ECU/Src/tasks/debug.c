@@ -301,11 +301,13 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 		uint16_t curreq = PedalTorqueRequest();
 		if ( curreq == 0 )
 		{
-		//	invRequestState( OPERATIONAL );
-		//	InverterAllowTorqueAll(true);
-		//	setTestMotors(true);
+#ifdef INVERTERS
+			invRequestState( OPERATIONAL );
+			InverterAllowTorqueAll(true);
+			setTestMotors(true);
+#endif
 
-			UARTwrite("Setting pedal enabled till next input.\r\n");
+			UARTwrite("Setting motors enabled till next input.\r\n");
 
 			bool quit = false;
 
@@ -345,13 +347,21 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 					lasttime = gettimer();
 					uint32_t percR = 0;
 
-					int32_t requestNm = PedalTorqueRequest();
 
 					if ( requestRaw > 300 )
-						percR = ( (100000/( 2100-300 )) * requestRaw-300) / 1000;
+						percR = ( (100000/( 2100-300 )) * requestRaw-300) / 100;
 
-					if ( percR > 100 )
-						percR = 100;
+					if ( percR > 1000 )
+						percR = 1000;
+
+					int32_t requestNm = getTorqueReqCurve(percR)*CarState.Torque_Req_CurrentMax/65;
+
+#ifdef INVERTERS
+					if ( requestNm > 0 )
+						InverterSetTorqueInd( 0, torque[motor], 500);
+					else
+						InverterSetTorqueInd( 0, 0, 0);
+#endif
 
 					UARTprintf("Pedal pos: raw:%d r%d%%, requestNm %d speed %d\r\n ", requestRaw, percR, requestNm, speed);
 				}
@@ -790,7 +800,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10007...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10008...\r\n\r\n");
 
 	redraw = false;
 
