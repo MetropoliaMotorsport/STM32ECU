@@ -122,7 +122,7 @@ void ADCTask(void *argument)
 		{
 			char str[40];
 			snprintf(str, 40, "Analogue diff %d.", count);
-			DebugMsg(str);
+//			DebugMsg(str);
 		}
 
 #ifdef STMADC
@@ -168,6 +168,7 @@ void ADCTask(void *argument)
 				DeviceState.Sensors = INERROR; // haven't seen all needed.
 				setAnalogNodesStr( analoguenodesOnline );
 				strcpy(ADCWaitStr, getAnalogNodesStr());
+				DebugMsg("Analogue node timeout");
 			}
 		}
 
