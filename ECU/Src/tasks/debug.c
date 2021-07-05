@@ -339,7 +339,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 				}
 
 				uint16_t requestRaw = ADCState.APPSR;//PedalTorqueRequest();
-				if ( abs(oldrequest-requestRaw) > 50  || gettimer() - lasttime > 1000) // only update if value changes.
+				if ( abs(oldrequest-requestRaw) > 50 || gettimer() - lasttime > 1000) // only update if value changes.
 				{
 					oldrequest = requestRaw;
 					lasttime = gettimer();
@@ -347,8 +347,8 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 
 					int32_t requestNm = PedalTorqueRequest();
 
-					if ( requestRaw > 100 )
-						percR = ( (100000/( 2100-100 )) * requestRaw-100) / 1000;
+					if ( requestRaw > 300 )
+						percR = ( (100000/( 2100-300 )) * requestRaw-300) / 1000;
 
 					if ( percR > 100 )
 						percR = 100;
