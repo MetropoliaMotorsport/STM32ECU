@@ -358,12 +358,12 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 
 #ifdef INVERTERS
 					if ( requestNm > 0 )
-						InverterSetTorqueInd( 0, torque[motor], 500);
+						InverterSetTorqueInd( 0, requestNm, 500);
 					else
 						InverterSetTorqueInd( 0, 0, 0);
 #endif
 
-					UARTprintf("Pedal pos: raw:%d r%d%%, requestNm %d speed %d\r\n ", requestRaw, percR, requestNm/0x4000, speed);
+					UARTprintf("Pedal pos: raw:%d r%d%%, requestNm %d ( raw %d ) speed %d\r\n ", requestRaw, percR, requestNm, requestNm/0x4000, speed);
 				}
 			}
 		} else
