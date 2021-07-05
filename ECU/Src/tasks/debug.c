@@ -338,16 +338,18 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 					UARTwrite(msg.str);
 				}
 
-				uint16_t request = ADCState.APPSR;//PedalTorqueRequest();
-// -100 || request > oldrequest+100
-				if ( request != oldrequest || gettimer() - lasttime > 1000) // only update if value changes.
+				uint16_t requestPerc = ADCState.APPSR;//PedalTorqueRequest();
+				if ( abs(oldrequest-requestPerc) > 50  || gettimer() - lasttime > 1000) // only update if value changes.
 				{
-					oldrequest = request;
+					oldrequest = requestPerc;
 					lasttime = gettimer();
-					uint16_t percR = 0;
-					if ( ADCState.APPSR > 100 )
-						percR = 100.0/(2300-100) * ADCState.APPSR-100;
-					UARTprintf("Pedal pos: raw:%d r%d%%, request %d speed %d\r\n ", ADCState.APPSR, percR, request, speed);
+					uint32_t percR = 0;
+
+					int32_t requestNm = PedalTorqueRequest();
+
+					if ( request> 100 )
+						percR = ( (100000/( 2100-100 )) * request-100) / 1000;
+					UARTprintf("Pedal pos: raw:%d r%d%%, requestNm %d speed %d\r\n ", request, percR, requestNm, speed);
 				}
 			}
 		} else
