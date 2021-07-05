@@ -71,7 +71,7 @@ volatile uint32_t ADC_DataMax[NumADCChan+NumADCChanADC3];
 #endif
 
 
-struct  {
+volatile struct  {
 	uint32_t lastread;
 	volatile char newdata;
 	int16_t SteeringAngle;

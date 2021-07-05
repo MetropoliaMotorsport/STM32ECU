@@ -19,6 +19,7 @@
 #include "taskpriorities.h"
 #include "preoperation.h"
 #include "adcecu.h"
+#include "timerecu.h"
 
 // freeRTOS
 #include "semphr.h"
@@ -319,6 +320,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 
 			uint16_t oldrequest = 0xffff;
 			int16_t speed = 500;
+			uint32_t lasttime = 0;
 
 			while ( !quit )
 			{
@@ -338,10 +340,11 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 
 				uint16_t request = ADCState.Torque_Req_R_Percent;//PedalTorqueRequest();
 
-				if ( request != oldrequest) // only update if value changes.
+				if ( request != oldrequest || gettimer() - lasttime > 1000) // only update if value changes.
 				{
 					oldrequest = request;
-					UARTprintf("Pedal pos: r%dl%d, request %d speed %d\r\n ", ADCState.Torque_Req_R_Percent / 10, ADCState.Torque_Req_L_Percent / 10, request, speed);
+					lasttime = gettimer();
+					UARTprintf("Pedal pos: r%d l%d, request %d speed %d\r\n ", ADCState.Torque_Req_R_Percent / 10, ADCState.Torque_Req_L_Percent / 10, request, speed);
 				}
 			}
 		} else
