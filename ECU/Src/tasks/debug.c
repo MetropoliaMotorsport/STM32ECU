@@ -349,6 +349,10 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 
 					if ( request> 100 )
 						percR = ( (100000/( 2100-100 )) * request-100) / 1000;
+
+					if ( percR > 100 )
+						percR = 100;
+
 					UARTprintf("Pedal pos: raw:%d r%d%%, requestNm %d speed %d\r\n ", request, percR, requestNm, speed);
 				}
 			}
