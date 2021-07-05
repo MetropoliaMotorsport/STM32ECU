@@ -338,13 +338,16 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 					UARTwrite(msg.str);
 				}
 
-				uint16_t request = ADCState.Torque_Req_R_Percent;//PedalTorqueRequest();
+				uint16_t request = ADCState.APPSR;//PedalTorqueRequest();
 
-				if ( request != oldrequest || gettimer() - lasttime > 1000) // only update if value changes.
+				if ( request > oldrequest-100 || request > oldrequest+100 ) //|| gettimer() - lasttime > 1000) // only update if value changes.
 				{
 					oldrequest = request;
 					lasttime = gettimer();
-					UARTprintf("Pedal pos: r%d l%d, request %d speed %d\r\n ", ADCState.Torque_Req_R_Percent / 10, ADCState.Torque_Req_L_Percent / 10, request, speed);
+					uint16_t percR = 0;
+					if ( ADCState.APPSR > 1000 )
+						percR = 100.0/(13000) * ADCState.APPSR-1000;
+					UARTprintf("Pedal pos: raw:%d r%d%%, request %d speed %d\r\n ", ADCState.APPSR, percR, ADCState.Torque_Req_R_Percent / 10, request, speed);
 				}
 			}
 		} else
@@ -781,7 +784,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10005...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10006...\r\n\r\n");
 
 	redraw = false;
 
