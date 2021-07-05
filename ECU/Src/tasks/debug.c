@@ -354,7 +354,9 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 					if ( percR > 1000 )
 						percR = 1000;
 
-					int32_t requestNm = (getTorqueReqCurve(percR)*CarState.Torque_Req_CurrentMax/65)*0x4000;
+					int32_t requestNm = (getTorqueReqCurve(percR)*CarState.Torque_Req_CurrentMax/65.0)*0x4000;
+
+					int reqPercCurve = getTorqueReqCurve(percR);
 
 #ifdef INVERTERS
 					if ( requestNm > 0 )
@@ -363,7 +365,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 						InverterSetTorqueInd( 0, 0, 0);
 #endif
 
-					UARTprintf("Pedal pos: raw:%d r%d%%, requestNm %d ( raw %d ) speed %d\r\n ", requestRaw, percR, requestNm, requestNm/0x4000, speed);
+					UARTprintf("Pedal pos: r%d%%, curve req %d requestNm %d ( raw %d ) speed %d, maxNm\r\n ", percR/10, reqPercCurve/10, requestNm, requestNm/0x4000, speed, CarState.Torque_Req_CurrentMax);
 				}
 			}
 		} else
