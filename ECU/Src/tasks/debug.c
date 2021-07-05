@@ -276,9 +276,9 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 
 			bool quit = false;
 
-			uint16_t ch = 0;
+			char ch = 0;
 
-			if(!UART_Receive(DEBUGUART, (uint8_t *)ch, 1)) {
+			if(!UART_Receive(DEBUGUART, (uint8_t *)&ch, 1)) {
 				UARTwrite("UART error\r\n");
 				return;
 			}
