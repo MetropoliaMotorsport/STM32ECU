@@ -61,14 +61,25 @@ void doVectoring(int16_t Torque_Req, vectoradjust * adj)
 	 adj->RL = Torque_Req+(rtY.tql*1000/65); // take requested adjustment in nm and convert it to to actual request format.
 	 if ( adj->RL > ( Torque_Req * 3 ) ) adj->RL = Torque_Req*3; // limit adjustment to max 3x original request.
 
+	 adj->FL = Torque_Req+(rtY.tql*1000/65); // take requested adjustment in nm and convert it to to actual request format.
+	 if ( adj->FL > ( Torque_Req * 3 ) ) adj->FL = Torque_Req*3; // limit adjustment to max 3x original request.
+
+
 	 adj->RR = Torque_Req-(rtY.tqr*1000/65);
 	 if ( adj->RR > ( Torque_Req * 3 ) ) adj->RR = Torque_Req*3;
 
+	 adj->FR = Torque_Req-(rtY.tqr*1000/65);
+	 if ( adj->FR > ( Torque_Req * 3 ) ) adj->FR = Torque_Req*3;
+
 	 if ( adj->RL < 0 ) adj->RL = 0;
 	 if ( adj->RR < 0 ) adj->RR = 0;
+	 if ( adj->FL < 0 ) adj->FL = 0;
+	 if ( adj->FR < 0 ) adj->FR = 0;
 
 	 if	( adj->RL > maxreq ) adj->RL = maxreq;
 	 if ( adj->RR > maxreq ) adj->RR = maxreq;
+	 if	( adj->FL > maxreq ) adj->FL = maxreq;
+	 if ( adj->FR > maxreq ) adj->FR = maxreq;
 
 #else
   #ifdef SIMPLETORQUEVECTOR
@@ -76,21 +87,22 @@ void doVectoring(int16_t Torque_Req, vectoradjust * adj)
 	  * torque vectoring should activate at >40/<-40 degrees of steering wheel angle.
 	  * Full(=10Nm) torque change should be reached linearily at >90/<-90 of steering angle.
 	  */
+	 // outdated, still for RWD
 		int TorqueVectorAddition;
 
 		// ensure torque request altering only happens when a torque request actually exists.
 
-		if ( CarState.TorqueVectoring && torquerequest > 0 && ADCState.Torque_Req_R_Percent > 0 && ADCState.Torque_Req_L_Percent > 0 && abs(ADCState.SteeringAngle) > 40 )
+		if ( CarState.TorqueVectoring && Torque_Req > 0 && ADCState.Torque_Req_R_Percent > 0 && ADCState.Torque_Req_L_Percent > 0 && abs(ADCState.SteeringAngle) > 40 )
 		{
 			TorqueVectorAddition = ConvertNMToRequest(getTorqueVector(ADCState.SteeringAngle))/10; // returns 10x NM request.
 
-			if  ( abs(TorqueVectorAddition) > torquerequest ){
-				if ( TorqueVectorAddition < 0 ) TorqueVectorAddition = 0-torquerequest;
-				else TorqueVectorAddition = torquerequest;
+			if  ( abs(TorqueVectorAddition) > Torque_Req ){
+				if ( TorqueVectorAddition < 0 ) TorqueVectorAddition = 0-Torque_Req;
+				else TorqueVectorAddition = Torque_Req;
 			}
 
-			int Left = torquerequest + TorqueVectorAddition;
-			int Right = torquerequest - TorqueVectorAddition;
+			int Left = Torque_Req + TorqueVectorAddition;
+			int Right = Torque_Req - TorqueVectorAddition;
 			// also check wheel speed.
 
 			if ( Left > 1000 ) Left = 1000;
@@ -98,20 +110,25 @@ void doVectoring(int16_t Torque_Req, vectoradjust * adj)
 			if ( Left < 0 ) Left = 0;
 			if ( Right < 0 ) Right = 0;
 
-			CarState.Torque_Req_L = Right;  // wheels wrong way round? , swapped for now, was + left before.
-			CarState.Torque_Req_R = Left; // check and fix properly if inverters configured wrong way round.
+			adj->RL = Left;
+			adj->RR = Right;
+			adj->FL = 0;
+			adj->FR = 0;
+
 			return 1; // we modified.
 		}
 		else
 		{
-			CarState.Torque_Req_L = torquerequest;  // wheels wrong way round? , swapped for now, was + left before.
-			CarState.Torque_Req_R = torquerequest;
+			adj->RL = Left;
+			adj->RR = Right;
+			adj->FL = 0;
+			adj->FR = 0;
 			return 0; // we set to zero.
 		}
 
 
   #else
-	 // no actual adjustment.
+	 // no actual adjustment for now.
 	 adj->FL = Torque_Req;
 	 adj->FR = Torque_Req;
 	 adj->RL = Torque_Req;
@@ -119,7 +136,6 @@ void doVectoring(int16_t Torque_Req, vectoradjust * adj)
   #endif
 #endif
 }
-
 
 
 /*

@@ -1,8 +1,8 @@
 /*
- * operationreadyness.h
+ * idleprocess.h
  *
  *  Created on: 13 Apr 2019
- *      Author: drago
+ *      Author: Visa
  */
 
 #ifndef IDLEPROCESS_H_

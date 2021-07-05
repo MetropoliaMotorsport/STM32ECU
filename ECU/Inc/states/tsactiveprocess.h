@@ -1,8 +1,8 @@
 /*
- * operationreadyness.h
+ * tsactiveprocess.h
  *
  *  Created on: 13 Apr 2019
- *      Author: drago
+ *      Author: Visa
  */
 
 #ifndef TSACTIVEPROCESS_H_

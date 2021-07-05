@@ -105,6 +105,14 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	return returnvalue; // should be 0 when everything ready.
 }
 
+static volatile bool testmotors = false;
+static bool testmotorslast = false;
+
+void setTestMotors( bool state )
+{
+	testmotors = state;
+}
+
 
 // get external hardware upto state to allow entering operational state on request.
 int PreOperationState( uint32_t OperationLoops  )
@@ -161,6 +169,12 @@ int PreOperationState( uint32_t OperationLoops  )
 #endif
 	{
 		CAN_SendStatus(1, PreOperationalState, preoperationstate );
+
+		if ( testmotors != testmotorslast)
+		{
+			InverterAllowTorqueAll(testmotors);
+			testmotorslast = testmotors;
+		}
 
 		// do power request
 
@@ -347,6 +361,8 @@ int PreOperationState( uint32_t OperationLoops  )
 	vectoradjust adj;
 
 	doVectoring(Torque_Req, &adj);
+
+	if ( testmotorslast ) InverterSetTorque(&adj, 1000);
 
 	if ( CarState.APPSstatus )
 		setOutput(RTDMLED,On);

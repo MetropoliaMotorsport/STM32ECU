@@ -263,14 +263,23 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 	static int32_t torque[4] = {0};
 	if ( checkOn( tkn2 )  )
 	{
-		invRequestState( OPERATIONAL );
-		InverterAllowTorqueAll(true);
+		if ( PedalTorqueRequest() == 0 )
+		{
+			invRequestState( OPERATIONAL );
+			InverterAllowTorqueAll(true);
+			setTestMotors(true);
 
-		UARTwrite("Setting torque enabled.\r\n");
+			UARTwrite("Setting torque enabled.\r\n");
+		} else
+		{
+			UARTwrite("Pedal input not 0, not enabling test.\r\n");
+		}
 	}
 	else if ( checkOff( tkn2 ) )
 	{
+		// check if pedal is 0, only allow enabling if no input.
 		InverterAllowTorqueAll( false );
+		setTestMotors(false);
 		invRequestState( BOOTUP );
 		UARTwrite("Setting torque disabled.\r\n");
 	}

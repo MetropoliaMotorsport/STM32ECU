@@ -542,6 +542,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 	snprintf(str, 40, "[%2X %2X %2X %2X state %d]", CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState);
 	DebugMsg(str);
 
+	// PDO timeout set in lenze software right now.
 	 // set SDO's to sync   0x1800-1806  = lenze TPDO 1 through 7
 	if ( Inverter->MCChannel == false )
 	{
@@ -553,7 +554,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 			break;
 
 		case 1:
-			CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234);
+			CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234); // sets private can.
 			Inverter->SetupState = 2;
 			Inverter->SetupStartTime = xTaskGetTickCount();
 			return true;
@@ -595,7 +596,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 #endif
 				if ( Inverter->SetupState < 9)
 				{
-					CANSendSDO(bus0, Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1);
+					CANSendSDO(bus0, Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1); // sets TPDO's to sync mode.
 					Inverter->SetupState++;
 				}
 				else

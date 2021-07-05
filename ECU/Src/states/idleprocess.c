@@ -164,8 +164,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 // allow APPS checking before RTDM
 	vectoradjust adj;
 
-	if ( CarState.TorqueVectoring )
-		doVectoring( CarState.Torque_Req, &adj );
+	doVectoring( CarState.Torque_Req, &adj );
 
 	if ( CarState.APPSstatus ) setOutput(TSLED,On); else setOutput(TSLED,Off);
 

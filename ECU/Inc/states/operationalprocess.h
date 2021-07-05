@@ -2,7 +2,7 @@
  * operationalprocess.h
  *
  *  Created on: 14 Mar 2019
- *      Author: drago
+ *      Author: Visa
  */
 
 #include "ecumain.h"

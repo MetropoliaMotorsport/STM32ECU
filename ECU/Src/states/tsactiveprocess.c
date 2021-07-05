@@ -89,11 +89,12 @@ int TSActiveProcess( uint32_t OperationLoops )
 	}
 
 	// allow APPS checking before RTDM
-	int Torque_Req = PedalTorqueRequest();
+
+	CarState.Torque_Req = PedalTorqueRequest(); // no actual request, merely being calculated.
 
 	vectoradjust adj;
 
-	doVectoring(Torque_Req, &adj);
+	doVectoring(CarState.Torque_Req , &adj);
 
 	InverterSetTorque(&adj, 0);
 

@@ -2,7 +2,7 @@
  * errors.h
  *
  *  Created on: 29 Apr 2021
- *      Author: visa
+ *      Author: Visa
  */
 
 #ifndef STATES_ERRORS_H_
