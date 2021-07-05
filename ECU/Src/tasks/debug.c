@@ -265,6 +265,12 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 	static int32_t torque[4] = {0};
 	if ( checkOn( tkn2 )  )
 	{
+		UARTwrite("Setting front power enabled.\r\n");
+
+		setDevicePower( Front1, true );
+		setDevicePower( Front2, true );
+		vTaskDelay(100);
+
 		uint16_t curreq = PedalTorqueRequest();
 		if ( curreq == 0 )
 		{
@@ -746,7 +752,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10002...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10003...\r\n\r\n");
 
 	redraw = false;
 
