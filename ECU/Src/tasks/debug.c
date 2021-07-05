@@ -345,8 +345,8 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 					oldrequest = request;
 					lasttime = gettimer();
 					uint16_t percR = 0;
-					if ( ADCState.APPSR > 1000 )
-						percR = 100.0/(13000) * ADCState.APPSR-1000;
+					if ( ADCState.APPSR > 100 )
+						percR = 100.0/(2300-100) * ADCState.APPSR-100;
 					UARTprintf("Pedal pos: raw:%d r%d%%, request %d speed %d\r\n ", ADCState.APPSR, percR, request, speed);
 				}
 			}
