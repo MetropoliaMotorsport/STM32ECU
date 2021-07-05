@@ -313,7 +313,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 			}
 		} else
 		{
-			UARTprintf("APPS request not 0, not enabling test [curreq %dnm].\r\n", curreq);
+			UARTprintf("APPS request not 0, not enabling test [curreq %dnm, ped pos l%d r%d , brakes r%d f%d].\r\n", curreq, ADCState.Torque_Req_L_Percent, ADCState.Torque_Req_R_Percent, ADCState.BrakeR, ADCState.BrakeF);
 		}
 	}
 	else if ( checkOff( tkn2 ) )
