@@ -58,14 +58,14 @@ SemaphoreHandle_t InvUpdating;
 
 InverterState_t InverterState[MOTORCOUNT];
 
-InverterState_t getInvState(uint8_t inv )
+InverterState_t * getInvState(uint8_t inv )
 {
 	if ( inv >=0 && inv < MOTORCOUNT )
-		return InverterState[inv];
+		return &InverterState[inv];
 	else
 	{
 		InverterState_t invalidinv = {0};
-		return invalidinv;
+		return &invalidinv;
 	}
 }
 

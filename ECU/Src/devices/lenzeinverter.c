@@ -627,6 +627,13 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 	return true;
 }
 
+bool InvStartupCfg( volatile InverterState_t *Inverter )
+{
+	// forcibly start the setup state machine.
+	Inverter->SetupState = 1;
+	InvStartupState( Inverter, (uint8_t[8]){0,0,0,0,0,0,0,0} );
+	return true;
+}
 
 
 bool processAPPCRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )

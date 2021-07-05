@@ -223,12 +223,12 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 		for ( int i=0;i<MOTORCOUNT;i++)
 		{
 
-			InverterState_t invs = getInvState(i);
+			InverterState_t * invs = getInvState(i);
 			char str[MAXDEBUGOUTPUT];
 			snprintf(str, MAXDEBUGOUTPUT, "%4d %14s %14s HV:%s\r\n", i,
-					getDeviceStatusStr(invs.InvState ),
-					getDeviceStatusStr(invs.InvRequested ),
-					invs.HighVoltageAvailable ? "Y" : "N"
+					getDeviceStatusStr(invs->InvState ),
+					getDeviceStatusStr(invs->InvRequested ),
+					invs->HighVoltageAvailable ? "Y" : "N"
 			);
 			UARTwrite(str);
 		}
@@ -240,11 +240,11 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 		UARTwrite("Sending inverter startup\r\n");
 		for ( int i=0;i<MOTORCOUNT;i++)
 		{
-		//	InvStartupCfg( &InverterState[i] );
+			InvStartupCfg( getInvState(i) );
 		}
 	}
 	else
-	if ( streql(tkn2, "reset") )
+	if ( streql(tkn2, "reset") ) // should try and reset errors.
 	{
 		UARTprintf("Sending inverter reset to %d\r\n", val2);
 		if ( val2 < 0 || val2 > MOTORCOUNT-1)
@@ -252,7 +252,7 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 			UARTwrite("Invalid inverter given.\r\n");
 		}
 	//	else
-//		InvReset(&InverterState[val2]);
+		InvReset(getInvState(val2));
 	}
 }
 

@@ -59,7 +59,7 @@ extern DeviceStatus Inverter;
 
 void InverterAllowTorque(uint8_t inv, bool allow );
 void InverterAllowTorqueAll( bool allow );
-InverterState_t getInvState(uint8_t inv );
+InverterState_t * getInvState(uint8_t inv );
 bool invertersStateCheck( DeviceStatus state );
 void InverterSetTorque( vectoradjust *adj, int16_t MaxSpeed );
 int InverterGetSpeed( void );
