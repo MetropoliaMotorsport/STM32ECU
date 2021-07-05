@@ -153,6 +153,7 @@ void PowerTask(void *argument)
 				DeviceState.PowerNodes = INERROR; // haven't seen all needed.
 				setPowerNodeStr( powernodesOnline );
 				strcpy(PNodeWaitStr, getPNodeStr());
+				DebugMsg("Power node timeout");
 			}
 
 			// brake powernode should be a priority as priority signal.
@@ -162,7 +163,7 @@ void PowerTask(void *argument)
 		{
 			char str[40];
 			snprintf(str, 40, "Powernodes diff %lu", count);
-			DebugMsg(str);
+	//		DebugMsg(str);
 		}
 
 		sendPowerNodeReq(); // process pending power requests.

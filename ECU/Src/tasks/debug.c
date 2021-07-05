@@ -293,6 +293,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 				if ( UART_WaitRXDone( DEBUGUART, 0 ) )
 				{
 					UARTwrite("Done.\r\n");
+					// reset request to 0 here.
 					return;
 				}
 
