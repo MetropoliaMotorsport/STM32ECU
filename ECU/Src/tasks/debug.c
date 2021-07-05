@@ -268,7 +268,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 		uint16_t curreq = PedalTorqueRequest();
 		if ( curreq == 0 )
 		{
-			invRequestState( OPERATIONAL );
+		//	invRequestState( OPERATIONAL );
 		//	InverterAllowTorqueAll(true);
 		//	setTestMotors(true);
 
@@ -745,7 +745,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10001...\r\n\r\n");
 
 	redraw = false;
 
