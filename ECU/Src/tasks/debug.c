@@ -17,6 +17,8 @@
 #include "powernode.h"
 #include "uartecu.h"
 #include "taskpriorities.h"
+#include "preoperation.h"
+#include "adcecu.h"
 
 // freeRTOS
 #include "semphr.h"
@@ -269,7 +271,45 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 			InverterAllowTorqueAll(true);
 			setTestMotors(true);
 
-			UARTwrite("Setting torque enabled.\r\n");
+			UARTwrite("Setting pedal enabled till next input.\r\n");
+
+			bool quit = false;
+
+			uint16_t ch = 0;
+
+			if(!UART_Receive(DEBUGUART, (uint8_t *)ch, 1)) {
+				UARTwrite("UART error\r\n");
+				return;
+			}
+
+			struct Debug_msg msg;
+
+			uint16_t oldrequest = 0xffff;
+			int16_t speed = 500;
+
+			while ( !quit )
+			{
+				if ( UART_WaitRXDone( DEBUGUART, 0 ) )
+				{
+					UARTwrite("Done.\r\n");
+					return;
+				}
+
+				// print other pending messages.
+				if ( xQueueReceive(DebugQueue,&msg,10) )
+				{
+					UARTwrite("\r\n");
+					UARTwrite(msg.str);
+				}
+
+				uint16_t request = PedalTorqueRequest();
+
+				if ( request != oldrequest) // only update if value changes.
+				{
+					oldrequest = request;
+					UARTprintf("Pedal pos: %d, request %d speed %d\r\n ", ADCState.Torque_Req_R_Percent / 10, request, speed);
+				}
+			}
 		} else
 		{
 			UARTwrite("Pedal input not 0, not enabling test.\r\n");
