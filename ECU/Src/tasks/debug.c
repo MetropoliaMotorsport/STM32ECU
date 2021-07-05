@@ -265,11 +265,12 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 	static int32_t torque[4] = {0};
 	if ( checkOn( tkn2 )  )
 	{
-		if ( PedalTorqueRequest() == 0 )
+		uint16_t curreq = PedalTorqueRequest();
+		if ( curreq == 0 )
 		{
 			invRequestState( OPERATIONAL );
-			InverterAllowTorqueAll(true);
-			setTestMotors(true);
+		//	InverterAllowTorqueAll(true);
+		//	setTestMotors(true);
 
 			UARTwrite("Setting pedal enabled till next input.\r\n");
 
@@ -312,7 +313,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 			}
 		} else
 		{
-			UARTwrite("Pedal input not 0, not enabling test.\r\n");
+			UARTprintf("APPS request not 0, not enabling test [curreq %dnm].\r\n", curreq);
 		}
 	}
 	else if ( checkOff( tkn2 ) )
