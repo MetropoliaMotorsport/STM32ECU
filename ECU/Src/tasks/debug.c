@@ -283,6 +283,20 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 			return;
 		}
 
+#if 0
+		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline() ;
+		// anode 1
+		if ( AnalogueNodesOnline & ( 0x1 << ANode1Bit ) )
+		{
+			sprintf(str, "Anode1: TorqueR: %lu Regen: %d AppsL: %lu\r\n", ADCState.APPSL, ADCState.Regen);
+			UARTwrite(str);
+		}
+#endif
+
+		// check if analogue nodes online
+
+//		ANode1Bit
+
 		uint16_t curreq = PedalTorqueRequest();
 		if ( curreq == 0 )
 		{
@@ -322,12 +336,12 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 					UARTwrite(msg.str);
 				}
 
-				uint16_t request = PedalTorqueRequest();
+				uint16_t request = ADCState.Torque_Req_R_Percent;//PedalTorqueRequest();
 
 				if ( request != oldrequest) // only update if value changes.
 				{
 					oldrequest = request;
-					UARTprintf("Pedal pos: %d, request %d speed %d\r\n ", ADCState.Torque_Req_R_Percent / 10, request, speed);
+					UARTprintf("Pedal pos: r%dl%d, request %d speed %d\r\n ", ADCState.Torque_Req_R_Percent / 10, ADCState.Torque_Req_L_Percent / 10, request, speed);
 				}
 			}
 		} else
