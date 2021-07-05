@@ -271,6 +271,18 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 		setDevicePower( Front2, true );
 		vTaskDelay(100);
 
+		if ( !getNodeDevicePower(Front1) )
+		{
+			UARTwrite("Front1 not powered.\r\n");
+			return;
+		}
+
+		if ( !getNodeDevicePower(Front2) )
+		{
+			UARTwrite("Front2 not powered.\r\n");
+			return;
+		}
+
 		uint16_t curreq = PedalTorqueRequest();
 		if ( curreq == 0 )
 		{
