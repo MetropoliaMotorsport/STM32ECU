@@ -240,29 +240,37 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 		}
 
 	}
-	else if ( streql(tkn2, "enable") )
+
+	else if ( checkOn(tkn2) )
 	{
 		UARTwrite("Enabling inverters and saving config.\r\n");
+		getEEPROMBlock(0)->MaxTorque = 5;
 		getEEPROMBlock(0)->InvEnabled = true;
-		writeEEPROMCurConf(); // enqueue write the data to eeprom.
-		vTaskDelay(100);
-		while ( EEPROMBusy() )
+		if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
 		{
-			vTaskDelay(100);
-		}
-		UARTwrite("Saved, power cycle to activate.\r\n");
+			vTaskDelay(20);
+			while ( EEPROMBusy() )
+			{
+				vTaskDelay(20);
+			}
+			UARTwrite("Saved, power cycle to activate.\r\n");
+		} else
+			UARTwrite("Error saving config.\r\n");
 	}
-	else if ( streql(tkn2, "disable") )
+	else if ( checkOff(tkn2) )
 	{
 		UARTwrite("Disabling inverters and saving config.\r\n");
 		getEEPROMBlock(0)->InvEnabled = false;
-		writeEEPROMCurConf(); // enqueue write the data to eeprom.
-		vTaskDelay(100);
-		while ( EEPROMBusy() )
+		if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
 		{
 			vTaskDelay(100);
-		}
-		UARTwrite("Saved, power cycle to activate.\r\n");
+			while ( EEPROMBusy() )
+			{
+				vTaskDelay(100);
+			}
+			UARTwrite("Saved, power cycle to activate.\r\n");
+		} else
+			UARTwrite("Error saving config.\r\n");
 	}
 	else if ( streql(tkn2, "startup") )
 	{

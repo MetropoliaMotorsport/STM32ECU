@@ -303,8 +303,6 @@ static int HardwareInit( void )
 
     // Moved inverters after eeprom so that config value can be used.
 
-    getEEPROMBlock(0)->InvEnabled = true;
-
 	if ( getEEPROMBlock(0)->InvEnabled )
 	{
 		initInv();

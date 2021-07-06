@@ -848,7 +848,9 @@ int writeEEPROMCurConf( void )  //write one of the two config banks to EEPROM
 		//setup data to write.
 
 		Remaining_Bytes = 32;
-		Memory_Address = &EEPROMdata.block1.MaxTorque-EEPROMdata.buffer;
+		// EEPROMdata.buffer = memory address of start of block, calculate relative address of write
+
+		Memory_Address = &getEEPROMBlock(0)->ConfigStart - EEPROMdata.buffer;
 
 		eepromwritinginprogress = true;
 

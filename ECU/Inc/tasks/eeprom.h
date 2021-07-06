@@ -81,15 +81,19 @@ typedef struct eepromdatastruct {
 
 	uint16_t DrivingModeInput[8]; //  16 bytes -- 506 bytes to here
 
-	// config data
+	uint8_t AlignmentPadding[6];
 
+	// config data start at 512 for alignment and easy writing.
+	union {
 	uint8_t MaxTorque;
+	uint8_t ConfigStart;
+	};
 	uint8_t PedalProfile;
 	bool LimpMode;
 	bool TorqueVectoring;
 	bool Fans;
 	uint8_t FanMax;
-	bool InvEnabled; // 512 bytes
+	bool InvEnabled; // 519 bytes
 
 } eepromdata; // max 1600bytes=50*32byte blocks.
 
