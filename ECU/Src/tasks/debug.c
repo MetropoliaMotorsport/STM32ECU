@@ -179,7 +179,7 @@ bool streql( const char * str1, const char * str2 )
 
 bool checkOn( const char * tkn )
 {
-	if ( streql(tkn, "closed") || streql(tkn, "on") || streql(tkn, "true") || streql(tkn, "enabled") )
+	if ( streql(tkn, "closed") || streql(tkn, "on") || streql(tkn, "true") || streql(tkn, "enable")  || streql(tkn, "enabled") )
 		return true;
 	else
 		return false;
@@ -187,7 +187,7 @@ bool checkOn( const char * tkn )
 
 bool checkOff( const char * tkn )
 {
-	if ( streql(tkn, "open") || streql(tkn, "off") || streql(tkn, "false") || streql(tkn, "disabled") )
+	if ( streql(tkn, "open") || streql(tkn, "off") || streql(tkn, "false") || streql(tkn, "disable") || streql(tkn, "disabled") )
 		return true;
 	else
 		return false;
@@ -228,7 +228,6 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 
 		for ( int i=0;i<MOTORCOUNT;i++)
 		{
-
 			InverterState_t * invs = getInvState(i);
 			char str[MAXDEBUGOUTPUT];
 			snprintf(str, MAXDEBUGOUTPUT, "%4d %14s %14s HV:%s\r\n", i,
@@ -240,7 +239,6 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 		}
 
 	}
-
 	else if ( checkOn(tkn2) )
 	{
 		UARTwrite("Enabling inverters and saving config.\r\n");
@@ -289,6 +287,9 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 		}
 	//	else
 		InvReset(getInvState(val2));
+	} else
+	{
+		UARTprintf("unknown inverter cmd\r\n");
 	}
 }
 
