@@ -538,7 +538,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 	static
 
 	char str[40];
-	snprintf(str, 40, "[%2X %2X %2X %2X state %d] (%lu)", CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState, gettimer());
+	snprintf(str, 40, "Inv %d [%2X %2X %2X %2X state %d] (%lu)", Inverter->Motor, CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState, gettimer());
 	DebugMsg(str);
 
 	// PDO timeout set in lenze software right now.
