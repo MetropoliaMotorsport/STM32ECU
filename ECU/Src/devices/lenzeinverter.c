@@ -434,7 +434,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 					if ( newbits & ( 0x1 << i ) )
 					{
 						char str[40] = "";
-						snprintf(str, 40, "Inv%d %s", inv, LenzeErrorBitTypeStatus1Str(i));
+						snprintf(str, 40, "Inv%d %s at (%lu)", inv, LenzeErrorBitTypeStatus1Str(i), gettimer());
 						DebugMsg(str);
 					}
 				}
@@ -451,7 +451,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 					if ( newbits & ( 0x1 << i ) )
 					{
 						char str[40] = "";
-						snprintf(str, 40, "Inv%d %s", inv, LenzeErrorBitTypeStatus2Str(i));
+						snprintf(str, 40, "Inv%d %s  at (%lu)", inv, LenzeErrorBitTypeStatus2Str(i), gettimer());
 						DebugMsg(str);
 					}
 				}
@@ -535,9 +535,7 @@ bool processAPPCError( const uint8_t CANRxData[8], const uint32_t DataLength, co
 
 bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxData[8] )
 {
-	static
-
-	char str[40];
+	static char str[40];
 	snprintf(str, 40, "Inv %d [%2X %2X %2X %2X state %d] (%lu)", Inverter->Motor, CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState, gettimer());
 	DebugMsg(str);
 
@@ -601,7 +599,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				else
 				{
 					char str[60];
-					snprintf(str, 60, "Lenze inverter %d ready at %lu.", Inverter->Motor, gettimer());
+					snprintf(str, 60, "Lenze inverter %d ready at (%lu)", Inverter->Motor, gettimer());
 					DebugMsg(str);
 					InvSend(Inverter, true);
 					Inverter->SetupState = 0xFF; // Done!

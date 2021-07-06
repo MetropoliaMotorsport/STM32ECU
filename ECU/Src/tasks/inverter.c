@@ -183,7 +183,7 @@ void HandleInverter( InverterState_t * Inverter )
 			Inverter->InvRequested = BOOTUP;
 #ifdef INVDEBUG
 			char str[40];
-			snprintf(str, 40, "Inverter Reset sent to Inv[%d]", Inverter->Motor);
+			snprintf(str, 40, "Inverter Reset sent to Inv[%d] at (%lu)", Inverter->Motor, gettimer());
 			DebugMsg(str);
 #endif
 		//	InvSend( Inverter, true);
@@ -225,7 +225,7 @@ void InvTask(void *argument)
 	if ( getDevicePower(Inverters) )
 	{
 		if ( !setDevicePower( Inverters, false ) )
-			DebugMsg("Error requesting power off for inverters.");
+			DebugMsg("Error requesting power off for inverters to reset.");
 	}
 
 	while ( !getDevicePower(Inverters) )
@@ -276,8 +276,10 @@ void InvTask(void *argument)
 					if ( InverterState[i].Device == OPERATIONAL )
 					{
 						char str[40];
-						snprintf(str, 40, "Inv[%d] not received exp.", i);
+						snprintf(str, 40, "Inv[%d] not received exp at (%lu)", i, gettimer());
 						DebugMsg(str);
+						HandleInverter(&InverterState[i]);
+						CAN_SendStatus(9, 0, 1);
 					}
 
 					if ( lastseen[i] > INVERTERTIMEOUT && InverterState[i].Device != OFFLINE ) //
@@ -285,9 +287,10 @@ void InvTask(void *argument)
 						if ( InverterState[i].Device != OFFLINE )
 						{
 							char str[40];
-							snprintf(str, 40, "Inverter %d Timeout (lu)", i), gettimer();
+							snprintf(str, 40, "Inverter %d Timeout (%lu)", i, gettimer());
 							DebugMsg(str);
 							InverterState[i].Device = OFFLINE;
+							CAN_SendStatus(9, 0, 2);
 						}
 						InverterState[i].SetupState = 0;
 					}
@@ -297,7 +300,9 @@ void InvTask(void *argument)
 				if ( InverterState[i].SetupState != 0xFF && InverterState[i].SetupState > 0
 					&& xTaskGetTickCount() - InverterState[i].SetupStartTime > 1000)
 				{
-					DebugMsg("Resettting startup state machine.");
+					char str[60];
+					snprintf(str, 60, "Resettting startup state machine at (%lu)", gettimer());
+					DebugMsg(str);
 					// for some reason inverter SDO state machine failed, try to reset it once.
 					InverterState[i].SetupState = 0; // start the setup state machine
 				}
