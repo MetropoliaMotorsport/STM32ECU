@@ -21,6 +21,7 @@
 #include "debug.h"
 #include "power.h"
 #include "taskpriorities.h"
+#include "timerecu.h"
 
 #ifdef SIEMENS
 	#include "siemensinverter.h"
@@ -57,6 +58,7 @@ QueueHandle_t InvQueue;
 SemaphoreHandle_t InvUpdating;
 
 InverterState_t InverterState[MOTORCOUNT];
+InverterState_t invalidinv = {0};
 
 InverterState_t * getInvState(uint8_t inv )
 {
@@ -64,7 +66,6 @@ InverterState_t * getInvState(uint8_t inv )
 		return &InverterState[inv];
 	else
 	{
-		InverterState_t invalidinv = {0};
 		return &invalidinv;
 	}
 }
@@ -244,7 +245,7 @@ void InvTask(void *argument)
 			DebugMsg("Error requesting power off for inverters.");
 	}
 
-	DebugMsg("Waiting setup");
+	DebugMsg("Inv Waiting setup");
 
 	uint32_t InvReceived = 0;
 
@@ -284,7 +285,7 @@ void InvTask(void *argument)
 						if ( InverterState[i].Device != OFFLINE )
 						{
 							char str[40];
-							snprintf(str, 40, "Inverter %d Timeout", i);
+							snprintf(str, 40, "Inverter %d Timeout (lu)", i), gettimer();
 							DebugMsg(str);
 							InverterState[i].Device = OFFLINE;
 						}

@@ -156,7 +156,7 @@ uint8_t InvSend( volatile InverterState_t *Inverter, bool reset )
 		if ( Inverter->Torque_Req < 0 && !Inverter->AllowRegen )
 			torque = 0;
 		else
-			torque = Inverter->Torque_Req;// * 0x4000;
+			torque = Inverter->Torque_Req;
 	}
 
     // store values for primary request.
@@ -186,7 +186,6 @@ uint8_t InvSend( volatile InverterState_t *Inverter, bool reset )
 
 		CAN2Send( Inverter->COBID+LENZE_RPDO1_ID, 8, msg1 );
 		CAN2Send( Inverter->COBID+LENZE_RPDO2_ID, 8, msg2 );
-
 	} else
 	{
 		CAN2Send( Inverter->COBID+LENZE_RPDO3_ID, 8, msg1 );
@@ -539,7 +538,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 	static
 
 	char str[40];
-	snprintf(str, 40, "[%2X %2X %2X %2X state %d]", CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState);
+	snprintf(str, 40, "[%2X %2X %2X %2X state %d] (%lu)", CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState, gettimer());
 	DebugMsg(str);
 
 	// PDO timeout set in lenze software right now.
@@ -601,8 +600,9 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				}
 				else
 				{
-					DebugMsg("Inverters Ready to use");
-
+					char str[60];
+					snprintf(str, 60, "Lenze inverter %d ready at %lu.", Inverter->Motor, gettimer());
+					DebugMsg(str);
 					InvSend(Inverter, true);
 					Inverter->SetupState = 0xFF; // Done!
 					InvSend(&InverterState[Inverter->Motor+1], true);
@@ -678,8 +678,8 @@ bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const
 				{
 				//	if ( CanRxData[] )  // 0x1801
 		#ifdef DEBUGAPPCSDO
-					char str[40];
-					snprintf(str, 40, "Lenze inverter %d at startup.", datahandle->index);
+					char str[60];
+					snprintf(str, 60, "Lenze inverter %d at startup (%lu).", datahandle->index, gettimer());
 					DebugMsg(str);
 		#endif
 					InverterState[datahandle->index].SetupState = 1; // start the setup state machine
