@@ -218,6 +218,9 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 {
 	if ( streql(tkn2, "state") || streql(tkn2, "status") )
 	{				  // PreOperation  PreOperation
+
+
+		UARTprintf("Inverter handling enabled: %s\r\n", getEEPROMBlock(0)->InvEnabled? "Y":"N" );
 		UARTwrite("-----------------------------------\r\n");
 		UARTwrite("Inv  Current State  Requested State\r\n");
 		UARTwrite("-----------------------------------\r\n");
