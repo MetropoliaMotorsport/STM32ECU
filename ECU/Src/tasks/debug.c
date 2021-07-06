@@ -323,11 +323,9 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 		uint16_t curreq = PedalTorqueRequest();
 		if ( curreq == 0 )
 		{
-#ifdef INVERTERS
 			invRequestState( OPERATIONAL );
 			InverterAllowTorqueAll(true);
 			setTestMotors(true);
-#endif
 
 			UARTwrite("Setting motors enabled till next input.\r\n");
 
@@ -380,14 +378,16 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 
 					int32_t requestNm = ((percR*maxNm)*0x4000)/1000;
 
-#ifdef INVERTERS
 					if ( requestNm > 0 )
 						InverterSetTorqueInd( 0, requestNm, 500);
 					else
 						InverterSetTorqueInd( 0, 0, 0);
-#endif
 
-					UARTprintf("Pedal pos: r%d%%, requestNm %d ( raw %d ) speed %d, maxNm %d\r\n ", percR/10, requestNm/0x4000, requestNm, speed, maxNm);
+					UARTprintf("Pedal pos: r%d%%, requestNm %d ( raw %d ) speed %d, maxNm %d, MC0: %s MC1: %s MC2: %s MC3: %s\r\n ",
+							percR/10, requestNm/0x4000, requestNm, speed, maxNm, getDeviceStatusStr(getInvState(0)->InvState ),
+							getDeviceStatusStr(getInvState(1)->InvState),getDeviceStatusStr(getInvState(2)->InvState ),
+							getDeviceStatusStr(getInvState(3)->InvState )
+							);
 				}
 			}
 		} else
