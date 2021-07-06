@@ -271,11 +271,6 @@ static int HardwareInit( void )
 	initPower();
 
 	initConfig();
-#ifdef INVERTERS
-	initInv();
-#else
-	DebugMsg("Inverters disabled.");
-#endif
 
 	initIMU();
 #ifdef PDM
@@ -305,6 +300,13 @@ static int HardwareInit( void )
 #ifdef EEPROMSTORAGE
     initEEPROM();
 #endif
+
+    // Moved inverters after eeprom so that config value can be used.
+
+	if ( getEEPROMBlock(0)->InvEnabled )
+		initInv();
+	else
+		DebugMsg("Inverters disabled.");
 
 	// after cubemx hardware inits, run our own initialisations to start up essential function.
 

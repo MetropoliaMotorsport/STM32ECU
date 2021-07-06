@@ -237,8 +237,31 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 		}
 
 	}
-	else
-	if ( streql(tkn2, "startup") )
+	else if ( streql(tkn2, "enable") )
+	{
+		UARTwrite("Enabling inverters and saving config.\r\n");
+		getEEPROMBlock(0)->InvEnabled = true;
+		writeEEPROMCurConf(); // enqueue write the data to eeprom.
+		vTaskDelay(100);
+		while ( EEPROMBusy() )
+		{
+			vTaskDelay(100);
+		}
+		UARTwrite("Saved, power cycle to activate.\r\n");
+	}
+	else if ( streql(tkn2, "disable") )
+	{
+		UARTwrite("Disabling inverters and saving config.\r\n");
+		getEEPROMBlock(0)->InvEnabled = false;
+		writeEEPROMCurConf(); // enqueue write the data to eeprom.
+		vTaskDelay(100);
+		while ( EEPROMBusy() )
+		{
+			vTaskDelay(100);
+		}
+		UARTwrite("Saved, power cycle to activate.\r\n");
+	}
+	else if ( streql(tkn2, "startup") )
 	{
 		UARTwrite("Sending inverter startup\r\n");
 		for ( int i=0;i<MOTORCOUNT;i++)
@@ -246,8 +269,7 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 			InvStartupCfg( getInvState(i) );
 		}
 	}
-	else
-	if ( streql(tkn2, "reset") ) // should try and reset errors.
+	else if ( streql(tkn2, "reset") ) // should try and reset errors.
 	{
 		UARTprintf("Sending inverter reset to %d\r\n", val2);
 		if ( val2 < 0 || val2 > MOTORCOUNT-1)

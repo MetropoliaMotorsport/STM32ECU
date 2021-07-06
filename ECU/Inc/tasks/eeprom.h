@@ -87,7 +87,9 @@ typedef struct eepromdatastruct {
 	uint8_t PedalProfile;
 	bool LimpMode;
 	bool TorqueVectoring;
-	bool Fans;						// 511 bytes
+	bool Fans;
+	uint8_t FanMax;
+	bool InvEnabled; // 512 bytes
 
 } eepromdata; // max 1600bytes=50*32byte blocks.
 

@@ -503,6 +503,7 @@ int EEPROMSend( void )
 }
 
 
+// TODO allow check to pass for newer versions
 bool checkversion(char * data)
 {
 	if ( strcmp( (char *) data, EEPROMVERSIONSTR ) == 0 )

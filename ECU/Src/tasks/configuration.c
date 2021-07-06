@@ -442,7 +442,7 @@ bool DoMenu( uint16_t input )
 	static bool inedit = false;
 	static bool incalib = false;
 
-#define menusize	(6)
+#define menusize	(8)
 
 	static char MenuLines[menusize+1][21] = { 0 };
 
@@ -518,13 +518,12 @@ bool DoMenu( uint16_t input )
 		doMenuPedalEdit( MenuLines[3], "Accel", (selection==2), &inedit, &getEEPROMBlock(0)->PedalProfile, input );
 		doMenuBoolEdit( MenuLines[4], "LimpDisable", (selection==3), &inedit, &getEEPROMBlock(0)->LimpMode, input);
 		doMenuBoolEdit( MenuLines[5], "Fans", (selection==4), &inedit, &getEEPROMBlock(0)->Fans, input);
-//		doMenuIntEdit( MenuLines[2], "Fan Max", (selection==1), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input );
+		doMenuIntEdit( MenuLines[6], "Fan Max", (selection==5), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input );
 
-		sprintf(MenuLines[6], "%cAPPS Calib", (selection==5) ? '>' :' ');
+		sprintf(MenuLines[7], "%cAPPS Calib", (selection==6) ? '>' :' ');
+		doMenuBoolEdit( MenuLines[8], "InvEnabled", (selection==7), &inedit, &getEEPROMBlock(0)->InvEnabled, input);
 
-//		doMenuBoolEdit( MenuLines[6], "TestHV", (selection==5), &inedit, &CarState.TestHV);
-
-//		sprintf(MenuLines[3], "%cAccel: %s", (selection==2) ? '>' :' ', GetPedalProfile(CarState.PedalProfile, false));
+//		doMenuBoolEdit( MenuLines[9], "TestHV", (selection==8), &inedit, &CarState.TestHV, input);
 
 		lcd_send_stringline( 0, MenuLines[0], MENUPRIORITY );
 
