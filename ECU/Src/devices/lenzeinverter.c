@@ -36,7 +36,7 @@ bool processAPPCError( const uint8_t CANRxData[8], const uint32_t DataLength, co
 
 bool getInvSDOSet( void );
 
-//		{ TimeoutFunction, ID, DLC, receivefunction, timeout, index.
+//		{ TimeoutFunction, ID, DLC, receivefunction, dotimeout, timeout, index.
 CANData InverterCANErr[MOTORCOUNT]= {
 		{ NULL, InverterRL_COBID+COBERR_ID + ( InverterRL_Channel * LENZE_MOTORB_OFFSET ), 8, processINVError, NULL, 0, 0 },
 		{ NULL, InverterRR_COBID+COBERR_ID + ( InverterRR_Channel * LENZE_MOTORB_OFFSET ), 8, processINVError, NULL, 0, 1 },
@@ -547,16 +547,20 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		switch ( Inverter->SetupState )
 		{
 		case 0:
-			DebugMsg("called in state 0");
+			DebugMsg("called in state 0"); // don't do anything in state 0
 			break;
 
 		case 1:
-			CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234); // sets private can.
-			Inverter->SetupState = 2;
-			Inverter->SetupStartTime = xTaskGetTickCount();
-			return true;
+			// received startup message, start timer on last seen SDO message.
+			Inverter->SetupLastSeenTime = gettimer();
+			break;
 
 		case 2:
+			CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234); // sets private can.
+			Inverter->SetupState = 3;
+			return true;
+
+		case 3:
 		{
 			uint8_t RDODone[8] = { 0x60, 0x04, 0x40, 0x01, 0, 0, 0, 0};
 
@@ -575,13 +579,13 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 
 		}
 
-		case 3:
 		case 4:
 		case 5:
 		case 6:
 		case 7:
 		case 8:
 		case 9:
+		case 10:
 		{
 			uint8_t RDODone[8] = { 0x60, Inverter->SetupState-3, 0x18, 0x02 };
 			if ( memcmp(RDODone, CANRxData, 8) == 0 )
@@ -657,9 +661,14 @@ bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const
 		uint8_t INVREBOOT[8] = {0x43, 0x56, 0x1F, 0x01 };
 
 		// check if APPC has just restarted
-		if ( memcmp(INVREBOOT, CANRxData, 8) == 0 )
+		if ( memcmp(INVREBOOT, CANRxData, 4) == 0 )
 		{
+			char str[60];
+			snprintf(str, 60, "Lenze inverter %d starting APPC setup again unexpectedly at (%lu)", datahandle->index, gettimer());
+			DebugMsg(str);
+			// set inv offline here.
 			InverterState[datahandle->index].SetupState = 0;
+//			InvStartupState( &InverterState[datahandle->index], CANRxData );
 			return true;
 		} else
 			InvStartupState( &InverterState[datahandle->index], CANRxData );
@@ -668,16 +677,16 @@ bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const
 	{
 		if ( InverterState[datahandle->index].SetupState == 0 )
 		{
-			uint8_t RDODone[8] = { 0xC1 };
+			uint8_t RDODone[8] = { 0x43, 0x56, 0x1F, 0x01 }; // ID query only done once at startup.
 
-			if ( memcmp(RDODone, CANRxData, 8) == 0 )
+			if ( memcmp(RDODone, CANRxData, 4) == 0 )
 			{
 				if ( !InverterState[datahandle->index].MCChannel )
 				{
 				//	if ( CanRxData[] )  // 0x1801
 		#ifdef DEBUGAPPCSDO
 					char str[60];
-					snprintf(str, 60, "Lenze inverter %d at startup (%lu).", datahandle->index, gettimer());
+					snprintf(str, 60, "Lenze inverter %d starting APPC setup, waiting at (%lu)", datahandle->index, gettimer());
 					DebugMsg(str);
 		#endif
 					InverterState[datahandle->index].SetupState = 1; // start the setup state machine

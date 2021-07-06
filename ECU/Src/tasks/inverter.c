@@ -246,6 +246,7 @@ void InvTask(void *argument)
 	}
 
 	DebugMsg("Inv Waiting setup");
+	CAN_SendStatus(8, 0, 0);
 
 	uint32_t InvReceived = 0;
 
@@ -298,14 +299,17 @@ void InvTask(void *argument)
 			} else
 			{
 				if ( InverterState[i].SetupState != 0xFF && InverterState[i].SetupState > 0
-					&& xTaskGetTickCount() - InverterState[i].SetupStartTime > 1000)
+					&& xTaskGetTickCount() - InverterState[i].SetupLastSeenTime > 1000)
 				{
 					char str[60];
-					snprintf(str, 60, "Resettting startup state machine at (%lu)", gettimer());
+					snprintf(str, 60, "Starting inverter private CFG after APPC setup.(%lu)", gettimer());
 					DebugMsg(str);
-					// for some reason inverter SDO state machine failed, try to reset it once.
-					InverterState[i].SetupState = 0; // start the setup state machine
+					// no messages for a second, APPC has finished setting up MC's, carry on with state machine.
+					InverterState[i].SetupState = 2; // start the setup state machine
+					static uint8_t dummyCAN[8] = {0,0,0,0,0,0,0,0};
+					InvStartupState( &InverterState[i], dummyCAN);
 				}
+
 			}
 		}
 
