@@ -320,13 +320,22 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 
 //		ANode1Bit
 
+		UARTwrite("Setting inverters operational.\r\n");
+
 		uint16_t curreq = PedalTorqueRequest();
 		if ( curreq == 0 )
 		{
+			vTaskDelay(100);
 			invRequestState( OPERATIONAL );
+			UARTwrite("1.\r\n");
+			vTaskDelay(100);
 			InverterAllowTorqueAll(true);
-			setTestMotors(true);
+			UARTwrite("2.\r\n");
+			vTaskDelay(100);
+			//setTestMotors(true);
 
+			UARTwrite("3.\r\n");
+			vTaskDelay(100);
 			UARTwrite("Setting motors enabled till next input.\r\n");
 
 			bool quit = false;
