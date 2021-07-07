@@ -303,7 +303,7 @@ void InvTask(void *argument)
 				{
 					// don't do anything if setup state 0, or 0xFF. Or if less then 1s since SetupLastSeenTime
 					if ( InverterState[i].SetupState == 1
-						&& gettimer() - InverterState[i].SetupLastSeenTime > 5000)
+						&& gettimer() - InverterState[i].SetupLastSeenTime > 1000)
 					{
 						char str[80];
 						snprintf(str, 80, "Starting Inverter %d private CFG after APPC setup (last %lu) (%lu)", i, InverterState[i].SetupLastSeenTime, gettimer());
@@ -314,7 +314,7 @@ void InvTask(void *argument)
 						static uint8_t dummyCAN[8] = {0,0,0,0,0,0,0,0};
 						InvStartupState( &InverterState[i], dummyCAN);
 					} else if ( InverterState[i].SetupState < 0xFE && InverterState[i].SetupState > 1
-							&& gettimer() - InverterState[i].SetupLastSeenTime > 5000 )
+							&& gettimer() - InverterState[i].SetupLastSeenTime > 1000 )
 					{
 						char str[80];
 						snprintf(str, 80, "Timeout during Inverter %d private CFG after APPC setup.(%lu)", i, gettimer());
