@@ -555,49 +555,25 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		case 1:
 			// received startup message, start timer on last seen SDO message.
 			Inverter->SetupLastSeenTime = time;
+			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
 			break;
 
 		case 2:
-		{
-			char str[40];
-			snprintf(str, 40, "Lenze inverter %d state 2 at (%lu)", Inverter->Motor, time);
-			DebugMsg(str);
 			Inverter->SetupLastSeenTime = time;
 			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
-			CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234); // sets private can.
-			Inverter->SetupState++;
+			Inverter->SetupState++; // start the setup state machine
+			CANSendSDO(bus0, Inverter->COBID, 0x1800, 2, 1);
 			return true;
-		}
+
 		case 3:
-		{
-			uint8_t RDODone[8] = { 0x60, 0x04, 0x40, 0x01, 0, 0, 0, 0};
-
-			if ( memcmp(RDODone, CANRxData, 4) == 0 )
-			{
-				Inverter->SetupLastSeenTime = time;
-				InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
-#if 1
-				char str[40];
-				snprintf(str, 40, "Lenze inverter %d rcv APPC SDO in state 3 at (%lu)", Inverter->Motor, time);
-				DebugMsg(str);
-#endif
-				Inverter->SetupState++; // start the setup state machine
-				CANSendSDO(bus0, Inverter->COBID, 0x1800, 2, 1);
-				return true;
-			}
-			break;
-
-		}
-
 		case 4:
 		case 5:
 		case 6:
 		case 7:
 		case 8:
 		case 9:
-		case 10:
 		{
-			uint8_t RDODone[8] = { 0x60, Inverter->SetupState-4, 0x18, 0x02 };
+			uint8_t RDODone[8] = { 0x60, Inverter->SetupState-3, 0x18, 0x02 };
 			if ( memcmp(RDODone, CANRxData, 8) == 0 )
 			{
 				Inverter->SetupLastSeenTime = time;
@@ -609,24 +585,44 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 #endif
 				if ( Inverter->SetupState < 9)
 				{
-					CANSendSDO(bus0, Inverter->COBID, 0x1800+Inverter->SetupState-3, 2, 1); // sets TPDO's to sync mode.
+					CANSendSDO(bus0, Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1); // sets TPDO's to sync mode.
 					Inverter->SetupState++;
 				}
 				else
 				{
 					char str[60];
-					snprintf(str, 60, "Lenze inverter %d ready at (%lu)", Inverter->Motor, gettimer());
+					snprintf(str, 60, "Lenze inverter %d set to sync, setting MC private at (%lu)", Inverter->Motor, gettimer());
 					DebugMsg(str);
-					InvSend(Inverter, true);
-					Inverter->SetupState = 0xFF; // Done!
-					InvSend(&InverterState[Inverter->Motor+1], true);
-					InverterState[Inverter->Motor+1].SetupState = 0xFF; // set the other inverter as configured too.
+					CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234); // sets private can.
+					Inverter->SetupState++;
 				}
 				return true;
 			}
 			break;
 		}
+		case 11:
+		{
+			uint8_t RDODone[8] = { 0x60, 0x04, 0x40, 0x01, 0, 0, 0, 0};
 
+			if ( memcmp(RDODone, CANRxData, 4) == 0 )
+			{
+				CANSendSDO(bus0, Inverter->COBID, 0x1800, 2, 1);
+#if 1
+				char str[40];
+				snprintf(str, 40, "Lenze inverter %d rcv APPC config done, now in private mode at (%lu)", Inverter->Motor, time);
+				DebugMsg(str);
+#endif
+				InvSend(Inverter, true);
+				Inverter->SetupState = 0xFF; // Done!
+				InvSend(&InverterState[Inverter->Motor+1], true);
+				InverterState[Inverter->Motor+1].SetupState = 0xFF; // set the other inverter as configured too.
+				return true;
+			}
+			break;
+
+		}
+
+		case 0xFE: // error state.
 		default:
 			Inverter->SetupState = 0;
 			InverterState[Inverter->Motor+1].SetupState = 0;
