@@ -653,7 +653,7 @@ bool processAPPCRDO( const uint8_t CANRxData[8], const uint32_t DataLength, cons
 {
 	if ( InverterState[datahandle->index].SetupState > 0)
 	{
-//		InvStartupState( &InverterState[datahandle->index], CANRxData );
+		InvStartupState( &InverterState[datahandle->index], CANRxData );
 	}
 
 	return true;
