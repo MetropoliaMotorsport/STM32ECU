@@ -579,8 +579,8 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				Inverter->SetupLastSeenTime = time;
 				InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
 #if 1
-				char str[40];
-				snprintf(str, 40, "Lenze inverter %d rcv SDO in state %d at (%lu)", Inverter->Motor,  Inverter->SetupState, time );
+				char str[80];
+				snprintf(str, 80, "Lenze inverter %d rcv SDO in state %d at (%lu)", Inverter->Motor,  Inverter->SetupState, time );
 				DebugMsg(str);
 #endif
 				if ( Inverter->SetupState < 9)
@@ -600,7 +600,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 			}
 			break;
 		}
-		case 11:
+		case 10:
 		{
 			uint8_t RDODone[8] = { 0x60, 0x04, 0x40, 0x01, 0, 0, 0, 0};
 
