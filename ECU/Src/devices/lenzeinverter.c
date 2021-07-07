@@ -563,21 +563,17 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		case 1:
 			// received startup message, start timer on last seen SDO message.
 			Inverter->SetupLastSeenTime = time;
-			DebugMsg("called in state 1");
 			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
 			break;
 
 		case 2:
-			DebugMsg("called in state 2:start");
-			vTaskDelay(5);
+			snprintf(str, 60, "Inv %d state 2: COBID %d from channel %d (%lu)", Inverter->Motor, Inverter->COBID, Inverter->MCChannel, time);
+			DebugMsg(str);
 			Inverter->SetupLastSeenTime = time;
 			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
 			DebugMsg("called in state 2:times");
-			vTaskDelay(5);
 			Inverter->SetupState++; // start the setup state machine
 			CANSendSDO(bus0, Inverter->COBID, 0x1800, 2, 1);
-			DebugMsg("called in state 2:sent SDO");
-			vTaskDelay(5);
 			return true;
 
 		case 3:
