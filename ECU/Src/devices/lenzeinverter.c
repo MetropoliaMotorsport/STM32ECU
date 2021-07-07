@@ -557,7 +557,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 			break;
 
 		case 2:
-			Inverter->SetupLastSeenTime = gettimer();
+			Inverter->SetupLastSeenTime = time;
 			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
 			CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234); // sets private can.
 			Inverter->SetupState = 3;

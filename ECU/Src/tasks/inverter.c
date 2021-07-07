@@ -298,6 +298,8 @@ void InvTask(void *argument)
 				}
 			} else
 			{
+				// state 1 should be triggered automatically by inverter startup right now, not attempting to force it.
+
 				// don't do anything if setup state 0, or 0xFF. Or if less then 1s since SetupLastSeenTime
 				if ( InverterState[i].SetupState == 1
 					&& xTaskGetTickCount() - InverterState[i].SetupLastSeenTime > 1000)
