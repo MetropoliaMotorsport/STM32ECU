@@ -422,7 +422,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 		{
 			// first error, record time for error time handling.
 			if ( InverterState[inv].InvState != INERROR )
-				InverterState[inv].errortime = xTaskGetTickCount();
+				InverterState[inv].errortime = gettimer();
 
 			// new error bits
 			if ( InverterState[inv].latchedStatus1 != latchedStatus1 )

@@ -175,11 +175,11 @@ void HandleInverter( InverterState_t * Inverter )
 	// initial testing, use maximum possible error reset period regardless of error.
 	if ( Inverter->InvState == INERROR )
 	{
-		if ( xTaskGetTickCount() - Inverter->errortime > ERRORTYPE1RESETTIME )
+		if ( gettimer() - Inverter->errortime > ERRORTYPE1RESETTIME )
 		{
 
 			InvResetError(Inverter);
-			Inverter->errortime = xTaskGetTickCount();
+			Inverter->errortime = gettimer();
 			Inverter->InvRequested = BOOTUP;
 #ifdef INVDEBUG
 			char str[40];
@@ -218,8 +218,6 @@ void InvTask(void *argument)
 	}
 
 	TickType_t lastseen[MOTORCOUNT];
-
-	xTaskGetTickCount();
 
 #if 0
 	// inverters should be shutdown at startup.
@@ -271,7 +269,7 @@ void InvTask(void *argument)
 			{
 				if ( ( InvReceived & invexpected[i] ) == invexpected[i] ) // everything received for inverter i
 				{
-					lastseen[i] = xTaskGetTickCount();
+					lastseen[i] = gettimer();
 					InverterState[i].Device = OPERATIONAL;
 					HandleInverter(&InverterState[i]);
 				} else
@@ -316,7 +314,7 @@ void InvTask(void *argument)
 						static uint8_t dummyCAN[8] = {0,0,0,0,0,0,0,0};
 						InvStartupState( &InverterState[i], dummyCAN);
 					} else if ( InverterState[i].SetupState < 0xFE && InverterState[i].SetupState > 1
-							&& xTaskGetTickCount() - InverterState[i].SetupLastSeenTime > 5000 )
+							&& gettimer() - InverterState[i].SetupLastSeenTime > 5000 )
 					{
 						char str[80];
 						snprintf(str, 80, "Timeout during Inverter %d private CFG after APPC setup.(%lu)", i, gettimer());
