@@ -221,6 +221,7 @@ void InvTask(void *argument)
 
 	xTaskGetTickCount();
 
+#if 0
 	// inverters should be shutdown at startup.
 	if ( getDevicePower(Inverters) )
 	{
@@ -234,16 +235,19 @@ void InvTask(void *argument)
 		setWatchdogBit(watchdogBit);
 	}
 
+
 	for ( int i=0;i<10;i++ )
 	{
 		vTaskDelay(CYCLETIME); // wait a few cycles for power to be off.
 		setWatchdogBit(watchdogBit);
 	}
 
-	//if (!setDevicePower( Inverters, true ) )
+
+	if (!setDevicePower( Inverters, true ) )
 	{
-			DebugMsg("Error requesting power off for inverters.");
+			DebugMsg("Error requesting power on for inverters.");
 	}
+#endif
 
 	DebugMsg("Inv Waiting setup");
 	CAN_SendStatus(8, 0, 0);
@@ -265,9 +269,7 @@ void InvTask(void *argument)
 		{
 			if( InverterState[i].SetupState == 0xFF )
 			{
-				if ( ( ( InvReceived & invexpected[i] ) == invexpected[i] )
-					&& ( InverterState[i].SetupState == 0xFF )
-					)// everything received for inverter i
+				if ( ( InvReceived & invexpected[i] ) == invexpected[i] ) // everything received for inverter i
 				{
 					lastseen[i] = xTaskGetTickCount();
 					InverterState[i].Device = OPERATIONAL;
@@ -302,21 +304,27 @@ void InvTask(void *argument)
 
 				// don't do anything if setup state 0, or 0xFF. Or if less then 1s since SetupLastSeenTime
 				if ( InverterState[i].SetupState == 1
-					&& xTaskGetTickCount() - InverterState[i].SetupLastSeenTime > 1000)
+					&& xTaskGetTickCount() - InverterState[i].SetupLastSeenTime > 5000)
 				{
 					char str[60];
 					snprintf(str, 60, "Starting Inverter %d private CFG after APPC setup.(%lu)", i, gettimer());
 					DebugMsg(str);
 					// no messages for a second, APPC has finished setting up MC's, carry on with state machine.
 					InverterState[i].SetupState = 2; // start the setup state machine
+					CAN_SendStatus(9, 0, 3);
 					static uint8_t dummyCAN[8] = {0,0,0,0,0,0,0,0};
 					InvStartupState( &InverterState[i], dummyCAN);
-				} else if ( InverterState[i].SetupState != 0xFF && InverterState[i].SetupState > 1
-						&& xTaskGetTickCount() - InverterState[i].SetupLastSeenTime > 1000 )
+				} else if ( InverterState[i].SetupState < 0xFE && InverterState[i].SetupState > 1
+						&& xTaskGetTickCount() - InverterState[i].SetupLastSeenTime > 5000 )
 				{
-					char str[60];
-						snprintf(str, 60, "Timeout during Inverter %d private CFG after APPC setup.(%lu)", i, gettimer());
-						DebugMsg(str);
+					char str[80];
+					snprintf(str, 80, "Timeout during Inverter %d private CFG after APPC setup.(%lu)", i, gettimer());
+					DebugMsg(str);
+					CAN_SendStatus(9, 0, 4);
+					InverterState[i].SetupState = 0xFE; // stop message repeating.
+				} else
+				{
+					// not seen inverters yet.
 				}
 
 

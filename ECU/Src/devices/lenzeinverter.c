@@ -536,8 +536,8 @@ bool processAPPCError( const uint8_t CANRxData[8], const uint32_t DataLength, co
 bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxData[8] )
 {
 	uint32_t time = gettimer();
-	static char str[40];
-	snprintf(str, 40, "Inv %d [%2X %2X %2X %2X state %d] (last %lu) (%lu)", Inverter->Motor, CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState,Inverter->SetupLastSeenTime, time);
+	static char str[60];
+	snprintf(str, 60, "Inv %d [%2X %2X %2X %2X state %d] (last %lu) (%lu)", Inverter->Motor, CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState,Inverter->SetupLastSeenTime, time);
 	DebugMsg(str);
 
 	// PDO timeout set in lenze software right now.
