@@ -609,7 +609,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 #endif
 				if ( Inverter->SetupState < 9)
 				{
-					CANSendSDO(bus0, Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1); // sets TPDO's to sync mode.
+					CANSendSDO(bus0, Inverter->COBID, 0x1800+Inverter->SetupState-3, 2, 1); // sets TPDO's to sync mode.
 					Inverter->SetupState++;
 				}
 				else
