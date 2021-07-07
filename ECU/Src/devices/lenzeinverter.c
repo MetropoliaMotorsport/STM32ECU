@@ -569,12 +569,15 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 
 		case 2:
 			DebugMsg("called in state 2:start");
+			vTaskDelay(5);
 			Inverter->SetupLastSeenTime = time;
 			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
 			DebugMsg("called in state 2:times");
+			vTaskDelay(5);
 			Inverter->SetupState++; // start the setup state machine
 			CANSendSDO(bus0, Inverter->COBID, 0x1800, 2, 1);
 			DebugMsg("called in state 2:sent SDO");
+			vTaskDelay(5);
 			return true;
 
 		case 3:
@@ -585,6 +588,8 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		case 8:
 		case 9:
 		{
+			DebugMsg("called in state 3-9:start");
+			vTaskDelay(5);
 			uint8_t RDODone[8] = { 0x60, Inverter->SetupState-3, 0x18, 0x02 };
 			if ( memcmp(RDODone, CANRxData, 8) == 0 )
 			{
