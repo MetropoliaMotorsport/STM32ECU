@@ -537,7 +537,8 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 {
 	uint32_t time = gettimer();
 	static char str[60];
-	snprintf(str, 60, "Inv %d [%2X %2X %2X %2X state %d] (last %lu) (%lu)", Inverter->Motor, CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState,Inverter->SetupLastSeenTime, time);
+	if (Inverter->SetupState > 1 )
+		snprintf(str, 60, "Inv %d [%2X %2X %2X %2X state %d] (last %lu) (%lu)", Inverter->Motor, CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState,Inverter->SetupLastSeenTime, time);
 	DebugMsg(str);
 
 	// PDO timeout set in lenze software right now.
@@ -564,7 +565,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 			Inverter->SetupLastSeenTime = time;
 			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
 			CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234); // sets private can.
-			Inverter->SetupState = 3;
+			Inverter->SetupState++;
 			return true;
 		}
 		case 3:
@@ -580,7 +581,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				snprintf(str, 40, "Lenze inverter %d rcv APPC SDO in state 3 at (%lu)", Inverter->Motor, time);
 				DebugMsg(str);
 #endif
-				Inverter->SetupState = 3; // start the setup state machine
+				Inverter->SetupState++; // start the setup state machine
 				CANSendSDO(bus0, Inverter->COBID, 0x1800, 2, 1);
 				return true;
 			}
@@ -596,7 +597,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		case 9:
 		case 10:
 		{
-			uint8_t RDODone[8] = { 0x60, Inverter->SetupState-3, 0x18, 0x02 };
+			uint8_t RDODone[8] = { 0x60, Inverter->SetupState-4, 0x18, 0x02 };
 			if ( memcmp(RDODone, CANRxData, 8) == 0 )
 			{
 				Inverter->SetupLastSeenTime = time;
