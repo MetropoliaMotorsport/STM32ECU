@@ -520,7 +520,7 @@ uint8_t CANSendSDO( enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub, uin
     storeLEint32(data, &msg[4]);
 
 	static char str[60];
-	snprintf(str, 60, "InvSDOsend Id %3X on %s [%2X %2X %2X %2X data %lu] (%lu)", id, bus==bus0?"bus0":"bus1", msg[0], msg[1], msg[2], msg[3], data, gettimer());
+	snprintf(str, 60, "InvSDOsend Id 0x%3X on %s [%2X %2X %2X %2X data %lu] (%lu)", COBSDOS_ID+id, bus==bus0?"bus0":"bus1", msg[0], msg[1], msg[2], msg[3], data, gettimer());
 	DebugMsg(str);
 
 	if ( bus == bus0 )

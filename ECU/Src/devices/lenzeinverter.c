@@ -666,7 +666,6 @@ bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const
 
 	if ( InverterState[datahandle->index].SetupState > 0 && InverterState[datahandle->index].SetupState < 0xFE)
 	{
-
 		uint8_t INVREBOOT[8] = {0x43, 0x56, 0x1F, 0x01 };
 
 		// check if APPC has just restarted
