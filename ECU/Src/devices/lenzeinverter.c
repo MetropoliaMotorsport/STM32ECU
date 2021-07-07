@@ -544,8 +544,10 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 	}
 
 	if (Inverter->SetupState > 1 )
+	{
 		snprintf(str, 60, "Inv %d [%2X %2X %2X %2X state %d] (last %lu) (%lu)", Inverter->Motor, CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState,Inverter->SetupLastSeenTime, time);
-	DebugMsg(str);
+		DebugMsg(str);
+	}
 
 	// PDO timeout set in lenze software right now.
 	 // set SDO's to sync   0x1800-1806  = lenze TPDO 1 through 7
@@ -561,14 +563,18 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		case 1:
 			// received startup message, start timer on last seen SDO message.
 			Inverter->SetupLastSeenTime = time;
+			DebugMsg("called in state 1");
 			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
 			break;
 
 		case 2:
+			DebugMsg("called in state 2:start");
 			Inverter->SetupLastSeenTime = time;
 			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
+			DebugMsg("called in state 2:times");
 			Inverter->SetupState++; // start the setup state machine
 			CANSendSDO(bus0, Inverter->COBID, 0x1800, 2, 1);
+			DebugMsg("called in state 2:sent SDO");
 			return true;
 
 		case 3:
