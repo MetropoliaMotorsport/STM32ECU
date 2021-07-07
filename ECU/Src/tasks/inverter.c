@@ -299,7 +299,6 @@ void InvTask(void *argument)
 			} else
 			{
 				// don't do anything if setup state 0, or 0xFF. Or if less then 1s since SetupLastSeenTime
-				// InverterState[i].SetupState != 0xFF &&
 				if ( InverterState[i].SetupState == 1
 					&& xTaskGetTickCount() - InverterState[i].SetupLastSeenTime > 1000)
 				{
