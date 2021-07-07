@@ -248,7 +248,10 @@ static int HardwareInit( void )
 	initLCD();
 
 	if ( watchdogRebooted() )
-	  lcd_send_stringline(0, "Watchdog Rebooted...", 0);
+	{
+		lcd_send_stringline(0, "Watchdog Rebooted...", 0);
+		DebugMsg("Watchdog Rebooted!");
+	}
 
 	lcd_startscroll();
 	lcd_setscrolltitle("Startup...");

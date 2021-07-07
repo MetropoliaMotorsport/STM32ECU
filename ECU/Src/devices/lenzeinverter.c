@@ -537,6 +537,12 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 {
 	uint32_t time = gettimer();
 	static char str[60];
+
+	if ( Inverter == NULL )
+	{
+		DebugMsg("Inverter startup called too soon!");
+	}
+
 	if (Inverter->SetupState > 1 )
 		snprintf(str, 60, "Inv %d [%2X %2X %2X %2X state %d] (last %lu) (%lu)", Inverter->Motor, CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3], Inverter->SetupState,Inverter->SetupLastSeenTime, time);
 	DebugMsg(str);
