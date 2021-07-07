@@ -557,12 +557,16 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 			break;
 
 		case 2:
+		{
+			char str[40];
+			snprintf(str, 40, "Lenze inverter %d state 2 at (%lu)", Inverter->Motor, time);
+			DebugMsg(str);
 			Inverter->SetupLastSeenTime = time;
 			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
 			CANSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234); // sets private can.
 			Inverter->SetupState = 3;
 			return true;
-
+		}
 		case 3:
 		{
 			uint8_t RDODone[8] = { 0x60, 0x04, 0x40, 0x01, 0, 0, 0, 0};
@@ -571,9 +575,9 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 			{
 				Inverter->SetupLastSeenTime = time;
 				InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
-#ifdef PRINTSTATE
+#if 1
 				char str[40];
-				snprintf(str, 40, "Lenze inverter %d rcv APPC SDO.", Inverter->Motor);
+				snprintf(str, 40, "Lenze inverter %d rcv APPC SDO in state 3 at (%lu)", Inverter->Motor, time);
 				DebugMsg(str);
 #endif
 				Inverter->SetupState = 3; // start the setup state machine
@@ -597,9 +601,9 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 			{
 				Inverter->SetupLastSeenTime = time;
 				InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
-#ifdef PRINTSTATE
+#if 1
 				char str[40];
-				snprintf(str, 40, "Lenze inverter %d rcv SDO.", Inverter->Motor);
+				snprintf(str, 40, "Lenze inverter %d rcv SDO in state %d at (%lu)", Inverter->Motor,  Inverter->SetupState, time );
 				DebugMsg(str);
 #endif
 				if ( Inverter->SetupState < 9)
@@ -694,6 +698,9 @@ bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const
 					snprintf(str, 80, "Lenze inverter %d starting APPC setup, waiting at (%lu)", datahandle->index, gettimer());
 					DebugMsg(str);
 		#endif
+					InverterState[datahandle->index].SetupLastSeenTime = gettimer();
+					InverterState[InverterState[datahandle->index].Motor+1].SetupLastSeenTime = gettimer();
+					// ensure timer is set before state changed.
 					InverterState[datahandle->index].SetupState = 1; // start the setup state machine
 					InvStartupState(&InverterState[datahandle->index], CANRxData);
 				}
