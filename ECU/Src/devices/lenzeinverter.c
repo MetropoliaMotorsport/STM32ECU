@@ -643,8 +643,8 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		case 0xFE: // error state.
 		default:
 			CAN_SendStatus(9, 0, 10);
-			Inverter->SetupState = 0;
-			InverterState[Inverter->Motor+1].SetupState = 0;
+			//Inverter->SetupState = 0;
+			//InverterState[Inverter->Motor+1].SetupState = 0;
 		}
 	} else
 	{
@@ -668,7 +668,11 @@ bool InvStartupCfg( volatile InverterState_t *Inverter )
 bool processAPPCRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	char str[80];
-	snprintf(str, 80, "APPCRDO received on id: %3X inv %d, setup state: %d at (%lu)", datahandle->id, datahandle->index, InverterState[datahandle->index].SetupState, gettimer());
+	snprintf(str, 80, "APPCRDO id: %3X inv %d [%2X %2X %2X %2X %2X %2X %2X %2X] state: %d at (%lu)",
+			datahandle->id, datahandle->index, InverterState[datahandle->index].SetupState,
+			CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3],
+			CANRxData[4], CANRxData[5], CANRxData[6], CANRxData[7],
+			gettimer());
 	DebugMsg(str);
 
 	if ( InverterState[datahandle->index].SetupState > 0)
