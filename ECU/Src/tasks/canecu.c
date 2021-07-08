@@ -51,7 +51,7 @@ TaskHandle_t CANRxTaskHandle = NULL;
 
 /* The queue is to be created to hold a maximum of 10 uint64_t
 variables. */
-#define CANTxQUEUE_LENGTH    32
+#define CANTxQUEUE_LENGTH    64
 #define CANRxQUEUE_LENGTH    256
 #define CANITEMSIZE			sizeof( struct can_msg )
 
@@ -483,10 +483,19 @@ uint8_t CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 	taskEXIT_CRITICAL();
 
 	if ( xPortIsInsideInterrupt() )
-		xQueueSendFromISR( CANTxQueue, ( void * ) &msg, NULL );
+	{
+		if ( !xQueueSendFromISR( CANTxQueue, ( void * ) &msg, NULL ) )
+		{
+			DebugMsg("failed to add canmsg to queue!");
+		}
+	}
 	else
-		xQueueSend( CANTxQueue, ( void * ) &msg, ( TickType_t ) 0 );
-
+	{
+		if ( !xQueueSend( CANTxQueue, ( void * ) &msg, ( TickType_t ) 0 ) )
+		{
+			DebugMsg("failed to add canmsg to queue!");
+		}
+	}
 	return 0;
 }
 
@@ -501,9 +510,19 @@ uint8_t CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 	memcpy(msg.data,pTxData, 8);
 	taskEXIT_CRITICAL();
 	if ( xPortIsInsideInterrupt() )
-		xQueueSendFromISR( CANTxQueue, ( void * ) &msg, NULL );
+	{
+		if ( !xQueueSendFromISR( CANTxQueue, ( void * ) &msg, NULL ) )
+		{
+			DebugMsg("failed to add canmsg to queue!");
+		}
+	}
 	else
-		xQueueSend( CANTxQueue, ( void * ) &msg, ( TickType_t ) 0 );
+	{
+		if ( !xQueueSend( CANTxQueue, ( void * ) &msg, ( TickType_t ) 0 ) )
+		{
+			DebugMsg("failed to add canmsg to queue!");
+		}
+	}
 
 	return 0;
 }
