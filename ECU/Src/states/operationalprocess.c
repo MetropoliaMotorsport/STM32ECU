@@ -188,7 +188,7 @@ int OperationalProcess( void )
 	looptimer = gettimer(); // start timing loop
 
 	// check loop timing.
-	if ( lastlooplength > PROCESSLOOPTIME*1.1 )
+	if ( lastlooplength > CYCLETIME*1.1 )
 	{
 		CAN_SendStatus(1, OperationalStateOverrun, lastlooplength);
 
@@ -231,7 +231,7 @@ int OperationalProcess( void )
 			break;
 
 		case RunningState : // Running    // can return to state 3
-			NewOperationalState = RunningProcess(loopcount, looptimer + PROCESSLOOPTIME );
+			NewOperationalState = RunningProcess(loopcount, looptimer + CYCLETIME );
 			break;
 
 		case TestingState : // testing state, can only enter from state 1.

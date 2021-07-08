@@ -270,6 +270,10 @@ void InvTask(void *argument)
 
 	uint32_t InvReceived = 0;
 
+	bool firstactive[4] = {false};
+
+	char str[80];
+
 	while( 1 )
 	{
 		// TODO change to a single element queue.
@@ -285,6 +289,20 @@ void InvTask(void *argument)
 		{
 			if( InverterState[i].SetupState == 0xFF )
 			{
+				if ( !firstactive[i] )
+				{
+					firstactive[i] = true;
+					snprintf(str, 60, "Inv[%d] first active cycle at (%lu)", i, gettimer());
+					DebugMsg(str);
+
+				}
+
+				if ( i == 0 )
+				{
+					snprintf(str, 60, "Inv[%d] received %lu, expected %lu at (%lu)", i, InvReceived, invexpected[i], gettimer());
+					DebugMsg(str);
+				}
+
 				if ( ( InvReceived & invexpected[i] ) == invexpected[i] ) // everything received for inverter i
 				{
 					lastseen[i] = gettimer();
@@ -294,8 +312,7 @@ void InvTask(void *argument)
 				{
 					if ( InverterState[i].Device == OPERATIONAL )
 					{
-						char str[40];
-						snprintf(str, 40, "Inv[%d] not received exp at (%lu)", i, gettimer());
+						snprintf(str, 60, "Inv[%d] not received exp at (%lu)", i, gettimer());
 						DebugMsg(str);
 						HandleInverter(&InverterState[i]);
 						CAN_SendStatus(9, 0, 1);
@@ -305,13 +322,12 @@ void InvTask(void *argument)
 					{
 						if ( InverterState[i].Device != OFFLINE )
 						{
-							char str[40];
 							snprintf(str, 40, "Inverter %d Timeout (%lu)", i, gettimer());
 							DebugMsg(str);
 							InverterState[i].Device = OFFLINE;
 							CAN_SendStatus(9, 0, 2);
 						}
-						InverterState[i].SetupState = 0;
+//						InverterState[i].SetupState = 0;
 					}
 				}
 			} else
@@ -329,7 +345,6 @@ void InvTask(void *argument)
 					if ( InverterState[i].SetupState == 1
 						&& gettimer() - InverterState[i].SetupLastSeenTime > 1000)
 					{
-						char str[80];
 						snprintf(str, 80, "Starting Inverter %d private CFG after APPC setup (last %lu) (%lu)", i, InverterState[i].SetupLastSeenTime, gettimer());
 						DebugMsg(str);
 						// no messages for a second, APPC has finished setting up MC's, carry on with state machine.
@@ -342,7 +357,6 @@ void InvTask(void *argument)
 					} else if ( InverterState[i].SetupState < 0xFE && InverterState[i].SetupState > 1
 							&& gettimer() - InverterState[i].SetupLastSeenTime > 1000 )
 					{
-						char str[80];
 						snprintf(str, 80, "Timeout during Inverter %d private CFG setup.(%lu)", i, gettimer());
 						DebugMsg(str);
 						CAN_SendStatus(9, 0, 4);

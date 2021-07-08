@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include "freertos.h"
 
-#define WATCHDOG
+//#define WATCHDOG
 
 #define LCDBUFFER
 
@@ -190,7 +190,7 @@
 #define MS1000					(1000)
 #define MS1						(1)
 
-#define CYCLETIME				(10)
+#define CYCLETIME				(20)
 
 // const TickType_t CYCLETIME = 10;
 
@@ -205,7 +205,7 @@
 #define INVERTERTIMEOUT			500
 #else
 #define PDMTIMEOUT				450 // 450ms to be rules compliant
-#define PROCESSLOOPTIME 		10   // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
+//#define PROCESSLOOPTIME 		10   // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
 #define BMSTIMEOUT				450 // was 5 seconds as bodge
 #define IVTTIMEOUT				450  // < 500ms for rules compliance on Power reading.
 #define IVTTIMEOUTWATTS			450

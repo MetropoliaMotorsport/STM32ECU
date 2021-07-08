@@ -84,7 +84,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
   // used so that main is still generated to see all the init steps CubeMX generated
   //	so that they can be integrated into our main.
-	realmain();
+ 	realmain();
   /* USER CODE END 1 */
 
   /* Enable I-Cache---------------------------------------------------------*/

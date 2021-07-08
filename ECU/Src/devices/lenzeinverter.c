@@ -550,6 +550,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		DebugMsg("Inverter startup called too soon!");
 	}
 
+#if 0
 	if (Inverter->SetupState > 1 )
 	{
 		snprintf(str, 60, "Inv %d [%2X %2X %2X %2X state %d] (last %lu) (%lu)",
@@ -557,7 +558,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				Inverter->SetupState,Inverter->SetupLastSeenTime, time);
 		DebugMsg(str);
 	}
-
+#endif
 
 	// PDO timeout set in lenze software right now.
 	 // set SDO's to sync   0x1800-1806  = lenze TPDO 1 through 7
@@ -577,9 +578,11 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 			break;
 
 		case 2:
+#if 0
 			snprintf(str, 60, "Inv %d state 2: COBID %d from channel %d (%lu)",
 					Inverter->Motor, Inverter->COBID, Inverter->MCChannel, time);
 			DebugMsg(str);
+#endif
 			Inverter->SetupLastSeenTime = time;
 			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
 			Inverter->SetupState++; // start the setup state machine
@@ -594,14 +597,12 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		case 8:
 		case 9:
 		{
-			snprintf(str, 80, "Lenze inverter %d rcv SDO in state %d at (%lu)", Inverter->Motor,  Inverter->SetupState, time );
-			DebugMsg(str);
 			uint8_t RDODone[8] = { 0x60, Inverter->SetupState-3, 0x18, 0x02 };
 			if ( memcmp(RDODone, CANRxData, 8) == 0 )
 			{
 				Inverter->SetupLastSeenTime = time;
 				InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
-#if 1
+#if 0
 				snprintf(str, 80, "Lenze inverter %d rcv SDO in state %d at (%lu)", Inverter->Motor,  Inverter->SetupState, time );
 				DebugMsg(str);
 #endif
@@ -612,8 +613,10 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				}
 				else
 				{
+#if 0
 					snprintf(str, 60, "Lenze inverter %d set to sync, setting MC private at (%lu)", Inverter->Motor, gettimer());
 					DebugMsg(str);
+#endif
 					InvSendSDO(Inverter->COBID+31, 0x4004, 1, 1234); // sets private can.
 					Inverter->SetupState++;
 				}
