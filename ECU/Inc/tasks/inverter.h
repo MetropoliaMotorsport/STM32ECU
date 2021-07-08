@@ -89,6 +89,8 @@ void InvResetError( volatile InverterState_t *Inverter );
 bool InvStartupCfg( volatile InverterState_t *Inverter );
 void InvReset( volatile InverterState_t *Inverter );
 
+bool InvSendSDO( uint16_t id, uint16_t idx, uint8_t sub, uint32_t data);
+
 extern TaskHandle_t InvTaskHandle;
 
 #endif /* INVERTER_H_ */

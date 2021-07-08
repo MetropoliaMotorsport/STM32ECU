@@ -582,9 +582,8 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 			DebugMsg(str);
 			Inverter->SetupLastSeenTime = time;
 			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
-			DebugMsg("called in state 2:times");
 			Inverter->SetupState++; // start the setup state machine
-			InvSendSDO(bus0, Inverter->COBID, 0x1800, 2, 1);
+			InvSendSDO(Inverter->COBID, 0x1800, 2, 1);
 			break;
 
 		case 3:
@@ -608,14 +607,14 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 #endif
 				if ( Inverter->SetupState < 9)
 				{
-					InvSendSDO(bus0, Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1); // sets TPDO's to sync mode.
+					InvSendSDO(Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1); // sets TPDO's to sync mode.
 					Inverter->SetupState++;
 				}
 				else
 				{
 					snprintf(str, 60, "Lenze inverter %d set to sync, setting MC private at (%lu)", Inverter->Motor, gettimer());
 					DebugMsg(str);
-					InvSendSDO(bus0, Inverter->COBID+31, 0x4004, 1, 1234); // sets private can.
+					InvSendSDO(Inverter->COBID+31, 0x4004, 1, 1234); // sets private can.
 					Inverter->SetupState++;
 				}
 				break;
