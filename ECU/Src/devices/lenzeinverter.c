@@ -406,6 +406,7 @@ char * LenzeErrorBitTypeStatus2Str( uint8_t bit )
 
 bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	char str[80] = "";
 	uint8_t inv=datahandle->index;
 
 	uint16_t status = CANRxData[0];
@@ -433,8 +434,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 				{
 					if ( newbits & ( 0x1 << i ) )
 					{
-						char str[40] = "";
-						snprintf(str, 40, "Inv%d %s at (%lu)", inv, LenzeErrorBitTypeStatus1Str(i), gettimer());
+						snprintf(str, 80, "Inv%d %s at (%lu)", inv, LenzeErrorBitTypeStatus1Str(i), gettimer());
 						DebugMsg(str);
 					}
 				}
@@ -450,8 +450,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 				{
 					if ( newbits & ( 0x1 << i ) )
 					{
-						char str[40] = "";
-						snprintf(str, 40, "Inv%d %s  at (%lu)", inv, LenzeErrorBitTypeStatus2Str(i), gettimer());
+						snprintf(str, 80, "Inv%d %s  at (%lu)", inv, LenzeErrorBitTypeStatus2Str(i), gettimer());
 						DebugMsg(str);
 					}
 				}

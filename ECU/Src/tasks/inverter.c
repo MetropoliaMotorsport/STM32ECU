@@ -158,6 +158,7 @@ DeviceStatus InverterStates[MOTORCOUNT];
 
 void HandleInverter( InverterState_t * Inverter )
 {
+	char str[80];
 	// only process inverter state if inverters have been seen and not in error state.
 	if (Inverter->InvState != OFFLINE && InverterStates[Inverter->Motor] != OFFLINE )
 	{
@@ -186,11 +187,12 @@ void HandleInverter( InverterState_t * Inverter )
 			Inverter->errortime = gettimer();
 			Inverter->InvRequested = BOOTUP;
 #ifdef INVDEBUG
-			char str[40];
-			snprintf(str, 40, "Inverter Reset sent to Inv[%d] at (%lu)", Inverter->Motor, gettimer());
+			snprintf(str, 80, "Inverter Reset sent to Inv[%d] at (%lu)", Inverter->Motor, gettimer());
 			DebugMsg(str);
 #endif
-		//	InvSend( Inverter, true);
+		} else
+		{
+			InvSend( Inverter, false ); // continue sending PDO.
 		}
 	}
 	else
@@ -315,15 +317,16 @@ void InvTask(void *argument)
 					if ( i == 0 && !firstbad[i] )
 					{
 						firstbad[i] = true;
-						snprintf(str, 60, "Inv[%d] first received %lu, expected %lu at (%lu)", i, InvReceived & invexpected[i], invexpected[i], gettimer());
+						snprintf(str, 60, "Inv[%d] not received %lu, expected %lu at (%lu)", i, InvReceived & invexpected[i], invexpected[i], gettimer());
 						DebugMsg(str);
 					}
+
+					HandleInverter(&InverterState[i]); // should always be sending PDO if we're configured.
 
 					if ( InverterState[i].Device == OPERATIONAL )
 					{
 						snprintf(str, 60, "Inv[%d] not received exp at (%lu)", i, gettimer());
 						DebugMsg(str);
-						HandleInverter(&InverterState[i]);
 						CAN_SendStatus(9, 0, 1);
 					}
 
