@@ -765,6 +765,7 @@ bool registerInverterCAN( void )
 	}
 
 	RegisterCan2Message(&InverterCANAPPCRDO[0]);
+	RegisterCan2Message(&InverterCANAPPCRDO[1]);
 
 	return true;
 }
