@@ -845,7 +845,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10033...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10034...\r\n\r\n");
 
 	redraw = false;
 
