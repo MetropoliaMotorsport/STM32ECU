@@ -1159,11 +1159,13 @@ bool RegisterCanTimeout( CANData * CanMessage)
 
 int RegisterCan1Message(CANData * CanMessage)
 {
+	char str[80];
 	if ( CanMessage != NULL && CanMessage->id != 0)
 	{
 		if ( CanBUS1Messages[CanMessage->id] != NULL)
 		{
-			DebugMsg("Tried to add a duplicate CAN id!");
+			snprintf(str, 80, "Tried to add a duplicate CAN id %3X on bus1!", CanMessage->id);
+			DebugMsg(str);
 		}
 		else
 		{
@@ -1179,6 +1181,7 @@ int RegisterCan1Message(CANData * CanMessage)
 
 int RegisterCan2Message(CANData * CanMessage)
 {
+	char str[80];
 #ifdef sharedCAN
 	return RegisterCan1Message(CanMessage);
 #else
@@ -1186,7 +1189,8 @@ int RegisterCan2Message(CANData * CanMessage)
 	{
 		if ( CanBUS2Messages[CanMessage->id] != NULL)
 		{
-			DebugMsg("Tried to add a duplicate CAN id!");
+			snprintf(str, 80, "Tried to add a duplicate CAN id %3X on bus0!", CanMessage->id);
+			DebugMsg(str);
 		}
 		else
 		{
