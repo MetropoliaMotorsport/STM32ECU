@@ -16,7 +16,14 @@ typedef struct Inv_msg {
 	uint8_t inverter;
 } Inv_msg;
 
-extern QueueHandle_t InvQueue;
+typedef struct InvCfg_msg {
+	uint8_t id;
+	uint16_t idx;
+	uint8_t sub;
+	uint32_t data;
+} InvCfg_msg;
+
+extern QueueHandle_t InvQueue, InvCfgQueue;
 
 #define ERRORTYPE1RESETTIME  (5500)
 #define ERRORTYPE2RESETTIME  (150)

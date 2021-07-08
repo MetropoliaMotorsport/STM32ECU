@@ -46,14 +46,18 @@ TaskHandle_t InvTaskHandle;
 #define InvQUEUE_LENGTH    20
 #define InvITEMSIZE		   sizeof( Inv_msg )
 
+#define InvCfgQUEUE_LENGTH    4   // should only have one pending send per inverter.
+#define InvCfgITEMSIZE		   sizeof( InvCfg_msg )
+
 /* The variable used to hold the queue's data structure. */
-static StaticQueue_t InvStaticQueue;
+static StaticQueue_t InvStaticQueue, InvCfgStaticQueue;
 
 /* The array to use as the queue's storage area.  This must be at least
 uxQueueLength * uxItemSize bytes. */
 uint8_t InvQueueStorageArea[ InvQUEUE_LENGTH * InvITEMSIZE ];
+uint8_t InvCfgQueueStorageArea[ InvCfgQUEUE_LENGTH * InvCfgITEMSIZE ];
 
-QueueHandle_t InvQueue;
+QueueHandle_t InvQueue, InvCfgQueue;
 
 SemaphoreHandle_t InvUpdating;
 
@@ -198,6 +202,20 @@ void HandleInverter( InverterState_t * Inverter )
 }
 
 
+bool InvSendSDO( uint16_t id, uint16_t idx, uint8_t sub, uint32_t data)
+{
+	InvCfg_msg msg;
+	msg.id = id;
+	msg.idx = idx;
+	msg.sub = sub;
+	msg.data = data;
+	if ( xQueueSend(InvCfgQueue, &msg, 0) )
+		return true;
+	else
+		return false;
+}
+
+
 // task to manage inverter state.
 void InvTask(void *argument)
 {
@@ -298,6 +316,12 @@ void InvTask(void *argument)
 				}
 			} else
 			{
+				InvCfg_msg cfgmsg;
+				if ( xQueueReceive(InvCfgQueue,&cfgmsg,0) ) // queue of pending inverter cfg commands, to send them at a controlled pace.
+				{
+					CANSendSDO(bus0, cfgmsg.id, cfgmsg.idx, cfgmsg.sub, cfgmsg.data);
+				}
+
 				// state 1 should be triggered automatically by inverter startup right now, not attempting to force it.
 				if ( !InverterState[i].MCChannel ) // if we've not configured inverters, only deal with APPC channel.
 				{
@@ -312,12 +336,14 @@ void InvTask(void *argument)
 						InverterState[i].SetupState = 2; // start the setup state machine
 						CAN_SendStatus(9, 0, 3);
 						static uint8_t dummyCAN[8] = {0,0,0,0,0,0,0,0};
-						InvStartupState( &InverterState[i], dummyCAN);
+						InvStartupState( &InverterState[i], dummyCAN );
+						snprintf(str, 80, "Starting Inverter %d StartupState called. (last %lu) (%lu)", i, InverterState[i].SetupLastSeenTime, gettimer());
+						DebugMsg(str);
 					} else if ( InverterState[i].SetupState < 0xFE && InverterState[i].SetupState > 1
 							&& gettimer() - InverterState[i].SetupLastSeenTime > 1000 )
 					{
 						char str[80];
-						snprintf(str, 80, "Timeout during Inverter %d private CFG after APPC setup.(%lu)", i, gettimer());
+						snprintf(str, 80, "Timeout during Inverter %d private CFG setup.(%lu)", i, gettimer());
 						DebugMsg(str);
 						CAN_SendStatus(9, 0, 4);
 						InverterState[i].SetupState = 0xFE; // stop message repeating.
@@ -548,7 +574,7 @@ void resetInv( void )
 
 int initInv( void )
 {
-	resetInv();
+	resetInv(); // sets up InverterState, id's, etc, so that CAN functions will not be called till setup.
 
 	RegisterResetCommand(resetInv);
 
@@ -562,6 +588,13 @@ int initInv( void )
 							  &InvStaticQueue );
 
 	vQueueAddToRegistry(InvQueue, "InverterQueue" );
+
+	InvCfgQueue = xQueueCreateStatic( InvCfgQUEUE_LENGTH,
+							  InvCfgITEMSIZE,
+							  InvCfgQueueStorageArea,
+							  &InvCfgStaticQueue );
+
+	vQueueAddToRegistry(InvQueue, "InverterCfgQueue" );
 
 	InvTaskHandle = xTaskCreateStatic(
 						  InvTask,
