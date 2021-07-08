@@ -271,6 +271,8 @@ void InvTask(void *argument)
 	uint32_t InvReceived = 0;
 
 	bool firstactive[4] = {false};
+	bool firstreceive[4] = {false};
+	bool firstbad[4] = {false};
 
 	char str[80];
 
@@ -297,19 +299,26 @@ void InvTask(void *argument)
 
 				}
 
-				if ( i == 0 )
-				{
-					snprintf(str, 60, "Inv[%d] received %lu, expected %lu at (%lu)", i, InvReceived, invexpected[i], gettimer());
-					DebugMsg(str);
-				}
-
 				if ( ( InvReceived & invexpected[i] ) == invexpected[i] ) // everything received for inverter i
 				{
+					if ( i == 0 && !firstreceive[i])
+					{
+						firstreceive[i] = true;
+						snprintf(str, 60, "Inv[%d] first received ok at (%lu)", i, gettimer());
+						DebugMsg(str);
+					}
 					lastseen[i] = gettimer();
 					InverterState[i].Device = OPERATIONAL;
 					HandleInverter(&InverterState[i]);
 				} else
 				{
+					if ( i == 0 && !firstbad[i] )
+					{
+						firstbad[i] = true;
+						snprintf(str, 60, "Inv[%d] first received %lu, expected %lu at (%lu)", i, InvReceived & invexpected[i], invexpected[i], gettimer());
+						DebugMsg(str);
+					}
+
 					if ( InverterState[i].Device == OPERATIONAL )
 					{
 						snprintf(str, 60, "Inv[%d] not received exp at (%lu)", i, gettimer());
