@@ -665,8 +665,14 @@ bool InvStartupCfg( volatile InverterState_t *Inverter )
 
 bool processAPPCRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	char str[80];
+	snprintf(str, 80, "APPCRDO received on id: %3X inv %d, setup state: %d at (%lu)", datahandle->id, datahandle->index, InverterState[datahandle->index].SetupState, gettimer());
+	DebugMsg(str);
+
 	if ( InverterState[datahandle->index].SetupState > 0)
 	{
+		snprintf(str, 80, "APPCRDO doing setup state.");
+		DebugMsg(str);
 		InvStartupState( &InverterState[datahandle->index], CANRxData );
 	}
 
