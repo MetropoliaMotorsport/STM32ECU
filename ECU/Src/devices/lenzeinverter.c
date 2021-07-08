@@ -540,7 +540,8 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 
 	if ( Inverter == NULL )
 	{
-		DebugMsg("Inverter startup called too soon! at (%lu)", time);
+		snprintf(str, 60, "Inverter startup called too soon! at (%lu)", time);
+		DebugMsg(str);
 	}
 
 	if ( Inverter->Motor > 2 )
