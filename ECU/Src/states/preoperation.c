@@ -362,7 +362,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	doVectoring(Torque_Req, &adj);
 
-	if ( testmotorslast ) InverterSetTorque(&adj, 1000);
+//	if ( testmotorslast ) InverterSetTorque(&adj, 1000);
 
 	if ( CarState.APPSstatus )
 		setOutput(RTDMLED,On);
