@@ -43,6 +43,7 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	bool FatalError;
 	DeviceStatus InvRequested;
 	uint16_t InvCommand;
+	uint16_t InvReqCommand;
 
 	bool AllowTorque;
 	bool AllowRegen;

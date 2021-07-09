@@ -160,10 +160,11 @@ void HandleInverter( InverterState_t * Inverter )
 {
 	char str[80];
 	// only process inverter state if inverters have been seen and not in error state.
-	if (Inverter->InvState != OFFLINE && InverterStates[Inverter->Motor] != OFFLINE )
+	if (Inverter->InvState != OFFLINE ) // && InverterStates[Inverter->Motor] != OFFLINE )
 	{
 	// run the state machine response and get command to match current situation.
 		command = getInverterControlWord( Inverter );
+		Inverter->InvReqCommand = command;
 
 		// only change command if we're not in wanted state to try and transition towards it.
 		if (Inverter->InvState != Inverter->InvRequested && Inverter->InvState > INERROR )

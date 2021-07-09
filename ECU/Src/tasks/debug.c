@@ -404,10 +404,11 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 					else
 						InverterSetTorqueInd( 0, 0, 0);
 
-					UARTprintf("Pedal pos: r%d%%, requestNm %d ( raw %d ) speed %d, maxNm %d, MC0: %s MC1: %s MC2: %s MC3: %s\r\n ",
+					UARTprintf("Pedal pos: r%d%%, requestNm %d ( raw %d ) speed %d, maxNm %d, MC0: %s, Cmd %d, Req %d, HV:%s\r\n ",
 							percR/10, requestNm/0x4000, requestNm, speed, maxNm, getDeviceStatusStr(getInvState(0)->InvState ),
-							getDeviceStatusStr(getInvState(1)->InvState),getDeviceStatusStr(getInvState(2)->InvState ),
-							getDeviceStatusStr(getInvState(3)->InvState )
+							getInvState(0)->InvCommand, getInvState(0)->InvReqCommand, getInvState(0)->HighVoltageAvailable?"Y":"N"
+				//			getDeviceStatusStr(getInvState(1)->InvState),getDeviceStatusStr(getInvState(2)->InvState ),
+				//			getDeviceStatusStr(getInvState(3)->InvState )
 							);
 				}
 			}
@@ -845,7 +846,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10042...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10043...\r\n\r\n");
 
 	redraw = false;
 
