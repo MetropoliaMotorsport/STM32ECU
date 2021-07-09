@@ -362,7 +362,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 			struct Debug_msg msg;
 
 			uint16_t oldrequest = 0xffff;
-			int16_t speed = 500;
+			int16_t speed = 800;
 			uint32_t lasttime = 0;
 
 			while ( !quit )
@@ -395,7 +395,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 					if ( percR > 1000 )
 						percR = 1000;
 
-					int32_t maxNm = 5;
+					int32_t maxNm = 15;
 
 					int32_t requestNm = ((percR*maxNm)*0x4000)/1000;
 
@@ -846,7 +846,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10048...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10049...\r\n\r\n");
 
 	redraw = false;
 
