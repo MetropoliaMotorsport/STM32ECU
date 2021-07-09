@@ -88,9 +88,9 @@ CANData InverterCANMotorValues2[MOTORCOUNT] = { // speed
 
 
 CANData InverterCANAPPCStatus[INVERTERCOUNT] = {
-		{ NULL, Inverter1_NodeID+COBTPDO1_ID+LENZE_APPC_OFFSET, 8, processAPPCStatus, NULL, 0, 0 },
+		{ NULL, Inverter1_NodeID+COBTPDO1_ID, 8, processAPPCStatus, NULL, 0, 0 },
 #if INVERTERCOUNT > 1
-		{ NULL, Inverter2_NodeID+COBTPDO1_ID+LENZE_APPC_OFFSET, 8, processAPPCStatus, NULL, 0, 2 }
+		{ NULL, Inverter2_NodeID+COBTPDO1_ID, 8, processAPPCStatus, NULL, 0, 2 }
 #endif
 };
 
