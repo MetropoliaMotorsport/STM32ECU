@@ -400,13 +400,13 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 					int32_t requestNm = ((percR*maxNm)*0x4000)/1000;
 
 					if ( requestNm > 0 )
-						InverterSetTorqueInd( 0, requestNm, 500);
+						InverterSetTorqueInd( 1, requestNm, 500);
 					else
-						InverterSetTorqueInd( 0, 0, 0);
+						InverterSetTorqueInd( 1, 0, 0);
 
-					UARTprintf("Pedal pos: r%d%%, requestNm %d ( raw %d ) speed %d, maxNm %d, MC0: %s, Cmd %d, Req %d, HV:%s\r\n ",
-							percR/10, requestNm/0x4000, requestNm, speed, maxNm, getDeviceStatusStr(getInvState(0)->InvState ),
-							getInvState(0)->InvCommand, getInvState(0)->InvReqCommand, getInvState(0)->HighVoltageAvailable?"Y":"N"
+					UARTprintf("Pedal pos: r%d%%, requestNm %d ( raw %d ) speed %d, maxNm %d, MC: %s, Cmd %d, Req %d, HV:%s\r\n ",
+							percR/10, requestNm/0x4000, requestNm, speed, maxNm, getDeviceStatusStr(getInvState(1)->InvState ),
+							getInvState(1)->InvCommand, getInvState(1)->InvReqCommand, getInvState(1)->HighVoltageAvailable?"Y":"N"
 				//			getDeviceStatusStr(getInvState(1)->InvState),getDeviceStatusStr(getInvState(2)->InvState ),
 				//			getDeviceStatusStr(getInvState(3)->InvState )
 							);
