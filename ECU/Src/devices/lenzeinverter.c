@@ -320,12 +320,14 @@ bool processAPPCStatus( const uint8_t CANRxData[8], const uint32_t DataLength, c
 	int16_t InvInputVoltage = getLEint16(&CANRxData[0])/16;
 	int16_t InvTemperature = getLEint16(&CANRxData[2])/16;
 
+#if 0
 	if ( invHV[inv] != InvInputVoltage )
 	{
 		invHV[inv] = InvInputVoltage;
 		snprintf(str, 80, "Inverter %d & %d HV at %dV (%lu)", inv, inv+1, InvInputVoltage, gettimer());
 		DebugMsg(str);
 	}
+#endif
 
 	if ( InvInputVoltage > 5 && InvInputVoltage < 640 )
 	{
