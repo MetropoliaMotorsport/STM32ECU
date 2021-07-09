@@ -312,34 +312,34 @@ void InvTask(void *argument)
 					lastseen[i] = gettimer();
 					InverterState[i].Device = OPERATIONAL;
 					HandleInverter(&InverterState[i]);
-				} else
+				}
+				else
 				{
 					if ( i == 0 && !firstbad[i] )
 					{
 						firstbad[i] = true;
 						snprintf(str, 60, "Inv[%d] not received %lu, expected %lu at (%lu)", i, InvReceived & invexpected[i], invexpected[i], gettimer());
 						DebugMsg(str);
-					}
 
-					HandleInverter(&InverterState[i]); // should always be sending PDO if we're configured.
-
-					if ( InverterState[i].Device == OPERATIONAL )
-					{
-						snprintf(str, 60, "Inv[%d] not received exp at (%lu)", i, gettimer());
-						DebugMsg(str);
 						CAN_SendStatus(9, 0, 1);
+
 					}
 
-					if ( lastseen[i] > INVERTERTIMEOUT && InverterState[i].Device != OFFLINE ) //
+					// should always be sending PDO if we're configured to stop timeouts.
+					HandleInverter(&InverterState[i]);
+
+					if ( gettimer()-lastseen[i] > INVERTERTIMEOUT && InverterState[i].Device != OFFLINE ) //
 					{
+						firstbad[i] = false;
 						if ( InverterState[i].Device != OFFLINE )
 						{
 							snprintf(str, 40, "Inverter %d Timeout (%lu)", i, gettimer());
 							DebugMsg(str);
 							InverterState[i].Device = OFFLINE;
+							// prevent automatically putting back online for now.
+							InverterState[i].SetupState = 0;
 							CAN_SendStatus(9, 0, 2);
 						}
-//						InverterState[i].SetupState = 0;
 					}
 				}
 			} else

@@ -231,6 +231,10 @@ uint8_t receiveINVNMT( volatile InverterState_t *Inverter)
 
 bool processINVError( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	const static blank = "";
+	char str[80];
+	char errorstr[40] = "";
+
 	uint8_t inv=datahandle->index;
 
 	uint8_t errorid=0;
@@ -261,22 +265,23 @@ bool processINVError( const uint8_t CANRxData[8], const uint32_t DataLength, con
 	// 00  10  81      DD  1E     03   -   00  00
 	if ( 1 ) //CANRxData[0] == 0 && CANRxData[1] == 0x10 && CANRxData[2] == 0x81 && CANRxData[6] == 0x00 && CANRxData[7] == 0 )
 	{
-		DebugMsg("Inverter error received.");
-
         uint16_t ErrorCode = CANRxData[4]*256+CANRxData[3];
 
         uint8_t AllowReset = 0;
 
         switch ( ErrorCode ) // 29954
         {
-        	case 30003 : // DC Underlink Voltage. HV dropped or dipped, allow reset attempt. //  33 117 hex
-        	case 30040 : // Power unit: Undervolt 24 V
-        	case 30045 : // Power unit: Supply undervoltage
+        	case 30003 : strcpy(errorstr, "HV Undervolt"); break; // DC Underlink Voltage. HV dropped or dipped, allow reset attempt. //  33 117 hex
+        	case 30040 : strcpy(errorstr, "?? Undervolt"); break; // Power unit: Undervolt 24 V
+        	case 30045 : strcpy(errorstr, "LV Undervolt"); break; // Power unit: Supply undervoltage
                 AllowReset = 1;
                 break;
             default : // other unknown errors, don't allow auto reset attempt.
                 AllowReset = 0;
         }
+
+		snsprintf(str, 80, "Inverter %d error %5X %s received.",datahandle->index, ErrorCode, errorstr);
+		DebugMsg(str);
 
 
 		if ( InverterState[inv].InvState >= OFFLINE) //if inverter status not in error yet, put it there.
@@ -284,7 +289,6 @@ bool processINVError( const uint8_t CANRxData[8], const uint32_t DataLength, con
 			InverterState[inv].InvState = INERROR;
 		}
 
-		InverterState[datahandle->index].InvState = INERROR;
         if ( Errors.InvAllowReset[datahandle->index] == 1 )
         {
             Errors.InvAllowReset[datahandle->index] = AllowReset;
@@ -379,6 +383,27 @@ char * LenzeErrorBitTypeStatus1Str( uint8_t bit )
 	}
 }
 
+const LenzeStatus1Errors = 0xb10110111111111110111110111011100;
+const LenzeStatus2Errors = 0x0111110011;
+
+// returns whether we have an actual stop error or not.
+bool LenzeErrorStatus1( uint32_t errorcode )
+{
+	if ( errorcode & LenzeStatus1Errors )
+		return true;
+	else
+		return false;
+}
+
+bool LenzeErrorStatus2( uint16_t errorcode )
+{
+	if ( errorcode & LenzeStatus2Errors )
+		return true;
+	else
+		return false;
+}
+
+
 
 //Diagnostic parameter:
 //0x2900:0x07 - Inverter A Supervision: latched status 1
@@ -434,7 +459,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 				{
 					if ( newbits & ( 0x1 << i ) )
 					{
-						snprintf(str, 80, "Inv%d %s at (%lu)", inv, LenzeErrorBitTypeStatus1Str(i), gettimer());
+						snprintf(str, 80, "Inv%d %s %s at (%lu)", inv, LenzeErrorStatus1(1 << i)?"Error":"Warning",  LenzeErrorBitTypeStatus1Str(i), gettimer());
 						DebugMsg(str);
 					}
 				}
@@ -468,7 +493,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 		return true;
 	} else // bad data.
 	{
-		return false;
+		return true;
 	}
 }
 
@@ -677,8 +702,6 @@ bool processAPPCRDO( const uint8_t CANRxData[8], const uint32_t DataLength, cons
 
 	if ( InverterState[datahandle->index].SetupState > 0)
 	{
-		snprintf(str, 80, "APPCRDO doing setup state.");
-		DebugMsg(str);
 		InvStartupState( &InverterState[datahandle->index], CANRxData );
 	}
 
