@@ -318,7 +318,7 @@ void InvTask(void *argument)
 					if ( i == 0 && !firstbad[i] )
 					{
 						firstbad[i] = true;
-						snprintf(str, 60, "Inv[%d] not received %lu, expected %lu at (%lu)", i, InvReceived & invexpected[i], invexpected[i], gettimer());
+						snprintf(str, 60, "Inv[%d] not received, got %lu, expected %lu at (%lu)", i, InvReceived & invexpected[i], invexpected[i], gettimer());
 						DebugMsg(str);
 
 						CAN_SendStatus(9, 0, 1);
