@@ -379,9 +379,16 @@ void InvTask(void *argument)
 						snprintf(str, 80, "\n\nTimeout during Inverter %d private CFG setup at state %d.(%lu)\n\n", i, InverterState[i].SetupState, gettimer());
 						DebugMsg(str);
 						CAN_SendStatus(9, 0, 4);
-						InverterState[i].SetupState = 2; // start the setup state machine, again.
-						InvStartupState( &InverterState[i], dummyCAN );
-//						InverterState[i].SetupState = 0xFE; // stop message repeating.
+
+						// check if inverters are drawing any current, if so, keep trying.
+
+						if ( InverterState[i].SetupTries < 5 )
+						{
+							InverterState[i].SetupTries++;
+							InverterState[i].SetupState = 2; // start the setup state machine, again.
+							InvStartupState( &InverterState[i], dummyCAN );
+	//						InverterState[i].SetupState = 0xFE; // stop message repeating.
+						}
 					} else
 					{
 						// not seen inverters yet.

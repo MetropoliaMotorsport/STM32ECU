@@ -749,6 +749,7 @@ bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const
 			{
 				if ( !InverterState[datahandle->index].MCChannel )
 				{
+					InverterState[datahandle->index].SetupTries = 0;
 				//	if ( CanRxData[] )  // 0x1801
 		#ifdef DEBUGAPPCSDO
 					char str[80];

@@ -36,6 +36,7 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	DeviceStatus Device;
 
 	uint8_t SetupState;
+	uint8_t SetupTries;
 	uint32_t SetupLastSeenTime;
 
 	DeviceStatus InvState;
