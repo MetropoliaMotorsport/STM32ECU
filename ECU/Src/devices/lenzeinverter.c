@@ -307,14 +307,24 @@ bool processINVError( const uint8_t CANRxData[8], const uint32_t DataLength, con
 }
 
 
+static uint16_t invHV[4];
+
 bool processAPPCStatus( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	uint8_t inv=datahandle->index;
+	char str[80];
 
 	if ( InverterState[inv].MCChannel && inv > 0 ) inv--; // set the voltage available on the the first channel of inverter.
 
 	int16_t InvInputVoltage = getLEint16(&CANRxData[0])/16;
 	int16_t InvTemperature = getLEint16(&CANRxData[2])/16;
+
+	if ( invHV[inv] != InvInputVoltage)
+	{
+		invHV[inv] = InvInputVoltage;
+		snprintf(str, 80, "Inverter %d & %d HV at %dV (%lu)", inv, inv+1, InvInputVoltage, gettimer());
+		DebugMsg(str);
+	}
 
 	if ( InvInputVoltage > 5 && InvInputVoltage < 640 )
 	{
