@@ -280,7 +280,7 @@ bool processINVError( const uint8_t CANRxData[8], const uint32_t DataLength, con
                 AllowReset = 0;
         }
 
-		snsprintf(str, 80, "Inverter %d error %5X %s received.",datahandle->index, ErrorCode, errorstr);
+		snprintf(str, 80, "Inverter %d error %5X %s received.",datahandle->index, ErrorCode, errorstr);
 		DebugMsg(str);
 
 
