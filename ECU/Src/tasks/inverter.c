@@ -34,7 +34,7 @@ DeviceStatus GetInverterState( void );
 int8_t getInverterControlWord( const InverterState_t *Inverter );
 void InvInternalResetRDO( void );
 
-bool InvStartupState( InverterState_t *Inverter, const uint8_t * CANRxData[8] );
+bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxData[8], bool resend );
 
 #define INVSTACK_SIZE 128*2
 #define INVTASKNAME  "InvTask"
@@ -370,7 +370,7 @@ void InvTask(void *argument)
 						InverterState[i].SetupState = 2; // start the setup state machine
 						CAN_SendStatus(9, 0, 3);
 
-						InvStartupState( &InverterState[i], dummyCAN );
+						InvStartupState( &InverterState[i], dummyCAN, false );
 						snprintf(str, 80, "Starting Inverter %d StartupState called. (last %lu) (%lu)", i, InverterState[i].SetupLastSeenTime, gettimer());
 						DebugMsg(str);
 					} else if ( InverterState[i].SetupState < 0xFE && InverterState[i].SetupState > 1
@@ -386,7 +386,7 @@ void InvTask(void *argument)
 						{
 							InverterState[i].SetupTries++;
 							InverterState[i].SetupState = 2; // start the setup state machine, again.
-							InvStartupState( &InverterState[i], dummyCAN );
+							InvStartupState( &InverterState[i], dummyCAN, true );
 	//						InverterState[i].SetupState = 0xFE; // stop message repeating.
 						}
 					} else

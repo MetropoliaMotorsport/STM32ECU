@@ -566,7 +566,7 @@ bool processAPPCError( const uint8_t CANRxData[8], const uint32_t DataLength, co
 }
 
 
-bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxData[8] )
+bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxData[8], bool resend )
 {
 	uint32_t time = gettimer();
 	static char str[80];
@@ -631,7 +631,13 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		case 9:
 		{
 			uint8_t RDODone[8] = { 0x60, Inverter->SetupState-3, 0x18, 0x02 };
-			if ( memcmp(RDODone, CANRxData, 8) == 0 )
+
+			if ( resend )
+			{
+				snprintf(str, 80, "Lenze inverter %d resending SDO in state %d at (%lu)", Inverter->Motor, Inverter->SetupState, time );
+				DebugMsg(str);
+				InvSendSDO(Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1); // sets TPDO's to sync mode.
+			} else if ( memcmp(RDODone, CANRxData, 8) == 0 )
 			{
 				Inverter->SetupLastSeenTime = time;
 				InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
@@ -661,7 +667,12 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		{
 			uint8_t RDODone[8] = { 0x60, 0x04, 0x40, 0x01, 0, 0, 0, 0};
 
-			if ( memcmp(RDODone, CANRxData, 4) == 0 )
+			if ( resend )
+			{
+				snprintf(str, 80, "Lenze inverter %d resending SDO in state %d at (%lu)", Inverter->Motor, Inverter->SetupState, time );
+				DebugMsg(str);
+				InvSendSDO(Inverter->COBID+31, 0x4004, 1, 1234);
+			} else if ( memcmp(RDODone, CANRxData, 4) == 0 )
 			{
 #if 1
 				snprintf(str, 80, "Lenze inverter %d rcv APPC config done, now in private mode at (%lu)", Inverter->Motor, time);
@@ -711,7 +722,7 @@ bool processAPPCRDO( const uint8_t CANRxData[8], const uint32_t DataLength, cons
 
 	if ( InverterState[datahandle->index].SetupState > 0)
 	{
-		InvStartupState( &InverterState[datahandle->index], CANRxData );
+		InvStartupState( &InverterState[datahandle->index], CANRxData, false );
 	}
 
 	return true;
@@ -734,10 +745,9 @@ bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const
 			DebugMsg(str);
 			// set inv offline here.
 			InverterState[datahandle->index].SetupState = 0;
-//			InvStartupState( &InverterState[datahandle->index], CANRxData );
 			return true;
 		} else
-			InvStartupState( &InverterState[datahandle->index], CANRxData );
+			InvStartupState( &InverterState[datahandle->index], CANRxData, false );
 	}
 	else
 	{
@@ -760,7 +770,7 @@ bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const
 					InverterState[InverterState[datahandle->index].Motor+1].SetupLastSeenTime = gettimer();
 					// ensure timer is set before state changed.
 					InverterState[datahandle->index].SetupState = 1; // start the setup state machine
-					InvStartupState(&InverterState[datahandle->index], CANRxData);
+					InvStartupState(&InverterState[datahandle->index], CANRxData, false);
 				}
 			}
 		}
