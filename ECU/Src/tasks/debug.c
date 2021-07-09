@@ -521,7 +521,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 
 	} else if ( streql( tkn2, "accel" )  )
 	{
-		if ( value1 >= 0 )
+		if ( value1 >= 0 && value1 < 16000 )
 		{
 			UARTwrite("Setting accelRPM/s\r\n");
 
@@ -541,11 +541,14 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 			{
 				InvSendSDO(getInvState(i)->COBID+(getInvState(i)->MCChannel*LENZE_MOTORB_OFFSET),0x6048, 0, getEEPROMBlock(0)->AccelRpms*4);
 			}
+		} else
+		{
+			UARTwrite("Invalid maxRPM given\r\n");
 		}
 	}
 	else if ( streql( tkn2, "speed" )  )
 	{
-		if ( value1 >= 0 )
+		if ( value1 >= 0 && value1 < 16000 )
 		{
 			UARTwrite("Setting maxRPMr\n");
 			getEEPROMBlock(0)->maxRpm = value1;
@@ -560,8 +563,10 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 			} else
 				UARTwrite("Error saving config.\r\n");
 
+		} else
+		{
+			UARTwrite("Invalid RPM given\r\n");
 		}
-		UARTwrite("Setting speed request, keeping previous torque.\r\n");
 	}
 	else if ( streql( tkn2, "torque" )  )
 	{
