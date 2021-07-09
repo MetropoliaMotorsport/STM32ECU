@@ -27,6 +27,7 @@ bool processINVEmergency( const uint8_t CANRxData[8], const uint32_t DataLength,
 bool processINVNMT( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 bool processAPPCRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processAPPCStatus( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 bool processINVRDO( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
@@ -85,14 +86,14 @@ CANData InverterCANMotorValues2[MOTORCOUNT] = { // speed
 #endif
 };
 
-/*
-CANData InverterCANAPPCStatus[INVERTERCOUNT] = { // torque
-		{ NULL, Inverter1_NodeID+COBTPDO1_ID+LENZE_APPC_OFFSET, 8, processAPPCOnline, NULL, 0, 0 },
+
+CANData InverterCANAPPCStatus[INVERTERCOUNT] = {
+		{ NULL, Inverter1_NodeID+COBTPDO1_ID+LENZE_APPC_OFFSET, 8, processAPPCStatus, NULL, 0, 0 },
 #if INVERTERCOUNT > 1
-		{ NULL, Inverter2_NodeID+COBTPDO1_ID+LENZE_APPC_OFFSET, 8, processAPPCOnline, NULL, 0, 1 }
+		{ NULL, Inverter2_NodeID+COBTPDO1_ID+LENZE_APPC_OFFSET, 8, processAPPCStatus, NULL, 0, 2 }
 #endif
 };
-*/
+
 
 
 // use APPC RDO1 sending as trigger to signify online.
@@ -314,12 +315,12 @@ bool processAPPCStatus( const uint8_t CANRxData[8], const uint32_t DataLength, c
 	uint8_t inv=datahandle->index;
 	char str[80];
 
-	if ( InverterState[inv].MCChannel && inv > 0 ) inv--; // set the voltage available on the the first channel of inverter.
+//	if ( InverterState[inv].MCChannel && inv > 0 ) inv--; // set the voltage available on the the first channel of inverter.
 
 	int16_t InvInputVoltage = getLEint16(&CANRxData[0])/16;
 	int16_t InvTemperature = getLEint16(&CANRxData[2])/16;
 
-	if ( invHV[inv] != InvInputVoltage)
+	if ( invHV[inv] != InvInputVoltage )
 	{
 		invHV[inv] = InvInputVoltage;
 		snprintf(str, 80, "Inverter %d & %d HV at %dV (%lu)", inv, inv+1, InvInputVoltage, gettimer());
@@ -826,6 +827,8 @@ bool registerInverterCAN( void )
 	RegisterCan2Message(&InverterCANAPPCRDO[0]);
 	RegisterCan2Message(&InverterCANAPPCRDO[1]);
 
+	RegisterCan2Message(&InverterCANAPPCStatus[0]);
+	RegisterCan2Message(&InverterCANAPPCStatus[1]);
 	return true;
 }
 
