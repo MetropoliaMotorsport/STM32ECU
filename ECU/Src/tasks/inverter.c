@@ -388,7 +388,14 @@ void InvTask(void *argument)
 				//			InverterState[i].SetupState = 2; // start the setup state machine, again.
 							InvStartupState( &InverterState[i], dummyCAN, true );
 						} else
+						{
+							if ( InverterState[i].SetupState != 0xFE )
+							{
+								snprintf(str, 80, "\Giving up onInverter %d private CFG setup in state %d (%lu)\n", i, InverterState[i].SetupState, gettimer());
+								DebugMsg(str);
+							}
 							InverterState[i].SetupState = 0xFE;
+						}
 					} else
 					{
 						// not seen inverters yet.
