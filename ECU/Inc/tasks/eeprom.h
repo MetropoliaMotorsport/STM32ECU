@@ -94,6 +94,9 @@ typedef struct eepromdatastruct {
 	bool Fans;
 	uint8_t FanMax;
 	bool InvEnabled; // 519 bytes
+	uint8_t EnabledMotors;
+	uint16_t AccelRpms;
+	uint16_t maxRpm;
 
 } eepromdata; // max 1600bytes=50*32byte blocks.
 

@@ -21,6 +21,8 @@
 #include "adcecu.h"
 #include "timerecu.h"
 
+#include "lenzeinverter.h"
+
 // freeRTOS
 #include "semphr.h"
 
@@ -242,7 +244,6 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 	else if ( checkOn(tkn2) )
 	{
 		UARTwrite("Enabling inverters and saving config.\r\n");
-		getEEPROMBlock(0)->MaxTorque = 5;
 		getEEPROMBlock(0)->InvEnabled = true;
 		if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
 		{
@@ -293,12 +294,14 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 	}
 }
 
-static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor, const int32_t value1  )
+static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1, const int32_t motor )
 {
+	int16_t speed = getEEPROMBlock(0)->maxRpm;
+	int32_t maxNm = getEEPROMBlock(0)->MaxTorque;
 
-	static int32_t speed[4] = {0};
-	static int32_t torque[4] = {0};
-	if ( checkOn( tkn2 )  )
+	uint8_t motorsenabled = getEEPROMBlock(0)->EnabledMotors;
+
+	if (  streql( tkn2, "test" ) )
 	{
 		UARTwrite("Setting front power enabled.\r\n");
 
@@ -362,7 +365,6 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 			struct Debug_msg msg;
 
 			uint16_t oldrequest = 0xffff;
-			int16_t speed = 800;
 			uint32_t lasttime = 0;
 
 			while ( !quit )
@@ -388,61 +390,208 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t motor,
 					lasttime = gettimer();
 					uint32_t percR = 0;
 
-
 					if ( requestRaw > 300 )
 						percR = ( (100000/( 2100-300 )) * requestRaw-300) / 100;
 
 					if ( percR > 1000 )
 						percR = 1000;
 
-					int32_t maxNm = 15;
-
 					int32_t requestNm = ((percR*maxNm)*0x4000)/1000;
 
-					if ( requestNm > 0 )
-						InverterSetTorqueInd( 1, requestNm, 500);
-					else
-						InverterSetTorqueInd( 1, 0, 0);
+					for ( int i=0;i<MOTORCOUNT;i++)
+					{
+						if ( requestNm > 0 && ( ( 1 < i ) & motorsenabled ) )
+							InverterSetTorqueInd( i, requestNm, speed);
+						else
+							InverterSetTorqueInd( i, 0, 0);
+					}
 
-					UARTprintf("Pedal pos: r%d%%, requestNm %d ( raw %d ) speed %d, maxNm %d, MC: %s, Cmd %d, Req %d, HV:%s\r\n ",
-							percR/10, requestNm/0x4000, requestNm, speed, maxNm, getDeviceStatusStr(getInvState(1)->InvState ),
-							getInvState(1)->InvCommand, getInvState(1)->InvReqCommand, getInvState(1)->HighVoltageAvailable?"Y":"N"
-				//			getDeviceStatusStr(getInvState(1)->InvState),getDeviceStatusStr(getInvState(2)->InvState ),
-				//			getDeviceStatusStr(getInvState(3)->InvState )
+					UARTprintf("Pedal pos: r%d%%, requestNm %d ( raw %d ) speed %d, maxNm %d, to MC[%s%s%s%s]\r\n ",
+							percR/10, requestNm/0x4000, requestNm, speed, maxNm,
+							(1 < 0 ) & motorsenabled?"0":"", 	(1 < 1 ) & motorsenabled?"1":"",
+							(1 < 2 ) & motorsenabled?"2":"",   (1 < 3 ) & motorsenabled?"3":""
 							);
 				}
 			}
+
+			InverterAllowTorqueAll( false );
+			setTestMotors(false);
+			invRequestState( BOOTUP );
+			UARTwrite("Setting torque disabled.\r\n");
 		} else
 		{
 			UARTprintf("APPS request not 0, not enabling test [curreq %dnm, ped pos l%d r%d , brakes r%d f%d].\r\n", curreq, ADCState.Torque_Req_L_Percent, ADCState.Torque_Req_R_Percent, ADCState.BrakeR, ADCState.BrakeF);
 		}
 	}
+	else if ( checkOn( tkn2 )  )
+	{
+		if ( value1 >= 0 )
+		{
+			uint8_t curenabled = getEEPROMBlock(0)->EnabledMotors;
+
+			if ( strcmp( tkn3, "all") )
+			{
+				UARTwrite("Setting all Motors enabled\r\n");
+				for ( int i=0; i< MOTORCOUNT; i++)
+				{
+					curenabled |= 1 << i;
+				}
+			}
+			else
+			{
+				if ( value1 >=0 && value1 < MOTORCOUNT)
+				{
+					UARTprintf("Setting motor %d enabled\r\n", value1);
+					curenabled |= 1 << value1;
+				} else
+				{
+					UARTprintf("Invalid motor given\r\n");
+				}
+			}
+
+			getEEPROMBlock(0)->EnabledMotors = curenabled;
+
+
+			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			{
+				vTaskDelay(20);
+				while ( EEPROMBusy() )
+				{
+					vTaskDelay(20);
+				}
+				UARTwrite("Saved.\r\n");
+			} else
+				UARTwrite("Error saving config.\r\n");
+
+		}
+	}
 	else if ( checkOff( tkn2 ) )
 	{
-		// check if pedal is 0, only allow enabling if no input.
-		InverterAllowTorqueAll( false );
-		setTestMotors(false);
-		invRequestState( BOOTUP );
-		UARTwrite("Setting torque disabled.\r\n");
+		if ( value1 >= 0 )
+			{
+				uint8_t curenabled = getEEPROMBlock(0)->EnabledMotors;
+
+				if ( strcmp( tkn3, "all") )
+				{
+					UARTwrite("Setting all Motors disabled\r\n");
+					curenabled = 0;
+				}
+				else
+				{
+					if ( value1 >=0 && value1 < MOTORCOUNT)
+					{
+						curenabled &= ~(1 << value1);
+						UARTprintf("Setting motor %d disabled\r\n", value1);
+					} else
+					{
+						UARTprintf("Invalid motor given\r\n");
+					}
+				}
+
+				getEEPROMBlock(0)->EnabledMotors = curenabled;
+
+
+				if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+				{
+					vTaskDelay(20);
+					while ( EEPROMBusy() )
+					{
+						vTaskDelay(20);
+					}
+					UARTwrite("Saved.\r\n");
+				} else
+					UARTwrite("Error saving config.\r\n");
+
+			}
+
+	} else if ( streql( tkn2, "status" ) )
+	{
+		UARTwrite("Motors control status\r\n\r\n");
+
+//		for( int i=0;i<MOTORCOUNT;i++)
+		{
+			UARTprintf("Motor %d Enabled: [%s%s%s%s]\r\n ",
+					(1 < 0 ) & motorsenabled?"0":"", (1 < 1 ) & motorsenabled?"1":"",
+					(1 < 2 ) & motorsenabled?"2":"", (1 < 3 ) & motorsenabled?"3":"");
+		}
+
+		UARTprintf("Max speed %dRPM\r\n", speed);
+		UARTprintf("Max Torque %dNm\r\n", maxNm);
+
+
+	} else if ( streql( tkn2, "accel" )  )
+	{
+		if ( value1 >= 0 )
+		{
+			UARTwrite("Setting accelRPM/s\r\n");
+
+			getEEPROMBlock(0)->AccelRpms = value1;
+			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			{
+				vTaskDelay(20);
+				while ( EEPROMBusy() )
+				{
+					vTaskDelay(20);
+				}
+				UARTwrite("Saved.\r\n");
+			} else
+				UARTwrite("Error saving config.\r\n");
+
+			for ( int i=0;i<MOTORCOUNT;i++)
+			{
+				InvSendSDO(getInvState(i)->COBID+(getInvState(i)->MCChannel*LENZE_MOTORB_OFFSET),0x6048, 0, getEEPROMBlock(0)->AccelRpms*4);
+			}
+		}
 	}
 	else if ( streql( tkn2, "speed" )  )
 	{
 		if ( value1 >= 0 )
-			speed[motor] = value1;
-		InverterSetTorqueInd( motor, torque[motor], speed[motor]);
+		{
+			UARTwrite("Setting maxRPMr\n");
+			getEEPROMBlock(0)->maxRpm = value1;
+			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			{
+				vTaskDelay(20);
+				while ( EEPROMBusy() )
+				{
+					vTaskDelay(20);
+				}
+				UARTwrite("Saved.\r\n");
+			} else
+				UARTwrite("Error saving config.\r\n");
+
+		}
 		UARTwrite("Setting speed request, keeping previous torque.\r\n");
 	}
 	else if ( streql( tkn2, "torque" )  )
 	{
-		if ( value1 >= 0 )
-			torque[motor] = value1;
-		InverterSetTorqueInd( motor, torque[motor], speed[motor]);
-		UARTwrite("Setting torque request, keeping previous speed.\r\n");
-	}
+		if ( value1 >= 0 &&  value1 <= 65)
+		{
+			UARTwrite("Setting max Torque\n");
+			getEEPROMBlock(0)->MaxTorque = value1;
+			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			{
+				vTaskDelay(20);
+				while ( EEPROMBusy() )
+				{
+					vTaskDelay(20);
+				}
+				UARTwrite("Saved.\r\n");
+			} else
+				UARTwrite("Error saving config.\r\n");
 
-	for ( int i=0;i<MOTORCOUNT;i++)
+		} else
+		{
+			UARTwrite("Invalid Torque value given.\r\n");
+		}
+	} else
 	{
-		UARTprintf("Current Params motor:%2d   speed:%5d torque:%5d\r\n", i, speed[i], torque[i]);
+		UARTwrite("motor test runs pedal test\r\n");
+		UARTwrite("motor on x enables motor for testing ( 0-3 or all )\r\n");
+		UARTwrite("motor off x disables motor for testing ( 0-3 or all )\r\n");
+		UARTwrite("motor torque x sets maxNm on car ( testing/otherwise ) to any value between 0-65Nm\r\n");
+		UARTwrite("motor speed x sets target speed for test, 0-?\r\n");
+		UARTwrite("motor accel x sets RPM/s acceleration max for MC ( saved but not resent )\r\n");
 	}
 }
 
@@ -846,7 +995,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10049...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10050...\r\n\r\n");
 
 	redraw = false;
 

@@ -16,6 +16,7 @@
 #include "inverter.h"
 #include "taskpriorities.h"
 #include "debug.h"
+#include "timerecu.h"
 
 TaskHandle_t PowerTaskHandle = NULL;
 
