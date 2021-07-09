@@ -23,5 +23,6 @@ char * getConfStr( void); // gets current short configuration line for display.
 bool ConfigInput( uint16_t input);
 
 bool initConfig( void );
+bool inConfig( void );
 
 #endif /* CONFIGURATION_H_ */

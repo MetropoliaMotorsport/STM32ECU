@@ -231,7 +231,6 @@ uint8_t receiveINVNMT( volatile InverterState_t *Inverter)
 
 bool processINVError( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	const static blank = "";
 	char str[80];
 	char errorstr[40] = "";
 
@@ -383,8 +382,8 @@ char * LenzeErrorBitTypeStatus1Str( uint8_t bit )
 	}
 }
 
-const LenzeStatus1Errors = 0xb10110111111111110111110111011100;
-const LenzeStatus2Errors = 0x0111110011;
+const uint32_t LenzeStatus1Errors = 0b10110111111111110111110111011100;
+const uint16_t LenzeStatus2Errors = 0b111110011;
 
 // returns whether we have an actual stop error or not.
 bool LenzeErrorStatus1( uint32_t errorcode )
@@ -432,6 +431,7 @@ char * LenzeErrorBitTypeStatus2Str( uint8_t bit )
 bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	char str[80] = "";
+	bool error=false;
 	uint8_t inv=datahandle->index;
 
 	uint16_t status = CANRxData[0];
@@ -446,14 +446,12 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 
 		if ( curinvState == INERROR )
 		{
-			// first error, record time for error time handling.
-			if ( InverterState[inv].InvState != INERROR )
-				InverterState[inv].errortime = gettimer();
-
 			// new error bits
 			if ( InverterState[inv].latchedStatus1 != latchedStatus1 )
 			{
 				uint32_t newbits = (InverterState[inv].latchedStatus1 ^ latchedStatus1 );
+
+				InverterState[inv].errortime = gettimer(); // last warning/error time.
 
 				for ( int i=0;i<32;i++)
 				{
@@ -463,8 +461,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 						DebugMsg(str);
 
 						if ( LenzeErrorStatus1(1 << i) )
-							InverterState[inv].FatalError = true;
-
+							error = true;
 					}
 				}
 
@@ -475,19 +472,27 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 			{
 				uint32_t newbits = (InverterState[inv].latchedStatus2 ^ latchedStatus2 );
 
+				InverterState[inv].errortime = gettimer(); // last warning/error time.
+
 				for ( int i=0;i<9;i++) // only 9 current valid error bits instatus2
 				{
 					if ( newbits & ( 0x1 << i ) )
 					{
 						snprintf(str, 80, "Inv%d %s %s at (%lu)", inv, LenzeErrorStatus2(1 << i)?"Error":"Warning", LenzeErrorBitTypeStatus2Str(i), gettimer());
 						DebugMsg(str);
+						if ( LenzeErrorStatus2(1 << i) )
+							error = true;
 					}
 				}
 
 				InverterState[inv].latchedStatus2 = latchedStatus2;
 			}
 
-//			if ( InverterState[inv].latchedStatus2 & LenzeErrorType1bits2 ) // we've got type errors
+			// record time for error time handling.
+			if ( InverterState[inv].InvState != INERROR  && error ) // if an actual error and not just a warning, set in error.
+			{
+				InverterState[inv].errortime = gettimer();
+			}
 		}
 
 		InverterState[inv].InvState = curinvState;
