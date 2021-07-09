@@ -180,7 +180,8 @@ void HandleInverter( InverterState_t * Inverter )
 	// initial testing, use maximum possible error reset period regardless of error.
 	if ( Inverter->InvState == INERROR )
 	{
-		if ( gettimer() - Inverter->errortime > ERRORTYPE1RESETTIME )
+		// only reset errors when we've got HV otherwise will always have motor conn error.
+		if ( gettimer() - Inverter->errortime > ERRORTYPE1RESETTIME && Inverter->HighVoltageAvailable  )
 		{
 
 			InvResetError(Inverter);
@@ -353,6 +354,8 @@ void InvTask(void *argument)
 				// state 1 should be triggered automatically by inverter startup right now, not attempting to force it.
 				if ( !InverterState[i].MCChannel ) // if we've not configured inverters, only deal with APPC channel.
 				{
+					static uint8_t dummyCAN[8] = {0,0,0,0,0,0,0,0};
+
 					// don't do anything if setup state 0, or 0xFF. Or if less then 1s since SetupLastSeenTime
 					if ( InverterState[i].SetupState == 1
 						&& gettimer() - InverterState[i].SetupLastSeenTime > 1000)
@@ -362,17 +365,19 @@ void InvTask(void *argument)
 						// no messages for a second, APPC has finished setting up MC's, carry on with state machine.
 						InverterState[i].SetupState = 2; // start the setup state machine
 						CAN_SendStatus(9, 0, 3);
-						static uint8_t dummyCAN[8] = {0,0,0,0,0,0,0,0};
+
 						InvStartupState( &InverterState[i], dummyCAN );
 						snprintf(str, 80, "Starting Inverter %d StartupState called. (last %lu) (%lu)", i, InverterState[i].SetupLastSeenTime, gettimer());
 						DebugMsg(str);
 					} else if ( InverterState[i].SetupState < 0xFE && InverterState[i].SetupState > 1
 							&& gettimer() - InverterState[i].SetupLastSeenTime > 1000 )
 					{
-						snprintf(str, 80, "Timeout during Inverter %d private CFG setup.(%lu)", i, gettimer());
+						snprintf(str, 80, "\n\nTimeout during Inverter %d private CFG setup.(%lu)\n\n", i, gettimer());
 						DebugMsg(str);
 						CAN_SendStatus(9, 0, 4);
-						InverterState[i].SetupState = 0xFE; // stop message repeating.
+						InverterState[i].SetupState = 2; // start the setup state machine, again.
+						InvStartupState( &InverterState[i], dummyCAN );
+//						InverterState[i].SetupState = 0xFE; // stop message repeating.
 					} else
 					{
 						// not seen inverters yet.

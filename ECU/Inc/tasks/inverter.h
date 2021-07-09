@@ -39,6 +39,7 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	uint32_t SetupLastSeenTime;
 
 	DeviceStatus InvState;
+	bool FatalError;
 	DeviceStatus InvRequested;
 	uint16_t InvCommand;
 

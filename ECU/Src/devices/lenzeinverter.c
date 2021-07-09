@@ -461,6 +461,10 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 					{
 						snprintf(str, 80, "Inv%d %s %s at (%lu)", inv, LenzeErrorStatus1(1 << i)?"Error":"Warning",  LenzeErrorBitTypeStatus1Str(i), gettimer());
 						DebugMsg(str);
+
+						if ( LenzeErrorStatus1(1 << i) )
+							InverterState[inv].FatalError = true;
+
 					}
 				}
 
@@ -475,7 +479,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 				{
 					if ( newbits & ( 0x1 << i ) )
 					{
-						snprintf(str, 80, "Inv%d %s  at (%lu)", inv, LenzeErrorBitTypeStatus2Str(i), gettimer());
+						snprintf(str, 80, "Inv%d %s %s at (%lu)", inv, LenzeErrorStatus2(1 << i)?"Error":"Warning", LenzeErrorBitTypeStatus2Str(i), gettimer());
 						DebugMsg(str);
 					}
 				}
