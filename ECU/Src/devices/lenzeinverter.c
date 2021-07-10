@@ -690,6 +690,9 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				DebugMsg(str);
 #endif
 				CAN_SendStatus(9, 0, 5);
+				// TODO ack this last SDO.
+				InvSendSDO(Inverter->COBID+(Inverter->MCChannel*LENZE_MOTORB_OFFSET),0x6048, 0, getEEPROMBlock(0)->AccelRpms*4);
+
 				Inverter->SetupState = 0xFF; // Done!
 				InverterState[Inverter->Motor+1].SetupState = 0xFF; // set the other inverter as configured too.
 			}
