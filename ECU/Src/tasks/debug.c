@@ -542,7 +542,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 	{
 		if ( value1 >= 0 && value1 < 16000 )
 		{
-			UARTwrite("Setting maxRPMr\n");
+			UARTwrite("Setting maxRPM\iger\n");
 			getEEPROMBlock(0)->maxRpm = value1;
 			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
 			{
@@ -564,7 +564,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 	{
 		if ( value1 >= 0 &&  value1 <= 65)
 		{
-			UARTwrite("Setting max Torque\n");
+			UARTwrite("Setting max Torque\r\n");
 			getEEPROMBlock(0)->MaxTorque = value1;
 			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
 			{
