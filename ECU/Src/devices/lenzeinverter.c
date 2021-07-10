@@ -47,15 +47,6 @@ CANData InverterCANErr[MOTORCOUNT]= {
 #endif
 };
 
-CANData InverterCANNMT[MOTORCOUNT] = {
-		{ NULL, InverterRL_COBID+COBNMT_ID + ( InverterRL_Channel * 0x100 ), 2, processINVNMT, NULL, 0, 0 },
-		{ NULL, InverterRR_COBID+COBNMT_ID + ( InverterRR_Channel * 0x100 ), 2, processINVNMT, NULL, 0, 1 },
-#if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID+COBNMT_ID + ( InverterFL_Channel * 0x100 ), 2, processINVNMT, NULL, 0, 2 },
-		{ NULL, InverterFR_COBID+COBNMT_ID + ( InverterFR_Channel * 0x100 ), 2, processINVNMT, NULL, 0, 3 }
-#endif
-};
-
 #define TPDSTATUS_ID 			( LENZE_TPDO2_ID )
 CANData InverterCANMotorStatus[MOTORCOUNT] = { // status values
 		{ NULL, InverterRL_COBID + TPDSTATUS_ID + ( InverterRL_Channel * 0x100 ), 8, processINVStatus, NULL, 0, 0 },
@@ -86,6 +77,13 @@ CANData InverterCANMotorValues2[MOTORCOUNT] = { // speed
 #endif
 };
 
+
+CANData InverterCANNMT[INVERTERCOUNT] = {
+		{ NULL, InverterRL_COBID+COBNMT_ID + ( InverterRL_Channel * 0x100 ), 2, processINVNMT, NULL, 0, 0 },
+#if MOTORCOUNT > 2
+		{ NULL, InverterFL_COBID+COBNMT_ID + ( InverterFL_Channel * 0x100 ), 2, processINVNMT, NULL, 0, 2 },
+#endif
+};
 
 CANData InverterCANAPPCStatus[INVERTERCOUNT] = {
 		{ NULL, Inverter1_NodeID+COBTPDO1_ID, 8, processAPPCStatus, NULL, 0, 0 },
@@ -811,7 +809,6 @@ bool registerInverterCAN( void )
 	for( int i=0;i<MOTORCOUNT;i++)
 	{
 		RegisterCan2Message(&InverterCANErr[i]);
-		RegisterCan2Message(&InverterCANNMT[i]);
 
 		// TPDO 2 - status from inverter A
 		// TPDO 3 - actual values (1) from motor A
@@ -825,6 +822,9 @@ bool registerInverterCAN( void )
 		RegisterCan2Message(&InverterCANMotorValues2[i]);
 		RegisterCan2Message(&InverterCANMotorRDO[i]);
 	}
+
+	RegisterCan2Message(&InverterCANNMT[0]);
+	RegisterCan2Message(&InverterCANNMT[1]);
 
 	RegisterCan2Message(&InverterCANAPPCRDO[0]);
 	RegisterCan2Message(&InverterCANAPPCRDO[1]);

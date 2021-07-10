@@ -309,13 +309,8 @@ static int HardwareInit( void )
 	if ( getEEPROMBlock(0)->InvEnabled )
 	{
 		initInv();
-
-		uint8_t motorsenabled = getEEPROMBlock(0)->EnabledMotors;
-
 		char str[80];
-		snprintf(str, 80, "Inverters enabled, MC enabled on [%s%s%s%s]",
-				(1 < 0 ) & motorsenabled?"0":"", 	(1 < 1 ) & motorsenabled?"1":"",
-				(1 < 2 ) & motorsenabled?"2":"",   (1 < 3 ) & motorsenabled?"3":""
+		snprintf(str, 80, "Inverters enabled, MC enabled on [%s]", getMotorsEnabledStr()
 		);
 		DebugMsg(str);
 	}

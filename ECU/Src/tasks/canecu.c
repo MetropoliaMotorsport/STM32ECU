@@ -182,7 +182,7 @@ void CANTxTask(void *argument)
 			waittick = cycletick-curtick+CYCLETIME;
 		}
 
-		UART_CANBufferTransmit();
+//		UART_CANBufferTransmit();
 
 		// ensure we can actually send a message -- bad, would leave messages potentially in buffer when no longer relevant.
 //		while ( HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) < 2 && HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2) < 2 )
@@ -192,7 +192,7 @@ void CANTxTask(void *argument)
 
 		if ( xQueueReceive(CANTxQueue,&msg,waittick) )
 		{
-			UART_CANBufferAdd(&msg);
+//			UART_CANBufferAdd(&msg);
 
 			if ( msg.bus == bus1)
 			{
@@ -210,16 +210,16 @@ void CANTxTask(void *argument)
 
 			if ( HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) < 1 )
 			{
+
 				DebugMsg("CAN Tx Buffer full");
-				// return error, can fifo full.
-			//	Error_Handler();
 			} else
-			if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcanp, &TxHeader, msg.data) != HAL_OK)
 			{
-				if ( pCANSendError != NULL )
-					(*pCANSendError)++;
-		//		return 1;
-			//	Error_Handler();
+				if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcanp, &TxHeader, msg.data) != HAL_OK)
+				{
+					DebugPrintf("CAN Tx Send Err code: %d",  hfdcanp->ErrorCode);
+					if ( pCANSendError != NULL )
+						(*pCANSendError)++;
+				}
 			}
 		}
 	}
@@ -269,6 +269,7 @@ void CANRxTask(void *argument)
 		// move uart can to own task? add an init state to wait for a go command for syncing at startup.
 		// r1xxxDbbbbbbbb
 
+#if 0
 		switch ( uartrxstate )
 		{
 		case 0 :
@@ -331,7 +332,7 @@ void CANRxTask(void *argument)
 			// cancel any receive, reset state
 			uartrxstate = 0;
 		}
-
+#endif
 
 		if( xQueueReceive(CANRxQueue,&msg,waittick) )
 		{
@@ -1426,7 +1427,7 @@ int CheckCanError( void )
 //					  offcan1count++; // increment occurances of coming off bus. if reach threshhold, go to error state.
 		  }
 		  Errors.ErrorPlace = 0xF1;
-		 LogError("CANBUS1 Down");
+		  LogError("CANBUS1 Down");
 //		  result +=1;
 	}
 
@@ -1455,21 +1456,21 @@ int CheckCanError( void )
 	if ( CAN2Status.BusOff) // detect passive error instead and try to stay off bus till clears?
 	{
 	//	Errors.ErrorPlace = 0xAA;
-		  blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
-		  HAL_FDCAN_Stop(&hfdcan2);
-		  CAN_SendStatus(255,0,0);
-		  DeviceState.CAN2 = OFFLINE;
+		blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
+		HAL_FDCAN_Stop(&hfdcan2);
+		CAN_SendStatus(255,0,0);
+		DeviceState.CAN2 = OFFLINE;
 
-		  if ( offcan2 == 0 )
-		  {
+		if ( offcan2 == 0 )
+		{
 #ifdef RECOVERCAN
-			  offcan2time = gettimer();
+		  offcan2time = gettimer();
 #endif
-			  offcan2 = 1;
-		  }
-		  Errors.ErrorPlace = 0xF3;
-		  LogError("CANBUS2 Down");
-//		  result +=4;
+		  offcan2 = 1;
+		}
+		Errors.ErrorPlace = 0xF3;
+		LogError("CANBUS2 Down");
+		//		  result +=4;
 	}
 
 #ifdef RECOVERCAN
@@ -1478,9 +1479,9 @@ int CheckCanError( void )
 		if (HAL_FDCAN_Start(&hfdcan2) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
 		{
 		// Start Error
-			 Errors.ErrorPlace = 0xF4;
-			 LogError("CANBUS2 Offline");
-			 result +=8;
+			Errors.ErrorPlace = 0xF4;
+			LogError("CANBUS2 Offline");
+			result +=8;
 		} else
 		{
 			offcan2 = 0;

@@ -299,7 +299,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 	int16_t speed = getEEPROMBlock(0)->maxRpm;
 	int32_t maxNm = getEEPROMBlock(0)->MaxTorque;
 
-	uint8_t motorsenabled = getEEPROMBlock(0)->EnabledMotors;
+	uint32_t motorsenabled = getEEPROMBlock(0)->EnabledMotors;
 
 	if (  streql( tkn2, "test" ) )
 	{
@@ -406,11 +406,8 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 							InverterSetTorqueInd( i, 0, 0);
 					}
 
-					UARTprintf("Pedal pos: r%d%%, requestNm %d ( raw %d ) speed %d, maxNm %d, to MC[%s%s%s%s]\r\n ",
-							percR/10, requestNm/0x4000, requestNm, speed, maxNm,
-							(1 < 0 ) & motorsenabled?"0":"", 	(1 < 1 ) & motorsenabled?"1":"",
-							(1 < 2 ) & motorsenabled?"2":"",   (1 < 3 ) & motorsenabled?"3":""
-							);
+					UARTprintf("Pedal pos: r%d%%, requestNm %d ( raw %d ) speed %d, maxNm %d, to MC[%s]\r\n ",
+							percR/10, requestNm/0x4000, requestNm, speed, maxNm, getMotorsEnabledStr() );
 				}
 			}
 
@@ -429,7 +426,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 		{
 			uint8_t curenabled = getEEPROMBlock(0)->EnabledMotors;
 
-			if ( strcmp( tkn3, "all") )
+			if ( strcmp( tkn3, "all") == 0)
 			{
 				UARTwrite("Setting all Motors enabled\r\n");
 				for ( int i=0; i< MOTORCOUNT; i++)
@@ -471,7 +468,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 			{
 				uint8_t curenabled = getEEPROMBlock(0)->EnabledMotors;
 
-				if ( strcmp( tkn3, "all") )
+				if ( strcmp( tkn3, "all") == 0 )
 				{
 					UARTwrite("Setting all Motors disabled\r\n");
 					curenabled = 0;
@@ -508,13 +505,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 	{
 		UARTwrite("Motors control status\r\n\r\n");
 
-//		for( int i=0;i<MOTORCOUNT;i++)
-		{
-			UARTprintf("Motor %d Enabled: [%s%s%s%s]\r\n ",
-					(1 < 0 ) & motorsenabled?"0":"", (1 < 1 ) & motorsenabled?"1":"",
-					(1 < 2 ) & motorsenabled?"2":"", (1 < 3 ) & motorsenabled?"3":"");
-		}
-
+		UARTprintf("Motors Enabled: [%s]\r\n", getMotorsEnabledStr());
 		UARTprintf("Max speed %dRPM\r\n", speed);
 		UARTprintf("Max Torque %dNm\r\n", maxNm);
 
