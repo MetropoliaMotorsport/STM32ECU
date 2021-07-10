@@ -84,6 +84,7 @@ uint8_t invRequestState( DeviceStatus state );
 void resetInv( void );
 int initInv( void );
 
+char * getMotorsEnabledStr( void );
 
 // internal functions.
 uint32_t getInvExpected(  uint8_t inv );

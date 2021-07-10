@@ -310,8 +310,7 @@ static int HardwareInit( void )
 	{
 		initInv();
 		char str[80];
-		snprintf(str, 80, "Inverters enabled, MC enabled on [%s]", getMotorsEnabledStr()
-		);
+		snprintf(str, 80, "Inverters enabled, MC enabled on [%s]", getMotorsEnabledStr());
 		DebugMsg(str);
 	}
 	else

@@ -22,6 +22,7 @@
 #include "timerecu.h"
 
 #include "lenzeinverter.h"
+#include "inverter.h"
 
 // freeRTOS
 #include "semphr.h"
@@ -991,7 +992,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10051...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10052...\r\n\r\n");
 
 	redraw = false;
 

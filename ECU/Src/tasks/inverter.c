@@ -221,8 +221,8 @@ bool InvSendSDO( uint16_t id, uint16_t idx, uint8_t sub, uint32_t data)
 
 char * getMotorsEnabledStr( void )
 {
-	char enabledstr[MOTORCOUNT+1];
-	uint8_t motorsenabled = getEEPROMBlock(0)->InvEnabled;
+	static char enabledstr[MOTORCOUNT+1];
+	uint8_t motorsenabled = getEEPROMBlock(0)->EnabledMotors;
 	snprintf(enabledstr,MOTORCOUNT+1, "%s%s%s%s",
 		(1 << 0 ) & motorsenabled?"0":"", 	(1 << 1 ) & motorsenabled?"1":"",
 		(1 << 2 ) & motorsenabled?"2":"",   (1 << 3 ) & motorsenabled?"3":"");
