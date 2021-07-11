@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 typedef struct Debug_msg {
 	char str[MAXDEBUGOUTPUT];
@@ -1096,11 +1097,14 @@ static void DebugTask(void *pvParameters)
 
 #define TOKENLENGTH   12
 
-
 		if ( charcount == 60 || endline )
 		{
 			if ( charcount > 0 )
 			{
+				// lowercase the input string.
+				for ( int i=0;str[i];i++)
+					str[i]=tolower(str[i]);
+
 				char tkn1[TOKENLENGTH] = "";
 				char tkn2[TOKENLENGTH] = "";
 				char tkn3[TOKENLENGTH] = "";
