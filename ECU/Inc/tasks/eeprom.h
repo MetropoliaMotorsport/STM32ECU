@@ -56,7 +56,10 @@ typedef struct pedalcurvestruct {
 
 // uint8_t ADCSteeringSize; // don't need size, can use 0 to terminate.
 typedef struct eepromdatastruct {
+	union {
 	char VersionString[10];
+	uint8_t BlockStart;
+	};
 
 	uint16_t ADCSteeringInput[10]; // HPF19 compatibility, potential future use
 	int16_t ADCSteeringOutput[10]; // min/max possible, further reaches, mid point. 40 bytes
@@ -97,6 +100,10 @@ typedef struct eepromdatastruct {
 	uint8_t EnabledMotors;
 	uint16_t AccelRpms;
 	uint16_t maxRpm;
+	union {
+	uint8_t regenMax;
+	uint8_t Blockend;
+	};
 
 } eepromdata; // max 1600bytes=50*32byte blocks.
 
@@ -115,7 +122,7 @@ int readEEPROMAddr( uint16_t address, uint16_t size );
 void commitEEPROM( void ); // function for timer callback to handle writing.
 
 int writeFullEEPROM( void );
-int writeConfigEEPROM( void );
+int writeFullConfigEEPROM( void );
 int writeEEPROMCurConf( void );
 
 bool writeEEPROMDone( void );

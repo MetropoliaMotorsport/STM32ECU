@@ -441,6 +441,7 @@ bool DoMenu( uint16_t input )
 	static int8_t top = 0;
 	static bool inedit = false;
 	static bool incalib = false;
+	static bool dofullsave = false;
 
 #define menusize	(8)
 
@@ -459,7 +460,13 @@ bool DoMenu( uint16_t input )
 			lcd_send_stringline( 2, "Saving settings.", MENUPRIORITY );
 			lcd_send_stringline( 3, "", MENUPRIORITY );
 
-			writeEEPROMCurConf(); // enqueue write the data to eeprom.
+			if ( dofullsave )
+			{
+				writeFullConfigEEPROM();
+			} else
+			{
+				writeEEPROMCurConf(); // enqueue write the data to eeprom.
+			}
 
 			return false;
 		}
@@ -482,10 +489,9 @@ bool DoMenu( uint16_t input )
 			if ( !doPedalCalibration(input) )
 			{
 				incalib = false;
+				dofullsave = true;
 
 				// set the current pedal calibration after calibration exited.
-
-				SetupADCInterpolationTables(getEEPROMBlock(0));
 			}
 			else
 				return true;
@@ -538,6 +544,7 @@ bool DoMenu( uint16_t input )
 	{
 
 		inmenu = true;
+		dofullsave = false;
 
 		return true;
 	}

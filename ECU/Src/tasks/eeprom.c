@@ -366,7 +366,7 @@ int DoEEPROM( void )
 								break;
 							case 1 :
 								lcd_send_stringline(3,"Config EEPROM Write", 1);
-								writeConfigEEPROM();
+								writeFullConfigEEPROM();
 								break;
 						}
 
@@ -786,16 +786,15 @@ int writeFullEEPROM( void )
 }
 
 
-int writeConfigEEPROM( void )
+int writeFullConfigEEPROM( void )
 {
 	if ( ! eepromwritinginprogress){
 
 		HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0); // enable write pin.
 
 		//setup data to write.
-
-		Remaining_Bytes = sizeof(EEPROMdata.padding1)+ sizeof(eepromdata);
-		Memory_Address = EEPROMdata.padding1-EEPROMdata.buffer;
+		Remaining_Bytes = sizeof(eepromdata); // sizeof(EEPROMdata.padding1)
+		Memory_Address =  &getEEPROMBlock(0)->BlockStart - EEPROMdata.buffer;
 
 		// EEPROMdata.buffer
 
