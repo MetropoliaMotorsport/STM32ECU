@@ -595,7 +595,40 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 
 static void debugShutdown( const char *tkn2, const char *tkn3 )
 {
-	if ( checkOn(tkn2) )
+	uint8_t shutdownstate=0;
+
+	if ( streql( tkn2, "boot" )  )
+	{
+		if ( checkOn(tkn3) )
+		{
+			shutdownstate=1;
+		} else if ( checkOff(tkn3) )
+		{
+			shutdownstate=0;
+		} else
+			shutdownstate=2;
+
+		if ( shutdownstate < 2 )
+		{
+			UARTprintf("Setting shutdown circuit at power on to: %s\r\n", shutdownstate?"Open":"Closed");
+			getEEPROMBlock(0)->alwaysHV = 1;
+			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			{
+				vTaskDelay(20);
+				while ( EEPROMBusy() )
+				{
+					vTaskDelay(20);
+				}
+				UARTwrite("Saved.\r\n");
+			} else
+			{
+				UARTwrite("Error saving config.\r\n");
+			}
+		} else
+		{
+			UARTprintf("Invalid value given.\r\n");
+		}
+	} else if ( checkOn(tkn2) )
 	{
 		UARTwrite("Setting shutdown circuit closed.\r\n");
 		ShutdownCircuitSet(true);
