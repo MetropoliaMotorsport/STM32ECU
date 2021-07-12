@@ -16,6 +16,7 @@
 #include "event_groups.h"
 #include "semphr.h"
 #include "taskpriorities.h"
+#include "debug.h"
 
 #define MAXWATCHDOGTASKS			10
 #define MAXWATCHDOGTASKNAMELENGTH 	20
@@ -139,7 +140,7 @@ static void WatchdogTask(void *pvParameters)
 //	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY );
 	volatile int count = 0;
 
-	vTaskDelay(20);
+	vTaskDelay(CYCLETIME*2);
 
 	while ( 1 )
 	{
@@ -159,14 +160,14 @@ static void WatchdogTask(void *pvParameters)
 			{
 				volatile int watchdognotkicked = 1;
 				char str[40] = "";
-				snprintf(str, 40, "Watchdog kicked bits: %4X", uxBits);
+				snprintf(str, 40, "Watchdog kicked bits: %4X", (uint32_t)uxBits);
 				DebugMsg(str);
 			}
 		}
 
 		xEventGroupClearBits(xWatchdog, 0xFF );
 
-		vTaskDelay(20);
+		vTaskDelay(CYCLETIME*2);
 	}
 }
 
@@ -219,6 +220,8 @@ int initWatchdog( void )
 	  a) WWDG clock counter period (in ms) = (4096 * PRESCALER) / (PCLK1 / 1000)
         ~ 0.1365ms
 
+        ~0.546
+
 	  b) WWDG timeout (in ms) = (counter + 1) * period
 
 	  ~17ms
@@ -230,9 +233,19 @@ int initWatchdog( void )
 
 	hwwdg1.Instance = WWDG1;
 
-	hwwdg1.Init.Prescaler = WWDG_PRESCALER_16;
-	hwwdg1.Init.Window    = 96;
-	hwwdg1.Init.Counter   = 127;
+	if ( CYCLETIME == 20 )
+	{
+		hwwdg1.Init.Prescaler = WWDG_PRESCALER_32; // approx ~68ms for full 63 unit window.
+		hwwdg1.Init.Window    = 75; // approx 35ms
+		hwwdg1.Init.Counter   = 106; // approx 45ms, giving +/- 5ms on 40ms to kick WD.∑
+	}
+	else
+	{
+		hwwdg1.Init.Prescaler = WWDG_PRESCALER_16;
+		hwwdg1.Init.Window    = 96;
+		hwwdg1.Init.Counter   = 127;
+	}
+
 
 	// 16
 
@@ -261,11 +274,14 @@ int initWatchdog( void )
 
 	volatile int counter = 0;
 
+	volatile int wdtime = 32;
+
 	while ( 1 )
 	{
 		counter++;
-		DWT_Delay(17*1000); // ensure that first trigger will be within window.
+		DWT_Delay(36*1000); // ensure that first trigger will be within window.
 		HAL_WWDG_Refresh(&hwwdg1);
+//		DebugPrintf("Watchdog call %d time: %d", counter, wdtime );
 
 	}
 #endif

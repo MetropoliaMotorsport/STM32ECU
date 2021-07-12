@@ -306,15 +306,15 @@ static int HardwareInit( void )
 
 	eepromdata * data = getEEPROMBlock(0);
 
-	DebugPrintf("Apps Calib L:%5d-%5d",
+	DebugPrintf("Apps Calib L:%5d - %5d",
 			data->ADCTorqueReqLInput[0],
 			data->ADCTorqueReqLInput[1]);
 
-	DebugPrintf("Apps Calib R:%5d-%5d",
+	DebugPrintf("Apps Calib R:%5d - %5d",
 			data->ADCTorqueReqRInput[0],
 			data->ADCTorqueReqRInput[1]);
 
-	DebugPrintf("Regen Calib:%5d-%5d",
+	DebugPrintf("Regen Calib: %5d - %5d",
 			data->ADCBrakeTravelInput[0],
 			data->ADCBrakeTravelInput[1]);
 

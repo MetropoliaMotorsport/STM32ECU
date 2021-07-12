@@ -1018,7 +1018,6 @@ void debugESCCodeInput( void )
 			UARTprintf("Down\r\n");
 		else
 			UARTwritech(ch);
-
 	}
 
 	UARTwrite("Done.\r\n");
@@ -1029,7 +1028,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10055...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10056...\r\n\r\n");
 
 	redraw = false;
 
