@@ -216,7 +216,10 @@ bool InvSendSDO( uint16_t id, uint16_t idx, uint8_t sub, uint32_t data)
 	if ( xQueueSend(InvCfgQueue, &msg, 0) )
 		return true;
 	else
+	{
+		DebugPrintf("Failed to add SDO %d %4X to queue at (%lu)", id, idx, gettimer());
 		return false;
+	}
 }
 
 char * getMotorsEnabledStr( void )
