@@ -304,6 +304,12 @@ void InvTask(void *argument)
 			}
 		}
 
+		InvCfg_msg cfgmsg;
+		if ( xQueueReceive(InvCfgQueue,&cfgmsg,0) ) // queue of pending inverter cfg commands, to send them at a controlled pace.
+		{
+			CANSendSDO(bus0, cfgmsg.id, cfgmsg.idx, cfgmsg.sub, cfgmsg.data);
+		}
+
 		for ( int i=0; i<MOTORCOUNT; i++) // speed is received
 		{
 			if( InverterState[i].SetupState == 0xFF )
@@ -363,12 +369,6 @@ void InvTask(void *argument)
 				}
 			} else
 			{
-				InvCfg_msg cfgmsg;
-				if ( xQueueReceive(InvCfgQueue,&cfgmsg,0) ) // queue of pending inverter cfg commands, to send them at a controlled pace.
-				{
-					CANSendSDO(bus0, cfgmsg.id, cfgmsg.idx, cfgmsg.sub, cfgmsg.data);
-				}
-
 				// state 1 should be triggered automatically by inverter startup right now, not attempting to force it.
 				if ( !InverterState[i].MCChannel ) // if we've not configured inverters, only deal with APPC channel.
 				{
