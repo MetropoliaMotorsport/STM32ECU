@@ -660,7 +660,9 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 #endif
 				if ( Inverter->SetupState < 9)
 				{
-					InvSendSDO(Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1); // sets TPDO's to sync mode.
+					// test timeout code repeatably.
+					if ( Inverter->COBID > 2 &&  Inverter->SetupState != 4  )
+						InvSendSDO(Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1); // sets TPDO's to sync mode.
 					Inverter->SetupState++;
 				}
 				else
