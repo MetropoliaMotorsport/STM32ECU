@@ -691,7 +691,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				snprintf(str, 80, "Lenze inverter %d rcv APPC config done, now in private mode at (%lu)", Inverter->Motor, time);
 				DebugMsg(str);
 #endif
-				CAN_SendStatus(9, 0, 5);
+				CAN_SendStatus(9, Inverter->Motor, 5);
 				// TODO ack this last SDO.
 				InvSendSDO(Inverter->COBID,0x6048, 0, getEEPROMBlock(0)->AccelRpms*4);
 				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET,0x6048, 0, getEEPROMBlock(0)->AccelRpms*4);
@@ -704,7 +704,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 
 		case 0xFE: // error state.
 		default:
-			CAN_SendStatus(9, 0, 10);
+			CAN_SendStatus(9, Inverter->Motor, 10);
 			//Inverter->SetupState = 0;
 			//InverterState[Inverter->Motor+1].SetupState = 0;
 		}

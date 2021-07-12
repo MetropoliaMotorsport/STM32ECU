@@ -310,6 +310,8 @@ void InvTask(void *argument)
 			CANSendSDO(bus0, cfgmsg.id, cfgmsg.idx, cfgmsg.sub, cfgmsg.data);
 		}
 
+		vTaskDelay(3); // wait a bit so not right at sync point.
+
 		for ( int i=0; i<MOTORCOUNT; i++) // speed is received
 		{
 			if( InverterState[i].SetupState == 0xFF )
@@ -319,7 +321,7 @@ void InvTask(void *argument)
 					firstactive[i] = true;
 					snprintf(str, 60, "Inv[%d] first active cycle at (%lu)", i, gettimer());
 					DebugMsg(str);
-
+					CAN_SendStatus(9, i, 0);
 				}
 
 				if ( ( InvReceived & invexpected[i] ) == invexpected[i] ) // everything received for inverter i
@@ -342,7 +344,7 @@ void InvTask(void *argument)
 						snprintf(str, 60, "Inv[%d] not received, got %lu, expected %lu at (%lu)", i, InvReceived & invexpected[i], invexpected[i], gettimer());
 						DebugMsg(str);
 
-						CAN_SendStatus(9, 0, 1);
+						CAN_SendStatus(9, i, 1);
 
 					}
 
@@ -359,7 +361,7 @@ void InvTask(void *argument)
 							InverterState[i].Device = OFFLINE;
 							// prevent automatically putting back online for now.
 							InverterState[i].SetupState = 0;
-							CAN_SendStatus(9, 0, 2);
+							CAN_SendStatus(9, i, 2);
 
 							firstbad[i] = false;
 							firstactive[i] = false;
@@ -382,7 +384,7 @@ void InvTask(void *argument)
 						DebugMsg(str);
 						// no messages for a second, APPC has finished setting up MC's, carry on with state machine.
 						InverterState[i].SetupState = 2; // start the setup state machine
-						CAN_SendStatus(9, 0, 3);
+						CAN_SendStatus(9, i, 3);
 
 						InvStartupState( &InverterState[i], dummyCAN, false );
 						snprintf(str, 80, "Starting Inverter %d StartupState called. (last %lu) (%lu)", i, InverterState[i].SetupLastSeenTime, gettimer());
@@ -396,7 +398,7 @@ void InvTask(void *argument)
 						{
 							snprintf(str, 80, "\nTimeout during Inverter %d private CFG setup at state %d, resending (%lu)\n", i, InverterState[i].SetupState, gettimer());
 							DebugMsg(str);
-							CAN_SendStatus(9, 0, 4);
+							CAN_SendStatus(9, i, 4);
 							InverterState[i].SetupTries++;
 							InvStartupState( &InverterState[i], dummyCAN, true );
 						} else
@@ -414,6 +416,7 @@ void InvTask(void *argument)
 					}
 				}
 			}
+			vTaskDelay(1);
 		}
 
 		setWatchdogBit(watchdogBit);
