@@ -208,10 +208,13 @@ void CANTxTask(void *argument)
 			TxHeader.Identifier = msg.id; // decide on an ECU ID/
 			TxHeader.DataLength = msg.dlc << 16; // only two bytes defined in send protocol, check this
 
+
 			if ( HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) < 1 )
 			{
 				DebugMsg("CAN Tx Buffer full");
-			} else
+				vTaskDelay(1);
+			}
+
 			{
 				if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcanp, &TxHeader, msg.data) != HAL_OK)
 				{
