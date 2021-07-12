@@ -626,13 +626,13 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 			snprintf(str, 60, "Inv %d state 2: COBID %d from channel %d (%lu)",
 					Inverter->Motor, Inverter->COBID, Inverter->MCChannel, time);
 			DebugMsg(str);
-#endif
+
 			Inverter->SetupLastSeenTime = time;
 			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
 			Inverter->SetupState++; // start the setup state machine
 			InvSendSDO(Inverter->COBID, 0x1800, 2, 1);
 			break;
-
+#endif
 		case 3:
 		case 4:
 		case 5:
@@ -650,7 +650,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				Inverter->SetupLastSeenTime = time;
 				InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
 				InvSendSDO(Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1); // sets TPDO's to sync mode.
-			} else if ( memcmp(RDODone, CANRxData, 8) == 0 )
+			} else if ( Inverter->SetupState == 2 || memcmp(RDODone, CANRxData, 8) == 0 )
 			{
 				Inverter->SetupLastSeenTime = time;
 				InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
