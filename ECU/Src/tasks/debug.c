@@ -584,12 +584,12 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 		}
 	} else
 	{
-		UARTwrite("motor test runs pedal test\r\n");
-		UARTwrite("motor on x enables motor for testing ( 0-3 or all )\r\n");
-		UARTwrite("motor off x disables motor for testing ( 0-3 or all )\r\n");
-		UARTwrite("motor torque x sets maxNm on car ( testing/otherwise ) to any value between 0-65Nm\r\n");
-		UARTwrite("motor speed x sets target speed for test, 0-?\r\n");
-		UARTwrite("motor accel x sets RPM/s acceleration max for MC ( saved but not resent )\r\n");
+		UARTwrite("[motor test] runs pedal test\r\n");
+		UARTwrite("[motor on x] enables motor for testing ( 0-3 or all )\r\n");
+		UARTwrite("[motor off x] disables motor for testing ( 0-3 or all )\r\n");
+		UARTwrite("[motor torque x] sets maxNm on car ( testing/otherwise ) to any value between 0-65Nm\r\n");
+		UARTwrite("[motor speed x] sets target speed for test, 0-?\r\n");
+		UARTwrite("[motor accel x] sets RPM/s acceleration max for MC ( saved but not resent )\r\n");
 	}
 }
 
@@ -1028,7 +1028,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10056...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10057...\r\n\r\n");
 
 	redraw = false;
 
