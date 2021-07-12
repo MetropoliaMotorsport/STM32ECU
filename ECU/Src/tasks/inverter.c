@@ -395,7 +395,6 @@ void InvTask(void *argument)
 							DebugMsg(str);
 							CAN_SendStatus(9, 0, 4);
 							InverterState[i].SetupTries++;
-				//			InverterState[i].SetupState = 2; // start the setup state machine, again.
 							InvStartupState( &InverterState[i], dummyCAN, true );
 						} else
 						{

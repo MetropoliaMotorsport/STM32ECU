@@ -643,13 +643,13 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 		{
 			uint8_t RDODone[8] = { 0x60, Inverter->SetupState-3, 0x18, 0x02 };
 
-			if ( resend )
+			if ( Inverter->SetupState > 2 && resend )
 			{
 				snprintf(str, 80, "Lenze inverter %d resending SDO in state %d at (%lu)", Inverter->Motor, Inverter->SetupState, time );
 				DebugMsg(str);
 				Inverter->SetupLastSeenTime = time;
 				InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
-				InvSendSDO(Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1); // sets TPDO's to sync mode.
+				InvSendSDO(Inverter->COBID, 0x1800+Inverter->SetupState-3, 2, 1); // sets TPDO's to sync mode.
 			} else if ( Inverter->SetupState == 2 || memcmp(RDODone, CANRxData, 8) == 0 )
 			{
 				Inverter->SetupLastSeenTime = time;
