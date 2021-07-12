@@ -1026,7 +1026,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10053...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10054...\r\n\r\n");
 
 	redraw = false;
 
@@ -1082,7 +1082,7 @@ static void DebugTask(void *pvParameters)
 		} else
 		if ( !( read == '\n' || read == '\r') )
 		{
-			if ( read >= 32) // only process printable charecters.
+			if ( read >= 32 && read <= 128) // only process printable charecters.
 			{
 				str[charcount] = read;
 				str[charcount+1] = 0;

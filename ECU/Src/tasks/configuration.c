@@ -490,6 +490,7 @@ bool DoMenu( uint16_t input )
 			{
 				incalib = false;
 				dofullsave = true;
+				SetupADCInterpolationTables(getEEPROMBlock(0));
 
 				// set the current pedal calibration after calibration exited.
 			}

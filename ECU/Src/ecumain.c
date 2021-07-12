@@ -273,8 +273,6 @@ static int HardwareInit( void )
 
 	initPower();
 
-	initConfig();
-
 	initIMU();
 #ifdef PDM
 	initPDM();
@@ -303,6 +301,22 @@ static int HardwareInit( void )
 #ifdef EEPROMSTORAGE
     initEEPROM();
 #endif
+
+	initConfig(); // config relies on eeprom data, was too early in process!
+
+	eepromdata * data = getEEPROMBlock(0);
+
+	DebugPrintf("Apps Calib L:%5d-%5d",
+			data->ADCTorqueReqLInput[0],
+			data->ADCTorqueReqLInput[1]);
+
+	DebugPrintf("Apps Calib R:%5d-%5d",
+			data->ADCTorqueReqRInput[0],
+			data->ADCTorqueReqRInput[1]);
+
+	DebugPrintf("Regen Calib:%5d-%5d",
+			data->ADCBrakeTravelInput[0],
+			data->ADCBrakeTravelInput[1]);
 
     // Moved inverters after eeprom so that config value can be used.
 
