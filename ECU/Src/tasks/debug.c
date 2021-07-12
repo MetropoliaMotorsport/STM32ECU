@@ -944,7 +944,10 @@ void debugConfig( void )
 	uint8_t state = 0;
 	uint16_t ch = 0;
 
-	UARTwrite("Running config menu.\r\n");
+	UARTwrite("Running config menu.\r\n\r\n");
+	UARTwrite("q: quit\r\n");
+	UARTwrite("c: open config menu\r\n");
+	UARTwrite("Arrow keys & Enter, control menu.\r\n");
 
 	while ( !quit )
 	{
@@ -1026,7 +1029,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10054...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU b10055...\r\n\r\n");
 
 	redraw = false;
 
@@ -1276,7 +1279,7 @@ static void DebugTask(void *pvParameters)
 					UARTwrite("motor");
 					UARTwrite("inverter reset");
 					UARTwrite("sensors");
-					UARTwrite("config");
+					UARTwrite("config	config menu input");
 					UARTwrite("esckey");
 					UARTwrite("list");
 					UARTwrite("stats");
