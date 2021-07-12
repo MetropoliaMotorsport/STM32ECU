@@ -210,7 +210,6 @@ void CANTxTask(void *argument)
 
 			if ( HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) < 1 )
 			{
-
 				DebugMsg("CAN Tx Buffer full");
 			} else
 			{
