@@ -466,7 +466,7 @@ bool processINVStatus( const uint8_t CANRxData[8], const uint32_t DataLength, co
 
 				for ( int i=0;i<32;i++)
 				{
-					if ( newbits & ( 0x1 << i ) )
+					if ( newbits & ( 0x1 << i ) && i > 0)
 					{
 						snprintf(str, 80, "Inv%d %s %s at (%lu)", inv, LenzeErrorStatus1(1 << i)?"Error":"Warning",  LenzeErrorBitTypeStatus1Str(i), gettimer());
 						DebugMsg(str);
