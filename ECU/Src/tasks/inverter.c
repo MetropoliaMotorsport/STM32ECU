@@ -385,7 +385,7 @@ void InvTask(void *argument)
 						snprintf(str, 80, "Starting Inverter %d StartupState called. (last %lu) (%lu)", i, InverterState[i].SetupLastSeenTime, gettimer());
 						DebugMsg(str);
 					} else if ( InverterState[i].SetupState < 0xFE && InverterState[i].SetupState > 1
-							&& gettimer() - InverterState[i].SetupLastSeenTime > 1000 )
+							&& gettimer() - InverterState[i].SetupLastSeenTime > 100 )
 					{
 						// check if inverters are drawing any current, if so, keep trying.
 
