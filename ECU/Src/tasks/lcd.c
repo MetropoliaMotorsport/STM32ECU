@@ -80,7 +80,7 @@ void LCDTask(void *argument)
 
 	bool inscroll = false;
 
-    const TickType_t xFrequency = 16;
+    const TickType_t xFrequency = 32;
 
 	struct lcd_msg msg;
 

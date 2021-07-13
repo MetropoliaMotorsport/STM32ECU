@@ -16,7 +16,7 @@
 #define CANBUS0 				hfdcan2
 #define	CANBUS1					hfdcan1
 
-#define BMSBASE_ID				0x8
+#define BMSBASE_ID				0x008
 #define BMSVOLT_ID				BMSBASE_ID+3 // 0xB is voltage.
 #define FLSpeed_COBID			0x71 // 112 // 0x70 orig
 #define FLSpeed_BUS				CAN1
@@ -24,7 +24,7 @@
 #define FRSpeed_BUS				CAN1
 
 #define PDM_ID					0x520
-#define MEMORATOR_ID			0x7B
+#define MEMORATOR_ID			0x07B
 
 #define NodeErr_ID        		0x600
 #define NodeCmd_ID				0x602
@@ -32,17 +32,17 @@
 
 #define AdcSimInput_ID			0x608
 
-#define AnalogNode1_ID			(1664)
-#define AnalogNode9_ID			(1680)
-#define AnalogNode10_ID			(1682)
-#define AnalogNode11_ID			(1684)
-#define AnalogNode12_ID			(1686)
-#define AnalogNode13_ID			(1688)
-#define AnalogNode14_ID			(1690)
-#define AnalogNode15_ID			(1692)
-#define AnalogNode16_ID			(1694)
-#define AnalogNode17_ID			(1696)
-#define AnalogNode18_ID			(1698)
+#define AnalogNode1_ID			(0x680) // (1664)
+#define AnalogNode9_ID			(0x690) // (1680)
+#define AnalogNode10_ID			(0x692) // (1682)
+#define AnalogNode11_ID			(0x694) // (1684)
+#define AnalogNode12_ID			(0x696) // (1686)
+#define AnalogNode13_ID			(0x698) // (1688)
+#define AnalogNode14_ID			(0x69A) // (1690)
+#define AnalogNode15_ID			(0x69C) // (1692)
+#define AnalogNode16_ID			(0x69E) // (1694)
+#define AnalogNode17_ID			(0x6A0) // (1696)
+#define AnalogNode18_ID			(0x6A2) // (1698)
 
 #define PowerNode33_ID			(0x6AE) // 1710 0x6AE
 #define PowerNode34_ID			(0x6AF) // 17110x6AF
@@ -62,7 +62,7 @@
 #define INV2_BUS				CANB0
 
 
-#define COBERR_ID				(0x80)
+#define COBERR_ID				(0x080)
 #define COBNMT_ID				(0x700)
 
 #define COBTPDO1_ID				(0x180)
@@ -80,7 +80,7 @@
 
 #define Inverter_BUS			CANB0
 
-#define ECU_CAN_ID				(0x20) // send +1
+#define ECU_CAN_ID				(0x020) // send +1
 
 // brake temp sensors 0x1a - first two bytes.
 
