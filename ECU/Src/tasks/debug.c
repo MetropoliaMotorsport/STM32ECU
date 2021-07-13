@@ -37,7 +37,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10063"
+#define VERSION "10064"
 
 #define DEBUGUART    UART2
 
@@ -404,7 +404,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 
 					for ( int i=0;i<MOTORCOUNT;i++)
 					{
-						if ( requestNm > 0 && ( ( 1 < i ) & motorsenabled ) )
+						if ( requestNm > 0 && ( ( 1 << i ) & motorsenabled ) )
 							InverterSetTorqueInd( i, requestNm, speed);
 						else
 							InverterSetTorqueInd( i, 0, 0);
