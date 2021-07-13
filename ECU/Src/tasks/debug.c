@@ -23,6 +23,7 @@
 
 #include "lenzeinverter.h"
 #include "inverter.h"
+#include "analognode.h"
 
 // freeRTOS
 #include "semphr.h"
@@ -37,7 +38,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10064"
+#define VERSION "10065"
 
 #define DEBUGUART    UART2
 
@@ -662,72 +663,60 @@ static void debugShutdown( const char *tkn2, const char *tkn3 )
 static void debugSensors( const char *tkn2 )
 {
 	{
-		UARTwrite("Current state of sensors:\r\n");
+		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline();
 
-#if 0
-		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline() ;
+		UARTprintf("Current Analog nodes not seen[%s]:\r\n", getADCWait());
+
 		// anode 1
 		if ( AnalogueNodesOnline & ( 0x1 << ANode1Bit ) )
 		{
-			sprintf(str, "Anode1: TorqueR: %lu Regen: %d AppsL: %lu\r\n", ADCState.APPSL, ADCState.Regen);
-			UARTwrite(str);
+			UARTprintf("Anode1: TorqueR: %lu Regen: %d AppsL: %lu\r\n", ADCState.APPSL, ADCState.Regen);
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode9Bit ) )
 		{
-			sprintf(str, "Anode9: ");
-			UARTwrite(str);
+			UARTprintf("Anode9: ");
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode10Bit ) )
 		{
-			sprintf(str, "Anode10: ");
-			UARTwrite(str);
+			UARTprintf("Anode10: ");
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode11Bit ) )
 		{
-			sprintf(str, "Anode11: ");
-			UARTwrite(str);
+			UARTprintf("Anode11: ");
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode12Bit ) )
 		{
-			sprintf(str, "Anode12: ");
-			UARTwrite(str);
+			UARTprintf("Anode12: ");
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode13Bit ) )
 		{
-			sprintf(str, "Anode13: ");
-			UARTwrite(str);
+			UARTprintf("Anode13: ");
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode14Bit ) )
 		{
-			sprintf(str, "Anode14: ");
-			UARTwrite(str);
+			UARTprintf("Anode14: ");
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode15Bit ) )
 		{
-			sprintf(str, "Anode15: ");
-			UARTwrite(str);
+			UARTprintf("Anode15: ");
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode16Bit ) )
 		{
-			sprintf(str, "Anode16: ");
-			UARTwrite(str);
+			UARTprintf("Anode16: ");
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode17Bit ) )
 		{
-			sprintf(str, "Anode17: ");
-			UARTwrite(str);
+			UARTprintf("Anode17: ");
 		}
-#endif
-
 	}
 }
 

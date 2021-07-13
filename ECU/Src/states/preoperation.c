@@ -21,6 +21,7 @@
 #include "inverter.h"
 #include "powernode.h"
 #include "timerecu.h"
+#include "debug.h"
 
 //#define PRINTDEBUGRUNNING
 
@@ -198,18 +199,22 @@ int PreOperationState( uint32_t OperationLoops  )
 
 			strcpy(str, "Wait:");
 
+			char * nodewait = "";
+
 #ifdef POWERNODES
-			if ( getPNodeWait() != NULL )
+			nodewait = getPNodeWait();
+			if ( nodewait[0] != 0)
 			{
-				sprintf(&str[strlen(str)],"P%s ", getPNodeWait() );
+				sprintf(&str[strlen(str)],"P%s ", nodewait );
 			}
 #endif
 
 #ifdef ANALOGNODES
 
-			if ( getADCWait() != NULL )
+			nodewait = getADCWait();
+			if ( nodewait[0] != 0)
 			{
-				sprintf(&str[strlen(str)],"A%s ", getADCWait() );
+				sprintf(&str[strlen(str)],"A%s ", nodewait );
 			}
 #endif
 
@@ -288,7 +293,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	{
 		if ( CheckButtonPressed(Config_Input) )
 		{
-			UARTprintf("Enter Config\r\n");
+			DebugPrintf("Enter Config\r\n");
 			ConfigInput( 0xFFFF );
 		}
 
@@ -327,7 +332,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		if ( CheckButtonPressed(Config_Input) )
 		{
-			UARTprintf("Enter\r\n");
+			DebugPrintf("Enter\r\n");
 			ConfigInput( KEY_ENTER );
 		}
 

@@ -16,6 +16,7 @@
 #include "analognode.h"
 #include <limits.h>
 #include "taskpriorities.h"
+#include "timerecu.h"
 
 #define UINTOFFSET	360
 
@@ -72,21 +73,26 @@ SemaphoreHandle_t xADC3 = NULL;
 
 #endif
 
+SemaphoreHandle_t waitStr = NULL;
+
 char ADCWaitStr[20] = "";
 
 char * getADCWait( void)
 {
-	// TODO add a mutex
-	if ( ADCWaitStr[0] == 0 ) return NULL;
-	else return ADCWaitStr;
+	static char ADCWaitStrRet[20] = "";
+	xSemaphoreTake(waitStr, portMAX_DELAY);
+	strcpy(ADCWaitStrRet, ADCWaitStr);
+	xSemaphoreGive(waitStr);
+	return ADCWaitStr;
 }
 
+uint32_t curanaloguenodesOnline = 0;
 uint32_t analoguenodesOnline = 0;
 uint32_t lastanaloguenodesOnline = 0;
 
 uint32_t getAnalogueNodesOnline( void )
 {
-	return analoguenodesOnline;
+	return curanaloguenodesOnline;
 }
 
 // Task shall monitor analogue node timeouts, and read data from local ADC/PWM to get all analogue values ready for main loop.
@@ -102,6 +108,8 @@ void ADCTask(void *argument)
 #endif
 
 	DeviceState.ADC = OPERATIONAL;
+
+	DeviceState.Sensors = OFFLINE; // not seen anything yet, so assume offline.
 
 	uint32_t count = 0;
 
@@ -154,23 +162,31 @@ void ADCTask(void *argument)
 
 	    ADCState.SteeringAngle = getSteeringAnglePWM();
 
+	    xSemaphoreTake(waitStr, portMAX_DELAY);
 		ADCWaitStr[0] = 0;
-
 		if ( analoguenodesOnline == ANodeAllBit ) // all expecter power nodes reported in. // TODO automate
 		{
 			DeviceState.Sensors = OPERATIONAL;
 			ADCWaitStr[0] = 0;
+			curanaloguenodesOnline = analoguenodesOnline;
 			lastseenall = gettimer();
-		} else
+		} else if ( gettimer() - lastseenall > NODETIMEOUT && DeviceState.Sensors > OFFLINE)
 		{
-			if ( gettimer() - lastseenall > NODETIMEOUT && DeviceState.Sensors > OFFLINE)
-			{
-				DeviceState.Sensors = INERROR; // haven't seen all needed.
-				setAnalogNodesStr( analoguenodesOnline );
-				strcpy(ADCWaitStr, getAnalogNodesStr());
-				DebugMsg("Analogue node timeout");
-			}
+			if ( analoguenodesOnline == 0 )
+				DeviceState.Sensors = OFFLINE; // can't see any nodes, so offline.
+			else
+				DeviceState.Sensors = INERROR; // haven't seen all needed, so in error.
+			setAnalogNodesStr( analoguenodesOnline );
+			strcpy(ADCWaitStr, getAnalogNodesStr());
+			DebugMsg("Analogue node timeout");
+			// update the currently available nodes
+			curanaloguenodesOnline = analoguenodesOnline;
+		} else if ( DeviceState.Sensors == OFFLINE )
+		{
+			strcpy(ADCWaitStr, "Offline");
 		}
+
+		xSemaphoreGive(waitStr);
 
 		if ( analoguenodesOnline == AnodeCriticalBit )
 		{
@@ -957,6 +973,9 @@ int initADC( void )
 		DeviceState.ADC = OPERATIONAL;
 	} else return 99;
 #endif
+
+
+	waitStr = xSemaphoreCreateMutex();
 
 	ADCTaskHandle = xTaskCreateStatic(
 	                      ADCTask,

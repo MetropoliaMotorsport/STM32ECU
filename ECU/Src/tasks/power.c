@@ -53,9 +53,8 @@ char PNodeWaitStr[20] = "";
 
 char * getPNodeWait( void)
 {
+	return PNodeWaitStr;
 	// TODO add a mutex
-	if ( PNodeWaitStr[0] == 0 ) return NULL;
-	else return PNodeWaitStr;
 }
 
 void PowerTask(void *argument)

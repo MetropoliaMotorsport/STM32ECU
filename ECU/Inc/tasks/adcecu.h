@@ -87,6 +87,45 @@ volatile struct  {
 	uint16_t APPSR;
 	uint16_t Regen;
 
+	// node sensor data.
+	int OilTemp1;
+	int OilTemp2;
+	int OilTemp3;
+	int OilTemp4;
+
+	int Susp1;
+	int susp2;
+	int Susp3;
+	int susp4;
+
+	int WaterTemp1;
+	int WaterTemp2;
+	int WaterTemp3;
+	int WaterTemp4;
+	int WaterTemp5;
+	int WaterTemp6;
+
+	uint16_t BrakeTemp1;
+	uint16_t BrakeTemp2;
+	uint16_t BrakeTemp3;
+	uint16_t BrakeTemp4;
+
+	int TireTemp1;
+	int TireTemp2;
+	int TireTemp3;
+
+	int TireTemp4;
+	int TireTemp5;
+	int TireTemp6;
+
+	int TireTemp7;
+	int TireTemp8;
+	int TireTemp9;
+
+	int TireTemp10;
+	int TireTemp11;
+	int TireTemp12;
+
 	uint8_t DrivingMode;
 } ADCState;
 
@@ -176,6 +215,7 @@ int initCANADC( void );
 uint32_t CheckADCSanity( void );
 
 char * getADCWait( void);
+uint32_t getAnalogueNodesOnline( void );
 
 int initADC( void );
 

@@ -52,32 +52,6 @@ CANData  AnalogNode17 = { &DeviceState.AnalogNode17, AnalogNode17_ID, 3, process
 CANData  AnalogNode18 = { &DeviceState.AnalogNode18, AnalogNode18_ID, 3, processANode18Data, NULL, NODETIMEOUT };
 
 
-struct anodedata {
-	int BrakeTemp1;
-	int OilTemp1;
-	int WaterTemp1;
-
-	int Susp1;
-	int susp2;
-
-	int OilTemp2;
-	int WaterTemp2;
-
-	uint16_t BrakeTemp2;
-
-	int Susp3;
-	int susp4;
-
-	uint16_t BrakeTemp3;
-	uint16_t BrakeTemp4;
-	int OilTemp3;
-	int OilTemp4;
-
-	int TireTemp1;
-	int TireTemp2;
-	int TireTemp3;
-};
-
 void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to safe defaults if not received.
 {
 	ADCState.Torque_Req_L_Percent=0;
@@ -122,9 +96,9 @@ bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode9Bit ), eSetBits);
 
-	int BrakeTemp1 = getBEint16(&CANRxData[0]);
-	int OilTemp1 = CANRxData[2];
-	int WaterTemp1 = CANRxData[3];
+	ADCState.BrakeTemp1 = getBEint16(&CANRxData[0]);
+	ADCState.OilTemp1 = CANRxData[2];
+	ADCState.WaterTemp1 = CANRxData[3];
 
 	return true;
 }
@@ -134,11 +108,11 @@ bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode10Bit ), eSetBits);
 
-	int Susp1 = getBEint16(&CANRxData[0]);
-	int susp2 = getBEint16(&CANRxData[4]);
+	ADCState.Susp1 = getBEint16(&CANRxData[0]);
+	ADCState.susp2 = getBEint16(&CANRxData[4]);
 
-	int OilTemp2 = CANRxData[1];
-	int WaterTemp2 = CANRxData[2];
+	ADCState.OilTemp2 = CANRxData[1];
+	ADCState.WaterTemp2 = CANRxData[2];
 
 	return true;
 }
@@ -146,7 +120,7 @@ bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	uint16_t BrakeTemp2 = getBEint16(&CANRxData[0]);
+	ADCState.BrakeTemp2 = getBEint16(&CANRxData[0]);
 
 	uint16_t BrakeF = getBEint16(&CANRxData[2]);
 	uint16_t BrakeR = getBEint16(&CANRxData[6]);
@@ -187,10 +161,10 @@ bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode12Bit ), eSetBits);
 
-	int WaterTemp3 = CANRxData[0];
-	int WaterTemp4 = CANRxData[1];
-	int WaterTemp5 = CANRxData[2];
-	int WaterTemp6 = CANRxData[3];
+	ADCState.WaterTemp3 = CANRxData[0];
+	ADCState.WaterTemp4 = CANRxData[1];
+	ADCState.WaterTemp5 = CANRxData[2];
+	ADCState.WaterTemp6 = CANRxData[3];
 
 	return true;
 }
@@ -200,8 +174,8 @@ bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode13Bit ), eSetBits);
 
-	int Susp3 = getBEint16(&CANRxData[0]);
-	int susp4 = getBEint16(&CANRxData[2]);
+	ADCState.Susp3 = getBEint16(&CANRxData[0]);
+	ADCState.susp4 = getBEint16(&CANRxData[2]);
 
 	return true;
 }
@@ -210,10 +184,10 @@ bool processANode14Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode14Bit ), eSetBits);
 
-	uint16_t BrakeTemp3 = getBEint16(&CANRxData[0]);
-	uint16_t BrakeTemp4 = getBEint16(&CANRxData[2]);
-	int OilTemp3 = CANRxData[3];
-	int OilTemp4 = CANRxData[4];
+	ADCState.BrakeTemp3 = getBEint16(&CANRxData[0]);
+	ADCState.BrakeTemp4 = getBEint16(&CANRxData[2]);
+	ADCState.OilTemp3 = CANRxData[3];
+	ADCState.OilTemp4 = CANRxData[4];
 
 	return true;
 }
@@ -222,9 +196,9 @@ bool processANode15Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode15Bit ), eSetBits);
 
-	int TireTemp1 = CANRxData[0];
-	int TireTemp2 = CANRxData[1];
-	int TireTemp3 = CANRxData[2];
+	ADCState.TireTemp1 = CANRxData[0];
+	ADCState.TireTemp2 = CANRxData[1];
+	ADCState.TireTemp3 = CANRxData[2];
 
 	return true;
 }
@@ -233,9 +207,9 @@ bool processANode16Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode16Bit ), eSetBits);
 
-	int TireTemp4 = CANRxData[0];
-	int TireTemp5 = CANRxData[1];
-	int TireTemp6 = CANRxData[2];
+	ADCState.TireTemp4 = CANRxData[0];
+	ADCState.TireTemp5 = CANRxData[1];
+	ADCState.TireTemp6 = CANRxData[2];
 
 	return true;
 }
@@ -244,9 +218,9 @@ bool processANode17Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode17Bit ), eSetBits);
 
-	int TireTemp7 = CANRxData[0];
-	int TireTemp8 = CANRxData[1];
-	int TireTemp9 = CANRxData[2];
+	ADCState.TireTemp7 = CANRxData[0];
+	ADCState.TireTemp8 = CANRxData[1];
+	ADCState.TireTemp9 = CANRxData[2];
 
 	return true;
 }
@@ -255,9 +229,9 @@ bool processANode18Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 {
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode18Bit ), eSetBits);
 
-	int TireTemp10 = CANRxData[0];
-	int TireTemp11 = CANRxData[1];
-	int TireTemp12 = CANRxData[2];
+	ADCState.TireTemp10 = CANRxData[0];
+	ADCState.TireTemp11 = CANRxData[1];
+	ADCState.TireTemp12 = CANRxData[2];
 
 	return true;
 }
