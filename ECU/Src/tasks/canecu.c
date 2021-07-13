@@ -155,7 +155,7 @@ void CANTxTask(void *argument)
 		.MessageMarker = 0
 	};
 
-	FDCAN_HandleTypeDef * hfdcanp = &hfdcan1;;
+	FDCAN_HandleTypeDef * hfdcanp = &hfdcan1;
 
 	volatile uint32_t * pCANSendError = &Errors.CANSendError1;
 
@@ -166,6 +166,13 @@ void CANTxTask(void *argument)
 	portTickType cycletick = xTaskGetTickCount();
 
 	portTickType waittick = CYCLETIME;
+
+	TxHeader.Identifier = 0x20; // decide on an ECU ID/
+	TxHeader.DataLength = 8 << 16; // only two bytes defined in send protocol, check this
+	memset(msg.data, 0, 8);
+
+	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, msg.data);
+	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader, msg.data);
 
 	while( 1 )
 	{
