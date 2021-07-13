@@ -37,6 +37,8 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
+#define VERSION "10063"
+
 #define DEBUGUART    UART2
 
 #define DEBUGSTACK_SIZE 128*8
@@ -1028,7 +1030,7 @@ static void DebugTask(void *pvParameters)
 {
 	uint8_t charcount = 0;
 
-	UARTwrite("\r\nBooting ECU b10061...\r\n\r\n");
+	UARTwrite("\r\nBooting ECU "VERSION"...\r\n\r\n");
 
 	redraw = false;
 
@@ -1071,15 +1073,16 @@ static void DebugTask(void *pvParameters)
 			continue; // nothing to do this loop, return to start.
 		}
 
-		if ( read == 8 )
+		if ( read == 8 || read == 127)
 		{
 			if ( charcount > 0 )
 			{
-				str[charcount] = 0;
 				--charcount;
-				UARTwritech(read);
+				str[charcount] = 0;
+				str[charcount+1] = 0;
+				UARTwritech(8);
 				UARTwritech(' ');
-				UARTwritech(read);
+				UARTwritech(8);
 			}
 		} else
 		if ( !( read == '\n' || read == '\r') )

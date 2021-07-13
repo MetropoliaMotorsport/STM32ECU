@@ -32,7 +32,7 @@ FDCAN_HandleTypeDef * hfdcan2p = NULL;
 
 int cancount;
 
-SemaphoreHandle_t CANBufferUpdating;
+SemaphoreHandle_t CANBufferUpdating, bus0TXDone, bus1TXDone;
 
 #define CANTXSTACK_SIZE 128*8
 #define CANTXTASKNAME  "CANTxTask"
@@ -205,23 +205,65 @@ void CANTxTask(void *argument)
 				pCANSendError = &Errors.CANSendError2;
 			}
 
-			TxHeader.Identifier = msg.id; // decide on an ECU ID/
-			TxHeader.DataLength = msg.dlc << 16; // only two bytes defined in send protocol, check this
+			FDCAN_ProtocolStatusTypeDef CANStatus;
 
+			HAL_FDCAN_GetProtocolStatus(hfdcanp, &CANStatus);
 
-			if ( HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) < 1 )
+			if ( !CANStatus.ErrorPassive ) // no point in trying to send if error passive.
 			{
-				DebugMsg("CAN Tx Buffer full");
-				vTaskDelay(1);
-			}
+				TxHeader.Identifier = msg.id; // decide on an ECU ID/
+				TxHeader.DataLength = msg.dlc << 16; // only two bytes defined in send protocol, check this
 
-			{
-				if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcanp, &TxHeader, msg.data) != HAL_OK)
+
+				if ( HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) == 0 )
 				{
-					DebugPrintf("CAN Tx Send Err code: %d",  hfdcanp->ErrorCode);
-					if ( pCANSendError != NULL )
-						(*pCANSendError)++;
+					DebugMsg("CAN Tx Buffer full, waiting for buffer empty.");
+
+					bool gotsem = false;
+
+					if ( msg.bus == bus1 )
+					{
+						gotsem = xSemaphoreTake(bus1TXDone, 10); // a bit of timeout so can't get permanently stuck here.
+					}
+					else
+					{
+						gotsem = xSemaphoreTake(bus0TXDone, 10);
+					}
+
+					if ( !gotsem )
+					{
+						DebugMsg("Buffer empty wait failed.");
+					}
 				}
+
+				if ( HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) != 0 )
+					if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcanp, &TxHeader, msg.data) != HAL_OK)
+					{
+						DebugPrintf("CAN Tx Send Err code: %d",  hfdcanp->ErrorCode);
+						if ( pCANSendError != NULL )
+							(*pCANSendError)++;
+					}
+			} else
+			{
+				if ( msg.bus == bus1)
+				{
+					static bool busnotact = false;
+					if ( !busnotact )
+					{
+						DebugPrintf("CAN Tx Bus1 Not actively transmitting.");
+						busnotact = true;
+					}
+				}
+				else if ( msg.bus == bus0)
+				{
+					static bool busnotact = false;
+					if ( !busnotact )
+					{
+						DebugPrintf("CAN Tx Bus0 Not actively transmitting.");
+						busnotact = true;
+					}
+				}
+
 			}
 		}
 	}
@@ -404,7 +446,7 @@ void FDCAN1_start(void)
   }
 
   // start can receive interrupt for CAN1
-  if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
+  if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_FLAG_ERROR_PASSIVE | FDCAN_IT_TIMEOUT_OCCURRED | FDCAN_IT_TX_COMPLETE | FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
   {
     // Notification Error
     Error_Handler();
@@ -417,7 +459,7 @@ void FDCAN2_start(void)
 #ifdef ONECAN
   hfdcan2p = &hfdcan1;
 #else
-  HAL_FDCAN_ConfigGlobalFilter(hfdcan2p, FDCAN_ACCEPT_IN_RX_FIFO1, FDCAN_ACCEPT_IN_RX_FIFO1, DISABLE, DISABLE);
+  HAL_FDCAN_ConfigGlobalFilter(hfdcan2p, FDCAN_IT_TIMEOUT_OCCURRED | FDCAN_ACCEPT_IN_RX_FIFO1, FDCAN_ACCEPT_IN_RX_FIFO1, DISABLE, DISABLE);
   HAL_FDCAN_ConfigRxFifoOverwrite(hfdcan2p, FDCAN_RX_FIFO1, FDCAN_RX_FIFO_OVERWRITE);
 #endif
 
@@ -431,7 +473,7 @@ void FDCAN2_start(void)
 
   // start can receive interrupt for first CAN's messages
 
-  if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE , 0) != HAL_OK)
+  if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_FLAG_ERROR_PASSIVE | FDCAN_IT_TIMEOUT_OCCURRED | FDCAN_IT_TX_COMPLETE | FDCAN_IT_RX_FIFO0_NEW_MESSAGE , 0) != HAL_OK)
   {
     // Notification Error
     Error_Handler();
@@ -447,7 +489,7 @@ void FDCAN2_start(void)
 
   // start can receive interrupt for second can's messages
 
-  if (HAL_FDCAN_ActivateNotification(hfdcan2p, FDCAN_IT_RX_FIFO1_NEW_MESSAGE , 0) != HAL_OK)
+  if (HAL_FDCAN_ActivateNotification(hfdcan2p, FDCAN_FLAG_ERROR_PASSIVE | FDCAN_IT_TX_COMPLETE | FDCAN_IT_RX_FIFO1_NEW_MESSAGE , 0) != HAL_OK)
   {
     // Notification Error
     Error_Handler();
@@ -489,14 +531,14 @@ uint8_t CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 	{
 		if ( !xQueueSendFromISR( CANTxQueue, ( void * ) &msg, NULL ) )
 		{
-			DebugMsg("failed to add canmsg to queue!");
+			DebugMsg("failed to add canmsg to bus1 queue!");
 		}
 	}
 	else
 	{
 		if ( !xQueueSend( CANTxQueue, ( void * ) &msg, ( TickType_t ) 0 ) )
 		{
-			DebugMsg("failed to add canmsg to queue!");
+			DebugMsg("failed to add canmsg to bus1 queue!");
 		}
 	}
 	return 0;
@@ -516,14 +558,14 @@ uint8_t CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 	{
 		if ( !xQueueSendFromISR( CANTxQueue, ( void * ) &msg, NULL ) )
 		{
-			DebugMsg("failed to add canmsg to queue!");
+			DebugMsg("failed to add canmsg to bus0 queue!");
 		}
 	}
 	else
 	{
 		if ( !xQueueSend( CANTxQueue, ( void * ) &msg, ( TickType_t ) 0 ) )
 		{
-			DebugMsg("failed to add canmsg to queue!");
+			DebugMsg("failed to add canmsg to bus0 queue!");
 		}
 	}
 
@@ -1392,6 +1434,49 @@ void HAL_FDCAN_ErrorCallback(FDCAN_HandleTypeDef *canp) {
 }
 
 
+void HAL_FDCAN_TimeoutOccurredCallback(FDCAN_HandleTypeDef *hfdcan)
+{
+	DebugMsg("CanTX Timeout");
+
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	if(hfdcan->Instance == FDCAN1){
+		xSemaphoreGiveFromISR(bus1TXDone, &xHigherPriorityTaskWoken);
+	} else if(hfdcan->Instance == FDCAN2) {
+		xSemaphoreGiveFromISR(bus0TXDone, &xHigherPriorityTaskWoken);
+	}
+
+	if ( xHigherPriorityTaskWoken )
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+}
+
+void HAL_FDCAN_TxFifoEmptyCallback(FDCAN_HandleTypeDef *hfdcan)
+{
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	if(hfdcan->Instance == FDCAN1){
+		xSemaphoreGiveFromISR(bus1TXDone, &xHigherPriorityTaskWoken);
+	} else if(hfdcan->Instance == FDCAN2) {
+		xSemaphoreGiveFromISR(bus0TXDone, &xHigherPriorityTaskWoken);
+	}
+
+	if ( xHigherPriorityTaskWoken )
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+
+void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t ErrorStatusITs)
+{
+	if(hfdcan->Instance == FDCAN1){
+		DebugPrintf("Can ErrorStatus bus1 %4x", ErrorStatusITs);
+	} else if(hfdcan->Instance == FDCAN2) {
+
+		DebugPrintf("Can ErrorStatus bus2 %4x", ErrorStatusITs);
+	}
+}
+
+
 int CheckCanError( void )
 {
 	int result = 0;
@@ -1522,6 +1607,8 @@ int initCAN( void )
 	resetCAN();
 
 	CANBufferUpdating = xSemaphoreCreateMutex();
+	bus0TXDone = xSemaphoreCreateMutex();
+	bus1TXDone = xSemaphoreCreateMutex();
 
 	MX_FDCAN1_Init();
 #ifndef ONECAN
