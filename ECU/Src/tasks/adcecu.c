@@ -171,7 +171,7 @@ void ADCTask(void *argument)
 			ADCWaitStr[0] = 0;
 			curanaloguenodesOnline = analoguenodesOnline;
 			lastseenall = gettimer();
-		} else if ( gettimer() - lastseenall > NODETIMEOUT && DeviceState.Sensors > OFFLINE)
+		} else if ( gettimer() - lastseenall > NODETIMEOUT && DeviceState.Sensors != OFFLINE )
 		{
 			if ( analoguenodesOnline == 0 )
 				DeviceState.Sensors = OFFLINE; // can't see any nodes, so offline.

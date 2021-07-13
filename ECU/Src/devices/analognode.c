@@ -42,7 +42,7 @@ void ANodeCritTimeout( uint16_t id );
 CANData  AnalogNode1 =  { &DeviceState.AnalogNode1, AnalogNode1_ID, 6, processANode1Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
 CANData  AnalogNode9 =  { &DeviceState.AnalogNode9, AnalogNode9_ID, 4, processANode9Data, NULL, NODETIMEOUT };
 CANData  AnalogNode10 = { &DeviceState.AnalogNode10, AnalogNode10_ID, 6, processANode10Data, NULL, NODETIMEOUT };
-CANData  AnalogNode11=  { &DeviceState.AnalogNode11, AnalogNode11_ID, 8, processANode11Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
+CANData  AnalogNode11 = { &DeviceState.AnalogNode11, AnalogNode11_ID, 8, processANode11Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
 CANData  AnalogNode12 = { &DeviceState.AnalogNode12, AnalogNode12_ID, 4, processANode12Data, NULL, NODETIMEOUT };
 CANData  AnalogNode13 = { &DeviceState.AnalogNode13, AnalogNode13_ID, 4, processANode13Data, NULL, NODETIMEOUT };
 CANData  AnalogNode14 = { &DeviceState.AnalogNode14, AnalogNode14_ID, 6, processANode14Data, NULL, NODETIMEOUT };

@@ -38,7 +38,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10066"
+#define VERSION "10067"
 
 #define DEBUGUART    UART2
 
@@ -654,102 +654,129 @@ static void debugShutdown( const char *tkn2, const char *tkn3 )
 	}
 }
 
+extern CANData  AnalogNode1;
+extern CANData  AnalogNode9;
+extern CANData  AnalogNode10;
+extern CANData  AnalogNode11;
+extern CANData  AnalogNode12;
+extern CANData  AnalogNode13;
+extern CANData  AnalogNode14;
+extern CANData  AnalogNode15;
+extern CANData  AnalogNode16;
+extern CANData  AnalogNode17;
+extern CANData  AnalogNode18;
+
+
 static void debugSensors( const char *tkn2 )
 {
 	{
 		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline();
 
-		UARTprintf("Current Analog nodes not seen[%s] ( %4X ):\r\n", getADCWait(), AnalogueNodesOnline);
+		bool force = true;
+
+		UARTprintf("Current Analog nodes not seen[%s] ( %4X ) at (%lu):\r\n", getADCWait(), AnalogueNodesOnline, gettimer());
 
 		// anode 1
-		if ( AnalogueNodesOnline & ( 0x1 << ANode1Bit ) )
+		if ( force || AnalogueNodesOnline & ( 0x1 << ANode1Bit ) )
 		{
-			UARTprintf("Anode1: TorqueR %lu   Regen %d   AppsL %lu\r\n",
+			UARTprintf("Anode1: TorqueR %lu   Regen %d   AppsL %lu   Last at (%lu)\r\n",
 					ADCState.APPSL,
-					ADCState.Regen);
+					ADCState.Regen,
+					AnalogNode1.time);
 		}
 
-		if ( AnalogueNodesOnline & ( 0x1 << ANode9Bit ) )
+		if ( force || AnalogueNodesOnline & ( 0x1 << ANode9Bit ) )
 		{
-			UARTprintf("Anode9: BrakeTemp1 %dc   OilTemp1 %dc   WaterTemp1 %dc\r\n",
+			UARTprintf("Anode9: BrakeTemp1 %dc   OilTemp1 %dc   WaterTemp1 %dc   Last at (%lu)\r\n",
 					ADCState.BrakeTemp1,
 					ADCState.OilTemp1,
-					ADCState.WaterTemp1 );
+					ADCState.WaterTemp1,
+					AnalogNode9.time);
 		}
 
-		if ( AnalogueNodesOnline & ( 0x1 << ANode10Bit ) )
+		if ( force || AnalogueNodesOnline & ( 0x1 << ANode10Bit ) )
 		{
-			UARTprintf("Anode10: Susp1: %lu Susp2: %lu OilTemp2: %dc   WaterTempe2 %dc\r\n",
+			UARTprintf("Anode10: Susp1: %lu Susp2: %lu OilTemp2: %dc   WaterTempe2 %dc   Last at (%lu)\r\n",
 					ADCState.Susp1,
 					ADCState.susp2,
 					ADCState.OilTemp2,
-					ADCState.WaterTemp2 );
+					ADCState.WaterTemp2,
+					AnalogNode10.time);
 		}
 
-		if ( AnalogueNodesOnline & ( 0x1 << ANode11Bit ) )
+		if ( force || AnalogueNodesOnline & ( 0x1 << ANode11Bit ) )
 		{
-			UARTprintf("Anode11: BrakeF Pres %dPa   BrakeF Pres %dPa   Torque Req R %3d%% (raw:%lu)\r\n",
+			UARTprintf("Anode11: BrakeF Pres %dPa   BrakeF Pres %dPa   Torque Req R %3d%% (raw:%lu)   Last at (%lu)\r\n",
 			        ADCState.BrakeF,
 			        ADCState.BrakeR,
 			        ADCState.Torque_Req_R_Percent,
-					ADCState.APPSR );
+					ADCState.APPSR,
+					AnalogNode11.time);
 		}
 
-		if ( AnalogueNodesOnline & ( 0x1 << ANode12Bit ) )
+		if ( force || AnalogueNodesOnline & ( 0x1 << ANode12Bit ) )
 		{
-			UARTprintf("Anode12: WaterTemps 3-6 %dc   %dc   %dc   %dc\r\n",
+			UARTprintf("Anode12: WaterTemps 3-6 %dc   %dc   %dc   %dc   Last at (%lu)\r\n",
 					ADCState.WaterTemp3,
 					ADCState.WaterTemp4,
 					ADCState.WaterTemp5,
-					ADCState.WaterTemp6 );
+					ADCState.WaterTemp6,
+					AnalogNode12.time );
 		}
 
-		if ( AnalogueNodesOnline & ( 0x1 << ANode13Bit ) )
+		if ( force || AnalogueNodesOnline & ( 0x1 << ANode13Bit ) )
 		{
-			UARTprintf("Anode13: Suspension 3-4 %lu   %lu\r\n",
+			UARTprintf("Anode13: Suspension 3-4 %lu   %lu   Last at (%lu)\r\n",
 					ADCState.Susp3,
-					ADCState.susp4);
+					ADCState.susp4,
+					AnalogNode13.time);
 		}
 
-		if ( AnalogueNodesOnline & ( 0x1 << ANode14Bit ) )
+		if ( force || AnalogueNodesOnline & ( 0x1 << ANode14Bit ) )
 		{
-			UARTprintf("Anode14: Brake Temps 3-4 %dc   %dc   Oil Temps 3-4 %dc   %dc\r\n",
+			UARTprintf("Anode14: Brake Temps 3-4 %dc   %dc   Oil Temps 3-4 %dc   %dc   Last at (%lu)\r\n",
 					ADCState.BrakeTemp3,
 					ADCState.BrakeTemp4,
 					ADCState.OilTemp3,
-					ADCState.OilTemp4);
+					ADCState.OilTemp4,
+					AnalogNode14.time
+					);
 		}
 
-		if ( AnalogueNodesOnline & ( 0x1 << ANode15Bit ) )
+		if ( force || AnalogueNodesOnline & ( 0x1 << ANode15Bit ) )
 		{
-			UARTprintf("Anode15: Tire Temps 1-3 %dc   %dc   %dc\r\n",
+			UARTprintf("Anode15: Tire Temps 1-3 %dc   %dc   %dc   Last at (%lu)\r\n",
 					ADCState.TireTemp1,
 					ADCState.TireTemp2,
-					ADCState.TireTemp3);
+					ADCState.TireTemp3,
+					AnalogNode15.time);
 		}
 
-		if ( AnalogueNodesOnline & ( 0x1 << ANode16Bit ) )
+		if ( force || AnalogueNodesOnline & ( 0x1 << ANode16Bit ) )
 		{
-			UARTprintf("Anode16: Tire Temps 4-6 %dc   %dc   %dc\r\n",
+			UARTprintf("Anode16: Tire Temps 4-6 %dc   %dc   %dc   Last at (%lu)\r\n",
 					ADCState.TireTemp4,
 					ADCState.TireTemp5,
-					ADCState.TireTemp6);
+					ADCState.TireTemp6,
+					AnalogNode16.time);
 		}
 
-		if ( AnalogueNodesOnline & ( 0x1 << ANode17Bit ) )
+		if ( force || AnalogueNodesOnline & ( 0x1 << ANode17Bit ) )
 		{
-			UARTprintf("Anode17: Tire Temps 7-9 %dc   %dc   %dc\r\n",
+			UARTprintf("Anode17: Tire Temps 7-9 %dc   %dc   %dc   Last at (%lu)\r\n",
 					ADCState.TireTemp7,
 					ADCState.TireTemp8,
-					ADCState.TireTemp9);
+					ADCState.TireTemp9,
+					AnalogNode17.time);
 		}
 
-		if ( AnalogueNodesOnline & ( 0x1 << ANode17Bit ) )
+		if ( force || AnalogueNodesOnline & ( 0x1 << ANode18Bit ) )
 		{
-			UARTprintf("Anode18: Tire Temps 10-12 %dc   %dc   %dc\r\n",
+			UARTprintf("Anode18: Tire Temps 10-12 %dc   %dc   %dc   Last at (%lu)\r\n",
 					ADCState.TireTemp10,
 					ADCState.TireTemp11,
-					ADCState.TireTemp12);
+					ADCState.TireTemp12,
+					AnalogNode18.time);
 		}
 	}
 }
