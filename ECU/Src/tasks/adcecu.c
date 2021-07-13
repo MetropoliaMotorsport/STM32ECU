@@ -164,6 +164,7 @@ void ADCTask(void *argument)
 
 	    xSemaphoreTake(waitStr, portMAX_DELAY);
 		ADCWaitStr[0] = 0;
+
 		if ( analoguenodesOnline == ANodeAllBit ) // all expecter power nodes reported in. // TODO automate
 		{
 			DeviceState.Sensors = OPERATIONAL;
@@ -183,7 +184,11 @@ void ADCTask(void *argument)
 			curanaloguenodesOnline = analoguenodesOnline;
 		} else if ( DeviceState.Sensors == OFFLINE )
 		{
-			strcpy(ADCWaitStr, "Offline");
+			if ( analoguenodesOnline == 0 )
+				DeviceState.Sensors = OFFLINE; // can't see any nodes, so offline.
+			else
+				DeviceState.Sensors = INERROR; // haven't seen all needed, so in error.
+			curanaloguenodesOnline = analoguenodesOnline;
 		}
 
 		xSemaphoreGive(waitStr);

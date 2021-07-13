@@ -38,7 +38,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10065"
+#define VERSION "10066"
 
 #define DEBUGUART    UART2
 
@@ -326,19 +326,13 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 			return;
 		}
 
-#if 0
 		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline() ;
 		// anode 1
-		if ( AnalogueNodesOnline & ( 0x1 << ANode1Bit ) )
+		if ( ! (AnalogueNodesOnline & ( 0x1 << ANode11Bit ) ) )
 		{
-			sprintf(str, "Anode1: TorqueR: %lu Regen: %d AppsL: %lu\r\n", ADCState.APPSL, ADCState.Regen);
-			UARTwrite(str);
+			UARTwrite("No pedal data from Analogue Node 11.\r\n");
+			return;
 		}
-#endif
-
-		// check if analogue nodes online
-
-//		ANode1Bit
 
 		UARTwrite("Setting inverters operational.\r\n");
 
@@ -546,7 +540,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 	{
 		if ( value1 >= 0 && value1 < 16000 )
 		{
-			UARTwrite("Setting maxRPM\iger\n");
+			UARTwrite("Setting maxRPM\r\n");
 			getEEPROMBlock(0)->maxRpm = value1;
 			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
 			{
@@ -665,57 +659,97 @@ static void debugSensors( const char *tkn2 )
 	{
 		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline();
 
-		UARTprintf("Current Analog nodes not seen[%s]:\r\n", getADCWait());
+		UARTprintf("Current Analog nodes not seen[%s] ( %4X ):\r\n", getADCWait(), AnalogueNodesOnline);
 
 		// anode 1
 		if ( AnalogueNodesOnline & ( 0x1 << ANode1Bit ) )
 		{
-			UARTprintf("Anode1: TorqueR: %lu Regen: %d AppsL: %lu\r\n", ADCState.APPSL, ADCState.Regen);
+			UARTprintf("Anode1: TorqueR %lu   Regen %d   AppsL %lu\r\n",
+					ADCState.APPSL,
+					ADCState.Regen);
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode9Bit ) )
 		{
-			UARTprintf("Anode9: ");
+			UARTprintf("Anode9: BrakeTemp1 %dc   OilTemp1 %dc   WaterTemp1 %dc\r\n",
+					ADCState.BrakeTemp1,
+					ADCState.OilTemp1,
+					ADCState.WaterTemp1 );
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode10Bit ) )
 		{
-			UARTprintf("Anode10: ");
+			UARTprintf("Anode10: Susp1: %lu Susp2: %lu OilTemp2: %dc   WaterTempe2 %dc\r\n",
+					ADCState.Susp1,
+					ADCState.susp2,
+					ADCState.OilTemp2,
+					ADCState.WaterTemp2 );
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode11Bit ) )
 		{
-			UARTprintf("Anode11: ");
+			UARTprintf("Anode11: BrakeF Pres %dPa   BrakeF Pres %dPa   Torque Req R %3d%% (raw:%lu)\r\n",
+			        ADCState.BrakeF,
+			        ADCState.BrakeR,
+			        ADCState.Torque_Req_R_Percent,
+					ADCState.APPSR );
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode12Bit ) )
 		{
-			UARTprintf("Anode12: ");
+			UARTprintf("Anode12: WaterTemps 3-6 %dc   %dc   %dc   %dc\r\n",
+					ADCState.WaterTemp3,
+					ADCState.WaterTemp4,
+					ADCState.WaterTemp5,
+					ADCState.WaterTemp6 );
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode13Bit ) )
 		{
-			UARTprintf("Anode13: ");
+			UARTprintf("Anode13: Suspension 3-4 %lu   %lu\r\n",
+					ADCState.Susp3,
+					ADCState.susp4);
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode14Bit ) )
 		{
-			UARTprintf("Anode14: ");
+			UARTprintf("Anode14: Brake Temps 3-4 %dc   %dc   Oil Temps 3-4 %dc   %dc\r\n",
+					ADCState.BrakeTemp3,
+					ADCState.BrakeTemp4,
+					ADCState.OilTemp3,
+					ADCState.OilTemp4);
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode15Bit ) )
 		{
-			UARTprintf("Anode15: ");
+			UARTprintf("Anode15: Tire Temps 1-3 %dc   %dc   %dc\r\n",
+					ADCState.TireTemp1,
+					ADCState.TireTemp2,
+					ADCState.TireTemp3);
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode16Bit ) )
 		{
-			UARTprintf("Anode16: ");
+			UARTprintf("Anode16: Tire Temps 4-6 %dc   %dc   %dc\r\n",
+					ADCState.TireTemp4,
+					ADCState.TireTemp5,
+					ADCState.TireTemp6);
 		}
 
 		if ( AnalogueNodesOnline & ( 0x1 << ANode17Bit ) )
 		{
-			UARTprintf("Anode17: ");
+			UARTprintf("Anode17: Tire Temps 7-9 %dc   %dc   %dc\r\n",
+					ADCState.TireTemp7,
+					ADCState.TireTemp8,
+					ADCState.TireTemp9);
+		}
+
+		if ( AnalogueNodesOnline & ( 0x1 << ANode17Bit ) )
+		{
+			UARTprintf("Anode18: Tire Temps 10-12 %dc   %dc   %dc\r\n",
+					ADCState.TireTemp10,
+					ADCState.TireTemp11,
+					ADCState.TireTemp12);
 		}
 	}
 }
