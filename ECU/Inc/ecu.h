@@ -357,6 +357,10 @@ typedef struct {
 	uint8_t Freq_IMD;
 	uint8_t DC_IMD;
 
+	bool AIRpsense;
+	bool AIRmsense;
+	bool PREsense;
+
 } CarStateType;
 
 typedef enum DeviceStatustype {

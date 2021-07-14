@@ -265,14 +265,35 @@ bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 
 bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-
 	if ( DataLength >> 16 == PowerNode37.dlcsize
-		&& CANRxData[0] <= 0b00011101 // max possible value. check for zeros in unused fields?
+		&& CANRxData[0] <= 0b00001101 // max possible value. check for zeros in unused fields?
 		&& CANRxData[1] < 100
 		&& ( CANRxData[2] >= 0 && CANRxData[2] <= 100 )
 		)
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode37Bit ), eSetBits);
+
+		newstate = CANRxData[0] & (0x1 << 0);
+		if ( CarState.AIRpsense != newstate )
+		{
+			DebugPrintf("AIR Plus sense state changed to %s", newstate?"Closed":"Open");
+			CarState.AIRpsense = newstate;
+		}
+
+		newstate = CANRxData[0] & (0x1 << 2);
+		if ( CarState.AIRmsense != newstate )
+		{
+			DebugPrintf("AIR Minus sense state changed to %s", newstate?"Closed":"Open");
+			CarState.AIRpsense = newstate;
+		}
+
+		newstate = CANRxData[0] & (0x1 << 3);
+		if ( CarState.AIRpsense != newstate )
+		{
+			DebugPrintf("PRE sense state changed to %s", newstate?"Closed":"Open");
+			CarState.AIRpsense = newstate;
+		}
+
 //		CarState.??? = (CANRxData[0] & (0x1 << 4) );
 //		CarState.I_currentMeasurement =  CANRxData[1];
 //		CarState.I_TSAL =  CANRxData[2];
