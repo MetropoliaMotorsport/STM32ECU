@@ -273,7 +273,7 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode37Bit ), eSetBits);
 
-		newstate = CANRxData[0] & (0x1 << 0);
+		bool newstate = CANRxData[0] & (0x1 << 0);
 		if ( CarState.AIRpsense != newstate )
 		{
 			DebugPrintf("AIR Plus sense state changed to %s", newstate?"Closed":"Open");
