@@ -150,10 +150,35 @@ bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		)
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode33Bit ), eSetBits);
-		Shutdown.BOTS = (CANRxData[0] & (0x1 << 4) );
-		Shutdown.InertiaSwitch = (CANRxData[0] & (0x1 << 0) );
-		Shutdown.BSPDAfter = (CANRxData[0] & (0x1 << 2) );
-		Shutdown.BSPDBefore = (CANRxData[0] & (0x1 << 3) );
+
+		bool newstate = CANRxData[0] & (0x1 << 4);
+		if ( Shutdown.BOTS != newstate )
+		{
+			DebugPrintf("BOTS Shutdown sense state changed to %s", newstate?"Closed":"Open");
+			Shutdown.BOTS = newstate;
+		}
+
+		newstate = CANRxData[0] & (0x1 << 0);
+		if ( Shutdown.InertiaSwitch != newstate )
+		{
+			DebugPrintf("Inertia Switch Shutdown sense state changed to %s", newstate?"Closed":"Open");
+			Shutdown.InertiaSwitch = newstate;
+		}
+
+		newstate = CANRxData[0] & (0x1 << 2);
+		if ( Shutdown.BSPDAfter != newstate )
+		{
+			DebugPrintf("BSPD After Switch Shutdown sense state changed to %s", newstate?"Closed":"Open");
+			Shutdown.BSPDAfter = newstate;
+		}
+
+		newstate = CANRxData[0] & (0x1 << 3);
+		if ( Shutdown.BSPDBefore != newstate )
+		{
+			DebugPrintf("BSPD Before Switch Shutdown sense state changed to %s", newstate?"Closed":"Open");
+			Shutdown.BSPDBefore = newstate;
+		}
+
 //		CarState.I_Telementry =  CANRxData[1];
 //		CarState.I_Front1 =  CANRxData[2];
 		return true;
@@ -177,9 +202,28 @@ bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode34Bit ), eSetBits);
 //		CarState.ShutdownSwitchesClosed = CANRxData[0];
-		Shutdown.CockpitButton = (CANRxData[0] & (0x1 << 2) ); // TODO set to right inputs.
-		Shutdown.LeftButton = (CANRxData[0] & (0x1 << 3) );
-		Shutdown.RightButton = (CANRxData[0] & (0x1 << 4) );
+
+		bool newstate = CANRxData[0] & (0x1 << 2);
+		if ( Shutdown.CockpitButton != newstate )
+		{
+			DebugPrintf("Cockpit Shutdown Button sense state changed to %s", newstate?"Closed":"Open");
+			Shutdown.CockpitButton = newstate;
+		}
+
+		newstate = CANRxData[0] & (0x1 << 3);
+		if ( Shutdown.LeftButton != newstate )
+		{
+			DebugPrintf("Left Shutdown Button sense state changed to %s", newstate?"Closed":"Open");
+			Shutdown.LeftButton = newstate;
+		}
+
+		newstate = CANRxData[0] & (0x1 << 4);
+		if ( Shutdown.RightButton != newstate )
+		{
+			DebugPrintf("Right Shutdown Button sense state changed to %s", newstate?"Closed":"Open");
+			Shutdown.RightButton = newstate;
+		}
+
 //		CarState.I_Inverters =  CANRxData[1];
 //		CarState.I_ECU =  CANRxData[2];
 //		CarState.I_Front2 =  CANRxData[3];
@@ -284,7 +328,7 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		if ( CarState.AIRmsense != newstate )
 		{
 			DebugPrintf("AIR Minus sense state changed to %s", newstate?"Closed":"Open");
-			CarState.AIRpsense = newstate;
+			CarState.AIRmsense = newstate;
 		}
 
 		newstate = CANRxData[0] & (0x1 << 3);
