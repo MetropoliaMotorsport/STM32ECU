@@ -67,6 +67,11 @@ void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to sa
 
 bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static first = false;
+	if ( !first )
+	{
+		DebugMsg("Analog node 1 First msg.");
+	}
 	int AccelL = getBEint16(&CANRxData[2]);
 	int Regen = getBEint16(&CANRxData[4]);
 
@@ -94,6 +99,11 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 
 bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static first = false;
+	if ( !first )
+	{
+		DebugMsg("Analog node 9 First msg.");
+	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode9Bit ), eSetBits);
 
 	ADCState.BrakeTemp1 = getBEint16(&CANRxData[0]);
@@ -106,6 +116,11 @@ bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 
 bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static first = false;
+	if ( !first )
+	{
+		DebugMsg("Analog node 10 First msg.");
+	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode10Bit ), eSetBits);
 
 	ADCState.Susp1 = getBEint16(&CANRxData[0]);
@@ -120,6 +135,11 @@ bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static first = false;
+	if ( !first )
+	{
+		DebugMsg("Analog node 11 First msg.");
+	}
 	ADCState.BrakeTemp2 = getBEint16(&CANRxData[0]);
 
 	uint16_t BrakeF = getBEint16(&CANRxData[2]);
@@ -159,6 +179,11 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 // only define so that driver can be informed if they are not online at startup.
 bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static first = false;
+	if ( !first )
+	{
+		DebugMsg("Analog node 12 First msg.");
+	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode12Bit ), eSetBits);
 
 	ADCState.WaterTemp3 = CANRxData[0];
@@ -172,6 +197,11 @@ bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static first = false;
+	if ( !first )
+	{
+		DebugMsg("Analog node 13 First msg.");
+	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode13Bit ), eSetBits);
 
 	ADCState.Susp3 = getBEint16(&CANRxData[0]);
@@ -182,6 +212,11 @@ bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode14Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static first = false;
+	if ( !first )
+	{
+		DebugMsg("Analog node 14 First msg.");
+	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode14Bit ), eSetBits);
 
 	ADCState.BrakeTemp3 = getBEint16(&CANRxData[0]);
@@ -194,6 +229,11 @@ bool processANode14Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode15Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static first = false;
+	if ( !first )
+	{
+		DebugMsg("Analog node 15 First msg.");
+	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode15Bit ), eSetBits);
 
 	ADCState.TireTemp1 = CANRxData[0];
@@ -205,6 +245,11 @@ bool processANode15Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode16Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static first = false;
+	if ( !first )
+	{
+		DebugMsg("Analog node 16 First msg.");
+	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode16Bit ), eSetBits);
 
 	ADCState.TireTemp4 = CANRxData[0];
@@ -216,6 +261,11 @@ bool processANode16Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode17Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static first = false;
+	if ( !first )
+	{
+		DebugMsg("Analog node 18 First msg.");
+	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode17Bit ), eSetBits);
 
 	ADCState.TireTemp7 = CANRxData[0];
@@ -227,6 +277,11 @@ bool processANode17Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode18Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static first = false;
+	if ( !first )
+	{
+		DebugMsg("Analog node 18 First msg.");
+	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode18Bit ), eSetBits);
 
 	ADCState.TireTemp10 = CANRxData[0];

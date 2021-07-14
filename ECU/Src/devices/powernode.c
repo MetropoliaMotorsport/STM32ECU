@@ -433,26 +433,6 @@ bool processPNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength,
 #define WARN_PWM_CHANNEL_UNINITIALIZED	258
 #define WARN_UNDEFINED_GPIO				259
 #define WARN_PWM_NOT_ENABLED			260
-/*
-Power Error 199
-Power Error 210
-Power Error 198
-Power Error 199
-Power Error 210
-Power Error 132
-Power Error 135
-Power Error 198
-Power Error 199
-Power Error 210
-Power Error 212
-Power Error 132
-Power Error 135
-Power Error 132
-Power Error 135
-Power Error 132
-Power Error 135
-
-*/
 
 //
 // command 12 is used to clear an error from switch shutoff
@@ -461,8 +441,6 @@ Power Error 135
 // number of which channel to clear (0 to 5)
 
 // for example: [1][12][3] will clear an error on channel 3 from node 1
-
-
 
 #define U5I0_SWITCH_OFF				129 //PO0
 #define U5I1_SWITCH_OFF				130 //PO1
@@ -483,6 +461,73 @@ struct PowerNodeError
 uint8_t PowerNodeErrorCount = 0;
 
 
+char * PNodeGetErrStr( uint32_t error )
+{
+	switch ( error )
+	{
+	case ERR_CAN_BUFFER_FULL			: return "ERR_CAN_BUFFER_FULL";
+	case ERR_CAN_FIFO_FULL				: return "ERR_CAN_FIFO_FULL";
+	case ERR_MESSAGE_DISABLED			: return "ERR_MESSAGE_DISABLED";
+	case ERR_DLC_0						: return "ERR_DLC_0";
+	case ERR_DLC_LONG					: return "ERR_DLC_LONG";
+	case ERR_SEND_FAILED				: return "ERR_SEND_FAILED";
+	case ERR_RECIEVE_FAILED				: return "ERR_RECIEVE_FAILED";
+	case ERR_INVALID_COMMAND			: return "ERR_INVALID_COMMAND";
+	case ERR_COMMAND_SHORT				: return "ERR_COMMAND_SHORT";
+	case ERR_RECIEVED_INVALID_ID 		: return "ERR_RECIEVED_INVALID_ID";
+	case ERR_CANBUSOFFLINE				: return "ERR_CANBUSOFFLINE";
+
+	case ERR_MODIFY_INVALID_MESSAGE		: return "ERR_MODIFY_INVALID_MESSAGE";
+	case ERR_MODIFY_INVALID_THING		: return "ERR_MODIFY_INVALID_THING";
+	case ERR_CLEAR_INVALID_ERROR		: return "ERR_CLEAR_INVALID_ERROR";
+
+	case ERR_MESS_INVALID_BYTES			: return "ERR_MESS_INVALID_BYTES";
+	case ERR_MESS_UNDEFINED				: return "ERR_MESS_UNDEFINED";
+
+	case WARN_UNDERVOLT_U5				: return "WARN_UNDERVOLT_CH0-1";
+	case WARN_OVERVOLT_U5				: return "WARN_OVERVOLT_CH0-1";
+	case WARN_UNDERTEMP_U5				: return "WARN_UNDERTEMP_CH0-1";
+	case WARN_OVERTEMP_U5				: return "WARN_OVERTEMP_CH0-1";
+	case WARN_UNDERCURR_U5I0			: return "WARN_UNDERCURR_CH0";
+	case WARN_OVERCURR_U5I0				: return "WARN_OVERCURR_CH0";
+	case WARN_UNDERCURR_U5I1			: return "WARN_UNDERCURR_CH1";
+	case WARN_OVERCURR_U5I1				: return "WARN_OVERCURR_CH1";
+	case ERROR_OVERCURR_TRIP_U5_0		: return "ERROR_OVERCURR_TRIP_CH0";
+	case ERROR_OVERCURR_TRIP_U5_1		: return "ERROR_OVERCURR_TRIP_CH1";
+	case WARN_UNDERVOLT_U6				: return "WARN_UNDERVOLT_CH2-3";
+	case WARN_OVERVOLT_U6				: return "WARN_OVERVOLT_CH2-3";
+	case WARN_UNDERTEMP_U6				: return "WARN_UNDERTEMP_CH2-3";
+	case WARN_OVERTEMP_U6				: return "WARN_OVERTEMP_CH2-3";
+	case WARN_UNDERCURR_U6I0			: return "WARN_UNDERCURR_CH2";
+	case WARN_OVERCURR_U6I0				: return "WARN_OVERCURR_CH2";
+	case WARN_UNDERCURR_U6I1			: return "WARN_UNDERCURR_CH3";
+	case WARN_OVERCURR_U6I1				: return "WARN_OVERCURR_CH3";
+	case ERROR_OVERCURR_TRIP_U6_0		: return "ERROR_OVERCURR_TRIP_CH2";
+	case ERROR_OVERCURR_TRIP_U6_1		: return "ERROR_OVERCURR_TRIP_CH3";
+	case WARN_UNDERVOLT_U7				: return "WARN_UNDERVOLT_CH4-5";
+	case WARN_OVERVOLT_U7				: return "WARN_OVERVOLT_CH4-5";
+	case WARN_UNDERTEMP_U7				: return "WARN_UNDERTEMP_CH4-5";
+	case WARN_OVERTEMP_U7				: return "WARN_OVERTEMP_CH4-5";
+	case WARN_UNDERCURR_U7I0			: return "WARN_UNDERCURR_CH4";
+	case WARN_OVERCURR_U7I0				: return "WARN_OVERCURR_CH4";
+	case WARN_UNDERCURR_U7I1			: return "WARN_UNDERCURR_CH5";
+	case WARN_OVERCURR_U7I1				: return "WARN_OVERCURR_CH5";
+	case ERROR_OVERCURR_TRIP_U7_0		: return "ERROR_OVERCURR_TRIP_CH4";
+	case ERROR_OVERCURR_TRIP_U7_1		: return "ERROR_OVERCURR_TRIP_CH5";
+
+	case ERROR_READ_TEMP				: return "ERROR_READ_TEMP";
+	case WARN_TEMP_MEASURE_OVERFLOW		: return "WARN_TEMP_MEASURE_OVERFLOW";
+	case WARN_VOLT_MEASURE_OVERFLOW		: return "WARN_VOLT_MEASURE_OVERFLOW";
+
+	case WARN_PWM_INVALID_CHANNEL		: return "WARN_PWM_INVALID_CHANNEL";
+	case WARN_PWM_CHANNEL_UNINITIALIZED	: return "WARN_PWM_CHANNEL_UNINITIALIZED";
+	case WARN_UNDEFINED_GPIO			: return "WARN_UNDEFINED_GPIO";
+	case WARN_PWM_NOT_ENABLED			: return "WARN_PWM_NOT_ENABLED";
+	default:
+		return "Unknown";
+	}
+}
+
 bool processPNodeErr( const uint8_t nodeid, const uint32_t errorcode, const CANData * datahandle )
 {
 	uint8_t channel = 255;
@@ -499,10 +544,6 @@ bool processPNodeErr( const uint8_t nodeid, const uint32_t errorcode, const CAND
 		case U7I0_SWITCH_OFF : channel = 4; break; //PO4
 		case U7I1_SWITCH_OFF : channel = 5; break; //PO5
 	}
-
-	char str[40]= "";
-	snprintf(str, 40, "Power Error %lu", errorcode);
-	DebugMsg(str);
 
 	if ( channel != 255 ) // received error was assigned a channel.
 	{

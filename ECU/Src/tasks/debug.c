@@ -38,7 +38,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10067"
+#define VERSION "10068"
 
 #define DEBUGUART    UART2
 

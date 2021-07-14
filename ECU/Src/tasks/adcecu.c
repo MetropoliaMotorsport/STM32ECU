@@ -115,6 +115,8 @@ void ADCTask(void *argument)
 
 	uint32_t lastseenall = 0;
 
+	uint32_t analoguenodesOnlineSince = 0;
+
 	while( 1 )
 	{
 		lastanaloguenodesOnline = analoguenodesOnline;
@@ -165,30 +167,46 @@ void ADCTask(void *argument)
 	    xSemaphoreTake(waitStr, portMAX_DELAY);
 		ADCWaitStr[0] = 0;
 
-		if ( analoguenodesOnline == ANodeAllBit ) // all expecter power nodes reported in. // TODO automate
+		analoguenodesOnlineSince |= analoguenodesOnline; // cumulatively add
+
+		if ( analoguenodesOnlineSince == ANodeAllBit ) // all expected nodes reported in.
 		{
+			if ( DeviceState.Sensors != OPERATIONAL )
+			{
+				DebugMsg("Analogue nodes all online");
+			}
 			DeviceState.Sensors = OPERATIONAL;
 			ADCWaitStr[0] = 0;
+			analoguenodesOnlineSince = 0;
 			curanaloguenodesOnline = analoguenodesOnline;
 			lastseenall = gettimer();
-		} else if ( gettimer() - lastseenall > NODETIMEOUT && DeviceState.Sensors != OFFLINE )
+		} else if ( gettimer() - lastseenall > NODETIMEOUT ) // only update status to rest of code every timeout val.
 		{
-			if ( analoguenodesOnline == 0 )
-				DeviceState.Sensors = OFFLINE; // can't see any nodes, so offline.
-			else
-				DeviceState.Sensors = INERROR; // haven't seen all needed, so in error.
-			setAnalogNodesStr( analoguenodesOnline );
+			lastseenall = gettimer();
+			setAnalogNodesStr( analoguenodesOnlineSince );
 			strcpy(ADCWaitStr, getAnalogNodesStr());
-			DebugMsg("Analogue node timeout");
+
 			// update the currently available nodes
-			curanaloguenodesOnline = analoguenodesOnline;
-		} else if ( DeviceState.Sensors == OFFLINE )
-		{
-			if ( analoguenodesOnline == 0 )
+			curanaloguenodesOnline = analoguenodesOnlineSince;
+
+			if ( analoguenodesOnlineSince == 0 )
+			{
+				if ( DeviceState.Sensors != OFFLINE )
+				{
+					DebugMsg("Analogue node timeout");
+				}
 				DeviceState.Sensors = OFFLINE; // can't see any nodes, so offline.
+			}
 			else
+			{
+				if ( DeviceState.Sensors != INERROR )
+				{
+					DebugMsg("Analogue nodes partially online");
+				}
 				DeviceState.Sensors = INERROR; // haven't seen all needed, so in error.
-			curanaloguenodesOnline = analoguenodesOnline;
+			}
+
+			analoguenodesOnlineSince = 0;
 		}
 
 		xSemaphoreGive(waitStr);

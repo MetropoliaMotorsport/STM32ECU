@@ -100,8 +100,7 @@ void PowerTask(void *argument)
 				setAllPowerActualOff();
 			} else
 			{
-
-				snprintf(str, MAXERROROUTPUT, "Power err: %d %lu", errormsg.nodeid, errormsg.error);
+				snprintf(str, MAXERROROUTPUT, "Power err: %d %lu %s", errormsg.nodeid, errormsg.error, PNodeGetErrStr( errormsg.error ));
 				LogError( str );
 			}
 		}
