@@ -61,6 +61,11 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	int32_t Speed;
 	uint8_t COBID;
 	bool MCChannel;
+
+	int16_t AmbTemp;
+	int16_t InvTemp;
+	int16_t MotorTemp;
+
 } InverterState_t;  // define external into realmain?
 
 extern DeviceStatus Inverter;

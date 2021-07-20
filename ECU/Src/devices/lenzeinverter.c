@@ -311,14 +311,16 @@ static uint16_t invHV[4];
 bool processAPPCStatus( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	uint8_t inv=datahandle->index;
-	char str[80];
-
-//	if ( InverterState[inv].MCChannel && inv > 0 ) inv--; // set the voltage available on the the first channel of inverter.
 
 	int16_t InvInputVoltage = getLEint16(&CANRxData[0])/16;
 	int16_t InvTemperature = getLEint16(&CANRxData[2])/16;
 
+	InverterState[inv].AmbTemp = InvTemperature;
+	if ( !InverterState[inv].MCChannel )
+		InverterState[inv+1].AmbTemp = InvTemperature;
+
 #if 0
+	char str[80];
 	if ( invHV[inv] != InvInputVoltage )
 	{
 		invHV[inv] = InvInputVoltage;
@@ -561,7 +563,8 @@ bool processINVValues2( const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 	if ( abs(MotorTemp) > 0 && abs(MotorTemp) < 200 && abs(PowerModTemp) > 0 && abs(PowerModTemp) < 200 )
 	{
-
+		InverterState[inv].MotorTemp = MotorTemp;
+		InverterState[inv].InvTemp = PowerModTemp;
 	} else // bad data.
 	{
 #ifdef errorLED
@@ -694,7 +697,9 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				CAN_SendStatus(9, Inverter->Motor, 5);
 				// TODO ack this last SDO.
 				InvSendSDO(Inverter->COBID,0x6048, 0, getEEPROMBlock(0)->AccelRpms*4);
-				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET,0x6048, 0, getEEPROMBlock(0)->AccelRpms*4);
+				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET, 0x6048+0x800, 0, getEEPROMBlock(0)->AccelRpms*4);
+				InvSendSDO(Inverter->COBID,0x6087, 0, getEEPROMBlock(0)->TorqueSlope*100);
+				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET, 0x6087+0x800, 0, getEEPROMBlock(0)->TorqueSlope*100);
 
 				Inverter->SetupState = 0xFF; // Done!
 				InverterState[Inverter->Motor+1].SetupState = 0xFF; // set the other inverter as configured too.

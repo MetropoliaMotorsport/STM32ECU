@@ -101,6 +101,7 @@ typedef struct eepromdatastruct {
 	uint16_t AccelRpms;
 	uint16_t maxRpm;
 	uint8_t regenMax;
+	uint16_t TorqueSlope;
 	union {
 	bool alwaysHV;
 	uint8_t Blockend;

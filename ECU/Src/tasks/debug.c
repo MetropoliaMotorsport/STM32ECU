@@ -38,7 +38,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10069"
+#define VERSION "10070"
 
 #define DEBUGUART    UART2
 
@@ -299,6 +299,8 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 	}
 }
 
+bool regentest = false;
+
 static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1, const int32_t motor )
 {
 	int16_t speed = getEEPROMBlock(0)->maxRpm;
@@ -405,8 +407,13 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 							InverterSetTorqueInd( i, 0, 0);
 					}
 
-					UARTprintf("Pedal pos: r%d%%, requestNm %d ( raw %d ) speed %d, maxNm %d, to MC[%s]\r\n ",
-							percR/10, requestNm/0x4000, requestNm, speed, maxNm, getMotorsEnabledStr() );
+					UARTprintf("Pedal: r%d%%, reqNm %d speed %d, maxNm %d, to MC[%s] 0[I%dc M%dc] 1[I%dc M%dc] 2[I%dc M%dc] 3[I%dc M%dc]\r\n ",
+							percR/10, requestNm/0x4000, speed, maxNm, getMotorsEnabledStr(),
+							getInvState(0)->InvTemp, getInvState(0)->MotorTemp,
+							getInvState(1)->InvTemp, getInvState(1)->MotorTemp,
+							getInvState(2)->InvTemp, getInvState(2)->MotorTemp,
+							getInvState(3)->InvTemp, getInvState(3)->MotorTemp
+						);
 				}
 			}
 
@@ -506,7 +513,9 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 
 		UARTprintf("Motors Enabled: [%s]\r\n", getMotorsEnabledStr());
 		UARTprintf("Max speed %dRPM\r\n", speed);
-		UARTprintf("Max Torque %dNm\r\n", maxNm);
+		UARTprintf("Max accel %dRPM/s\r\n", getEEPROMBlock(0)->AccelRpms);
+		UARTprintf("Max torque %dNm\r\n", maxNm);
+		UARTprintf("Max torque slope %d\r\n", getEEPROMBlock(0)->TorqueSlope);
 
 
 	} else if ( streql( tkn2, "accel" )  )
@@ -529,14 +538,43 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 
 			for ( int i=0;i<MOTORCOUNT;i++)
 			{
-				InvSendSDO(getInvState(i)->COBID+(getInvState(i)->MCChannel*LENZE_MOTORB_OFFSET),0x6048, 0, getEEPROMBlock(0)->AccelRpms*4);
+				InvSendSDO(getInvState(i)->COBID+(getInvState(i)->MCChannel*LENZE_MOTORB_OFFSET),
+						0x6048+(getInvState(i)->MCChannel*0x800),
+						0, getEEPROMBlock(0)->AccelRpms*4);
 			}
 		} else
 		{
 			UARTwrite("Invalid maxRPM given\r\n");
 		}
-	}
-	else if ( streql( tkn2, "speed" )  )
+	} else if ( streql( tkn2, "slope" )  )
+	{
+		if ( value1 >= 0 && value1 < 16000 )
+		{
+			UARTwrite("Setting torque slope\r\n");
+
+			getEEPROMBlock(0)->TorqueSlope = value1;
+			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			{
+				vTaskDelay(20);
+				while ( EEPROMBusy() )
+				{
+					vTaskDelay(20);
+				}
+				UARTwrite("Saved.\r\n");
+			} else
+				UARTwrite("Error saving config.\r\n");
+
+			for ( int i=0;i<MOTORCOUNT;i++)
+			{
+				InvSendSDO(getInvState(i)->COBID+(getInvState(i)->MCChannel*LENZE_MOTORB_OFFSET),
+						0x6087+(getInvState(i)->MCChannel*0x800),
+						0, getEEPROMBlock(0)->TorqueSlope*100); // verify slope value, seems to be x100
+			}
+		} else
+		{
+			UARTwrite("Invalid maxRPM given\r\n");
+		}
+	} else if ( streql( tkn2, "speed" )  )
 	{
 		if ( value1 >= 0 && value1 < 16000 )
 		{
@@ -586,7 +624,8 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 		UARTwrite("[motor off x] disables motor for testing ( 0-3 or all )\r\n");
 		UARTwrite("[motor torque x] sets maxNm on car ( testing/otherwise ) to any value between 0-65Nm\r\n");
 		UARTwrite("[motor speed x] sets target speed for test, 0-?\r\n");
-		UARTwrite("[motor accel x] sets RPM/s acceleration max for MC ( saved but not resent )\r\n");
+		UARTwrite("[motor accel x] sets RPM/s acceleration max for MC\r\n");
+		UARTwrite("[motor slope x] sets torque slope for MC\r\n");
 	}
 }
 

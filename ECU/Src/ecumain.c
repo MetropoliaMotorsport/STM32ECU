@@ -324,8 +324,8 @@ static int HardwareInit( void )
 	{
 		initInv();
 		char str[80];
-		snprintf(str, 80, "Inverters Handling enabled, with MC enabled on Motors [%s] at max %dNm, %dRPM, %dRPM/s accel",
-				getMotorsEnabledStr(), getEEPROMBlock(0)->MaxTorque, getEEPROMBlock(0)->maxRpm, getEEPROMBlock(0)->AccelRpms);
+		snprintf(str, 80, "Inverters Handling enabled, with MC enabled on Motors [%s] at max %dNm, %dRPM, %dRPM/s accel Torqueslope %d",
+				getMotorsEnabledStr(), getEEPROMBlock(0)->MaxTorque, getEEPROMBlock(0)->maxRpm, getEEPROMBlock(0)->AccelRpms,getEEPROMBlock(0)->TorqueSlope);
 		DebugMsg(str);
 	}
 	else
