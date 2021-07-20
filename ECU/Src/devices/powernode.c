@@ -309,11 +309,15 @@ bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 
 bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+#if 1
+	if ( 1 )
+#else
 	if ( DataLength >> 16 == PowerNode37.dlcsize
 		&& CANRxData[0] <= 0b00001101 // max possible value. check for zeros in unused fields?
 		&& CANRxData[1] < 100
 		&& ( CANRxData[2] >= 0 && CANRxData[2] <= 100 )
 		)
+#endif
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode37Bit ), eSetBits);
 
