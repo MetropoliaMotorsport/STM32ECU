@@ -94,13 +94,16 @@ void PowerTask(void *argument)
 		{
 			if ( errormsg.error == 0xFFFF )
 			{
-				LogError("Power err: LV Down");
+				snprintf(str, MAXERROROUTPUT, "Power err: LV Down at (%lu)",gettimer());
+
+				LogError( str );
 				resetLV = true;
 
 				setAllPowerActualOff();
+				CAN_SendStatus(7, 0, 0);
 			} else
 			{
-				snprintf(str, MAXERROROUTPUT, "Power err: %d %lu %s", errormsg.nodeid, errormsg.error, PNodeGetErrStr( errormsg.error ));
+				snprintf(str, MAXERROROUTPUT, "Power err: %d %lu %s at (%lu)", errormsg.nodeid, errormsg.error, PNodeGetErrStr( errormsg.error ), gettimer());
 				LogError( str );
 			}
 		}
