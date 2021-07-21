@@ -312,6 +312,12 @@ void setAnalogNodesStr( const uint32_t nodesonline ) // any of these missing sho
 
 	uint8_t pos = 0;
 
+	if ( !(nodesonline & ( 0x1 << ANode1Bit )) )
+	{
+		ANodeStr[pos] = 'I';
+		ANodeStr[pos+1] = '\0';
+		pos++;
+	}
 	if ( !(nodesonline & ( 0x1 << ANode9Bit )) )
 	{
 		ANodeStr[pos] = '9';
@@ -321,6 +327,12 @@ void setAnalogNodesStr( const uint32_t nodesonline ) // any of these missing sho
 	if ( !(nodesonline & ( 0x1 << ANode10Bit )) )
 	{
 		ANodeStr[pos] = '0';
+		ANodeStr[pos+1] = '\0';
+		pos++;
+	}
+	if ( !(nodesonline & ( 0x1 << ANode11Bit )) )
+	{
+		ANodeStr[pos] = '1';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}

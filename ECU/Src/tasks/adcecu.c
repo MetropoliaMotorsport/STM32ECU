@@ -83,7 +83,7 @@ char * getADCWait( void)
 	xSemaphoreTake(waitStr, portMAX_DELAY);
 	strcpy(ADCWaitStrRet, ADCWaitStr);
 	xSemaphoreGive(waitStr);
-	return ADCWaitStr;
+	return ADCWaitStrRet;
 }
 
 uint32_t curanaloguenodesOnline = 0;
@@ -116,6 +116,8 @@ void ADCTask(void *argument)
 	uint32_t lastseenall = 0;
 
 	uint32_t analoguenodesOnlineSince = 0;
+
+	ADCWaitStr[0] = 0;
 
 	while( 1 )
 	{
@@ -165,7 +167,6 @@ void ADCTask(void *argument)
 	    ADCState.SteeringAngle = getSteeringAnglePWM();
 
 	    xSemaphoreTake(waitStr, portMAX_DELAY);
-		ADCWaitStr[0] = 0;
 
 		analoguenodesOnlineSince |= analoguenodesOnline; // cumulatively add
 

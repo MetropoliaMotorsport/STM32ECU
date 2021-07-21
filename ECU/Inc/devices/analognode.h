@@ -27,6 +27,7 @@
 
 #define ANodeAllBit ( (0x1 << ANode1Bit ) \
 					+ (0x1 << ANode9Bit)  \
+					+ (0x1 << ANode10Bit) \
 					+ (0x1 << ANode11Bit) \
 					+ (0x1 << ANode12Bit) \
 					+ (0x1 << ANode13Bit) \
