@@ -309,7 +309,9 @@ int GetUpDownPressed( void )
 	{
 		Input[Down_Input].pressed = 0;
 		return 1;
-	} else 	if ( Input[Up_Input].held != 0 ){
+	}
+#if 0
+	else 	if ( Input[Up_Input].held != 0 ){
 		if (gettimer() - Input[Up_Input].lastpressed > REPEATRATE )
 		{
 			Input[Up_Input].lastpressed = gettimer();
@@ -322,6 +324,7 @@ int GetUpDownPressed( void )
 			return 1;
 		}
 	}
+#endif
 
 	return 0;
 }
