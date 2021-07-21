@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include "freertos.h"
 
-#define WATCHDOG
+//#define WATCHDOG
 
 #define LCDBUFFER
 

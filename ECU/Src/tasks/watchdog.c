@@ -153,7 +153,9 @@ static void WatchdogTask(void *pvParameters)
 		if( ( uxBits & activeBits ) == ( activeBits ) )
 		{
 			// only kick the watchdog if all expected bits are set.
+#ifdef WATCHDOG
 			HAL_WWDG_Refresh(&hwwdg1);
+#endif
 		} else
 		{
 			if ( activeBits > 0 )
@@ -161,7 +163,8 @@ static void WatchdogTask(void *pvParameters)
 				volatile int watchdognotkicked = 1;
 				char str[40] = "";
 				snprintf(str, 40, "Watchdog kicked bits: %4X", (uint32_t)uxBits);
-				DebugMsg(str);
+				UART_Transmit(DEBUGUART, str, strlen(str));
+			//	DebugMsg(str);
 			}
 		}
 
@@ -263,6 +266,7 @@ int initWatchdog( void )
 	DBGMCU->APB3FZ1 = ( 1 << 6 ); //Bit6 WWDG1:WWDG1stopindebug;
 
 	HAL_NVIC_EnableIRQ(WWDG_IRQn);
+#endif
 
 	// min 8 // should now be double.
 	// max 16
@@ -295,6 +299,5 @@ int initWatchdog( void )
 						  xWATCHDOGStack,
 						  &xWATCHDOGTaskBuffer );
 
-#endif
 	return 0;
 }
