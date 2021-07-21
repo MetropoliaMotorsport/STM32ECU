@@ -163,8 +163,11 @@ static void WatchdogTask(void *pvParameters)
 				volatile int watchdognotkicked = 1;
 				char str[40] = "";
 				snprintf(str, 40, "Watchdog kicked bits: %4X", (uint32_t)uxBits);
+#ifdef WATCHDOG
 				UART_Transmit(DEBUGUART, str, strlen(str));
-			//	DebugMsg(str);
+#else
+				DebugMsg(str);
+#endif
 			}
 		}
 

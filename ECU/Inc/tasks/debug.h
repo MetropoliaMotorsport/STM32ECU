@@ -9,8 +9,11 @@
 #define DEVICES_DEBUG_H_
 
 #include "ecumain.h"
+#include "uartecu.h"
 
 #define MAXDEBUGOUTPUT (80)
+
+#define DEBUGUART    UART2
 
 // print a message to debug output.
 bool DebugMsg( const char * msg);

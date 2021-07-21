@@ -40,8 +40,6 @@ typedef struct Debug_msg {
 
 #define VERSION "10071"
 
-#define DEBUGUART    UART2
-
 #define DEBUGSTACK_SIZE 128*8
 #define DEBUGTASKNAME  "DebugTask"
 StaticTask_t xDEBUGTaskBuffer;
