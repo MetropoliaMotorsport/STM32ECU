@@ -48,5 +48,7 @@
 #define InverterFR_COBID			(Inverter2_NodeID)
 #define InverterFR_Channel			(1)
 
+#define TORQUESLOPESCALING			(90)
+
 #endif /* LENZEINVERTER_H_ */
 

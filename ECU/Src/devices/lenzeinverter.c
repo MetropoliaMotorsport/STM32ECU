@@ -698,8 +698,8 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				// TODO ack this last SDO.
 				InvSendSDO(Inverter->COBID,0x6048, 0, getEEPROMBlock(0)->AccelRpms*4);
 				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET, 0x6048+0x800, 0, getEEPROMBlock(0)->AccelRpms*4);
-				InvSendSDO(Inverter->COBID,0x6087, 0, getEEPROMBlock(0)->TorqueSlope*100);
-				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET, 0x6087+0x800, 0, getEEPROMBlock(0)->TorqueSlope*100);
+				InvSendSDO(Inverter->COBID,0x6087, 0, getEEPROMBlock(0)->TorqueSlope*TORQUESLOPESCALING);
+				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET, 0x6087+0x800, 0, getEEPROMBlock(0)->TorqueSlope*TORQUESLOPESCALING);
 
 				Inverter->SetupState = 0xFF; // Done!
 				InverterState[Inverter->Motor+1].SetupState = 0xFF; // set the other inverter as configured too.

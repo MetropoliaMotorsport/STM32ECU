@@ -38,7 +38,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10070"
+#define VERSION "10071"
 
 #define DEBUGUART    UART2
 
@@ -568,7 +568,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 			{
 				InvSendSDO(getInvState(i)->COBID+(getInvState(i)->MCChannel*LENZE_MOTORB_OFFSET),
 						0x6087+(getInvState(i)->MCChannel*0x800),
-						0, getEEPROMBlock(0)->TorqueSlope*100); // verify slope value, seems to be x100
+						0, getEEPROMBlock(0)->TorqueSlope*TORQUESLOPESCALING); // verify slope value, seems to be x100
 			}
 		} else
 		{
