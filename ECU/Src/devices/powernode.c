@@ -336,10 +336,10 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		}
 
 		newstate = CANRxData[0] & (0x1 << 3);
-		if ( CarState.AIRpsense != newstate )
+		if ( CarState.PREsense != newstate )
 		{
 			DebugPrintf("PRE sense state changed to %s", newstate?"Closed":"Open");
-			CarState.AIRpsense = newstate;
+			CarState.PREsense = newstate;
 		}
 
 //		CarState.??? = (CANRxData[0] & (0x1 << 4) );

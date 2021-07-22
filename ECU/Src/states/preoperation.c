@@ -389,7 +389,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	}
 
 
-	if ( CheckTSActivationRequest )
+	if ( CheckTSActivationRequest ) // manual startup power request whilst in testing phases.
 	{
 		setDevicePower( Front1, true );
 		setDevicePower( Front2, true );
@@ -402,6 +402,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	if ( GetInverterState() < BOOTUP  ) { ReadyToStart += 8; } // require inverters to be online
 	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart += 16; } // require critical sensor nodes online for startup.
 	if ( DeviceState.PowerNodes != OPERATIONAL ) { ReadyToStart += 32; }
+//	if ( !getDevicePower(TSAL) ) { ReadyToStart += 64; } // require TSAL power to allow startup.
 
 	if ( ReadyToStart == 0 )
 	{

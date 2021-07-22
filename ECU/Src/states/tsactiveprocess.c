@@ -66,7 +66,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	uint32_t curtime = gettimer();
 
 	uint8_t prechargedone = 0;
-	if ( prechargetimer+MS1000*6 < curtime )
+	if ( CarState.PREsense && prechargetimer+MS1000*6 < curtime )
 	{
 		prechargedone = 1;
 		lcd_send_stringline(1,"Precharge Done.", 255);
