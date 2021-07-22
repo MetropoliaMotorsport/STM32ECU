@@ -38,7 +38,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10074"
+#define VERSION "10075"
 
 #define DEBUGSTACK_SIZE 128*8
 #define DEBUGTASKNAME  "DebugTask"
@@ -312,6 +312,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 
 		setDevicePower( Front1, true );
 		setDevicePower( Front2, true );
+		setDevicePower( TSAL, true );
 		vTaskDelay(100);
 
 		if ( !getNodeDevicePower(Front1) )

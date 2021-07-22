@@ -212,9 +212,13 @@ void ADCTask(void *argument)
 
 		xSemaphoreGive(waitStr);
 
-		if ( analoguenodesOnline == AnodeCriticalBit )
+		if ( analoguenodesOnlineSince & AnodeCriticalBit == AnodeCriticalBit )
 		{
+			DeviceState.CriticalSensors = OPERATIONAL;
 			// we've received all the SCS data
+		} else
+		{
+			DeviceState.CriticalSensors = INERROR;
 		}
 
 		DeviceState.ADCSanity = CheckADCSanity();

@@ -44,7 +44,7 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	}
 
 	if ( DeviceState.ADCSanity == 0 )
-	   returnvalue &= ~(0x1 << PedalADCReceived);
+	   returnvalue &= ~(0x1 << PedalADCReceived); // ensures even if analogue nodes online, input needs to be sane for bootup.
 	else
 	   returnvalue |= 0x1 << PedalADCReceived;
 
@@ -380,7 +380,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	{
 		blinkOutput(TSOFFLED, BlinkMed, 1);
 #ifdef SHUTDOWNSWITCHCHECK
-	    ReadyToStart += 8;
+	    ReadyToStart += 2;
 #endif
 	}  else
 	{
@@ -388,9 +388,20 @@ int PreOperationState( uint32_t OperationLoops  )
 		setOutput(TSOFFLED,On);
 	}
 
+
+	if ( CheckTSActivationRequest )
+	{
+		setDevicePower( Front1, true );
+		setDevicePower( Front2, true );
+		setDevicePower( TSAL, true );
+		setDevicePower( Inverters, true );
+	}
+
 //	if ( errorPower() ) { ReadyToStart += 1; }
-	if ( preoperationstate != 0 ) { ReadyToStart += 2; }
-	if ( GetInverterState() < BOOTUP  ) { ReadyToStart += 4; }
+	if ( preoperationstate != 0 ) { ReadyToStart += 4; }
+	if ( GetInverterState() < BOOTUP  ) { ReadyToStart += 8; } // require inverters to be online
+	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart += 16; } // require critical sensor nodes online for startup.
+	if ( DeviceState.PowerNodes != OPERATIONAL ) { ReadyToStart += 32; }
 
 	if ( ReadyToStart == 0 )
 	{

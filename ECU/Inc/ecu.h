@@ -384,6 +384,7 @@ typedef struct {
 	DeviceStatus ADC;
 	uint16_t ADCSanity;
 	DeviceStatus Sensors;
+	DeviceStatus CriticalSensors;
 	DeviceStatus PWM;
 //	DeviceStatus Inverter;
 	DeviceStatus BMS;
