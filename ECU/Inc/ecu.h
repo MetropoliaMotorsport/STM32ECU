@@ -376,7 +376,7 @@ typedef enum DeviceStatustype {
 typedef struct {
 	DeviceStatus NONE;
 	DeviceStatus CAN1;
-	DeviceStatus CAN2;
+	DeviceStatus CAN0;
 	bool FrontSpeedSensors;
 	bool IVTEnabled;
 	bool BMSEnabled;

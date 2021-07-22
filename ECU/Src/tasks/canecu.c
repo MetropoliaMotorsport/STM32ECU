@@ -1476,10 +1476,11 @@ void HAL_FDCAN_TxFifoEmptyCallback(FDCAN_HandleTypeDef *hfdcan)
 void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t ErrorStatusITs)
 {
 	if(hfdcan->Instance == FDCAN1){
-		DebugPrintf("Can ErrorStatus bus1 %4x", ErrorStatusITs);
+		if ( DeviceState.CAN1 == OPERATIONAL )
+			DebugPrintf("Can ErrorStatus bus1 %4x", ErrorStatusITs);
 	} else if(hfdcan->Instance == FDCAN2) {
-
-		DebugPrintf("Can ErrorStatus bus2 %4x", ErrorStatusITs);
+		if ( DeviceState.CAN0 == OPERATIONAL )
+			DebugPrintf("Can ErrorStatus bus2 %4x", ErrorStatusITs);
 	}
 }
 
@@ -1553,7 +1554,7 @@ int CheckCanError( void )
 		blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
 		HAL_FDCAN_Stop(&hfdcan2);
 		CAN_SendStatus(255,0,0);
-		DeviceState.CAN2 = OFFLINE;
+		DeviceState.CAN0 = OFFLINE;
 
 		if ( offcan2 == 0 )
 		{
@@ -1563,7 +1564,7 @@ int CheckCanError( void )
 		  offcan2 = 1;
 		}
 		Errors.ErrorPlace = 0xF3;
-		LogError("CANBUS2 Down");
+		LogError("CANBUS0 Down");
 		//		  result +=4;
 	}
 
@@ -1574,13 +1575,13 @@ int CheckCanError( void )
 		{
 		// Start Error
 			Errors.ErrorPlace = 0xF4;
-			LogError("CANBUS2 Offline");
+			LogError("CANBUS0 Offline");
 			result +=8;
 		} else
 		{
 			offcan2 = 0;
-			LogError("CANBUS1 Up");
-			DeviceState.CAN2 = OPERATIONAL;
+			LogError("CANBUS0 Up");
+			DeviceState.CAN0 = OPERATIONAL;
 			CAN_SendStatus(254,0,0);
 		}
 	}
@@ -1600,7 +1601,7 @@ void resetCAN( void )
 #endif
 
 	DeviceState.CAN1 = OPERATIONAL;
-	DeviceState.CAN2 = OPERATIONAL;
+	DeviceState.CAN0 = OPERATIONAL;
 
 }
 

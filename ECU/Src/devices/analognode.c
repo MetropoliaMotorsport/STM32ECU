@@ -67,7 +67,7 @@ void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to sa
 
 bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	static first = false;
+	static bool first = false;
 	if ( !first )
 	{
 		DebugMsg("Analog node 1 First msg.");
@@ -100,7 +100,7 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 
 bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	static first = false;
+	static bool first = false;
 	if ( !first )
 	{
 		DebugMsg("Analog node 9 First msg.");
@@ -118,7 +118,7 @@ bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 
 bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	static first = false;
+	static bool first = false;
 	if ( !first )
 	{
 		DebugMsg("Analog node 10 First msg.");
@@ -138,7 +138,7 @@ bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	static first = false;
+	static bool first = false;
 	if ( !first )
 	{
 		DebugMsg("Analog node 11 First msg.");
@@ -183,7 +183,7 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 // only define so that driver can be informed if they are not online at startup.
 bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	static first = false;
+	static bool first = false;
 	if ( !first )
 	{
 		DebugMsg("Analog node 12 First msg.");
@@ -202,7 +202,7 @@ bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	static first = false;
+	static bool first = false;
 	if ( !first )
 	{
 		DebugMsg("Analog node 13 First msg.");
@@ -218,7 +218,7 @@ bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode14Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	static first = false;
+	static bool first = false;
 	if ( !first )
 	{
 		DebugMsg("Analog node 14 First msg.");
@@ -236,7 +236,7 @@ bool processANode14Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode15Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	static first = false;
+	static bool first = false;
 	if ( !first )
 	{
 		DebugMsg("Analog node 15 First msg.");
@@ -253,7 +253,7 @@ bool processANode15Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode16Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	static first = false;
+	static bool first = false;
 	if ( !first )
 	{
 		DebugMsg("Analog node 16 First msg.");
@@ -270,7 +270,7 @@ bool processANode16Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode17Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	static first = false;
+	static bool first = false;
 	if ( !first )
 	{
 		DebugMsg("Analog node 17 First msg.");
@@ -287,7 +287,7 @@ bool processANode17Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 bool processANode18Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-	static first = false;
+	static bool first = false;
 	if ( !first )
 	{
 		DebugMsg("Analog node 18 First msg.");
