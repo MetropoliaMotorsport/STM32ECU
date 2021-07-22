@@ -295,6 +295,7 @@ int PreOperationState( uint32_t OperationLoops  )
 		{
 			DebugPrintf("Enter Config\r\n");
 			ConfigInput( 0xFFFF );
+			ReadyToStart += 1;
 		}
 
 		static bool showbrakebal = false;

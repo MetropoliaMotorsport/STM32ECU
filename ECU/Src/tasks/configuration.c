@@ -173,7 +173,7 @@ void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editi
 			// find current value position. will default to first item if an invalid value was given.
 			for ( int i=1;validvalues[i]!=0;i++)
 			{
-				if ( *value ==  validvalues[i] ) position = i;
+				if ( *value == validvalues[i] ) position = i;
 			}
 
 			// work out new value change attempted.
@@ -434,6 +434,21 @@ bool doPedalCalibration( uint16_t input )
 
 }
 
+
+#define MENU_NM		 (1)
+#define MENU_ACCEL 	 (2)
+#define MENU_LIMPDIS (3)
+#define MENU_FANS	 (4)
+#define MENU_FANMAX	 (5)
+#define MENU_CALIB   (6)
+#define MENU_INVEN	 (7)
+#define MENU_HV		 (8)
+
+#define MENU_LAST	 (MENU_HV)
+
+#define MENUSIZE	 (MENU_LAST+1)
+
+
 bool DoMenu( uint16_t input )
 {
 	static bool inmenu = false;
@@ -443,11 +458,11 @@ bool DoMenu( uint16_t input )
 	static bool incalib = false;
 	static bool dofullsave = false;
 
-#define menusize	(8)
-
-	static char MenuLines[menusize+1][21] = { 0 };
+	static char MenuLines[MENUSIZE+1][21] = { 0 };
 
 	const uint8_t torquevals[] = {0,5,10,25,65,0}; // zero terminated so function can find end.
+
+	const uint8_t fanvals[] = {0,25,50,75,100,125,150,175,200,225,255,0};
 
 	if ( inmenu )
 	{
@@ -471,7 +486,7 @@ bool DoMenu( uint16_t input )
 			return false;
 		}
 
-		if ( !incalib && selection == 5 && input == KEY_ENTER ) // CheckButtonPressed(Config_Input) )
+		if ( !incalib && selection == MENU_CALIB && input == KEY_ENTER ) // CheckButtonPressed(Config_Input) )
 		{
 			incalib = true;
 			input = 0;
@@ -512,7 +527,7 @@ bool DoMenu( uint16_t input )
 			}
 
 			if ( selection <  0) selection=0;
-			if ( selection > menusize-1) selection=menusize-1;
+			if ( selection > MENUSIZE-1) selection=MENUSIZE-1;
 
 			if ( top + 2 < selection ) top +=1;
 			if ( selection < top ) top -=1;
@@ -521,16 +536,17 @@ bool DoMenu( uint16_t input )
 		strcpy(MenuLines[0], "Config Menu:");
 
 		sprintf(MenuLines[1], "%cBack & Save", (selection==0) ? '>' :' ');
-		doMenuIntEdit( MenuLines[2], "Max Nm", (selection==1), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input );
-		doMenuPedalEdit( MenuLines[3], "Accel", (selection==2), &inedit, &getEEPROMBlock(0)->PedalProfile, input );
-		doMenuBoolEdit( MenuLines[4], "LimpDisable", (selection==3), &inedit, &getEEPROMBlock(0)->LimpMode, input);
-		doMenuBoolEdit( MenuLines[5], "Fans", (selection==4), &inedit, &getEEPROMBlock(0)->Fans, input);
-		doMenuIntEdit( MenuLines[6], "Fan Max", (selection==5), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input );
 
-		sprintf(MenuLines[7], "%cAPPS Calib", (selection==6) ? '>' :' ');
-		doMenuBoolEdit( MenuLines[8], "InvEnabled", (selection==7), &inedit, &getEEPROMBlock(0)->InvEnabled, input);
+		doMenuIntEdit( MenuLines[1+MENU_NM], "Max Nm", (selection==MENU_NM), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input );
+		doMenuPedalEdit( MenuLines[1+MENU_ACCEL], "Accel", (selection==MENU_ACCEL), &inedit, &getEEPROMBlock(0)->PedalProfile, input );
+		doMenuBoolEdit( MenuLines[1+MENU_LIMPDIS], "LimpDisable", (selection==MENU_LIMPDIS), &inedit, &getEEPROMBlock(0)->LimpMode, input);
+		doMenuBoolEdit( MenuLines[1+MENU_FANS], "Fans", (selection==MENU_FANS), &inedit, &getEEPROMBlock(0)->Fans, input);
+		doMenuIntEdit( MenuLines[1+MENU_FANMAX], "Fan Max", (selection==MENU_FANMAX), &inedit, &getEEPROMBlock(0)->FanMax, fanvals, input );
 
-//		doMenuBoolEdit( MenuLines[9], "TestHV", (selection==8), &inedit, &CarState.TestHV, input);
+		sprintf(MenuLines[1+MENU_CALIB], "%cAPPS Calib", (selection==MENU_CALIB) ? '>' :' ');
+		doMenuBoolEdit( MenuLines[1+MENU_INVEN], "InvEnabled", (selection==MENU_INVEN), &inedit, &getEEPROMBlock(0)->InvEnabled, input);
+
+		doMenuBoolEdit( MenuLines[1+MENU_HV], "HV@Startup", (selection==MENU_HV), &inedit, &getEEPROMBlock(0)->alwaysHV, input);
 
 		lcd_send_stringline( 0, MenuLines[0], MENUPRIORITY );
 
