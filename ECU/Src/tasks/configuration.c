@@ -552,7 +552,7 @@ bool DoMenu( uint16_t input )
 			setDevicePower(RightFans, curfans);
 		}
 
-		bool curfanmax = getEEPROMBlock(0)->FanMax;
+		uint8_t curfanmax = getEEPROMBlock(0)->FanMax;
 		doMenuIntEdit( MenuLines[1+MENU_FANMAX], "Fan Max", (selection==MENU_FANMAX), &inedit, &curfanmax, fanvals, input );
 		if ( curfanmax != getEEPROMBlock(0)->FanMax )
 		{

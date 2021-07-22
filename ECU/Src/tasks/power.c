@@ -17,6 +17,7 @@
 #include "taskpriorities.h"
 #include "debug.h"
 #include "timerecu.h"
+#include "semphr.h"
 
 TaskHandle_t PowerTaskHandle = NULL;
 
@@ -49,13 +50,26 @@ ShutdownState Shutdown;
 
 // how to ensure power always enabled?
 
+static SemaphoreHandle_t waitStr = NULL;
+
 char PNodeWaitStr[20] = "";
+uint32_t curpowernodesOnline = 0;
 
 char * getPNodeWait( void)
 {
 	return PNodeWaitStr;
 	// TODO add a mutex
 }
+
+char * getPowerWait( void)
+{
+	static char PowerWaitStrRet[20] = "";
+	xSemaphoreTake(waitStr, portMAX_DELAY);
+	strcpy(PowerWaitStrRet, PNodeWaitStr);
+	xSemaphoreGive(waitStr);
+	return PowerWaitStrRet;
+}
+
 
 void PowerTask(void *argument)
 {
@@ -76,6 +90,7 @@ void PowerTask(void *argument)
 
 	uint32_t powernodesOnline = 0;
 	uint32_t lastpowernodesOnline = 0;
+	uint32_t powernodesOnlineSince = 0;
 	uint32_t count = 0;
 
 	uint32_t lastseenall = 0;
@@ -143,24 +158,46 @@ void PowerTask(void *argument)
 
 		// check if powernodes received.
 
+		powernodesOnlineSince |= powernodesOnline; // cumulatively add
+
 		if ( powernodesOnline == PNodeAllBit ) // all expected power nodes reported in. // TODO automate
 		{
+			if ( DeviceState.PowerNodes != OPERATIONAL )
+			{
+				DebugMsg("Power nodes all online");
+			}
 			DeviceState.PowerNodes = OPERATIONAL;
 			PNodeWaitStr[0] = 0;
+			powernodesOnlineSince = 0;
+			curpowernodesOnline = powernodesOnline;
 			lastseenall = gettimer();
-		} else
+		} else if ( gettimer() - lastseenall > PDMTIMEOUT ) // only update status to rest of code every timeout val.
 		{
-			// allow some timeout before declaring error, but only after we've actually already got online.
+			lastseenall = gettimer();
+			setPowerNodeStr( powernodesOnlineSince );
+			strcpy(PNodeWaitStr, getPNodeStr());
 
-			if ( gettimer() - lastseenall > PDMTIMEOUT && DeviceState.PowerNodes > OFFLINE)
+			// update the currently available nodes
+			curpowernodesOnline = powernodesOnlineSince;
+
+			if ( powernodesOnlineSince == 0 )
 			{
-				DeviceState.PowerNodes = INERROR; // haven't seen all needed.
-				setPowerNodeStr( powernodesOnline );
-				strcpy(PNodeWaitStr, getPNodeStr());
-				DebugMsg("Power node timeout");
+				if ( DeviceState.PowerNodes != OFFLINE )
+				{
+					DebugMsg("Power node timeout");
+				}
+				DeviceState.PowerNodes = OFFLINE; // can't see any nodes, so offline.
+			}
+			else
+			{
+				if ( DeviceState.Sensors != INERROR )
+				{
+					DebugMsg("Power nodes partially online");
+				}
+				DeviceState.PowerNodes = INERROR; // haven't seen all needed, so in error.
 			}
 
-			// brake powernode should be a priority as priority signal.
+			powernodesOnlineSince = 0;
 		}
 
 		if ( lastpowernodesOnline != powernodesOnline )
@@ -173,7 +210,7 @@ void PowerTask(void *argument)
 		// set the fan PWM speed when seen fan power node online.
 		if ( !fanssent && powernodesOnline & ( 1 << POWERNODE_FAN_BIT ) )
 		{
-			sendFanPWM( &getEEPROMBlock(0)->FanMax, &getEEPROMBlock(0)->FanMax );
+			sendFanPWM( getEEPROMBlock(0)->FanMax, getEEPROMBlock(0)->FanMax );
 			fanssent = true;
 
 			// if fans are set on in menu, put them on at startup.
@@ -417,6 +454,8 @@ int initPower( void )
 	RegisterResetCommand(resetPower);
 
 	resetPower();
+
+	waitStr = xSemaphoreCreateMutex();
 
 	PowerQueue = xQueueCreateStatic( PowerQUEUE_LENGTH,
 							  PowerITEMSIZE,

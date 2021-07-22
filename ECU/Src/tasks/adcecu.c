@@ -73,7 +73,7 @@ SemaphoreHandle_t xADC3 = NULL;
 
 #endif
 
-SemaphoreHandle_t waitStr = NULL;
+static SemaphoreHandle_t waitStr = NULL;
 
 char ADCWaitStr[20] = "";
 
