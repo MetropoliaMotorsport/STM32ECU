@@ -15,6 +15,7 @@
 #include "adcecu.h"
 #include "semphr.h"
 #include "taskpriorities.h"
+#include "power.h"
 
 // ADC conversion buffer, should be aligned in memory for faster DMA?
 typedef struct {
@@ -540,13 +541,36 @@ bool DoMenu( uint16_t input )
 		doMenuIntEdit( MenuLines[1+MENU_NM], "Max Nm", (selection==MENU_NM), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input );
 		doMenuPedalEdit( MenuLines[1+MENU_ACCEL], "Accel", (selection==MENU_ACCEL), &inedit, &getEEPROMBlock(0)->PedalProfile, input );
 		doMenuBoolEdit( MenuLines[1+MENU_LIMPDIS], "LimpDisable", (selection==MENU_LIMPDIS), &inedit, &getEEPROMBlock(0)->LimpMode, input);
-		doMenuBoolEdit( MenuLines[1+MENU_FANS], "Fans", (selection==MENU_FANS), &inedit, &getEEPROMBlock(0)->Fans, input);
-		doMenuIntEdit( MenuLines[1+MENU_FANMAX], "Fan Max", (selection==MENU_FANMAX), &inedit, &getEEPROMBlock(0)->FanMax, fanvals, input );
+
+
+		bool curfans = getEEPROMBlock(0)->Fans;
+		doMenuBoolEdit( MenuLines[1+MENU_FANS], "Fans", (selection==MENU_FANS), &inedit, &curfans, input);
+		if ( curfans != getEEPROMBlock(0)->Fans )
+		{
+			getEEPROMBlock(0)->Fans = curfans;
+			setDevicePower(LeftFans, curfans);
+			setDevicePower(RightFans, curfans);
+		}
+
+		bool curfanmax = getEEPROMBlock(0)->FanMax;
+		doMenuIntEdit( MenuLines[1+MENU_FANMAX], "Fan Max", (selection==MENU_FANMAX), &inedit, &curfanmax, fanvals, input );
+		if ( curfanmax != getEEPROMBlock(0)->FanMax )
+		{
+			getEEPROMBlock(0)->FanMax = curfanmax;
+			FanPWMControl( curfanmax, curfanmax );
+		}
 
 		sprintf(MenuLines[1+MENU_CALIB], "%cAPPS Calib", (selection==MENU_CALIB) ? '>' :' ');
+
 		doMenuBoolEdit( MenuLines[1+MENU_INVEN], "InvEnabled", (selection==MENU_INVEN), &inedit, &getEEPROMBlock(0)->InvEnabled, input);
 
-		doMenuBoolEdit( MenuLines[1+MENU_HV], "HV@Startup", (selection==MENU_HV), &inedit, &getEEPROMBlock(0)->alwaysHV, input);
+		bool curhvState = getEEPROMBlock(0)->alwaysHV;
+		doMenuBoolEdit( MenuLines[1+MENU_HV], "HV Startup", (selection==MENU_HV), &inedit, &curhvState, input);
+		if ( curhvState != getEEPROMBlock(0)->alwaysHV )
+		{
+			getEEPROMBlock(0)->alwaysHV = curhvState;
+			ShutdownCircuitSet(curhvState);
+		}
 
 		lcd_send_stringline( 0, MenuLines[0], MENUPRIORITY );
 

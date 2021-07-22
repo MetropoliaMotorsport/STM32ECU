@@ -80,6 +80,8 @@ void PowerTask(void *argument)
 
 	uint32_t lastseenall = 0;
 
+	bool fanssent = false;
+
 	while( 1 )
 	{
 		lastpowernodesOnline = powernodesOnline;
@@ -168,7 +170,22 @@ void PowerTask(void *argument)
 	//		DebugMsg(str);
 		}
 
-		sendPowerNodeReq(); // process pending power requests.
+		// set the fan PWM speed when seen fan power node online.
+		if ( !fanssent && powernodesOnline & ( 1 << POWERNODE_FAN_BIT ) )
+		{
+			sendFanPWM( &getEEPROMBlock(0)->FanMax, &getEEPROMBlock(0)->FanMax );
+			fanssent = true;
+
+			// if fans are set on in menu, put them on at startup.
+			if ( getEEPROMBlock(0)->Fans )
+			{
+				setDevicePower(LeftFans, true);// queue up enabling fans.
+				setDevicePower(RightFans, true);
+			}
+		} else
+		{
+			sendPowerNodeReq(); // process pending power requests, but not if also sent fan PWM request this cycle.
+		}
 	}
 
 	vTaskDelete(NULL);

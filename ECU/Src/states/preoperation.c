@@ -396,6 +396,8 @@ int PreOperationState( uint32_t OperationLoops  )
 		setDevicePower( Front2, true );
 		setDevicePower( TSAL, true );
 		setDevicePower( Inverters, true );
+		setDevicePower( RightPump, true );
+		setDevicePower( LeftPump, true );
 	}
 
 //	if ( errorPower() ) { ReadyToStart += 1; }

@@ -23,6 +23,8 @@
 					+ (0x1 << PNode37Bit) \
 					)
 
+#define POWERNODE_FAN_BIT  (PNode35Bit)
+
 extern CANData PowerNodeErr;
 extern CANData PowerNodeAck;
 
