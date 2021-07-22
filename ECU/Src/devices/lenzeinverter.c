@@ -559,7 +559,6 @@ bool processINVValues2( const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 	xTaskNotify( InvTaskHandle, ( 0x1 << (InverterState[inv].Motor*3+2) ), eSetBits);
 	// don't actually have anything to do with these right now.
-	return true;
 
 	if ( abs(MotorTemp) > 0 && abs(MotorTemp) < 200 && abs(PowerModTemp) > 0 && abs(PowerModTemp) < 200 )
 	{
@@ -572,6 +571,9 @@ bool processINVValues2( const uint8_t CANRxData[8], const uint32_t DataLength, c
 #endif
 		return false;
 	}
+
+	return true;
+
 }
 
 bool processAPPCError( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
