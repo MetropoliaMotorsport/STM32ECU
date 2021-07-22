@@ -137,7 +137,7 @@ char * GetPedalProfile( uint8_t profile, bool shortform )
 
 
 void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editing,
-		volatile uint8_t * value, const uint8_t * validvalues, uint16_t input )
+		volatile uint8_t * value, const uint8_t * validvalues, uint16_t input, bool percentage )
 {
 	char str[LCDCOLUMNS+1] = "";
 
@@ -190,8 +190,8 @@ void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editi
 	}
 
 	// print value
-	len = sprintf(str, "%3d", *value);
-	memcpy(&display[LCDCOLUMNS-1-3], str, len);
+	len = sprintf(str, "%3d%s", *value, percentage?"%":"");
+	memcpy(&display[LCDCOLUMNS-1-3-(percentage?1:0)], str, len);
 }
 
 
@@ -463,7 +463,7 @@ bool DoMenu( uint16_t input )
 
 	const uint8_t torquevals[] = {0,5,10,25,65,0}; // zero terminated so function can find end.
 
-	const uint8_t fanvals[] = {0,25,50,75,100,125,150,175,200,225,255,0};
+	const uint8_t fanvals[] = {10,20,30,40,50,60,70,80,90,100,0};
 
 	if ( inmenu )
 	{
@@ -538,7 +538,7 @@ bool DoMenu( uint16_t input )
 
 		sprintf(MenuLines[1], "%cBack & Save", (selection==0) ? '>' :' ');
 
-		doMenuIntEdit( MenuLines[1+MENU_NM], "Max Nm", (selection==MENU_NM), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input );
+		doMenuIntEdit( MenuLines[1+MENU_NM], "Max Nm", (selection==MENU_NM), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input, false );
 		doMenuPedalEdit( MenuLines[1+MENU_ACCEL], "Accel", (selection==MENU_ACCEL), &inedit, &getEEPROMBlock(0)->PedalProfile, input );
 		doMenuBoolEdit( MenuLines[1+MENU_LIMPDIS], "LimpDisable", (selection==MENU_LIMPDIS), &inedit, &getEEPROMBlock(0)->LimpMode, input);
 
@@ -552,12 +552,15 @@ bool DoMenu( uint16_t input )
 			setDevicePower(RightFans, curfans);
 		}
 
-		uint8_t curfanmax = getEEPROMBlock(0)->FanMax;
-		doMenuIntEdit( MenuLines[1+MENU_FANMAX], "Fan Max", (selection==MENU_FANMAX), &inedit, &curfanmax, fanvals, input );
-		if ( curfanmax != getEEPROMBlock(0)->FanMax )
+		uint8_t curfanmaxcur = ceil((100.0 / 255 * getEEPROMBlock(0)->FanMax )); // convert to %
+
+		uint8_t curfanmax = curfanmaxcur;
+		doMenuIntEdit( MenuLines[1+MENU_FANMAX], "Fan Max", (selection==MENU_FANMAX), &inedit, &curfanmax, fanvals, input, true );
+		if ( curfanmax != curfanmaxcur ) // value changed.
 		{
-			getEEPROMBlock(0)->FanMax = curfanmax;
-			FanPWMControl( curfanmax, curfanmax );
+			getEEPROMBlock(0)->FanMax = floor(curfanmax * 2.55);
+			FanPWMControl( getEEPROMBlock(0)->FanMax, getEEPROMBlock(0)->FanMax );
+//			DebugPrintf("Setting fanmax to %d", getEEPROMBlock(0)->FanMax);
 		}
 
 		sprintf(MenuLines[1+MENU_CALIB], "%cAPPS Calib", (selection==MENU_CALIB) ? '>' :' ');
