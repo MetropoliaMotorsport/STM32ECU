@@ -534,6 +534,13 @@ char * PNodeGetErrStr( uint32_t error )
 {
 	switch ( error )
 	{
+	case U5I0_SWITCH_OFF : return "ERR Channel 0 Switched Off";
+	case U5I1_SWITCH_OFF : return "ERR Channel 1 Switched Off";
+	case U6I0_SWITCH_OFF : return "ERR Channel 2 Switched Off";
+	case U6I1_SWITCH_OFF : return "ERR Channel 3 Switched Off";
+	case U7I0_SWITCH_OFF : return "ERR Channel 4 Switched Off";
+	case U7I1_SWITCH_OFF : return "ERR Channel 5 Switched Off";
+
 	case ERR_CAN_BUFFER_FULL			: return "ERR_CAN_BUFFER_FULL";
 	case ERR_CAN_FIFO_FULL				: return "ERR_CAN_FIFO_FULL";
 	case ERR_MESSAGE_DISABLED			: return "ERR_MESSAGE_DISABLED";
@@ -845,7 +852,7 @@ uint32_t powerErrorOccurred( DevicePower device )
 
 		for ( int j=0;PowerRequests[j].nodeid != 0;j++)
 		{
-			if ( PowerRequests[j].nodeid ==  DevicePowerList[i].nodeid )
+			if ( PowerRequests[j].nodeid == DevicePowerList[i].nodeid )
 			{
 				return PowerRequests[j].error[DevicePowerList[i].output];
 		//		if ( PowerRequests[j].error[DevicePowerList[i].output] )
