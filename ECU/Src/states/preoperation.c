@@ -407,6 +407,7 @@ int PreOperationState( uint32_t OperationLoops  )
 		setDevicePower( RightPump, true );
 		setDevicePower( LeftPump, true );
 		DebugPrintf("Setting startup power.");
+		lcd_send_stringline( 3, "Setting startup power.", 3);
 	}
 
 //	if ( errorPower() ) { ReadyToStart += 1; }
