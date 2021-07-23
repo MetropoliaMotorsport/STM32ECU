@@ -25,6 +25,7 @@
 
 #define ANodeBADDataShift (16)
 
+#ifdef ALLANODES
 #define ANodeAllBit ( (0x1 << ANode1Bit ) \
 					+ (0x1 << ANode9Bit)  \
 					+ (0x1 << ANode10Bit) \
@@ -37,6 +38,12 @@
 					+ (0x1 << ANode17Bit) \
 					+ (0x1 << ANode18Bit) \
 					)
+#else
+#define ANodeAllBit ( (0x1 << ANode1Bit ) \
+					+ (0x1 << ANode11Bit) \
+					)
+#endif
+
 #define AnodeCriticalBit ( (0x1 << ANode1Bit ) + (0x1 << ANode11Bit) )
 
 

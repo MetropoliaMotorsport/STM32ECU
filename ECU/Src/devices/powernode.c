@@ -658,30 +658,40 @@ void setPowerNodeStr( uint32_t nodesonline )
 
 	uint8_t pos = 0;
 
+	if ( PNodeAllBit & ( 0x1 << PNode33Bit ) )
 	if ( !(nodesonline & ( 0x1 << PNode33Bit )) )
 	{
 		PNodeStr[pos] = '3';
 		PNodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( PNodeAllBit & ( 0x1 << PNode34Bit ) )
 	if ( !(nodesonline & ( 0x1 << PNode34Bit )) )
 	{
 		PNodeStr[pos] = '4';
 		PNodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( PNodeAllBit & ( 0x1 << PNode35Bit ) )
 	if ( !(nodesonline & ( 0x1 << PNode35Bit )) )
 	{
 		PNodeStr[pos] = '5';
 		PNodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+
+	if ( PNodeAllBit & ( 0x1 << PNode36Bit ) )
 	if ( !(nodesonline & ( 0x1 << PNode36Bit )) )
 	{
 		PNodeStr[pos] = '6';
 		PNodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( PNodeAllBit & ( 0x1 << PNode37Bit ) )
 	if ( !(nodesonline & ( 0x1 << PNode37Bit )) )
 	{
 		PNodeStr[pos] = '7';

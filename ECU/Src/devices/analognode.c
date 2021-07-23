@@ -312,66 +312,88 @@ void setAnalogNodesStr( const uint32_t nodesonline ) // any of these missing sho
 
 	uint8_t pos = 0;
 
+
+	if ( ANodeAllBit & ( 0x1 << ANode1Bit ) )
 	if ( !(nodesonline & ( 0x1 << ANode1Bit )) )
 	{
 		ANodeStr[pos] = 'I';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( ANodeAllBit & ( 0x1 << ANode9Bit ) )
 	if ( !(nodesonline & ( 0x1 << ANode9Bit )) )
 	{
 		ANodeStr[pos] = '9';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( ANodeAllBit & ( 0x1 << ANode10Bit ) )
 	if ( !(nodesonline & ( 0x1 << ANode10Bit )) )
 	{
 		ANodeStr[pos] = '0';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( ANodeAllBit & ( 0x1 << ANode11Bit ) )
 	if ( !(nodesonline & ( 0x1 << ANode11Bit )) )
 	{
 		ANodeStr[pos] = '1';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( ANodeAllBit & ( 0x1 << ANode12Bit ) )
 	if ( !(nodesonline & ( 0x1 << ANode12Bit )) )
 	{
 		ANodeStr[pos] = '2';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( ANodeAllBit & ( 0x1 << ANode13Bit ) )
 	if ( !(nodesonline & ( 0x1 << ANode13Bit )) )
 	{
 		ANodeStr[pos] = '3';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( ANodeAllBit & ( 0x1 << ANode14Bit ) )
 	if ( !(nodesonline & ( 0x1 << ANode14Bit )) )
 	{
 		ANodeStr[pos] = '4';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( ANodeAllBit & ( 0x1 << ANode15Bit ) )
 	if ( !(nodesonline & ( 0x1 << ANode15Bit )) )
 	{
 		ANodeStr[pos] = '5';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( ANodeAllBit & ( 0x1 << ANode16Bit ) )
 	if ( !(nodesonline & ( 0x1 << ANode16Bit )) )
 	{
 		ANodeStr[pos] = '6';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( ANodeAllBit & ( 0x1 << ANode17Bit ) )
 	if ( !(nodesonline & ( 0x1 << ANode17Bit )) )
 	{
 		ANodeStr[pos] = '7';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
+
+	if ( ANodeAllBit & ( 0x1 << ANode18Bit ) )
 	if ( !(nodesonline & ( 0x1 << ANode18Bit )) )
 	{
 		ANodeStr[pos] = '8';

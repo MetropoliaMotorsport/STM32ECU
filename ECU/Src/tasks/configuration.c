@@ -363,18 +363,19 @@ bool doPedalCalibration( uint16_t input )
 	int32_t APPSR_close = abs(APPSR_max-APPSR_min) < 500 ? 1 : 0;
 	int32_t REG_close = abs(REG_max-REG_min) < 500 ? 1 : 0;
 
+	snprintf( str, 21, "L%5d R%5d B%5d", ADCState.APPSL, ADCState.APPSR, ADCState.Regen );
+
 	if ( APPSL_close || APPSR_close )
 	{
 		lcd_send_stringline(1, "", MENUPRIORITY-1);
 		lcd_send_stringline(2, "Press APPS & Brake", MENUPRIORITY-1);
-
-		lcd_send_stringline(3, "", MENUPRIORITY-1);
+		lcd_send_stringline(3, str, MENUPRIORITY-1);
 	} else
 	if ( REG_close )
 	{
 		lcd_send_stringline(1, "", MENUPRIORITY-1);
 		lcd_send_stringline(2, "Press Brake", MENUPRIORITY-1);
-		lcd_send_stringline(3, "", MENUPRIORITY-1);
+		lcd_send_stringline(3, str, MENUPRIORITY-1);
 	} else
 	{
 		int APPSL = 100.0/(APPSL_max-APPSL_min) * (ADCState.APPSL-APPSL_min);
