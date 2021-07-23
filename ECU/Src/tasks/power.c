@@ -289,7 +289,6 @@ bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is
 	if ( !Shutdown.IMD ) return false;
 #endif
 	return true;
-
 }
 
 char * ShutDownOpenStr( void )

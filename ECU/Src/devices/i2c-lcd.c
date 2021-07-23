@@ -353,12 +353,14 @@ int lcd_send_stringposDIR( int row, int col, char *str )
 
 int lcd_dosend( void )
 {
-	if ( inerror )
+	static uint32_t lastreset = 0;
+	if ( inerror || gettimer() - lastreset > 1000 )
 	{
-		vTaskDelay(100); // allow time for whatever caused the error to settle.
+		vTaskDelay(50); // allow time for whatever caused the error to settle.
 		lcd_init(lcdi2c); // queus up buffer to send.
 		vTaskDelay(5);
 		readytosend = true;
+		lastreset = gettimer();
 	}
 
 	// used for initialisation, and any other special commands. send blocking to ensure works.
