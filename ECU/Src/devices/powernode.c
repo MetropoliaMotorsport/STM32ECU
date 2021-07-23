@@ -142,6 +142,12 @@ void PNode36Timeout( uint16_t id )
 
 bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static bool first = false;
+	if ( !first )
+	{
+		DebugMsg("PNode 33 First msg.");
+		first = true;
+	}
 
 	if ( DataLength >> 16 == PowerNode33.dlcsize
 		&& CANRxData[0] <= 0b00011101 // max possible value. check for zeros in unused fields?
@@ -193,6 +199,13 @@ bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 
+	static bool first = false;
+	if ( !first )
+	{
+		DebugMsg("PNode 34 First msg.");
+		first = true;
+	}
+
 	if ( DataLength >> 16 == PowerNode34.dlcsize
 		&& CANRxData[0] <= 0b00011100 // max possible value. check for zeros in unused fields?
 		&& CANRxData[1] < 255
@@ -239,6 +252,13 @@ bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle ) // Cooling
 {
 
+	static bool first = false;
+	if ( !first )
+	{
+		DebugMsg("PNode 35 First msg.");
+		first = true;
+	}
+
 	if ( DataLength >> 16 == PowerNode35.dlcsize
 		&& ( CANRxData[0] >= 0 && CANRxData[0] <= MAXFANCURRENT )
 		&& ( CANRxData[1] >= 0 && CANRxData[1] <= MAXFANCURRENT )
@@ -262,6 +282,13 @@ bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 
 bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle ) // Rear
 {
+
+	static bool first = false;
+	if ( !first )
+	{
+		DebugMsg("PNode 36 First msg.");
+		first = true;
+	}
 
 	if ( DataLength >> 16 == PowerNode36.dlcsize
 		&& ( CANRxData[0] >= 0 && CANRxData[0] <= 10 )
@@ -309,6 +336,14 @@ bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 
 bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+
+	static bool first = false;
+	if ( !first )
+	{
+		DebugMsg("PNode 37 First msg.");
+		first = true;
+	}
+
 #if 1
 	if ( 1 )
 #else

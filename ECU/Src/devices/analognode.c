@@ -54,6 +54,7 @@ CANData  AnalogNode18 = { &DeviceState.AnalogNode18, AnalogNode18_ID, 3, process
 
 void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to safe defaults if not received.
 {
+	DebugMsg("ANode timeout.");
 	ADCState.Torque_Req_L_Percent=0;
 	ADCState.Torque_Req_R_Percent=0;
 	ADCState.Regen_Percent=0;
