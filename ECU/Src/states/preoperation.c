@@ -398,7 +398,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	}
 
 
-	if ( CheckTSActivationRequest ) // manual startup power request whilst in testing phases.
+	if ( CheckTSActivationRequest() ) // manual startup power request whilst in testing phases.
 	{
 		setDevicePower( Front1, true );
 		setDevicePower( Front2, true );
@@ -406,6 +406,7 @@ int PreOperationState( uint32_t OperationLoops  )
 		setDevicePower( Inverters, true );
 		setDevicePower( RightPump, true );
 		setDevicePower( LeftPump, true );
+		DebugPrintf("Setting startup power.");
 	}
 
 //	if ( errorPower() ) { ReadyToStart += 1; }
