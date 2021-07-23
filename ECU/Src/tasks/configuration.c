@@ -623,9 +623,11 @@ char * getConfStr( void )
 SemaphoreHandle_t xInConfig = NULL;
 StaticSemaphore_t xInConfigBuffer;
 
+uint8_t configstate = 0;
+
 bool inConfig( void )
 {
-	return uxSemaphoreGetCount( xInConfig );
+	return configstate;//uxSemaphoreGetCount( xInConfig );
 }
 
 // checks if device initial values appear OK.
@@ -634,8 +636,6 @@ void ConfigTask(void *argument)
 	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY ); // ensure that tasks don't start before all initialisation done.
 
 	ConfigInput_msg confinp;
-
-	uint8_t configstate = 0;
 
 	while ( 1 )
 	{

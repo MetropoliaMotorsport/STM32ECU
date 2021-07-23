@@ -339,14 +339,22 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		switch ( GetLeftRightPressed() )
 		{
-			case -1 : ConfigInput( KEY_LEFT ); break;
-			case 1 : ConfigInput( KEY_RIGHT ); break;
+			case -1 :
+				DebugPrintf("Left\r\n");
+				ConfigInput( KEY_LEFT ); break;
+			case 1 :
+				DebugPrintf("Right\r\n");
+				ConfigInput( KEY_RIGHT ); break;
 		}
 
 		switch ( GetUpDownPressed() )
 		{
-			case -1 : ConfigInput( KEY_UP ); break;
-			case 1 : ConfigInput( KEY_DOWN ); break;
+			case -1 :
+				DebugPrintf("Up\r\n");
+				ConfigInput( KEY_UP ); break;
+			case 1 :
+				DebugPrintf("Down\r\n");
+				ConfigInput( KEY_DOWN ); break;
 		}
 
 	}
