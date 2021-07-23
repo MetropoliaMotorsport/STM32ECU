@@ -34,6 +34,7 @@ DI7 pin 25 PF12 ok    input 8
  */
 
 #ifdef HPF20
+// these seem wrong
 	#define DI2		(0)
 	#define DI3		(1)
 	#define DI4		(2)
@@ -62,12 +63,12 @@ typedef enum input {
 	TS_Input=DI6, // input 4.
 	RTDM_Input=DI4, // input 2
 	StartStop_Input=DI7, //
-	Config_Input=DI11, // same as center button
-	Center_Input=DI11,
-	Left_Input=DI3,
-	Right_Input=DI2,
-	Up_Input=DI15,
-	Down_Input=DI14,
+	Config_Input=5, // same as center button
+	Center_Input=5,
+	Left_Input=9,
+	Right_Input=2,
+	Up_Input=7,
+	Down_Input=3,
 #endif
 
 #ifdef HPF19
