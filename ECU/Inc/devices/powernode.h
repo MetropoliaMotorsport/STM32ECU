@@ -23,6 +23,8 @@
 					+ (0x1 << PNode37Bit) \
 					)
 
+#define PNODECRITICALBITS	( (0x1 << PNode34Bit) )  // brake and buzzer are critical
+
 #define POWERNODE_FAN_BIT  (PNode35Bit)
 
 extern CANData PowerNodeErr;

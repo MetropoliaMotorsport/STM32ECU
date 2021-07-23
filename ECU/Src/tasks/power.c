@@ -61,7 +61,8 @@ char * getPNodeWait( void)
 	// TODO add a mutex
 }
 
-char * getPowerWait( void)
+
+char * getPowerWait( void )
 {
 	static char PowerWaitStrRet[20] = "";
 	xSemaphoreTake(waitStr, portMAX_DELAY);
@@ -199,6 +200,16 @@ void PowerTask(void *argument)
 
 			powernodesOnlineSince = 0;
 		}
+
+		if ( ( powernodesOnlineSince & PNODECRITICALBITS ) == PNODECRITICALBITS )
+		{
+			DeviceState.CriticalPower = OPERATIONAL;
+			// we've received all the SCS data
+		} else
+		{
+			DeviceState.CriticalPower = INERROR;
+		}
+
 
 		if ( lastpowernodesOnline != powernodesOnline )
 		{

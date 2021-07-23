@@ -305,10 +305,11 @@
 
 #define IVTReceived				8
 
+#define PNodeReceived			9
+
 #define INVERTERRECEIVED		20
 
-#define POWERNODERECEIVED
-
+//#define POWERNODERECEIVED
 
 #define RearLeftInverter		0
 #define RearRightInverter		1
@@ -385,6 +386,7 @@ typedef struct {
 	uint16_t ADCSanity;
 	DeviceStatus Sensors;
 	DeviceStatus CriticalSensors;
+	DeviceStatus CriticalPower;
 	DeviceStatus PWM;
 //	DeviceStatus Inverter;
 	DeviceStatus BMS;

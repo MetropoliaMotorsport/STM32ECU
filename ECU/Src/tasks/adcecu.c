@@ -17,6 +17,7 @@
 #include <limits.h>
 #include "taskpriorities.h"
 #include "timerecu.h"
+#include "debug.h"
 
 #define UINTOFFSET	360
 
@@ -133,7 +134,7 @@ void ADCTask(void *argument)
 		if ( lastanaloguenodesOnline != analoguenodesOnline )
 		{
 			char str[40];
-			snprintf(str, 40, "Analogue diff %d.", count);
+			snprintf(str, 40, "Analogue diff %lu", count);
 //			DebugMsg(str);
 		}
 
@@ -212,7 +213,7 @@ void ADCTask(void *argument)
 
 		xSemaphoreGive(waitStr);
 
-		if ( analoguenodesOnlineSince & AnodeCriticalBit == AnodeCriticalBit )
+		if ( ( analoguenodesOnlineSince & AnodeCriticalBit ) == AnodeCriticalBit )
 		{
 			DeviceState.CriticalSensors = OPERATIONAL;
 			// we've received all the SCS data
@@ -850,8 +851,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 uint32_t CheckADCSanity( void )
 {
 	uint16_t returnvalue = 0;
-
-	uint32_t ADCReceived = 0;
 
 	// check adc's are giving values in acceptable range.
 	if ( abs(ADCState.SteeringAngle) >= 181 ) // if impossible angle.

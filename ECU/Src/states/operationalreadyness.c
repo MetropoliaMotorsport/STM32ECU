@@ -26,15 +26,17 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 	{
 		returnvalue =
 #ifndef POWERNODES
-					(0X1 << PDMReceived)+
+					(0x1 << PDMReceived)+
+#else
+					(0x1 << PNodeReceived)+
 #endif
-					(0X1 << BMSReceived)+
-					(0X1 << IVTReceived)+
+					(0x1 << BMSReceived)+
+					(0x1 << IVTReceived)+
 #ifdef HPF19
 					(0x1 << FLeftSpeedReceived)+
 					(0x1 << FRightSpeedReceived)+
 #endif
-					(0x1 << PedalADCReceived);//
+					(0x1 << PedalADCReceived);
 
 			//(0x1 << YAWOnlineBit);
 	}
@@ -81,6 +83,11 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 		returnvalue &= ~(0x1 << PDMReceived);
 // ensure in communication with PDM.
 
+	}
+#else
+	if ( DeviceState.CriticalPower == OPERATIONAL )
+	{
+		returnvalue &= ~(0x1 << PNodeReceived);
 	}
 #endif
 
