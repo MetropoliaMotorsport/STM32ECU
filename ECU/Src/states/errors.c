@@ -18,7 +18,7 @@
 #include "semphr.h"
 #include "queue.h"
 
-#define MAXERRORMSGLENGTH  40
+#define MAXERRORMSGLENGTH  MAXERROROUTPUT
 
 struct error_msg {
   char msg[MAXERRORMSGLENGTH];

@@ -534,12 +534,12 @@ char * PNodeGetErrStr( uint32_t error )
 {
 	switch ( error )
 	{
-	case U5I0_SWITCH_OFF : return "ERR Channel 0 Switched Off";
-	case U5I1_SWITCH_OFF : return "ERR Channel 1 Switched Off";
-	case U6I0_SWITCH_OFF : return "ERR Channel 2 Switched Off";
-	case U6I1_SWITCH_OFF : return "ERR Channel 3 Switched Off";
-	case U7I0_SWITCH_OFF : return "ERR Channel 4 Switched Off";
-	case U7I1_SWITCH_OFF : return "ERR Channel 5 Switched Off";
+	case U5I0_SWITCH_OFF 				: return "ERR Channel 0 Off";
+	case U5I1_SWITCH_OFF 				: return "ERR Channel 1 Off";
+	case U6I0_SWITCH_OFF 				: return "ERR Channel 2 Off";
+	case U6I1_SWITCH_OFF 				: return "ERR Channel 3 Off";
+	case U7I0_SWITCH_OFF 				: return "ERR Channel 4 Off";
+	case U7I1_SWITCH_OFF 				: return "ERR Channel 5 Off";
 
 	case ERR_CAN_BUFFER_FULL			: return "ERR_CAN_BUFFER_FULL";
 	case ERR_CAN_FIFO_FULL				: return "ERR_CAN_FIFO_FULL";
@@ -568,8 +568,8 @@ char * PNodeGetErrStr( uint32_t error )
 	case WARN_OVERCURR_U5I0				: return "WARN_OVERCURR_CH0";
 	case WARN_UNDERCURR_U5I1			: return "WARN_UNDERCURR_CH1";
 	case WARN_OVERCURR_U5I1				: return "WARN_OVERCURR_CH1";
-	case ERROR_OVERCURR_TRIP_U5_0		: return "ERROR_OVERCURR_TRIP_CH0";
-	case ERROR_OVERCURR_TRIP_U5_1		: return "ERROR_OVERCURR_TRIP_CH1";
+	case ERROR_OVERCURR_TRIP_U5_0		: return "ERROR_OVERCURR_CH0";
+	case ERROR_OVERCURR_TRIP_U5_1		: return "ERROR_OVERCURR_CH1";
 	case WARN_UNDERVOLT_U6				: return "WARN_UNDERVOLT_CH2-3";
 	case WARN_OVERVOLT_U6				: return "WARN_OVERVOLT_CH2-3";
 	case WARN_UNDERTEMP_U6				: return "WARN_UNDERTEMP_CH2-3";
@@ -578,8 +578,8 @@ char * PNodeGetErrStr( uint32_t error )
 	case WARN_OVERCURR_U6I0				: return "WARN_OVERCURR_CH2";
 	case WARN_UNDERCURR_U6I1			: return "WARN_UNDERCURR_CH3";
 	case WARN_OVERCURR_U6I1				: return "WARN_OVERCURR_CH3";
-	case ERROR_OVERCURR_TRIP_U6_0		: return "ERROR_OVERCURR_TRIP_CH2";
-	case ERROR_OVERCURR_TRIP_U6_1		: return "ERROR_OVERCURR_TRIP_CH3";
+	case ERROR_OVERCURR_TRIP_U6_0		: return "ERROR_OVERCURR_CH2";
+	case ERROR_OVERCURR_TRIP_U6_1		: return "ERROR_OVERCURR_CH3";
 	case WARN_UNDERVOLT_U7				: return "WARN_UNDERVOLT_CH4-5";
 	case WARN_OVERVOLT_U7				: return "WARN_OVERVOLT_CH4-5";
 	case WARN_UNDERTEMP_U7				: return "WARN_UNDERTEMP_CH4-5";
@@ -588,8 +588,8 @@ char * PNodeGetErrStr( uint32_t error )
 	case WARN_OVERCURR_U7I0				: return "WARN_OVERCURR_CH4";
 	case WARN_UNDERCURR_U7I1			: return "WARN_UNDERCURR_CH5";
 	case WARN_OVERCURR_U7I1				: return "WARN_OVERCURR_CH5";
-	case ERROR_OVERCURR_TRIP_U7_0		: return "ERROR_OVERCURR_TRIP_CH4";
-	case ERROR_OVERCURR_TRIP_U7_1		: return "ERROR_OVERCURR_TRIP_CH5";
+	case ERROR_OVERCURR_TRIP_U7_0		: return "ERROR_OVERCURR_CH4";
+	case ERROR_OVERCURR_TRIP_U7_1		: return "ERROR_OVERCURR_CH5";
 
 	case ERROR_READ_TEMP				: return "ERROR_READ_TEMP";
 	case WARN_TEMP_MEASURE_OVERFLOW		: return "WARN_TEMP_MEASURE_OVERFLOW";
