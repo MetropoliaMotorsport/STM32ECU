@@ -398,7 +398,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	}
 
 
-	if ( CheckTSActivationRequest() ) // manual startup power request whilst in testing phases.
+	if ( CheckRTDMActivationRequest() ) // manual startup power request whilst in testing phases.
 	{
 		setDevicePower( Front1, true );
 		setDevicePower( Front2, true );
