@@ -490,15 +490,22 @@ bool DoMenu( uint16_t input )
 
 		if ( !incalib && selection == MENU_CALIB && input == KEY_ENTER ) // CheckButtonPressed(Config_Input) )
 		{
-			incalib = true;
-			input = 0;
+			if ( DeviceState.CriticalSensors == OPERATIONAL )
+			{
 
-			APPSL_min = UINT16_MAX;
-			APPSL_max = 0;
-			APPSR_min = UINT16_MAX;
-			APPSR_max = 0;
-			REG_min = UINT16_MAX;
-			REG_max = 0;
+				incalib = true;
+				input = 0;
+
+				APPSL_min = UINT16_MAX;
+				APPSL_max = 0;
+				APPSR_min = UINT16_MAX;
+				APPSR_max = 0;
+				REG_min = UINT16_MAX;
+				REG_max = 0;
+			} else
+			{
+				lcd_send_stringline( 3, "Err: ADC Not ready.", 3);
+			}
 		}
 
 		if ( incalib )
