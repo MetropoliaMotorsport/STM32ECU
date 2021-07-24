@@ -164,7 +164,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 
 	CAN_SendStatus(1, OperationalReadyState, received );
 
-	if ( OperationLoops > 500 )	// how many loops allow to get all data on time?, failure timeout.
+	if ( OperationLoops > 5 ) // 500 )	// how many loops allow to get all data on time?, failure timeout.
 	{
 		DebugMsg("Errorplace 0xBA Too many loops.");
 		Errors.ErrorPlace = 0xBA;
@@ -192,9 +192,12 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 
 	}
 
+	int invcount = 0;
+
 	if (received != 0 )
 	{ // activation requested but not everything is in satisfactory condition to continue
 
+		DebugPrintf("Received %d", received);
 		// show error state but allow to continue in some state if non critical sensor fails sanity.
 
 		blinkOutput(TSLED,LEDBLINK_FOUR,1); // indicate TS was requested before system ready.
@@ -202,7 +205,6 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 	}
 	else // if ( GetInverterState() >= STOPPED  ) // Ready to switch on
 	{
-		int invcount = 0;
 		for ( int i=0;i<MOTORCOUNT; i++)
 		{
 			if ( getInvState(i)->Device != OFFLINE )
@@ -210,6 +212,12 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 				invcount++;
 			}
 		}
+
+		DebugPrintf("Invc: %d %s %s %s %s", invcount,
+				getDeviceStatusStr(getInvState(0)->Device),
+				getDeviceStatusStr(getInvState(1)->Device),
+				getDeviceStatusStr(getInvState(2)->Device),
+				getDeviceStatusStr(getInvState(3)->Device) );
 
 		if ( invcount == MOTORCOUNT )
 		{

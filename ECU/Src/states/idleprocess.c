@@ -102,7 +102,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		DebugMsg("Entering Idle State");
 							 //12345678901234567890
 		setRunningPower( CheckHV, false );
-		invRequestState( PREOPERATIONAL ); // request to go into ready for HV
+		invRequestState( OPERATIONAL ); // request to go into ready for HV
 
 		lcd_clear();
 		//lcd_settitle("Ready to activate TS");
@@ -153,7 +153,16 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	// at this state, everything is ready to be powered up.
 
-	if ( invertersStateCheck(STOPPED) // returns true if all inverters match state
+	int invcount = 0;
+	for ( int i=0;i<MOTORCOUNT; i++)
+	{
+		if ( getInvState(i)->Device != OFFLINE )
+		{
+			invcount++;
+		}
+	}
+
+	if ( invcount == MOTORCOUNT // invertersStateCheck(STOPPED) // returns true if all inverters match state
 	  && CarState.VoltageBMS > MINHV
 #ifdef IVTEnable
 	#ifndef NOTSAL
@@ -165,11 +174,22 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 #endif
 	  ) // minimum accumulator voltage to allow TS, set a little above BMS limit, so we can
 	{
+		static bool first = false;
+
+		if ( !first )
+		{
+			first = true;
+			DebugMsg("Ready to enable TS");
+		}
+
 		readystate = 0;
 		if ( !TSRequested )
 		{
 			blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP); // start blinking to indicate ready.
 		}
+	} else
+	{
+
 	}
 
 #ifdef SETDRIVEMODEINIDLE
@@ -189,8 +209,9 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	if ( DeviceState.IVTEnabled )
 	{
-		if ( CarState.VoltageINV > 60 ) InvHVPresent = 1;
-	} else InvHVPresent = 1; // just assume HV present after request if IVT not enabled.
+		if ( CarState.VoltageINV > 60 )
+			InvHVPresent = 1;
+	} else InvHVPresent = 1; // just assume HV present after request if IVT not enabled. // TODO read from inverters.
 
 	if ( readystate == 0 && TSRequested && CarState.VoltageBMS > MINHV && InvHVPresent )
 	{
@@ -212,6 +233,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 		if ( CheckShutdown() )
 		{
+			DebugMsg("Timeout activating TS, check TSMS & HVD");
 			lcd_send_stringline(1,"Error Activating TS", 255);
 			lcd_send_stringline(2,"Check TSMS & HVD.", 255);
 		}
@@ -219,6 +241,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	if ( readystate == 0 && CheckTSActivationRequest() )
 	{
+		DebugMsg("TS Activation requested whilst ready.");
 		TSRequested = 1;
 		HVEnableTimer = gettimer();
 		CheckHV=true;
