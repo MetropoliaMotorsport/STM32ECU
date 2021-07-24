@@ -718,7 +718,7 @@ static void debugSensors( const char *tkn2 )
 		// anode 1
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode1Bit ) )
 		{
-			UARTprintf("Anode1: Torque Req L %3d%% (raw:%lu)   Regen %d (raw:%lu) Last at (%lu)\r\n",
+			UARTprintf("Anode1: Torque Req L %3d%% (raw:%lu)   Regen %3d%% (raw:%lu) Last at (%lu)\r\n",
 				    ADCState.Torque_Req_L_Percent/10,
 					ADCState.APPSL,
 				    ADCState.Regen_Percent/10,

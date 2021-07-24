@@ -22,6 +22,7 @@
 #include "powernode.h"
 #include "timerecu.h"
 #include "debug.h"
+#include "ivt.h"
 
 //#define PRINTDEBUGRUNNING
 
@@ -98,7 +99,7 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	else
 	{
 		returnvalue |= 0x1 << BMSReceived;
-
+	}
 
 	if ( receiveIVT() ) // ensure heard from IVT
 	{
@@ -333,16 +334,24 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		if ( showbrakebal ) PrintBrakeBalance( );
 
-	#ifdef ADC
+
 		if ( showadc )
 		{
+#ifdef ADC
 			sprintf(str,"A1 %.5lu %.5lu %.5lu", ADC_Data[0], ADC_Data[1], ADC_Data[2]);
 			lcd_send_stringline(1,str, 255);
 
 			sprintf(str,"A3 %.5lu %.5lu %.5lu", ADC_Data[3], ADC_Data[4], ADC_Data[5]);
 			lcd_send_stringline(2,str, 255);
+#else
+			sprintf(str, "L%3d%% R%3d%% B%3d%% ",
+					    ADCState.Torque_Req_L_Percent/10,
+					    ADCState.Torque_Req_R_Percent/10,
+					    ADCState.Regen_Percent/10);
+
+			lcd_send_stringline(0,str, 255);
+#endif
 		}
-	#endif
 	} else
 	{
 		ReadyToStart |= (1<<READYCONFIGBIT);  // being in config means not ready to start.
