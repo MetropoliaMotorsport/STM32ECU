@@ -111,7 +111,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 		if ( !first )
 		{
 			first = true;
-			DebugMsg("Readyness Power fail");
+			DebugPrintf("Readyness Power fail: %s", getDeviceStatusStr(DeviceState.CriticalPower));
 		}
 	}
 
@@ -123,7 +123,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 
 
 #else
-	if ( DeviceState.ADC == OPERATIONAL )
+	if ( DeviceState.ADCSanity == 0 )
 	{
 		returnvalue &= ~(0x1 << PedalADCReceived); // using local adc, already established online in initialisation.
 	} else
@@ -132,7 +132,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 		if ( !first )
 		{
 			first = true;
-			DebugMsg("Readyness ADC fail");
+			DebugPrintf("Readyness ADC fail ADCSanity %d", DeviceState.ADCSanity);
 		}
 	}
 
@@ -178,6 +178,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 	// this state is just to allow devices to get ready, don't need to check any data.
 
 	received = ReadyReceive( received );
+
         // check for incoming data, break when all received.
 
 	// process data.
