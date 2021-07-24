@@ -447,7 +447,7 @@ int PreOperationState( uint32_t OperationLoops  )
 //	if ( errorPower() ) { ReadyToStart += 1; }
 
 	if ( preoperationstate != 0 ) { ReadyToStart |= (1<<READYDEVBIT); }
-	if ( GetInverterState() < BOOTUP  ) { ReadyToStart |= (1<<READYINVBIT);} // require inverters to be online
+	if ( DeviceState.Inverter == OFFLINE || DeviceState.Inverter == INERROR ) { ReadyToStart |= (1<<READYINVBIT);} // require inverters to be online
 	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYSENSBIT); } // require critical sensor nodes online for startup.
 	if ( DeviceState.PowerNodes != OPERATIONAL ) { ReadyToStart |= (1<<READYPOWERBIT);}
 //	if ( !getDevicePower(TSAL) ) { ReadyToStart += 64; } // require TSAL power to allow startup.
@@ -469,7 +469,6 @@ int PreOperationState( uint32_t OperationLoops  )
 
 				setOutput(RTDMLED,Off);
 				return OperationalReadyState; // normal operational state on request
-
 			}
 
 	} else
