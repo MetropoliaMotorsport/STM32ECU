@@ -171,7 +171,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 		return OperationalErrorState; // error, too long waiting for data. Go to error state to inform and allow restart of process.
 	}
 
-	invRequestState(STOPPED);
+//	invRequestState(STOPPED); // not working for lenze.
 
 	vTaskDelay(5);
 
