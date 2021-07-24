@@ -11,7 +11,7 @@
 #include "ecumain.h"
 #include "uartecu.h"
 
-#define MAXDEBUGOUTPUT (80)
+#define MAXDEBUGOUTPUT (120)
 
 #define DEBUGUART    UART2
 
