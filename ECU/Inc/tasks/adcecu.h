@@ -156,6 +156,8 @@ struct ADCInterpolationTables { // pointers to array data for linear interpolati
 		struct ADCTable BrakeF;
 		struct ADCTable BrakeR;
 
+		struct ADCTable Regen;
+
 		struct ADCTable AccelL;
 		struct ADCTable AccelR;
 

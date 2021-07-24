@@ -366,6 +366,11 @@ bool SetupADCInterpolationTables( eepromdata * data )
 
 		ADCInterpolationTables.BrakeF.Elements = BrakeFSize;
 
+		ADCInterpolationTables.Regen.Input = BrakeTravelInput;
+		ADCInterpolationTables.Regen.Output = BrakeTravelOutput;
+
+		ADCInterpolationTables.Regen.Elements = BrakeTravelSize;
+
 		ADCInterpolationTables.AccelL.Input = TorqueReqLInput;
 		ADCInterpolationTables.AccelL.Output = TorqueReqLOutput;
 
@@ -514,8 +519,6 @@ int getBrakeBalance(uint16_t ADCInputF, uint16_t ADCInputR)
 #endif
 
 
-
-
 	if (ADCInputF > 5 && ADCInputR > 5) // too small a value to get accurate reading
 	{
 		return (ADCInputF * 100) / ( ADCInputF + ADCInputR );
@@ -545,9 +548,6 @@ int getTorqueReqPercL( uint16_t RawADCInputF )
 	  return CANADC.Torque_Req_L_Percent;
 	}
 #endif
-#ifndef STMADC
-	return 0;
-#endif
 #ifdef NOAPPS
 	return 0;
 #else
@@ -558,14 +558,10 @@ int getTorqueReqPercL( uint16_t RawADCInputF )
 
 int getBrakeTravelPerc( uint16_t RawADCInputF )
 {
-
-#ifndef STMADC
-	return 0;
-#endif
 #ifdef NOAPPS
 	return 0;
 #else
-    struct ADCTable ADC = ADCInterpolationTables.AccelL;
+    struct ADCTable ADC = ADCInterpolationTables.Regen;
 	return linearInterpolate(ADC.Input, ADC.Output, ADC.Elements, RawADCInputF);
 #endif
 }

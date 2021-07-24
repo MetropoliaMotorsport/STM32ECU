@@ -206,8 +206,10 @@ bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		first = true;
 	}
 
+
+
 	if ( DataLength >> 16 == PowerNode34.dlcsize
-		&& CANRxData[0] <= 0b00011100 // max possible value. check for zeros in unused fields?
+//		&& CANRxData[0] & ~(0b00011100) != 0 // check mask fit
 		&& CANRxData[1] < 255
 		&& ( CANRxData[2] >= 0 && CANRxData[2] <= 255 )
 		&& CANRxData[3] < 255

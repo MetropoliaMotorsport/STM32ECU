@@ -34,7 +34,6 @@ uint8_t TorqueReqRSize = 6; //sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0])
 // Regen sensor.
 uint16_t BrakeTravelInput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] =  {  0,  0, 0,     0,      64000,  64001 };; // calibration values for right input // 6200
 int16_t BrakeTravelOutput[sizeof(((eepromdata*)0)->ADCTorqueReqRInput)/2+4] = { 0,      0,      0,   1000,   1000,   1001 };
-
 uint8_t BrakeTravelSize = 6; //sizeof(TorqueReqRInput)/sizeof(TorqueReqRInput[0]);
 
 uint16_t TorqueInputs[5][sizeof(((eepromdata*)0)->pedalcurves[0].PedalCurveInput)/2] = {{50,950}}; // start registered travel at 8%
