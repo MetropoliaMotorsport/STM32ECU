@@ -231,6 +231,13 @@ char * getMotorsEnabledStr( void )
 	return enabledstr;
 }
 
+volatile int invertersonline = 0;
+
+int getInvOnlineCount( void )
+{
+	return invertersonline;
+}
+
 
 // task to manage inverter state.
 void InvTask(void *argument)
@@ -426,6 +433,8 @@ void InvTask(void *argument)
 					}
 				}
 			}
+
+			invertersonline = online;
 
 			if ( online == 4 )
 				DeviceState.Inverter = lowest; // set current lowest state as operational state

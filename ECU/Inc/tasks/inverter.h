@@ -90,6 +90,7 @@ void resetInv( void );
 int initInv( void );
 
 int initNoInv( void );
+int getInvOnlineCount( void );
 
 char * getMotorsEnabledStr( void );
 

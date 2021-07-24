@@ -66,9 +66,9 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 #endif
 
 	if ( GetInverterState() != OFFLINE ) // && GetInverterState() != INERROR )
-		   returnvalue &= ~(0x1 << InverterReceived);
-		else
-		   returnvalue |= 0x1 << InverterReceived;
+	   returnvalue &= ~(0x1 << InverterReceived);
+	else
+	   returnvalue |= 0x1 << InverterReceived;
 
 #ifndef POWERNODES
 
