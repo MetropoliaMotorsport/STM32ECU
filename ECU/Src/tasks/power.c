@@ -291,13 +291,15 @@ bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is
 	return true;
 }
 
+#define MAXSHUTDOWNSTR	40
+
 char * ShutDownOpenStr( void )
 {
 	static char str[255] = "";
 
 	// TODO move these into actual order of SDC.
 
-	sprintf(str, "%s%s%s%s%s%s%s%s%s",
+	snprintf(str, 40, "%s%s%s%s%s%s%s%s%s",
 		(!Shutdown.CockpitButton)?"DRV,":"",
 		(!Shutdown.LeftButton)?"LFT,":"",
 		(!Shutdown.RightButton)?"RGT,":"",
@@ -312,10 +314,10 @@ char * ShutDownOpenStr( void )
 
 	);
 
-	int len=strlen(str);
+//	int len=strlen(str);
 
-	if ( len > 0)
-		str[len-1] = 0;
+//	if ( len > 0)
+//		str[len-1] = 0;
 
 	return str;
 }

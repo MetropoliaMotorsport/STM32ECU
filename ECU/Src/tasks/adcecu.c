@@ -892,7 +892,7 @@ uint32_t CheckADCSanity( void )
 		ADCState.Torque_Req_L_Percent = 0;
 	}
 
-
+	// calculate brake balance, if theres some pressure.
 	if ( ADCState.BrakeF > 5 && ADCState.BrakeR > 5
 		 && ADCState.BrakeF < 255 && ADCState.BrakeR < 255
 	) {

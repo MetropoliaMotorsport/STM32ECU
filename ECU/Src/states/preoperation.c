@@ -149,16 +149,14 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		// set startup powerstates to bring devices up.
 
+		setDevicePower( Front1, true );
+		setDevicePower( Front2, true );
+		setDevicePower( TSAL, true );
+
 //		setDevicePower(Buzzer, 0);
 
-//		setDevicePower(ECU, 1);
-//		setDevicePower(TSAL, 1);
 //		setDevicePower(IVT, 1);
 //		setDevicePower(Telemetry, 1);
-//		setDevicePower(Front1, 1);
-
-//		setDevicePower(Inverters, 1);
-//		setDevicePower(Front2, 1);
 
 		initVectoring();
 
@@ -404,9 +402,9 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	if ( CheckRTDMActivationRequest() ) // manual startup power request whilst in testing phases, allows to reset if error occurred.
 	{
-		setDevicePower( Front1, true );
-		setDevicePower( Front2, true );
-		setDevicePower( TSAL, true );
+//		setDevicePower( Front1, true );
+//		setDevicePower( Front2, true );
+//		setDevicePower( TSAL, true );
 		setDevicePower( Inverters, true );
 		setDevicePower( RightPump, true );
 		setDevicePower( LeftPump, true );

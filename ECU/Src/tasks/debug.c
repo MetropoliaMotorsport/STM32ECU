@@ -38,7 +38,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10087"
+#define VERSION "10088"
 
 #define DEBUGSTACK_SIZE 128*8
 #define DEBUGTASKNAME  "DebugTask"
@@ -717,8 +717,10 @@ static void debugSensors( const char *tkn2 )
 		// anode 1
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode1Bit ) )
 		{
-			UARTprintf("Anode1: TorqueR %lu   Regen %d   AppsL %lu   Last at (%lu)\r\n",
+			UARTprintf("Anode1: Torque Req L %3d%% (raw:%lu)   Regen %d (raw:%lu) Last at (%lu)\r\n",
+				    ADCState.Torque_Req_L_Percent,
 					ADCState.APPSL,
+				    ADCState.Regen_Percent,
 					ADCState.Regen,
 					AnalogNode1.time);
 		}
