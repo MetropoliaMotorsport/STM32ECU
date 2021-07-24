@@ -204,7 +204,7 @@ bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		DebugMsg("PNode 34 First msg.");
 		first = true;
 	}
-
+	// 0x1f 0x0001 10000
 	if ( DataLength >> 16 == PowerNode34.dlcsize
 //		&& CANRxData[0] & ~(0b00011100) != 0 // check mask fit
 		&& CANRxData[1] < 255

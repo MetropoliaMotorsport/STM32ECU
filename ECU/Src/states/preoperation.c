@@ -66,7 +66,7 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 #endif
 
 	static bool first = false;
-	if ( DeviceState.Inverter != OFFLINE ) // && GetInverterState() != INERROR )
+	if ( 1 ) //DeviceState.Inverter != OFFLINE ) // && GetInverterState() != INERROR )
 	{
 		if ( !first )
 		{
@@ -91,23 +91,23 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	}
 #endif
 
-//	if ( receiveBMS() ) // ensure heard from BMS
+	if ( receiveBMS() ) // ensure heard from BMS
 	{
 		returnvalue &= ~(0x1 << BMSReceived);
 	}
-/*	else
+	else
 	{
 		returnvalue |= 0x1 << BMSReceived;
-	} */
 
-//	if ( receiveIVT() ) // ensure heard from IVT
+
+	if ( receiveIVT() ) // ensure heard from IVT
 	{
 		returnvalue &= ~(0x1 << IVTReceived);
 	}
-/*	else
+	else
 	{
 		returnvalue |= 0x1 << IVTReceived; // why was this commented out?
-	} */
+	}
 
 	// check datalogger response?   --
 
