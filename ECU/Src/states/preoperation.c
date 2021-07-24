@@ -273,6 +273,14 @@ int PreOperationState( uint32_t OperationLoops  )
 					strcat(str, ") " );
 				}
 
+				if (ReadyToStart & (0x1 << READYCONFIGBIT ) ) {	strcat(str, "CFG " ); }
+
+				if (ReadyToStart & (0x1 << READYDEVBIT ) ) {	strcat(str, "DEV " ); }
+
+				if (ReadyToStart & (0x1 << READYSENSBIT ) ) {	strcat(str, "SNS " ); }
+
+				if (ReadyToStart & (0x1 << READYPOWERBIT ) ) {	strcat(str, "PWR " ); }
+
 #ifndef POWERNODES
 				if (! ( preoperationstate & (0x1 << PDMReceived) ) ) {
 				// only show as PDM error if pdm is on bus.

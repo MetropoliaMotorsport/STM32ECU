@@ -171,10 +171,15 @@ int initBMS( void )
 	RegisterResetCommand(resetBMS);
 
 	resetBMS();
-
+#ifdef HPF19
+	RegisterCan1Message(&BMSVoltage);
+	RegisterCan1Message(&BMSOpMode);
+	RegisterCan1Message(&BMSError);
+#else
 	RegisterCan2Message(&BMSVoltage);
 	RegisterCan2Message(&BMSOpMode);
 	RegisterCan2Message(&BMSError);
+#endif
 	return 0;
 }
 

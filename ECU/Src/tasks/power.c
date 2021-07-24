@@ -276,17 +276,16 @@ int setRunningPower( bool HV, bool buzzer )
 
 bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is closed
 {
-
 #ifdef HPF20
 	if ( !Shutdown.BOTS ) return false;
 	if ( !Shutdown.BSPDAfter ) return false;
 	if ( !Shutdown.BSPDBefore ) return false;
 	if ( !Shutdown.CockpitButton ) return false;
-	if ( !Shutdown.InertiaSwitch ) return false;
+//	if ( !Shutdown.InertiaSwitch ) return false;
 	if ( !Shutdown.LeftButton ) return false;
 	if ( !Shutdown.RightButton ) return false;
 	if ( !Shutdown.BMS ) return false;
-	if ( !Shutdown.IMD ) return false;
+//	if ( !Shutdown.IMD ) return false;
 #endif
 	return true;
 }
