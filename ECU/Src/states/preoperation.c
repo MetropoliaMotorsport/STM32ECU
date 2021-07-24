@@ -65,8 +65,16 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 	}
 #endif
 
-	if ( GetInverterState() != OFFLINE ) // && GetInverterState() != INERROR )
+	static bool first = false;
+	if ( DeviceState.Inverter != OFFLINE ) // && GetInverterState() != INERROR )
+	{
+		if ( !first )
+		{
+			first = true;
+			DebugMsg("Inverters online in startup.");
+		}
 	   returnvalue &= ~(0x1 << InverterReceived);
+	}
 	else
 	   returnvalue |= 0x1 << InverterReceived;
 
@@ -114,6 +122,12 @@ void setTestMotors( bool state )
 	testmotors = state;
 }
 
+#define READYCONFIGBIT		0
+#define READYSDCBIT     	1
+#define READYDEVBIT			2
+#define READYINVBIT			3
+#define READYSENSBIT		4
+#define READYPOWERBIT		5
 
 // get external hardware upto state to allow entering operational state on request.
 int PreOperationState( uint32_t OperationLoops  )
@@ -249,7 +263,7 @@ int PreOperationState( uint32_t OperationLoops  )
 				if (preoperationstate & (0x1 << PedalADCReceived) ) { strcat(str, "ADC " ); }
 #endif
 
-				if (ReadyToStart & (0x1 << 3 ) ) {
+				if (ReadyToStart & (0x1 << READYSDCBIT ) ) {
 
 					strcat(str, "SDC(" );
 
@@ -263,10 +277,11 @@ int PreOperationState( uint32_t OperationLoops  )
 				// only show as PDM error if pdm is on bus.
 					if (preoperationstate & (0x1 << PDMReceived) ) { strcat(str, "PDM " ); }
 
-					if (ReadyToStart & (0x1 << 0 ) ) { strcat(str, "PDM " );  } // ?
+					if (ReadyToStart & (0x1 << READYPOWERBIT ) ) { strcat(str, "PDM " );  } // ?
 				}
 #endif
-				if (ReadyToStart & (0x1 << 2 ) ) { strcat(str, "INV " );  }
+				if (ReadyToStart & (0x1 << READYINVBIT ) ) { strcat(str, "INV " );  }
+
 
 				strpad(str,20, true);
 #ifndef PRINTDEBUGRUNNING
@@ -297,7 +312,7 @@ int PreOperationState( uint32_t OperationLoops  )
 		{
 			DebugPrintf("Enter Config\r\n");
 			ConfigInput( 0xFFFF );
-			ReadyToStart += 1; // we're probably entering config, don't allow startup this cycle.
+			ReadyToStart |= (1<<READYCONFIGBIT); // we're probably entering config, don't allow startup this cycle.
 		}
 
 		static bool showbrakebal = false;
@@ -330,7 +345,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	#endif
 	} else
 	{
-		ReadyToStart += 1; // being in config means not ready to start.
+		ReadyToStart |= (1<<READYCONFIGBIT);  // being in config means not ready to start.
 		// process config input.
 
 		if ( CheckButtonPressed(Config_Input) )
@@ -413,10 +428,11 @@ int PreOperationState( uint32_t OperationLoops  )
 	}
 
 //	if ( errorPower() ) { ReadyToStart += 1; }
-	if ( preoperationstate != 0 ) { ReadyToStart += 4; }
-	if ( GetInverterState() < BOOTUP  ) { ReadyToStart += 8; } // require inverters to be online
-	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart += 16; } // require critical sensor nodes online for startup.
-	if ( DeviceState.PowerNodes != OPERATIONAL ) { ReadyToStart += 32; }
+
+	if ( preoperationstate != 0 ) { ReadyToStart |= (1<<READYDEVBIT); }
+	if ( GetInverterState() < BOOTUP  ) { ReadyToStart |= (1<<READYINVBIT);} // require inverters to be online
+	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYSENSBIT); } // require critical sensor nodes online for startup.
+	if ( DeviceState.PowerNodes != OPERATIONAL ) { ReadyToStart |= (1<<READYPOWERBIT);}
 //	if ( !getDevicePower(TSAL) ) { ReadyToStart += 64; } // require TSAL power to allow startup.
 
 	if ( ReadyToStart == 0 )
