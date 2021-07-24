@@ -231,7 +231,7 @@ bool SetCriticalError()
 {
 	// do a better fix
 //	if ( CriticalError != NULL)
-		return xSemaphoreGive( CriticalError );
+//		return xSemaphoreGive( CriticalError );
 //	else return false;
 }
 
