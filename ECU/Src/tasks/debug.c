@@ -225,7 +225,7 @@ static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 	{				  // PreOperation  PreOperation
 
 
-		UARTprintf("Inverter handling enabled: %s\r\n", getEEPROMBlock(0)->InvEnabled? "Y":"N" );
+		UARTprintf("Inverter handling enabled: %s Global state: %s\r\n", getEEPROMBlock(0)->InvEnabled? "Y":"N", getDeviceStatusStr(GetInverterState()) );
 		UARTwrite("-----------------------------------\r\n");
 		UARTwrite("Inv  Current State  Requested State\r\n");
 		UARTwrite("-----------------------------------\r\n");

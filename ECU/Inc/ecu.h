@@ -388,7 +388,7 @@ typedef struct {
 	DeviceStatus CriticalSensors;
 	DeviceStatus CriticalPower;
 	DeviceStatus PWM;
-//	DeviceStatus Inverter;
+	DeviceStatus Inverter;
 	DeviceStatus BMS;
 	DeviceStatus IMU;
 	DeviceStatus PDM;

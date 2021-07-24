@@ -10,12 +10,12 @@
 
 
 uint16_t BrakeRInput[sizeof(((eepromdata*)0)->ADCBrakeRPresInput)/2 +3 ] = { 0, 0, 	  0, 	 0, 65535 }; // at 240bar, should be 240 output, at 0 bar should be 0 // 62914
-int16_t BrakeROutput[sizeof(((eepromdata*)0)->ADCBrakeRPresOutput)/2 +3 ] = { -1,     0,    0,     240,  255 }; // output range // 240
+int16_t BrakeROutput[sizeof(((eepromdata*)0)->ADCBrakeRPresOutput)/2 +3 ] = { 0,     0,    0,     240,  255 }; // output range // 240
 uint8_t BrakeRSize = sizeof(BrakeRInput)/sizeof(BrakeRInput[0]);
 
 
 uint16_t BrakeFInput[sizeof(((eepromdata*)0)->ADCBrakeFPresInput)/2 +3 ] = { 0, 0,    0,	 0, 65535 }; // at 240bar, should be 240 output, at 0 bar should be 0 // 62914
-int16_t BrakeFOutput[sizeof(((eepromdata*)0)->ADCBrakeFPresOutput)/2 +3 ] = { -1,     0,    0,     240,  255 }; // output range // 240
+int16_t BrakeFOutput[sizeof(((eepromdata*)0)->ADCBrakeFPresOutput)/2 +3 ] = { 0,     0,    0,     240,  255 }; // output range // 240
 uint8_t BrakeFSize = sizeof(BrakeFInput)/sizeof(BrakeFInput[0]);
 
 

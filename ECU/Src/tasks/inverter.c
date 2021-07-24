@@ -152,7 +152,6 @@ bool checkStatusCode( uint8_t status )
 	}
 }
 
-DeviceStatus Inverter;
 DeviceStatus InverterStates[MOTORCOUNT];
 
 
@@ -242,7 +241,7 @@ void InvTask(void *argument)
 
 	Inv_msg msg;
 
-	Inverter = OFFLINE;
+	DeviceState.Inverter = OFFLINE;
 
 	uint32_t invexpected[MOTORCOUNT];
 
@@ -416,7 +415,7 @@ void InvTask(void *argument)
 						{
 							if ( InverterState[i].SetupState != 0xFE )
 							{
-								snprintf(str, 80, "\Giving up onInverter %d private CFG setup in state %d (%lu)\n", i, InverterState[i].SetupState, gettimer());
+								snprintf(str, 80, "Giving up on Inverter %d private CFG setup in state %d (%lu)\n", i, InverterState[i].SetupState, gettimer());
 								DebugMsg(str);
 							}
 							InverterState[i].SetupState = 0xFE;
@@ -429,9 +428,9 @@ void InvTask(void *argument)
 			}
 
 			if ( online == 4 )
-				Inverter = lowest; // set current lowest state as operational state
+				DeviceState.Inverter = lowest; // set current lowest state as operational state
 			else
-				Inverter = OFFLINE;
+				DeviceState.Inverter = OFFLINE;
 
 			vTaskDelay(1);
 		}
@@ -495,12 +494,12 @@ DeviceStatus InternalInverterState ( uint16_t Status ) // status 104, failed to 
 
 DeviceStatus GetInverterState( void )
 {
-	return Inverter;
+	return DeviceState.Inverter;
 }
 
 bool invertersStateCheck( const DeviceStatus state )
 {
-	if ( Inverter == state ) return true;
+	if ( DeviceState.Inverter == state ) return true;
 	else return false;
 }
 
@@ -603,7 +602,7 @@ long getInvSpeedValue( uint8_t *data )
 
 uint8_t invRequestState( DeviceStatus state )
 {
-	if ( Inverter != state )
+	if ( DeviceState.Inverter != state )
 	{
 		Inv_msg msg;
 		msg.state  = state;
@@ -617,6 +616,8 @@ uint8_t invRequestState( DeviceStatus state )
 void resetInv( void )
 {
 //	InvInternalResetRDO();
+
+	DeviceState.Inverter = OFFLINE;
 
 	for ( int i=0;i<MOTORCOUNT; i++)
 	{
@@ -652,6 +653,12 @@ void resetInv( void )
 	Errors.InverterError = 0; // reset logged errors.
 }
 
+
+int initNoInv( void )
+{
+	resetInv();
+	return 0;
+}
 
 int initInv( void )
 {
