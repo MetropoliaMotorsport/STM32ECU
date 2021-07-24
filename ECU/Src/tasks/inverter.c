@@ -312,6 +312,9 @@ void InvTask(void *argument)
 
 		vTaskDelay(3); // wait a bit so not right at sync point.
 
+		int online = 0;
+		DeviceStatus lowest = OPERATIONAL;
+
 		for ( int i=0; i<MOTORCOUNT; i++) // speed is received
 		{
 			if( InverterState[i].SetupState == 0xFF )
@@ -369,6 +372,14 @@ void InvTask(void *argument)
 						}
 					}
 				}
+
+				if ( InverterState[i].Device != OFFLINE )
+				{
+					online++;
+					if ( InverterState[i].Device < lowest )
+						lowest = InverterState[i].Device;
+				}
+
 			} else
 			{
 				// state 1 should be triggered automatically by inverter startup right now, not attempting to force it.
@@ -416,6 +427,12 @@ void InvTask(void *argument)
 					}
 				}
 			}
+
+			if ( online == 4 )
+				Inverter = lowest; // set current lowest state as operational state
+			else
+				Inverter = OFFLINE;
+
 			vTaskDelay(1);
 		}
 
