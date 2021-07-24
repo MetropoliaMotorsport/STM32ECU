@@ -172,9 +172,9 @@ int initBMS( void )
 
 	resetBMS();
 
-	RegisterCan1Message(&BMSVoltage);
-	RegisterCan1Message(&BMSOpMode);
-	RegisterCan1Message(&BMSError);
+	RegisterCan2Message(&BMSVoltage);
+	RegisterCan2Message(&BMSOpMode);
+	RegisterCan2Message(&BMSError);
 	return 0;
 }
 
