@@ -187,6 +187,7 @@ void ADCTask(void *argument)
 				DebugMsg("Analogue nodes all online");
 			}
 			DeviceState.Sensors = OPERATIONAL;
+			setAnalogNodesStr( analoguenodesOnlineSince );
 			ADCWaitStr[0] = 0;
 			analoguenodesOnlineSince = 0;
 			curanaloguenodesOnline = analoguenodesOnline;

@@ -505,6 +505,7 @@ bool DoMenu( uint16_t input )
 			} else
 			{
 				lcd_send_stringline( 3, "Err: ADC Not ready.", 3);
+				input = 0;
 			}
 		}
 
