@@ -84,8 +84,8 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	{
 		xTaskNotify( ADCTaskHandle, ( 0x1 << ANode1Bit ), eSetBits);
 
-        ADCState.Torque_Req_L_Percent = getTorqueReqPercL(AccelL*16);
-        ADCState.Regen_Percent = getBrakeTravelPerc(Regen*16);
+        ADCState.Torque_Req_L_Percent = getTorqueReqPercL(AccelL);
+        ADCState.Regen_Percent = getBrakeTravelPerc(Regen);
 		ADCState.APPSL = AccelL;
 		ADCState.Regen = Regen;
 

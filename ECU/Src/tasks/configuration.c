@@ -412,9 +412,14 @@ bool doPedalCalibration( uint16_t input )
 		{
 			data->ADCTorqueReqLInput[0] = APPSL_min;
 			data->ADCTorqueReqLInput[1] = APPSL_max;
+			data->ADCTorqueReqLInput[2] = 0;
+			data->ADCTorqueReqLInput[3] = 0;
 
 			data->ADCTorqueReqRInput[0] = APPSR_min;
 			data->ADCTorqueReqRInput[1] = APPSR_max;
+			data->ADCTorqueReqRInput[2] = 0;
+			data->ADCTorqueReqRInput[3] = 0;
+
 
 			// store new APPS calibration to memory.
 		}
@@ -426,6 +431,8 @@ bool doPedalCalibration( uint16_t input )
 		{
 			data->ADCBrakeTravelInput[0] = REG_min;
 			data->ADCBrakeTravelInput[1] = REG_max;
+			data->ADCBrakeTravelInput[2] = 0;
+			data->ADCBrakeTravelInput[3] = 0;
 			// store new Regen calibration to memory.
 		}
 
