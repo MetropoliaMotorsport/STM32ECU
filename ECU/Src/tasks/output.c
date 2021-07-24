@@ -155,14 +155,14 @@ void OutputTask(void *argument)
 
 
 
-	for ( int i=0;i<18;i++)
+	for ( int i=0;i<19;i++)
 	{
 		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), On);
 	}
 
 	vTaskDelay(2000);
 
-	for ( int i=0;i<18;i++)
+	for ( int i=0;i<19;i++)
 	{
 		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), Off);
 	}

@@ -12,6 +12,7 @@
 #include "power.h"
 #include "errors.h"
 #include "lcd.h"
+#include "debug.h"
 
 
 int AllowLimp( void ) // function to determine if limp mode is allowable
@@ -131,6 +132,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 
 	if ( OperationLoops > 500 )	// how many loops allow to get all data on time?, failure timeout.
 	{
+		DebugMsg("Errorplace 0xBA Too many loops.");
 		Errors.ErrorPlace = 0xBA;
 		return OperationalErrorState; // error, too long waiting for data. Go to error state to inform and allow restart of process.
 	}
@@ -150,6 +152,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 	{
 	//	CAN_SendStatus(5, OperationalReadyState, received);
 	//	Errors.State = OperationalReadyState;
+		DebugMsg("Errorplace 0xBB critical error.");
 		Errors.ErrorPlace = 0xBB;
 		return OperationalErrorState; // something has triggered an unacceptable error ( inverter error state etc ), drop to error state to deal with it.
 

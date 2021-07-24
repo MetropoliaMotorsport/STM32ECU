@@ -231,9 +231,13 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 bool SetCriticalError()
 {
 	// do a better fix
-//	if ( CriticalError != NULL)
-//		return xSemaphoreGive( CriticalError );
-//	else return false;
+	if ( CriticalError != NULL )
+	{
+		DebugMsg("Logging critical error");
+		return true;
+	//	return xSemaphoreGive( CriticalError );
+	}
+	else return false;
 }
 
 bool CheckCriticalError()

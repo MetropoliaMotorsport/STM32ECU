@@ -18,6 +18,7 @@
 #include "lcd.h"
 #include "output.h"
 #include "power.h"
+#include "debug.h"
 
 bool CheckHV = false;
 
@@ -134,6 +135,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	if ( received != 0 ) // not all expected data received in window.
 	{
+		DebugMsg("Errorplace 0x9A not received data");
 		CAN_SendStatus(1, OperationalState, received);
 		Errors.ErrorPlace = 0x9A;
 		Errors.OperationalReceiveError = received;
@@ -143,6 +145,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	if ( CheckCriticalError() )
 	{
+		DebugMsg("Errorplace 0xCA Critical error.");
 		Errors.ErrorPlace = 0xCA;
 		Errors.ErrorReason = 0;
 		return OperationalErrorState;
@@ -163,8 +166,10 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	  ) // minimum accumulator voltage to allow TS, set a little above BMS limit, so we can
 	{
 		readystate = 0;
-		 if ( !TSRequested )
-			 blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP); // start blinking to indicate ready.
+		if ( !TSRequested )
+		{
+			blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP); // start blinking to indicate ready.
+		}
 	}
 
 #ifdef SETDRIVEMODEINIDLE
