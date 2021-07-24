@@ -177,7 +177,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 
 	// this state is just to allow devices to get ready, don't need to check any data.
 
-//	received = ReadyReceive( received );
+	received = ReadyReceive( received );
         // check for incoming data, break when all received.
 
 	// process data.
