@@ -246,12 +246,12 @@ int setRunningPower( bool HV, bool buzzer )
 #else
 	bool HVR = true;
 
-	if ( GetInverterState() < STOPPED ) HVR = false;
+//	if ( GetInverterState() < STOPPED ) HVR = false;
 
 	if ( ( HVR && HV ) )
 	{
 // request HV on.
-	//	ShutdownCircuitSet( true );
+		ShutdownCircuitSet( true );
 		setDevicePower( Buzzer, buzzer );
 		return 1;
 //		return CANSendPDM(10,buzzer); // send PDM message anyway as it's being monitored for HV state in SIM even though has no effect
@@ -261,7 +261,7 @@ int setRunningPower( bool HV, bool buzzer )
 		return 0;
 //	    return CANSendPDM(0,buzzer);
 	}
-
+#if 0
 	if ( ( ADCState.BrakeF > 5 ) ||      // ensure brake light power turned on if any indication brakes are being pressed.
 		 ( ADCState.BrakeR > 5 ) || 		// TODO find suitable minimum values to trigger on.
 		 ( ADCState.Regen_Percent > 5) )
@@ -271,6 +271,7 @@ int setRunningPower( bool HV, bool buzzer )
 	{
 		setDevicePower( Brake,  false);
 	};
+#endif
 #endif
 }
 

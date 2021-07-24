@@ -58,7 +58,11 @@ int TSActiveProcess( uint32_t OperationLoops )
 		PrintRunning("TS:On");
 
 	setRunningPower( true, false ); // will enable HV if inverters in ready status and HV enabled flag set.
+#ifdef HPF19
 	invRequestState(PREOPERATIONAL);
+#else
+	invRequestState(OPERATIONAL);
+#endif
 
 	uint8_t ReceiveNonCriticalError = 0;
 

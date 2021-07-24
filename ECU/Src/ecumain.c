@@ -241,7 +241,7 @@ static int HardwareInit( void )
 
 	// startup LCD first
 #ifdef HPF20
-//	ShutdownCircuitSet( false ); // ensure shutdown circuit is closed at start
+	ShutdownCircuitSet( false ); // ensure shutdown circuit is closed at start
 
     initOutput(); // set default led states and start life indicator LED blinking. needed for LCD powering.
 
@@ -359,7 +359,10 @@ static int HardwareInit( void )
 		DebugMsg("Shutdowncircuit Closed");
 		ShutdownCircuitSet(true);
 	} else
+	{
 		DebugMsg("Shutdowncircuit Open");
+		ShutdownCircuitSet(false);
+	}
 
 	// after cubemx hardware inits, run our own initialisations to start up essential function.
 

@@ -634,6 +634,11 @@ static void debugShutdown( const char *tkn2, const char *tkn3 )
 {
 	uint8_t shutdownstate=0;
 
+	if ( streql( tkn2, "help" )  )
+	{
+		UARTprintf("shutdown boot off|on to change startup state of ECU HV switch.\r\n");
+		UARTprintf("shutdown off|on to change current state.\r\n");
+	} else
 	if ( streql( tkn2, "boot" )  )
 	{
 		if ( checkOn(tkn3) )
@@ -1366,16 +1371,16 @@ static void DebugTask(void *pvParameters)
 
 					UARTwrite("List of available commands:\r\n");
 
-					UARTwrite("power state|device on|off");
-					UARTwrite("fanpwm <leftduty> <rightduty>");
-					UARTwrite("shutdown state|on|off");
-					UARTwrite("motor");
-					UARTwrite("inverter reset");
-					UARTwrite("sensors");
-					UARTwrite("config	config menu input");
-					UARTwrite("esckey");
-					UARTwrite("list");
-					UARTwrite("stats");
+					UARTwrite("power state|device on|off\r\n");
+					UARTwrite("fanpwm <leftduty> <rightduty>\r\n");
+					UARTwrite("shutdown state|on|off|<boot on|off>\r\n");
+					UARTwrite("motor\r\n");
+					UARTwrite("inverter reset\r\n");
+					UARTwrite("sensors\r\n");
+					UARTwrite("config	config menu input\r\n");
+					UARTwrite("esckey\r\n");
+					UARTwrite("list\r\n");
+					UARTwrite("stats\r\n");
 
 				} else
 

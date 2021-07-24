@@ -153,8 +153,22 @@ void OutputTask(void *argument)
 	// (e.g. absence of failures is not actively indicated) must be illuminated
 	// for 1 s to 3 s for visible check after power cycling the LVMS.
 
-	blinkOutput(IMDLED, Timed, 2000);
-	blinkOutput(BMSLED, Timed, 2000);
+
+
+	for ( int i=0;i<18;i++)
+	{
+		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), On);
+	}
+
+	vTaskDelay(2000);
+
+	for ( int i=0;i<18;i++)
+	{
+		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), Off);
+	}
+
+//	blinkOutput(IMDLED, Timed, 2000);
+//	blinkOutput(BMSLED, Timed, 2000);
 
 	TickType_t xLastWakeTime;
 
