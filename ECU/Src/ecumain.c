@@ -324,6 +324,19 @@ static int HardwareInit( void )
 			data->ADCBrakeTravelInput[2],
 			data->ADCBrakeTravelInput[3]);
 
+
+	for ( int i=0;i<100;i+=10)
+	{
+
+	//	int range =
+
+	//	100/(data->ADCTorqueReqLInput[1] - data->ADCTorqueReqLInput[0]) * ;
+
+	//	DebugPrintf(getTorqueReqPercR();
+	}
+
+
+
     // Moved inverters after eeprom so that config value can be used.
 
 	if ( getEEPROMBlock(0)->InvEnabled )
@@ -335,7 +348,10 @@ static int HardwareInit( void )
 		DebugMsg(str);
 	}
 	else
+	{
 		DebugMsg("Inverters disabled.");
+		initNoInv();
+	}
 
 
 	if ( getEEPROMBlock(0)->alwaysHV )
