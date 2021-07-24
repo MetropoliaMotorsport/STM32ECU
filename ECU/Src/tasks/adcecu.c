@@ -861,7 +861,7 @@ uint32_t CheckADCSanity( void )
 	}
 	else returnvalue &= ~(0x1 << SteeringAngleReceivedBit);
 
-	if ( getAnalogNodesCriticalStr() == NULL ) // string will be empty if everything expected received.
+	if ( DeviceState.CriticalSensors == OPERATIONAL ) // string will be empty if everything expected received.
 	{
 
 		if ( ADCState.BrakeF < 0 || ADCState.BrakeF >= 240 )
