@@ -198,15 +198,12 @@ bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 
 bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
-
 	static bool first = false;
 	if ( !first )
 	{
 		DebugMsg("PNode 34 First msg.");
 		first = true;
 	}
-
-
 
 	if ( DataLength >> 16 == PowerNode34.dlcsize
 //		&& CANRxData[0] & ~(0b00011100) != 0 // check mask fit
@@ -216,7 +213,6 @@ bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		)
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode34Bit ), eSetBits);
-//		CarState.ShutdownSwitchesClosed = CANRxData[0];
 
 		bool newstate = CANRxData[0] & (0x1 << 2);
 		if ( Shutdown.CockpitButton != newstate )
