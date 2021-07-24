@@ -211,10 +211,14 @@ int PreOperationState( uint32_t OperationLoops  )
 
 #ifdef ANALOGNODES
 
-			nodewait = getADCWait();
-			if ( nodewait[0] != 0)
+
+			if ( DeviceState.Sensors != OPERATIONAL )
 			{
-				sprintf(&str[strlen(str)],"A%s ", nodewait );
+				nodewait = getADCWait();
+				if ( nodewait[0] != 0)
+				{
+					sprintf(&str[strlen(str)],"A%s ", nodewait );
+				}
 			}
 #endif
 

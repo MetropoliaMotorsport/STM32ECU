@@ -406,13 +406,13 @@ void setAnalogNodesStr( const uint32_t nodesonline ) // any of these missing sho
 
 char * getAnalogNodesCriticalStr( void )
 {
-	if ( ANodeCritStr[0] == 0) return NULL;
+	if ( ANodeCritStr[0] == 0) return "";
 	return ANodeCritStr;
 }
 
 char * getAnalogNodesStr( void )
 {
-	if ( ANodeStr[0] == 0) return NULL;
+	if ( ANodeStr[0] == 0) return "";
 	return ANodeStr;
 }
 

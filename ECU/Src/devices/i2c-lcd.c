@@ -6,6 +6,7 @@
 #include "lcd.h"
 #include "i2c.h"
 #include "i2c-lcd.h"
+#include "timerecu.h"
 
 #include <stdbool.h>
 
@@ -354,6 +355,8 @@ int lcd_send_stringposDIR( int row, int col, char *str )
 int lcd_dosend( void )
 {
 	static uint32_t lastreset = 0;
+	// rtctime
+
 	if ( inerror || gettimer() - lastreset > 1000 )
 	{
 		vTaskDelay(50); // allow time for whatever caused the error to settle.

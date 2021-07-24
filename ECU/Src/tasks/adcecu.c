@@ -213,7 +213,7 @@ void ADCTask(void *argument)
 			{
 				if ( DeviceState.Sensors != INERROR )
 				{
-					DebugMsg("Analogue nodes partially online");
+					DebugPrintf("Analogue nodes partially online (%lu)", curanaloguenodesOnline);
 				}
 				DeviceState.Sensors = INERROR; // haven't seen all needed, so in error.
 			}
