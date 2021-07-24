@@ -69,6 +69,14 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 	{
 		// check voltages, temperatures.
 		returnvalue &= ~(0x1 << BMSReceived); // return voltage in OK range.
+	} else
+	{
+		static bool first = false;
+		if ( !first )
+		{
+			first = true;
+			DebugMsg("Readyness BMS fail");
+		}
 	}
 
 	//receiveIVT();
@@ -76,6 +84,14 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 	if ( DeviceState.IVT != OFFLINE )
 	{
 		returnvalue &= ~(0x1 << IVTReceived); // check values
+	} else
+	{
+		static bool first = false;
+		if ( !first )
+		{
+			first = true;
+			DebugMsg("Readyness IVT fail");
+		}
 	}
 
 #ifndef POWERNODES
@@ -89,7 +105,16 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 	if ( DeviceState.CriticalPower == OPERATIONAL )
 	{
 		returnvalue &= ~(0x1 << PNodeReceived);
+	} else
+	{
+		static bool first = false;
+		if ( !first )
+		{
+			first = true;
+			DebugMsg("Readyness Power fail");
+		}
 	}
+
 #endif
 
 #ifdef STMADC
@@ -101,7 +126,16 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 	if ( DeviceState.ADC == OPERATIONAL )
 	{
 		returnvalue &= ~(0x1 << PedalADCReceived); // using local adc, already established online in initialisation.
+	} else
+	{
+		static bool first = false;
+		if ( !first )
+		{
+			first = true;
+			DebugMsg("Readyness ADC fail");
+		}
 	}
+
 #endif
 
 	return returnvalue;
