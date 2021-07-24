@@ -171,7 +171,7 @@ void ADCTask(void *argument)
 
 		analoguenodesOnlineSince |= analoguenodesOnline; // cumulatively add
 
-		if ( ( analoguenodesOnlineSince & AnodeCriticalBit ) == AnodeCriticalBit )
+		if ( ( curanaloguenodesOnline & AnodeCriticalBit ) == AnodeCriticalBit )
 		{
 			DeviceState.CriticalSensors = OPERATIONAL;
 			// we've received all the SCS data
