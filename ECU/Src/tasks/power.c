@@ -302,14 +302,14 @@ char * ShutDownOpenStr( void )
 		(!Shutdown.CockpitButton)?"DRV,":"",
 		(!Shutdown.LeftButton)?"LFT,":"",
 		(!Shutdown.RightButton)?"RGT,":"",
-		(!Shutdown.InertiaSwitch)?"INRT,":"",
+"", //		(!Shutdown.InertiaSwitch)?"INRT,":"",
 
 		(!Shutdown.BMS)?"BMS,":"",
-		(!Shutdown.IMD)?"IMD,":"",
+"",//		(!Shutdown.IMD)?"IMD,":"",
 
-		(!Shutdown.BOTS)?"BOTS,":"",
-		(!Shutdown.BSPDAfter)?"BSPDA,":"",
-		(!Shutdown.BSPDBefore)?"BSPDB,":""
+"",//		(!Shutdown.BOTS)?"BOTS,":"",
+"",//		(!Shutdown.BSPDAfter)?"BSPDA,":"",
+""//		(!Shutdown.BSPDBefore)?"BSPDB,":""
 
 	);
 
