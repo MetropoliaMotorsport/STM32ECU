@@ -105,6 +105,7 @@ int Startup( uint32_t OperationLoops  )
 	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
 #endif
 	{
+		DebugMsg("Entering Startup State");
 		CAN_SendStatus(1, StartupState, 0);
 	}
 

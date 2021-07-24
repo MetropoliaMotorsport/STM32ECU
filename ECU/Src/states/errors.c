@@ -81,6 +81,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		DebugMsg("Entering Error State");
 		char str[LCDCOLUMNS+1];
 		lcd_startscroll();
 		lcd_setscrolltitle("ERROR State");

@@ -46,7 +46,16 @@ uint32_t OperationalReceive( void )
 
 	// change order, get status from pdo3, and then compare against pdo2?, 2 should be more current being higher priority
 
-	if ( GetInverterState() > OFFLINE )
+	int invcount = 0;
+	for ( int i=0;i<MOTORCOUNT; i++)
+	{
+		if ( getInvState(i)->Device == OFFLINE )
+		{
+			invcount++;
+		}
+	}
+
+	if ( invcount == MOTORCOUNT )// GetInverterState() > OFFLINE )
 		returnvalue &= ~(0x1 << (InverterReceived));
 
 #ifdef HPF19
@@ -89,6 +98,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		DebugMsg("Entering Idle State");
 							 //12345678901234567890
 		setRunningPower( CheckHV, false );
 		invRequestState( PREOPERATIONAL ); // request to go into ready for HV

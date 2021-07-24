@@ -72,7 +72,7 @@ static uint16_t DevicesOnline( uint16_t returnvalue )
 		if ( !first )
 		{
 			first = true;
-			DebugMsg("Inverters online in startup.");
+//			DebugMsg("Inverters online in startup.");
 		}
 	   returnvalue &= ~(0x1 << InverterReceived);
 	}
@@ -152,6 +152,7 @@ int PreOperationState( uint32_t OperationLoops  )
 #endif
     if ( OperationLoops == 0 )
 	{
+    	DebugMsg("Entering Pre Operation State");
     	// pre operation state is to allow hardware to get ready etc, no point in logging errors at this point.
     	// the user can see operational state.
     	SetErrorLogging( false );

@@ -30,6 +30,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		DebugMsg("Entering TS Active State");
 		 	 	 	 	 	 //12345678901234567890
 		lcd_clear();
 		//lcd_settitle("TS Active");

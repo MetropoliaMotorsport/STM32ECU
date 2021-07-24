@@ -119,6 +119,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		DebugMsg("Entering Readyness check State");
 		setRunningPower( false, false );
 		SetErrorLogging(true);
 		lcd_clear();

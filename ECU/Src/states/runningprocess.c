@@ -85,6 +85,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		DebugMsg("Entering RTDM State");
 		lcd_clear();
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		setOutput(RTDMLED,On); // move to ActivateRTDM
