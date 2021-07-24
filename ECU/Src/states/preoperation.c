@@ -129,6 +129,7 @@ void setTestMotors( bool state )
 #define READYINVBIT			3
 #define READYSENSBIT		4
 #define READYPOWERBIT		5
+#define READYTSALBIT		6
 
 // get external hardware upto state to allow entering operational state on request.
 int PreOperationState( uint32_t OperationLoops  )
@@ -447,10 +448,24 @@ int PreOperationState( uint32_t OperationLoops  )
 //	if ( errorPower() ) { ReadyToStart += 1; }
 
 	if ( preoperationstate != 0 ) { ReadyToStart |= (1<<READYDEVBIT); }
-	if ( DeviceState.Inverter == OFFLINE || DeviceState.Inverter == INERROR ) { ReadyToStart |= (1<<READYINVBIT);} // require inverters to be online
+
+
+	for ( int i=0;i<MOTORCOUNT; i++)
+	{
+		if ( getInvState(i)->Device == OFFLINE )
+		{
+			ReadyToStart |= (1<<READYINVBIT);
+		}
+	}
+
+//	if ( DeviceState.Inverters == OFFLINE || DeviceState.Inverter == INERROR ) {
+//				ReadyToStart |= (1<<READYINVBIT);
+//	} // require inverters to be online
+
+
 	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYSENSBIT); } // require critical sensor nodes online for startup.
 	if ( DeviceState.PowerNodes != OPERATIONAL ) { ReadyToStart |= (1<<READYPOWERBIT);}
-//	if ( !getDevicePower(TSAL) ) { ReadyToStart += 64; } // require TSAL power to allow startup.
+//	if ( !getDevicePower(TSAL) ) { ReadyToStart |= (1<<READYTSALBIT) } // require TSAL power to allow startup.
 
 	if ( ReadyToStart == 0 )
 	{
