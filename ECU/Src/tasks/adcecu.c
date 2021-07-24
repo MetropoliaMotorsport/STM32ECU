@@ -171,6 +171,15 @@ void ADCTask(void *argument)
 
 		analoguenodesOnlineSince |= analoguenodesOnline; // cumulatively add
 
+		if ( ( analoguenodesOnlineSince & AnodeCriticalBit ) == AnodeCriticalBit )
+		{
+			DeviceState.CriticalSensors = OPERATIONAL;
+			// we've received all the SCS data
+		} else
+		{
+			DeviceState.CriticalSensors = INERROR;
+		}
+
 		if ( analoguenodesOnlineSince == ANodeAllBit ) // all expected nodes reported in.
 		{
 			if ( DeviceState.Sensors != OPERATIONAL )
@@ -212,15 +221,6 @@ void ADCTask(void *argument)
 		}
 
 		xSemaphoreGive(waitStr);
-
-		if ( ( analoguenodesOnlineSince & AnodeCriticalBit ) == AnodeCriticalBit )
-		{
-			DeviceState.CriticalSensors = OPERATIONAL;
-			// we've received all the SCS data
-		} else
-		{
-			DeviceState.CriticalSensors = INERROR;
-		}
 
 		DeviceState.ADCSanity = CheckADCSanity();
 	}
