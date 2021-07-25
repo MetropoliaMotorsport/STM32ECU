@@ -516,10 +516,10 @@ int PreOperationState( uint32_t OperationLoops  )
 					);
 		}
 
-		lcd_send_stringline(0,"Motor test.", 255);
+		lcd_send_stringline(0,"Motor test.", 254);
 		snprintf(str, 80, "P%3d%% Nm %lu %drpm", percR/10, requestNm/0x4000, speed);
 
-		lcd_send_stringline(1,str,255);
+		lcd_send_stringline(1,str,254);
 
 		int highesti = 0;
 		int highestin = -1;
@@ -542,7 +542,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		sprintf(str, "I%d %dc  M%d %dc", highestin, highesti, highestmn, highestm);
 
-		lcd_send_stringline(2,str,255);
+		lcd_send_stringline(2,str,254);
 	}
 
 	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYTESTING); }
