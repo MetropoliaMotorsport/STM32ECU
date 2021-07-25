@@ -453,16 +453,23 @@ int PreOperationState( uint32_t OperationLoops  )
 			// don't disable power other than HV.
 		} else
 		{
-			lcd_send_stringline( 3, "Starting test mode.", 3);
-			DebugMsg("Starting test mode.");
-			testmotors = true;
-			setDevicePower( Inverters, true );
-			setDevicePower( RightPump, true );
-			setDevicePower( LeftPump, true );
-			InverterAllowTorqueAll( true );
-			invRequestState( OPERATIONAL );
-			setDevicePower( Buzzer, true );
-			ShutdownCircuitSet(true);
+			if ( ADCState.Torque_Req_R_Percent == 0 )
+			{
+				lcd_send_stringline( 3, "Starting test mode.", 3);
+				DebugMsg("Starting test mode.");
+				testmotors = true;
+				setDevicePower( Inverters, true );
+				setDevicePower( RightPump, true );
+				setDevicePower( LeftPump, true );
+				InverterAllowTorqueAll( true );
+				invRequestState( OPERATIONAL );
+				setDevicePower( Buzzer, true );
+				ShutdownCircuitSet(true);
+			} else
+			{
+				lcd_send_stringline( 3, "Release pedal!", 3);
+				DebugMsg("Can't start test mode, pedal not at 0.");
+			}
 		}
 
 		testmotorslast = testmotors;
@@ -506,7 +513,7 @@ int PreOperationState( uint32_t OperationLoops  )
 		}
 
 		lcd_send_stringline(0,"Motor test.", 255);
-		sprintf(str, "P%3d%% Nm %lu", percR/10, requestNm/0x4000);
+		snprintf(str, 80, "P%3d%% Nm %lu %drpm", percR/10, requestNm/0x4000, speed);
 
 		lcd_send_stringline(1,str,255);
 
