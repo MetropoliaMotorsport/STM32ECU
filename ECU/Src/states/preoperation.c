@@ -499,9 +499,11 @@ int PreOperationState( uint32_t OperationLoops  )
 
 			for ( int i=0;i<MOTORCOUNT;i++)
 			{
+#if 0
 				if ( requestNm > 0 && ( ( 1 << i ) & motorsenabled ) )
 					InverterSetTorqueInd( i, requestNm, speed);
 				else
+#endif
 					InverterSetTorqueInd( i, 0, 0);
 			}
 
@@ -541,8 +543,6 @@ int PreOperationState( uint32_t OperationLoops  )
 		sprintf(str, "I%d %dc  M%d %dc", highestin, highesti, highestmn, highestm);
 
 		lcd_send_stringline(2,str,255);
-
-		InverterAllowTorqueAll( false );
 	}
 
 	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYTESTING); }
