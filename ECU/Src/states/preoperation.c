@@ -451,8 +451,6 @@ int PreOperationState( uint32_t OperationLoops  )
 			ShutdownCircuitSet(false);
 			setDevicePower( Buzzer, false );
 			invRequestState( BOOTUP );
-			waitprecharge = false;
-			doneprecharge = false;
 			// don't disable power other than HV.
 		} else
 		{
@@ -470,6 +468,8 @@ int PreOperationState( uint32_t OperationLoops  )
 				setDevicePower( Buzzer, true );
 #endif
 				ShutdownCircuitSet(true);
+				waitprecharge = false;
+				doneprecharge = false;
 			} else
 			{
 				lcd_send_stringline( 3, "Release pedal!", 3);
