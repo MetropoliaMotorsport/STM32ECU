@@ -38,7 +38,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10091"
+#define VERSION "10092"
 
 #define DEBUGSTACK_SIZE 128*8
 #define DEBUGTASKNAME  "DebugTask"
@@ -384,18 +384,19 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 					UARTwrite(msg.str);
 				}
 
-				uint16_t requestRaw = ADCState.APPSR;//PedalTorqueRequest();
-				if ( abs(oldrequest-requestRaw) > 50 || gettimer() - lasttime > 1000) // only update if value changes.
+				uint16_t requestRaw = ADCState.Torque_Req_R_Percent;//PedalTorqueRequest();
+//				if ( abs(oldrequest-requestRaw) > 50 || gettimer() - lasttime > 1000) // only update if value changes.
+				if ( abs(oldrequest-requestRaw) > 5 || gettimer() - lasttime > 1000) // only update if value changes.
 				{
 					oldrequest = requestRaw;
 					lasttime = gettimer();
-					uint32_t percR = 0;
+					uint32_t percR = requestRaw;
 
-					if ( requestRaw > 300 )
-						percR = ( (100000/( 2100-300 )) * requestRaw-300) / 100;
+//					if ( requestRaw > 300 )
+//						percR = ( (100000/( 2100-300 )) * requestRaw-300) / 100;
 
-					if ( percR > 1000 )
-						percR = 1000;
+//					if ( percR > 1000 )
+//						percR = 1000;
 
 					int32_t requestNm = ((percR*maxNm)*0x4000)/1000;
 
