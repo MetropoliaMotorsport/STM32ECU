@@ -457,8 +457,8 @@ int PreOperationState( uint32_t OperationLoops  )
 			{
 				lcd_send_stringline( 3, "Starting test mode.", 3);
 				DebugMsg("Starting test mode.");
-#if 0
 				testmotors = true;
+#if 0
 				setDevicePower( Inverters, true );
 				setDevicePower( RightPump, true );
 				setDevicePower( LeftPump, true );
