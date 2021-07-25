@@ -99,6 +99,7 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 void PNode33Timeout( uint16_t id );
 void PNode34Timeout( uint16_t id );
 void PNode36Timeout( uint16_t id ); // critical due to brakelight
+void PNode37Timeout( uint16_t id );
 
 //bool processPNodeTimeout(uint8_t CANRxData[8], uint32_t DataLength );
 
@@ -110,7 +111,7 @@ CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNo
 CANData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, PNode34Timeout, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
 CANData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
 CANData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, PNode36Timeout, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
-CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 3, processPNode37Data, NULL, NODETIMEOUT }; // [?], Current, TSAL.
+CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 3, processPNode37Data, PNode37Timeout, NODETIMEOUT }; // [?], Current, TSAL.
 
 
 int sendPowerNodeErrReset( uint8_t id, uint8_t channel );
@@ -137,6 +138,13 @@ void PNode36Timeout( uint16_t id )
 {
 	DeviceState.BrakeLight = OFFLINE;
     SetCriticalError();
+}
+
+void PNode37Timeout( uint16_t id )
+{
+	CarState.AIRmsense = false;
+	CarState.AIRpsense = false;
+	CarState.PREsense = false;
 }
 
 
@@ -354,21 +362,21 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode37Bit ), eSetBits);
 
-		bool newstate = CANRxData[0] & (0x1 << 0);
+		bool newstate = ! ( CANRxData[0] & (0x1 << 0) );
 		if ( CarState.AIRpsense != newstate )
 		{
 			DebugPrintf("AIR Plus sense state changed to %s", newstate?"Closed":"Open");
 			CarState.AIRpsense = newstate;
 		}
 
-		newstate = CANRxData[0] & (0x1 << 2);
+		newstate = ! ( CANRxData[0] & (0x1 << 2) );
 		if ( CarState.AIRmsense != newstate )
 		{
 			DebugPrintf("AIR Minus sense state changed to %s", newstate?"Closed":"Open");
 			CarState.AIRmsense = newstate;
 		}
 
-		newstate = CANRxData[0] & (0x1 << 3);
+		newstate = ! ( CANRxData[0] & (0x1 << 3) );
 		if ( CarState.PREsense != newstate )
 		{
 			DebugPrintf("PRE sense state changed to %s", newstate?"Closed":"Open");

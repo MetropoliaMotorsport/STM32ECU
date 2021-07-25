@@ -497,15 +497,22 @@ int PreOperationState( uint32_t OperationLoops  )
 
 			requestNm = ((percR*maxNm)*0x4000)/1000;
 
-			for ( int i=0;i<MOTORCOUNT;i++)
+			if (!CarState.PREsense )
 			{
-#if 0
-				if ( requestNm > 0 && ( ( 1 << i ) & motorsenabled ) )
-					InverterSetTorqueInd( i, requestNm, speed);
-				else
-#endif
-					InverterSetTorqueInd( i, 0, 0);
+				for ( int i=0;i<MOTORCOUNT;i++)
+				{
+	#if 0
+					if ( requestNm > 0 && ( ( 1 << i ) & motorsenabled ) )
+						InverterSetTorqueInd( i, requestNm, speed);
+					else
+	#endif
+						InverterSetTorqueInd( i, 0, 0);
+				}
+			} else
+			{
+				lcd_send_stringline( 2, "Waiting for PRECh", 3);
 			}
+
 
 			DebugPrintf("Pedal: r%d%%, reqNm %d speed %d, maxNm %d, to MC[%s] 0[I%dc M%dc] 1[I%dc M%dc] 2[I%dc M%dc] 3[I%dc M%dc]\r\n ",
 						percR/10, requestNm/0x4000, speed, maxNm, getMotorsEnabledStr(),
