@@ -714,6 +714,8 @@ extern CANData  AnalogNode18;
 static void debugSensors( const char *tkn2 )
 {
 	{
+		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY ); // wait for cycle to sync readings.
+
 		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline();
 
 		bool force = true;

@@ -130,6 +130,7 @@ void setTestMotors( bool state )
 #define READYSENSBIT		4
 #define READYPOWERBIT		5
 #define READYTSALBIT		6
+#define READYTESTING		7
 
 // get external hardware upto state to allow entering operational state on request.
 int PreOperationState( uint32_t OperationLoops  )
@@ -137,8 +138,6 @@ int PreOperationState( uint32_t OperationLoops  )
 //	static int OperationLoops = 0;
 	static uint16_t preoperationstate;
 	static uint16_t ReadyToStart;
-
-	char RequestState = PreOperationalState; // initialise to PreOperationalState as default requested next state.
 
 	char str[80] = "";
 
@@ -185,12 +184,6 @@ int PreOperationState( uint32_t OperationLoops  )
 #endif
 	{
 		CAN_SendStatus(1, PreOperationalState, preoperationstate );
-
-		if ( testmotors != testmotorslast)
-		{
-			InverterAllowTorqueAll(testmotors);
-			testmotorslast = testmotors;
-		}
 
 		// do power request
 
@@ -262,6 +255,10 @@ int PreOperationState( uint32_t OperationLoops  )
 			if ( ReadyToStart != 0 )
 			{
 				strcpy(str, "Err:");
+
+
+				if (ReadyToStart & (0x1 << READYTESTING ) ) {	strcat(str, "TST " ); }
+
 #ifdef STMADC // ADC is onboard, any issues with it are an error not a wait.
 				if (preoperationstate & (0x1 << PedalADCReceived) ) { strcat(str, "ADC " ); }
 #endif
@@ -274,6 +271,8 @@ int PreOperationState( uint32_t OperationLoops  )
 
 					strcat(str, ") " );
 				}
+
+				if (ReadyToStart & (0x1 << READYTSALBIT ) ) { strcat(str, "TSAL " );  }
 
 				if (ReadyToStart & (0x1 << READYCONFIGBIT ) ) {	strcat(str, "CFG " ); }
 
@@ -313,18 +312,18 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	lcd_send_stringline(3, getConfStr(), 255);
 
-	// TODO this variable is going to be done away with.
-	RequestState = OperationalReadyState; // nothing happening in config, assume normal operation.
-
 	ReadyToStart = 0;
 
 	if ( !inConfig() )
 	{
 		if ( CheckButtonPressed(Config_Input) )
 		{
-			DebugPrintf("Enter Config\r\n");
-			ConfigInput( 0xFFFF );
-			ReadyToStart |= (1<<READYCONFIGBIT); // we're probably entering config, don't allow startup this cycle.
+			if ( !testmotors )
+			{
+				DebugPrintf("Enter Config\r\n");
+				ConfigInput( 0xFFFF );
+				ReadyToStart |= (1<<READYCONFIGBIT); // we're probably entering config, don't allow startup this cycle.
+			}
 		}
 
 		static bool showbrakebal = false;
@@ -434,18 +433,97 @@ int PreOperationState( uint32_t OperationLoops  )
 		setOutput(TSOFFLED,On);
 	}
 
+	static int percR = -1;
+	static int32_t requestNm = 0;
 
-	if ( CheckRTDMActivationRequest() ) // manual startup power request whilst in testing phases, allows to reset if error occurred.
+
+	if ( CheckRTDMActivationRequest() || testmotors != testmotorslast ) // manual startup power request whilst in testing phases, allows to reset if error occurred.
 	{
-//		setDevicePower( Front1, true );
-//		setDevicePower( Front2, true );
-//		setDevicePower( TSAL, true );
-		setDevicePower( Inverters, true );
-		setDevicePower( RightPump, true );
-		setDevicePower( LeftPump, true );
-		DebugPrintf("Setting startup power.");
-		lcd_send_stringline( 3, "Setting startup power.", 3);
+		if ( testmotors )
+		{
+			lcd_send_stringline( 3, "Ending test mode.", 3);
+			DebugMsg("Ending test mode.");
+			percR = -1;
+			requestNm = 0;
+			testmotors = false;
+			InverterAllowTorqueAll( false );
+			ShutdownCircuitSet(false);
+			setDevicePower( Buzzer, false );
+			invRequestState( BOOTUP );
+			// don't disable power other than HV.
+		} else
+		{
+			lcd_send_stringline( 3, "Starting test mode.", 3);
+			DebugMsg("Starting test mode.");
+			testmotors = true;
+			setDevicePower( Inverters, true );
+			setDevicePower( RightPump, true );
+			setDevicePower( LeftPump, true );
+			InverterAllowTorqueAll( true );
+			invRequestState( OPERATIONAL );
+			setDevicePower( Buzzer, true );
+			ShutdownCircuitSet(true);
+		}
+
+		testmotorslast = testmotors;
 	}
+
+	if ( testmotors )
+	{
+
+		int16_t speed = getEEPROMBlock(0)->maxRpm;
+		int32_t maxNm = getEEPROMBlock(0)->MaxTorque;
+
+		uint32_t motorsenabled = getEEPROMBlock(0)->EnabledMotors;
+
+		if ( percR != ADCState.Torque_Req_R_Percent ) // only update if value changes.
+		{
+			if ( DeviceState.ADCSanity == 0 )
+			{
+				percR = ADCState.Torque_Req_R_Percent;
+
+				requestNm = ((percR*maxNm)*0x4000)/1000;
+
+				for ( int i=0;i<MOTORCOUNT;i++)
+				{
+					if ( requestNm > 0 && ( ( 1 << i ) & motorsenabled ) )
+						InverterSetTorqueInd( i, requestNm, speed);
+					else
+						InverterSetTorqueInd( i, 0, 0);
+				}
+			}
+
+			DebugPrintf("Pedal: r%d%%, reqNm %d speed %d, maxNm %d, to MC[%s] 0[I%dc M%dc] 1[I%dc M%dc] 2[I%dc M%dc] 3[I%dc M%dc]\r\n ",
+						percR/10, requestNm/0x4000, speed, maxNm, getMotorsEnabledStr(),
+						getInvState(0)->InvTemp, getInvState(0)->MotorTemp,
+						getInvState(1)->InvTemp, getInvState(1)->MotorTemp,
+						getInvState(2)->InvTemp, getInvState(2)->MotorTemp,
+						getInvState(3)->InvTemp, getInvState(3)->MotorTemp
+					);
+		}
+
+		lcd_send_stringline(0,"Motor test.", 255);
+		sprintf(str, "P%3d%% Nm %lu", percR/10, requestNm/0x4000);
+
+		lcd_send_stringline(1,str,255);
+
+		int highesti = 0;
+		int highestm = 0;
+
+		for ( int i=0;i<MOTORCOUNT;i++)
+		{
+			if (getInvState(i)->InvTemp > highesti ) highesti = getInvState(i)->InvTemp;
+			if (getInvState(i)->MotorTemp > highesti ) highestm = getInvState(i)->MotorTemp;
+		}
+
+		sprintf(str, "Max I%dc  M%dc", highesti, highestm);
+
+		lcd_send_stringline(2,str,255);
+
+		InverterAllowTorqueAll( false );
+	}
+
+	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYTESTING); }
 
 //	if ( errorPower() ) { ReadyToStart += 1; }
 
@@ -466,8 +544,8 @@ int PreOperationState( uint32_t OperationLoops  )
 
 
 	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYSENSBIT); } // require critical sensor nodes online for startup.
-	if ( DeviceState.PowerNodes != OPERATIONAL ) { ReadyToStart |= (1<<READYPOWERBIT);}
-//	if ( !getDevicePower(TSAL) ) { ReadyToStart |= (1<<READYTSALBIT) } // require TSAL power to allow startup.
+	if ( DeviceState.PowerNodes != OPERATIONAL ) { ReadyToStart |= (1<<READYPOWERBIT); }
+	if ( !getDevicePower(TSAL) ) { ReadyToStart |= (1<<READYTSALBIT); } // require TSAL power to allow startup.
 
 	if ( ReadyToStart == 0 )
 	{
@@ -475,19 +553,18 @@ int PreOperationState( uint32_t OperationLoops  )
 			// devices are ready and in pre operation state.
 			// check for request to move to active state.
 
-			if ( ( RequestState == TestingState ) )
-			{
-				return PreOperationalState;
-			}
+		if ( testmotors )
+		{
+			return PreOperationalState;
+		}
 
-			if ( CheckActivationRequest() && RequestState != TestingState ) // check if driver has requested activation and if so proceed
-			{
-				OperationLoops = 0;
+		if ( CheckActivationRequest() ) // check if driver has requested activation and if so proceed
+		{
+			OperationLoops = 0;
 
-				setOutput(RTDMLED,Off);
-				return OperationalReadyState; // normal operational state on request
-			}
-
+			setOutput(RTDMLED,Off);
+			return OperationalReadyState; // normal operational state on request
+		}
 	} else
 	{ // hardware not ready for active state
 		if ( OperationLoops == 50 ) // 0.5 seconds, send reset nmt, try to get inverters online if not online at startup.
@@ -504,25 +581,6 @@ int PreOperationState( uint32_t OperationLoops  )
 				CAN_SendStatus(1,PowerOnRequestBeforeReady,0);
 
 				lcd_send_stringline( 3, "Not ready.", 3);
-
-				// send NMT.
-			} else
-			{
-				OperationLoops = 0;
-
-				CAN_SendStatus(1,PowerOnRequestTimeout,0);
-				blinkOutput(TSLED, LEDBLINK_FOUR, 1);
-
-				if ( ( RequestState == TestingState ) )
-				{   // should allow testing mode regardless of all hardware being initialised
-					OperationLoops = 0;
-					return TestingState; // an alternate mode ( testing requested in config for next state.
-				}
-
-				// check if limp state possible?
-				// return LimpState; // either testing or limp mode requested requested. - not seperate state in current config.
-
-				return OperationalErrorState; // quit right away to error handler state if no possible special state requested on timeout
 			}
 		}
 	}

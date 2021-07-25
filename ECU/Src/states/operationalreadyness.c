@@ -108,7 +108,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 	} else
 	{
 		static bool first = false;
-		if ( !first )
+//		if ( !first )
 		{
 			first = true;
 			DebugPrintf("Readyness Power fail: %s", getDeviceStatusStr(DeviceState.CriticalPower));
@@ -129,7 +129,7 @@ uint16_t ReadyReceive( uint16_t returnvalue )
 	} else
 	{
 		static bool first = false;
-		if ( !first )
+//		if ( !first )
 		{
 			first = true;
 			DebugPrintf("Readyness ADC fail ADCSanity %d", DeviceState.ADCSanity);
