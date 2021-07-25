@@ -508,15 +508,25 @@ int PreOperationState( uint32_t OperationLoops  )
 		lcd_send_stringline(1,str,255);
 
 		int highesti = 0;
+		int highestin = -1;
 		int highestm = 0;
+		int highestmn = -1;
 
 		for ( int i=0;i<MOTORCOUNT;i++)
 		{
-			if (getInvState(i)->InvTemp > highesti ) highesti = getInvState(i)->InvTemp;
-			if (getInvState(i)->MotorTemp > highesti ) highestm = getInvState(i)->MotorTemp;
+			if (getInvState(i)->InvTemp >= highesti )
+			{
+				highesti = getInvState(i)->InvTemp;
+				highestin = i;
+			}
+			if (getInvState(i)->MotorTemp >= highesti )
+			{
+				highestm = getInvState(i)->MotorTemp;
+				highestmn = i;
+			}
 		}
 
-		sprintf(str, "Max I%dc  M%dc", highesti, highestm);
+		sprintf(str, "I%d %dc  M%d %dc", highestin, highesti, highestmn, highestm);
 
 		lcd_send_stringline(2,str,255);
 
