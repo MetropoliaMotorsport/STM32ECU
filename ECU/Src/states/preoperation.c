@@ -506,11 +506,12 @@ int PreOperationState( uint32_t OperationLoops  )
 				{
 					DebugMsg("Precharge done, torque request active.");
 					doneprecharge = true;
+					waitprecharge = false;
 				}
 
 				for ( int i=0;i<MOTORCOUNT;i++)
 				{
-	#if 0
+	#if 1
 					if ( requestNm > 0 && ( ( 1 << i ) & motorsenabled ) )
 						InverterSetTorqueInd( i, requestNm, speed);
 					else
