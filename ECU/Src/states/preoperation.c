@@ -457,6 +457,7 @@ int PreOperationState( uint32_t OperationLoops  )
 			{
 				lcd_send_stringline( 3, "Starting test mode.", 3);
 				DebugMsg("Starting test mode.");
+#if 0
 				testmotors = true;
 				setDevicePower( Inverters, true );
 				setDevicePower( RightPump, true );
@@ -464,6 +465,7 @@ int PreOperationState( uint32_t OperationLoops  )
 				InverterAllowTorqueAll( true );
 				invRequestState( OPERATIONAL );
 				setDevicePower( Buzzer, true );
+#endif
 				ShutdownCircuitSet(true);
 			} else
 			{
