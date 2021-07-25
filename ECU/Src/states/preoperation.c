@@ -505,6 +505,7 @@ int PreOperationState( uint32_t OperationLoops  )
 				if ( ! doneprecharge )
 				{
 					DebugMsg("Precharge done, torque request active.");
+					doneprecharge = true;
 				}
 
 				for ( int i=0;i<MOTORCOUNT;i++)
