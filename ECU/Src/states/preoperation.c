@@ -470,7 +470,6 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	if ( testmotors )
 	{
-
 		int16_t speed = getEEPROMBlock(0)->maxRpm;
 		int32_t maxNm = getEEPROMBlock(0)->MaxTorque;
 
@@ -478,19 +477,23 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		if ( percR != ADCState.Torque_Req_R_Percent ) // only update if value changes.
 		{
-			if ( DeviceState.ADCSanity == 0 )
+			if ( DeviceState.CriticalSensors == OPERATIONAL )
 			{
 				percR = ADCState.Torque_Req_R_Percent;
+			} else
+			{
+				percR = 0;
+				lcd_send_stringline(3,"Pedal timeout", 3);
+			}
 
-				requestNm = ((percR*maxNm)*0x4000)/1000;
+			requestNm = ((percR*maxNm)*0x4000)/1000;
 
-				for ( int i=0;i<MOTORCOUNT;i++)
-				{
-					if ( requestNm > 0 && ( ( 1 << i ) & motorsenabled ) )
-						InverterSetTorqueInd( i, requestNm, speed);
-					else
-						InverterSetTorqueInd( i, 0, 0);
-				}
+			for ( int i=0;i<MOTORCOUNT;i++)
+			{
+				if ( requestNm > 0 && ( ( 1 << i ) & motorsenabled ) )
+					InverterSetTorqueInd( i, requestNm, speed);
+				else
+					InverterSetTorqueInd( i, 0, 0);
 			}
 
 			DebugPrintf("Pedal: r%d%%, reqNm %d speed %d, maxNm %d, to MC[%s] 0[I%dc M%dc] 1[I%dc M%dc] 2[I%dc M%dc] 3[I%dc M%dc]\r\n ",
