@@ -500,7 +500,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 			requestNm = ((percR*maxNm)*0x4000)/1000;
 
-			if (!CarState.PREsense )
+			if ( CarState.PREsense )
 			{
 				if ( ! doneprecharge )
 				{
