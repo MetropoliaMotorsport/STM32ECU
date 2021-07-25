@@ -435,7 +435,8 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	static int percR = -1;
 	static int32_t requestNm = 0;
-
+	static bool waitprecharge = false;
+	static bool doneprecharge = false;
 
 	if ( CheckRTDMActivationRequest() || testmotors != testmotorslast ) // manual startup power request whilst in testing phases, allows to reset if error occurred.
 	{
@@ -450,6 +451,8 @@ int PreOperationState( uint32_t OperationLoops  )
 			ShutdownCircuitSet(false);
 			setDevicePower( Buzzer, false );
 			invRequestState( BOOTUP );
+			waitprecharge = false;
+			doneprecharge = false;
 			// don't disable power other than HV.
 		} else
 		{
@@ -499,6 +502,11 @@ int PreOperationState( uint32_t OperationLoops  )
 
 			if (!CarState.PREsense )
 			{
+				if ( ! doneprecharge )
+				{
+					DebugMsg("Precharge done, torque request active.");
+				}
+
 				for ( int i=0;i<MOTORCOUNT;i++)
 				{
 	#if 0
@@ -510,6 +518,11 @@ int PreOperationState( uint32_t OperationLoops  )
 				}
 			} else
 			{
+				if ( ! waitprecharge )
+				{
+					waitprecharge = true;
+					DebugMsg("Waiting for precharge");
+				}
 				lcd_send_stringline( 2, "Waiting for PRECh", 3);
 			}
 
