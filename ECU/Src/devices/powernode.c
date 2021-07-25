@@ -225,21 +225,21 @@ bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		bool newstate = CANRxData[0] & (0x1 << 2);
 		if ( Shutdown.CockpitButton != newstate )
 		{
-			DebugPrintf("Cockpit Shutdown Button sense state changed to %s", newstate?"Closed":"Open");
+			DebugPrintf("Cockpit Shutdown Button sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
 			Shutdown.CockpitButton = newstate;
 		}
 
 		newstate = CANRxData[0] & (0x1 << 3);
 		if ( Shutdown.LeftButton != newstate )
 		{
-			DebugPrintf("Left Shutdown Button sense state changed to %s", newstate?"Closed":"Open");
+			DebugPrintf("Left Shutdown Button sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
 			Shutdown.LeftButton = newstate;
 		}
 
 		newstate = CANRxData[0] & (0x1 << 4);
 		if ( Shutdown.RightButton != newstate )
 		{
-			DebugPrintf("Right Shutdown Button sense state changed to %s", newstate?"Closed":"Open");
+			DebugPrintf("Right Shutdown Button sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
 			Shutdown.RightButton = newstate;
 		}
 
@@ -365,21 +365,21 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		bool newstate = ! ( CANRxData[0] & (0x1 << 0) );
 		if ( CarState.AIRpsense != newstate )
 		{
-			DebugPrintf("AIR Plus sense state changed to %s", newstate?"Closed":"Open");
+			DebugPrintf("AIR Plus sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
 			CarState.AIRpsense = newstate;
 		}
 
 		newstate = ! ( CANRxData[0] & (0x1 << 2) );
 		if ( CarState.AIRmsense != newstate )
 		{
-			DebugPrintf("AIR Minus sense state changed to %s", newstate?"Closed":"Open");
+			DebugPrintf("AIR Minus sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
 			CarState.AIRmsense = newstate;
 		}
 
 		newstate = ! ( CANRxData[0] & (0x1 << 3) );
 		if ( CarState.PREsense != newstate )
 		{
-			DebugPrintf("PRE sense state changed to %s", newstate?"Closed":"Open");
+			DebugPrintf("PRE sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
 			CarState.PREsense = newstate;
 		}
 
