@@ -59,6 +59,8 @@ extern CANData AnalogNode16;
 extern CANData AnalogNode17;
 extern CANData AnalogNode18;
 
+uint32_t getOldestANodeCriticalData( void );
+
 bool processANodeErr( const uint8_t nodeid, const uint32_t errorcode, const CANData * datahandle );
 bool processANodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 

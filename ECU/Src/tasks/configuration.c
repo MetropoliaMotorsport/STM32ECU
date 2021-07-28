@@ -361,7 +361,7 @@ bool doPedalCalibration( uint16_t input )
 
 	int32_t APPSL_close = abs(APPSL_max-APPSL_min) < 500 ? 1 : 0;
 	int32_t APPSR_close = abs(APPSR_max-APPSR_min) < 500 ? 1 : 0;
-	int32_t REG_close = abs(REG_max-REG_min) < 500 ? 1 : 0;
+	int32_t REG_close = abs(REG_max-REG_min) < 50 ? 1 : 0;
 
 	snprintf( str, 21, "L%5d R%5d B%5d", ADCState.APPSL, ADCState.APPSR, ADCState.Regen );
 

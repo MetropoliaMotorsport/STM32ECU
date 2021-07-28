@@ -391,6 +391,11 @@ void CANRxTask(void *argument)
 			RxHeader.Identifier = msg.id;
 			RxHeader.DataLength = msg.dlc;
 
+			if ( msg.id == 0x601 )
+			{
+				volatile int i = 0;
+			}
+
 			if ( msg.bus == bus1)
 			{
 				if ( !processCan1Message(&RxHeader, msg.data) )
@@ -1104,10 +1109,10 @@ char CANLogDataFast( void )
 void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLength )
 {
 	// stamp when we received it
-	datahandle->time = gettimer();
 
 	if ( datahandle->getData == NULL )
-	{ // No handler.
+	{ // No handler, just update timestamp and move along.
+		datahandle->time = gettimer();
 		return;
 	}
 
@@ -1127,6 +1132,8 @@ void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLeng
 		} else baddata = true;
 	}
 
+	datahandle->time = gettimer();
+
 	if ( baddata || baddlc ) // bad data.
 	{
 		Errors.CANError++;
@@ -1138,6 +1145,7 @@ void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLeng
 		reTransmitError(99,CANRxData, DataLength);
 #endif
 	}
+
 }
 
 

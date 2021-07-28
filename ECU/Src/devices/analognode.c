@@ -55,15 +55,25 @@ CANData  AnalogNode18 = { &DeviceState.AnalogNode18, AnalogNode18_ID, 3, process
 void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to safe defaults if not received.
 {
 	DebugMsg("ANode timeout.");
-	ADCState.Torque_Req_L_Percent=0;
-	ADCState.Torque_Req_R_Percent=0;
-	ADCState.Regen_Percent=0;
-	ADCState.APPSL=0;
-	ADCState.APPSR=0;
-	ADCState.Regen=0;
-    ADCState.BrakeF = APPSBrakeHard;
-    ADCState.BrakeR = APPSBrakeHard;
+	xSemaphoreTake(ADCUpdate, portMAX_DELAY);
+	ADCStateNew.Torque_Req_L_Percent=0;
+	ADCStateNew.Torque_Req_R_Percent=0;
+	ADCStateNew.Regen_Percent=0;
+	ADCStateNew.APPSL=0;
+	ADCStateNew.APPSR=0;
+	ADCStateNew.Regen=0;
+	ADCStateNew.BrakeF = APPSBrakeHard;
+	ADCStateNew.BrakeR = APPSBrakeHard;
+	xSemaphoreGive(ADCUpdate);
     SetCriticalError();
+}
+
+uint32_t getOldestANodeCriticalData( void )
+{
+	uint32_t time = gettimer();
+	if ( AnalogNode1.time <  time ) time = AnalogNode1.time;
+	if ( AnalogNode11.time <  time ) time = AnalogNode11.time;
+	return time;
 }
 
 bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
@@ -82,13 +92,13 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 		&& ( Regen < 4096 )
 		)
 	{
+		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
+		ADCStateNew.Torque_Req_L_Percent = getTorqueReqPercL(AccelL);
+		ADCStateNew.Regen_Percent = getBrakeTravelPerc(Regen);
+		ADCStateNew.APPSL = AccelL;
+		ADCStateNew.Regen = Regen;
+		xSemaphoreGive(ADCUpdate);
 		xTaskNotify( ADCTaskHandle, ( 0x1 << ANode1Bit ), eSetBits);
-
-        ADCState.Torque_Req_L_Percent = getTorqueReqPercL(AccelL);
-        ADCState.Regen_Percent = getBrakeTravelPerc(Regen);
-		ADCState.APPSL = AccelL;
-		ADCState.Regen = Regen;
-
 		return true;
 	} else // bad data.
 	{
@@ -109,9 +119,9 @@ bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode9Bit ), eSetBits);
 
-	ADCState.BrakeTemp1 = getBEint16(&CANRxData[0]);
-	ADCState.OilTemp1 = CANRxData[2];
-	ADCState.WaterTemp1 = CANRxData[3];
+	ADCStateSensors.BrakeTemp1 = getBEint16(&CANRxData[0]);
+	ADCStateSensors.OilTemp1 = CANRxData[2];
+	ADCStateSensors.WaterTemp1 = CANRxData[3];
 
 	return true;
 }
@@ -127,11 +137,11 @@ bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode10Bit ), eSetBits);
 
-	ADCState.Susp1 = getBEint16(&CANRxData[0]);
-	ADCState.susp2 = getBEint16(&CANRxData[4]);
+	ADCStateSensors.Susp1 = getBEint16(&CANRxData[0]);
+	ADCStateSensors.susp2 = getBEint16(&CANRxData[4]);
 
-	ADCState.OilTemp2 = CANRxData[1];
-	ADCState.WaterTemp2 = CANRxData[2];
+	ADCStateSensors.OilTemp2 = CANRxData[1];
+	ADCStateSensors.WaterTemp2 = CANRxData[2];
 
 	return true;
 }
@@ -145,7 +155,7 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 		DebugMsg("Analog node 11 First msg.");
 		first = true;
 	}
-	ADCState.BrakeTemp2 = getBEint16(&CANRxData[0]);
+	ADCStateSensors.BrakeTemp2 = getBEint16(&CANRxData[0]);
 
 	uint16_t BrakeF = getBEint16(&CANRxData[2]);
 	uint16_t BrakeR = getBEint16(&CANRxData[6]);
@@ -164,13 +174,13 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 		&& ( AccelR < 65000 ) // make sure not pegged fully down.
 		)
 	{
+		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
+        ADCStateNew.BrakeF = BrakeF;
+        ADCStateNew.BrakeR = BrakeR;
+        ADCStateNew.Torque_Req_R_Percent = getTorqueReqPercR(AccelR);
+		ADCStateNew.APPSR = AccelR;
+		xSemaphoreGive(ADCUpdate);
 		xTaskNotify( ADCTaskHandle, ( 0x1 << ANode11Bit ), eSetBits);
-
-        ADCState.BrakeF = BrakeF;
-        ADCState.BrakeR = BrakeR;
-        ADCState.Torque_Req_R_Percent = getTorqueReqPercR(AccelR);
-		ADCState.APPSR = AccelR;
-
 		return true;
 	} else // bad data.
 	{
@@ -191,12 +201,10 @@ bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 		first = true;
 	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode12Bit ), eSetBits);
-
-	ADCState.WaterTemp3 = CANRxData[0];
-	ADCState.WaterTemp4 = CANRxData[1];
-	ADCState.WaterTemp5 = CANRxData[2];
-	ADCState.WaterTemp6 = CANRxData[3];
-
+	ADCStateSensors.WaterTemp3 = CANRxData[0];
+	ADCStateSensors.WaterTemp4 = CANRxData[1];
+	ADCStateSensors.WaterTemp5 = CANRxData[2];
+	ADCStateSensors.WaterTemp6 = CANRxData[3];
 	return true;
 }
 
@@ -211,8 +219,8 @@ bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode13Bit ), eSetBits);
 
-	ADCState.Susp3 = getBEint16(&CANRxData[0]);
-	ADCState.susp4 = getBEint16(&CANRxData[2]);
+	ADCStateSensors.Susp3 = getBEint16(&CANRxData[0]);
+	ADCStateSensors.susp4 = getBEint16(&CANRxData[2]);
 
 	return true;
 }
@@ -227,10 +235,10 @@ bool processANode14Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode14Bit ), eSetBits);
 
-	ADCState.BrakeTemp3 = getBEint16(&CANRxData[0]);
-	ADCState.BrakeTemp4 = getBEint16(&CANRxData[2]);
-	ADCState.OilTemp3 = CANRxData[3];
-	ADCState.OilTemp4 = CANRxData[4];
+	ADCStateSensors.BrakeTemp3 = getBEint16(&CANRxData[0]);
+	ADCStateSensors.BrakeTemp4 = getBEint16(&CANRxData[2]);
+	ADCStateSensors.OilTemp3 = CANRxData[3];
+	ADCStateSensors.OilTemp4 = CANRxData[4];
 
 	return true;
 }
@@ -245,9 +253,9 @@ bool processANode15Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode15Bit ), eSetBits);
 
-	ADCState.TireTemp1 = CANRxData[0];
-	ADCState.TireTemp2 = CANRxData[1];
-	ADCState.TireTemp3 = CANRxData[2];
+	ADCStateSensors.TireTemp1 = CANRxData[0];
+	ADCStateSensors.TireTemp2 = CANRxData[1];
+	ADCStateSensors.TireTemp3 = CANRxData[2];
 
 	return true;
 }
@@ -262,9 +270,9 @@ bool processANode16Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode16Bit ), eSetBits);
 
-	ADCState.TireTemp4 = CANRxData[0];
-	ADCState.TireTemp5 = CANRxData[1];
-	ADCState.TireTemp6 = CANRxData[2];
+	ADCStateSensors.TireTemp4 = CANRxData[0];
+	ADCStateSensors.TireTemp5 = CANRxData[1];
+	ADCStateSensors.TireTemp6 = CANRxData[2];
 
 	return true;
 }
@@ -279,9 +287,9 @@ bool processANode17Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode17Bit ), eSetBits);
 
-	ADCState.TireTemp7 = CANRxData[0];
-	ADCState.TireTemp8 = CANRxData[1];
-	ADCState.TireTemp9 = CANRxData[2];
+	ADCStateSensors.TireTemp7 = CANRxData[0];
+	ADCStateSensors.TireTemp8 = CANRxData[1];
+	ADCStateSensors.TireTemp9 = CANRxData[2];
 
 	return true;
 }
@@ -296,9 +304,9 @@ bool processANode18Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	}
 	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode18Bit ), eSetBits);
 
-	ADCState.TireTemp10 = CANRxData[0];
-	ADCState.TireTemp11 = CANRxData[1];
-	ADCState.TireTemp12 = CANRxData[2];
+	ADCStateSensors.TireTemp10 = CANRxData[0];
+	ADCStateSensors.TireTemp11 = CANRxData[1];
+	ADCStateSensors.TireTemp12 = CANRxData[2];
 
 	return true;
 }
@@ -497,6 +505,8 @@ void resetAnalogNodes( void )
 
 int initAnalogNodes( void )
 {
+	assert_param(ADCUpdate);
+
 	RegisterResetCommand(resetAnalogNodes);
 
 	resetAnalogNodes();

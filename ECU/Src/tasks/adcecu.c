@@ -53,6 +53,8 @@ DMA_BUFFER ALIGN_32BYTES (static uint32_t aADCxConvertedDataADC3[ADC_CONVERTED_D
 #include "adc_hpf20.h"
 #endif
 
+volatile ADCState_t ADCState;
+volatile ADCState_t ADCStateNew;
 
 void ReadADC1(bool half);
 void ReadADC3(bool half);
@@ -75,6 +77,7 @@ SemaphoreHandle_t xADC3 = NULL;
 #endif
 
 static SemaphoreHandle_t waitStr = NULL;
+SemaphoreHandle_t ADCUpdate = NULL;
 
 char ADCWaitStr[20] = "";
 
@@ -116,6 +119,8 @@ void ADCTask(void *argument)
 
 	uint32_t lastseenall = 0;
 
+	uint32_t oldestcritical = 0;
+
 	uint32_t analoguenodesOnlineSince = 0;
 
 	ADCWaitStr[0] = 0;
@@ -128,6 +133,25 @@ void ADCTask(void *argument)
 
 		// block and wait for main cycle.
 		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY );
+
+		// copy received critical sensor data from last cycle to
+		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
+		memcpy(&ADCState, &ADCStateNew, sizeof(ADCState));
+
+		oldestcritical = getOldestANodeCriticalData();
+
+		uint32_t curtime = gettimer();
+
+		if ( DeviceState.CriticalSensors == OPERATIONAL )
+		{
+			if ( curtime - CYCLETIME - 1  > oldestcritical )
+			{
+				DebugPrintf("Oldest ANode data %d old at (%lu)", curtime-oldestcritical, curtime);
+			}
+		}
+
+		// find oldest data.
+		xSemaphoreGive(ADCUpdate);
 
 		count++;
 
@@ -1000,6 +1024,8 @@ int initADC( void )
 
 
 	waitStr = xSemaphoreCreateMutex();
+
+	ADCUpdate = xSemaphoreCreateMutex();
 
 	ADCTaskHandle = xTaskCreateStatic(
 	                      ADCTask,

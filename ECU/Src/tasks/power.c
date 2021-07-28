@@ -96,6 +96,8 @@ void PowerTask(void *argument)
 
 	uint32_t lastseenall = 0;
 
+	uint32_t oldestcritical = 0;
+
 	bool fanssent = false;
 
 	while( 1 )
@@ -106,6 +108,22 @@ void PowerTask(void *argument)
 
 		// block and wait for main cycle.
 		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY );
+
+		oldestcritical = getOldestPNodeData();
+
+		uint32_t curtime = gettimer();
+
+		if ( DeviceState.PowerNodes == OPERATIONAL )
+		{
+			if ( curtime - CYCLETIME - 1  > oldestcritical )
+			{
+				DebugPrintf("Oldest PNode data %d old at (%lu)", curtime-oldestcritical, curtime);
+			}
+		}
+
+		// find oldest data.
+		xSemaphoreGive(ADCUpdate);
+
 
 		count++;
 		while ( xQueueReceive(PowerErrorQueue,&errormsg,0) )

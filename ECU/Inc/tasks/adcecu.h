@@ -9,6 +9,7 @@
 #define ADCECU_H_
 #include "eeprom.h"
 #include "ecu.h"
+#include "semphr.h"
 
 #ifdef HPF19
 	#define SteeringADC			5 // ai2
@@ -71,7 +72,9 @@ volatile uint32_t ADC_DataMax[NumADCChan+NumADCChanADC3];
 #endif
 
 
-volatile struct  {
+extern SemaphoreHandle_t ADCUpdate;
+
+typedef struct {
 	uint32_t lastread;
 	volatile char newdata;
 	int16_t SteeringAngle;
@@ -86,8 +89,14 @@ volatile struct  {
 	uint16_t APPSL;
 	uint16_t APPSR;
 	uint16_t Regen;
+	uint8_t DrivingMode;
+} ADCState_t;
 
-	// node sensor data.
+extern volatile ADCState_t ADCState;
+extern volatile ADCState_t ADCStateNew;
+
+volatile struct {
+// node sensor data.
 	int OilTemp1;
 	int OilTemp2;
 	int OilTemp3;
@@ -125,9 +134,8 @@ volatile struct  {
 	int TireTemp10;
 	int TireTemp11;
 	int TireTemp12;
+} ADCStateSensors;
 
-	uint8_t DrivingMode;
-} ADCState;
 
 #ifdef HPF19
 struct  {

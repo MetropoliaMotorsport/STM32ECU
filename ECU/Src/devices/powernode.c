@@ -10,6 +10,7 @@
 #include "power.h"
 #include "debug.h"
 #include "errors.h"
+#include "timerecu.h"
 #include <stdarg.h>
 
 #include <stdio.h>
@@ -116,6 +117,17 @@ CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 3, processPNo
 
 int sendPowerNodeErrReset( uint8_t id, uint8_t channel );
 
+
+uint32_t getOldestPNodeData( void )
+{
+	uint32_t time = gettimer();
+	if ( PowerNode33.time <  time ) time = PowerNode33.time;
+	if ( PowerNode34.time <  time ) time = PowerNode34.time;
+	if ( PowerNode35.time <  time ) time = PowerNode35.time;
+//	if ( PowerNode36.time <  time ) time = PowerNode36.time; // not currently operational
+	if ( PowerNode37.time <  time ) time = PowerNode37.time;
+	return time;
+}
 
 void PNode33Timeout( uint16_t id )
 {

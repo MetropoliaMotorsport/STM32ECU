@@ -17,6 +17,7 @@
 #include "timerecu.h"
 #include "power.h"
 #include "errors.h"
+#include "debug.h"
 
 /* Private includes ----------------------------------------------------------*/
 

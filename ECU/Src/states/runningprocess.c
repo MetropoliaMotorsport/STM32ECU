@@ -19,7 +19,7 @@
 #include "output.h"
 #include "lcd.h"
 #include "inverter.h"
-
+#include "debug.h"
 
 uint16_t PrintRunning( char *title )
 {
