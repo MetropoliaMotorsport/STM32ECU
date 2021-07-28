@@ -357,7 +357,7 @@ int lcd_dosend( void )
 	static uint32_t lastreset = 0;
 	// rtctime
 
-	if ( inerror || gettimer() - lastreset > 1000 )
+	if ( inerror ) // || gettimer() - lastreset > 1000 )
 	{
 		vTaskDelay(50); // allow time for whatever caused the error to settle.
 		lcd_init(lcdi2c); // queus up buffer to send.
