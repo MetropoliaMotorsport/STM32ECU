@@ -204,7 +204,7 @@ void ADCTask(void *argument)
 			DeviceState.CriticalSensors = INERROR;
 		}
 
-		if ( analoguenodesOnlineSince == ANodeAllBit ) // all expected nodes reported in.
+		if ( ( analoguenodesOnlineSince & ANodeAllBit ) == ANodeAllBit ) // all expected nodes reported in.
 		{
 			if ( DeviceState.Sensors != OPERATIONAL )
 			{

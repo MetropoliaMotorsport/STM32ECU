@@ -170,6 +170,7 @@ void PowerTask(void *argument)
 
 		// check if powernodes received.
 
+		uint32_t looptime = gettimer();
 
 	    xSemaphoreTake(waitStr, portMAX_DELAY);
 
@@ -177,7 +178,7 @@ void PowerTask(void *argument)
 
 		PNodeWaitStr[0] = 0;
 
-		if ( powernodesOnline == PNodeAllBit ) // all expected power nodes reported in. // TODO automate
+		if ( ( powernodesOnline & PNodeAllBit ) == PNodeAllBit ) // all expected power nodes reported in. // TODO automate
 		{
 			if ( DeviceState.PowerNodes != OPERATIONAL )
 			{
@@ -186,10 +187,10 @@ void PowerTask(void *argument)
 			DeviceState.PowerNodes = OPERATIONAL;
 			powernodesOnlineSince = 0;
 			curpowernodesOnline = powernodesOnline;
-			lastseenall = gettimer();
-		} else if ( gettimer() - lastseenall > PDMTIMEOUT ) // only update status to rest of code every timeout val.
+			lastseenall = looptime;
+		} else if ( looptime - lastseenall > PDMTIMEOUT ) // only update status to rest of code every timeout val.
 		{
-			lastseenall = gettimer();
+			lastseenall = looptime;
 			setPowerNodeStr( powernodesOnlineSince );
 			strcpy(PNodeWaitStr, getPNodeStr());
 
@@ -206,7 +207,7 @@ void PowerTask(void *argument)
 			}
 			else
 			{
-				if ( DeviceState.Sensors != INERROR )
+				if ( DeviceState.PowerNodes != INERROR )
 				{
 					DebugMsg("Power nodes partially online");
 				}
