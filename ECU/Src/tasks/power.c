@@ -57,20 +57,13 @@ uint32_t curpowernodesOnline = 0;
 
 char * getPNodeWait( void)
 {
-	return PNodeWaitStr;
-	// TODO add a mutex
-}
-
-
-char * getPowerWait( void )
-{
 	static char PowerWaitStrRet[20] = "";
 	xSemaphoreTake(waitStr, portMAX_DELAY);
 	strcpy(PowerWaitStrRet, PNodeWaitStr);
 	xSemaphoreGive(waitStr);
 	return PowerWaitStrRet;
+	// TODO add a mutex
 }
-
 
 void PowerTask(void *argument)
 {
@@ -177,7 +170,12 @@ void PowerTask(void *argument)
 
 		// check if powernodes received.
 
+
+	    xSemaphoreTake(waitStr, portMAX_DELAY);
+
 		powernodesOnlineSince |= powernodesOnline; // cumulatively add
+
+		PNodeWaitStr[0] = 0;
 
 		if ( powernodesOnline == PNodeAllBit ) // all expected power nodes reported in. // TODO automate
 		{
@@ -186,7 +184,6 @@ void PowerTask(void *argument)
 				DebugMsg("Power nodes all online");
 			}
 			DeviceState.PowerNodes = OPERATIONAL;
-			PNodeWaitStr[0] = 0;
 			powernodesOnlineSince = 0;
 			curpowernodesOnline = powernodesOnline;
 			lastseenall = gettimer();
@@ -235,6 +232,10 @@ void PowerTask(void *argument)
 			snprintf(str, 40, "Powernodes diff %lu", count);
 	//		DebugMsg(str);
 		}
+
+
+	    xSemaphoreGive(waitStr);
+
 
 		// set the fan PWM speed when seen fan power node online.
 		if ( !fanssent && powernodesOnline & ( 1 << POWERNODE_FAN_BIT ) )

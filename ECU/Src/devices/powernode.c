@@ -701,7 +701,7 @@ char PNodeStr[10] = "";
 
 char * getPNodeStr( void )
 {
-	if ( PNodeStr[0] == 0) return NULL;
+	if ( PNodeStr[0] == 0) return "";
 	else return PNodeStr;
 }
 

@@ -1480,15 +1480,27 @@ void HAL_FDCAN_TxFifoEmptyCallback(FDCAN_HandleTypeDef *hfdcan)
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
+// not sure where properly defined
+
+#define FDCAN_ELEMENT_MASK_EFC   ((uint32_t)0x00800000U) /* Event FIFO Control          */
 
 void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t ErrorStatusITs)
 {
 	if(hfdcan->Instance == FDCAN1){
 		if ( DeviceState.CAN1 == OPERATIONAL )
-			DebugPrintf("Can ErrorStatus bus1 %4x", ErrorStatusITs);
+		{
+			if ( ErrorStatusITs != FDCAN_ELEMENT_MASK_EFC )
+			{
+				DebugPrintf("Can ErrorStatus bus1 %4x", ErrorStatusITs);
+			}
+		}
+
 	} else if(hfdcan->Instance == FDCAN2) {
 		if ( DeviceState.CAN0 == OPERATIONAL )
-			DebugPrintf("Can ErrorStatus bus2 %4x", ErrorStatusITs);
+		{
+			if ( ErrorStatusITs != FDCAN_ELEMENT_MASK_EFC )
+				DebugPrintf("Can ErrorStatus bus2 %4x", ErrorStatusITs);
+		}
 	}
 }
 
