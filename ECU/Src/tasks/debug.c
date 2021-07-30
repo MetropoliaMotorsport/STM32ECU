@@ -703,7 +703,7 @@ static void debugShutdown( const char *tkn2, const char *tkn3 )
 		last = showShutdown("BOTS", Shutdown.BOTS, true);
 		last = showShutdown("Inertia", Shutdown.InertiaSwitch, true);
 
-		showShutdown("ECU", ShutdownCircuitState(), true);
+		last = showShutdown("ECU", ShutdownCircuitState(), true);
 
 		last = showShutdown("Cockpit", Shutdown.CockpitButton, last);
 		last = showShutdown("Right", Shutdown.RightButton, last);
