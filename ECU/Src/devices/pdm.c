@@ -76,7 +76,9 @@ void PDMTimeout( uint16_t id )
     Shutdown.BMS = true;
     Shutdown.IMD = true;
     Shutdown.BSPDBefore = true;
-    Shutdown.AIROpen = false;
+    Shutdown.AIRm = false;
+    Shutdown.AIRp = false;
+    Shutdown.PRE = false;
 }
 
 int receivePDM( void )
@@ -190,7 +192,9 @@ void resetPDM ( void )
 	Shutdown.IMD = true;
 	Shutdown.BSPDBefore = true;
 
-	Shutdown.AIROpen = false;
+	Shutdown.AIRm = false;
+	Shutdown.AIRp = false;
+	Shutdown.PRE = false;
 	Shutdown.CockpitButton = true;
 }
 

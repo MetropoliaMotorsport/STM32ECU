@@ -63,13 +63,14 @@ devicepowerreq DevicePowerList[] =
 		{ LeftPump, 35, 4 },
 		{ RightPump, 35, 5 },
 
-		{ Brake, 36, 1 },
-		{ Buzzer, 36, 2 },
+//		{ Brake, 36, 1 },
+//		{ Buzzer, 36, 2 },
 		{ IVT, 36, 3 },
 		{ Accu, 36, 4 }, // TODO make sure this channel cannot be reset for latching rules.
 		{ AccuFan, 36, 5},
 
-		{ Back1, 37, 3 },
+		{ Buzzer, 37, 2 },
+		{ Brake, 37, 3 },
 		{ Current, 37, 4 },
 		{ TSAL, 37, 5 }, // essential to be powered, else not compliant.
 
@@ -112,7 +113,7 @@ CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNo
 CANData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, PNode34Timeout, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
 CANData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
 CANData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, PNode36Timeout, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
-CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 3, processPNode37Data, PNode37Timeout, NODETIMEOUT }; // [?], Current, TSAL.
+CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 5, processPNode37Data, PNode37Timeout, NODETIMEOUT }; // [?], Current, TSAL.
 
 
 int sendPowerNodeErrReset( uint8_t id, uint8_t channel );
@@ -154,9 +155,9 @@ void PNode36Timeout( uint16_t id )
 
 void PNode37Timeout( uint16_t id )
 {
-	CarState.AIRmsense = false;
-	CarState.AIRpsense = false;
-	CarState.PREsense = false;
+	Shutdown.AIRm = false;
+	Shutdown.AIRp = false;
+	Shutdown.PRE = false;
 }
 
 
@@ -320,8 +321,8 @@ bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode36Bit ), eSetBits);
 
-		CarState.I_BrakeLight = CANRxData[0];
-		CarState.I_Buzzers = CANRxData[1];
+//		CarState.I_BrakeLight = CANRxData[0];
+//		CarState.I_Buzzers = CANRxData[1];
 		CarState.I_IVT = CANRxData[2];
 		CarState.I_AccuPCBs = CANRxData[3];
 		CarState.I_AccuFans = CANRxData[4];
@@ -375,25 +376,28 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode37Bit ), eSetBits);
 
 		bool newstate = ! ( CANRxData[0] & (0x1 << 0) );
-		if ( CarState.AIRpsense != newstate )
+		if ( Shutdown.AIRp != newstate )
 		{
 			DebugPrintf("AIR Plus sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
-			CarState.AIRpsense = newstate;
+			Shutdown.AIRp = newstate;
 		}
 
 		newstate = ! ( CANRxData[0] & (0x1 << 2) );
-		if ( CarState.AIRmsense != newstate )
+		if ( Shutdown.AIRm != newstate )
 		{
 			DebugPrintf("AIR Minus sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
-			CarState.AIRmsense = newstate;
+			Shutdown.AIRm = newstate;
 		}
 
 		newstate = ! ( CANRxData[0] & (0x1 << 3) );
-		if ( CarState.PREsense != newstate )
+		if ( Shutdown.PRE != newstate )
 		{
 			DebugPrintf("PRE sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
-			CarState.PREsense = newstate;
+			Shutdown.PRE = newstate;
 		}
+
+		//		CarState.I_BrakeLight = CANRxData[0];
+		//		CarState.I_Buzzers = CANRxData[1];
 
 //		CarState.??? = (CANRxData[0] & (0x1 << 4) );
 //		CarState.I_currentMeasurement =  CANRxData[1];
@@ -1004,7 +1008,9 @@ void resetPowerNodes( void )
 	Shutdown.BMS = false;
 	Shutdown.BMSReason = false;
 	Shutdown.IMD = false;
-	Shutdown.AIROpen = false;
+	Shutdown.AIRm = false;
+	Shutdown.AIRp = false;
+	Shutdown.PRE = false;
 
 // reset errors
 

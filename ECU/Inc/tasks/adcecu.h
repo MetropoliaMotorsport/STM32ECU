@@ -75,7 +75,7 @@ volatile uint32_t ADC_DataMax[NumADCChan+NumADCChanADC3];
 extern SemaphoreHandle_t ADCUpdate;
 
 typedef struct {
-	uint32_t lastread;
+	uint32_t Oldest;
 	volatile char newdata;
 	int16_t SteeringAngle;
 	uint8_t BrakeF;

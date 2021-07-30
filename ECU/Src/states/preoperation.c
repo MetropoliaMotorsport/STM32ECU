@@ -465,7 +465,9 @@ int PreOperationState( uint32_t OperationLoops  )
 				setDevicePower( LeftPump, true );
 				InverterAllowTorqueAll( true );
 				invRequestState( OPERATIONAL );
-				setDevicePower( Buzzer, true );
+
+				// TODO set a timer to turn off buzzer.
+//				setDevicePower( Buzzer, true );
 #endif
 				ShutdownCircuitSet(true);
 				waitprecharge = false;
@@ -500,7 +502,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 			requestNm = ((percR*maxNm)*0x4000)/1000;
 
-			if ( CarState.PREsense )
+			if ( Shutdown.PRE )
 			{
 				if ( ! doneprecharge )
 				{

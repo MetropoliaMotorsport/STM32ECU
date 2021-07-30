@@ -335,24 +335,9 @@ static int HardwareInit( void )
 	//	DebugPrintf(getTorqueReqPercR();
 	}
 
-
-
     // Moved inverters after eeprom so that config value can be used.
 
-	if ( getEEPROMBlock(0)->InvEnabled )
-	{
-		initInv();
-		char str[120];
-		snprintf(str, 120, "Inverters Handling enabled, with MC enabled on Motors [%s] at max %dNm, %dRPM, %dRPM/s accel Torqueslope %d",
-				getMotorsEnabledStr(), getEEPROMBlock(0)->MaxTorque, getEEPROMBlock(0)->maxRpm, getEEPROMBlock(0)->AccelRpms,getEEPROMBlock(0)->TorqueSlope);
-		DebugMsg(str);
-	}
-	else
-	{
-		DebugMsg("Inverters disabled.");
-		initNoInv();
-	}
-
+	initInv();
 
 	if ( getEEPROMBlock(0)->alwaysHV )
 	{

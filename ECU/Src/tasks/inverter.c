@@ -673,11 +673,25 @@ int initInv( void )
 {
 	resetInv(); // sets up InverterState, id's, etc, so that CAN functions will not be called till setup.
 
-	RegisterResetCommand(resetInv);
+	if ( getEEPROMBlock(0)->InvEnabled )
+	{
+		char str[120];
+		snprintf(str, 120, "Inverters Handling enabled, with MC enabled on Motors [%s] at max %dNm, %dRPM, %dRPM/s accel Torqueslope %d",
+				getMotorsEnabledStr(), getEEPROMBlock(0)->MaxTorque, getEEPROMBlock(0)->maxRpm, getEEPROMBlock(0)->AccelRpms,getEEPROMBlock(0)->TorqueSlope);
+		DebugMsg(str);
 
-	registerInverterCAN();
+		RegisterResetCommand(resetInv);
 
-	InvUpdating = xSemaphoreCreateMutex();
+		registerInverterCAN();
+
+		InvUpdating = xSemaphoreCreateMutex();
+	}
+	else
+	{
+		DebugMsg("Inverters disabled.");
+		initNoInv();
+	}
+
 
 	InvQueue = xQueueCreateStatic( InvQUEUE_LENGTH,
 							  InvITEMSIZE,
@@ -693,7 +707,8 @@ int initInv( void )
 
 	vQueueAddToRegistry(InvQueue, "InverterCfgQueue" );
 
-	InvTaskHandle = xTaskCreateStatic(
+	if ( getEEPROMBlock(0)->InvEnabled )
+		InvTaskHandle = xTaskCreateStatic(
 						  InvTask,
 						  INVTASKNAME,
 						  INVSTACK_SIZE,

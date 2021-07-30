@@ -136,7 +136,7 @@ char * GetPedalProfile( uint8_t profile, bool shortform )
 }
 
 
-void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editing,
+void doMenu8BitEdit( char * display, char * menuitem, bool selected, bool * editing,
 		volatile uint8_t * value, const uint8_t * validvalues, uint16_t input, bool percentage )
 {
 	char str[LCDCOLUMNS+1] = "";
@@ -155,7 +155,6 @@ void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editi
 			GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
 		}
 
-
 		if ( *editing )
 		{
 			display[LCDCOLUMNS-1-5] = '<';
@@ -172,7 +171,7 @@ void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editi
 			int position = 0;
 
 			// find current value position. will default to first item if an invalid value was given.
-			for ( int i=1;validvalues[i]!=0;i++)
+			for ( uint16_t i=1;validvalues[i]!=0;i++)
 			{
 				if ( *value == validvalues[i] ) position = i;
 			}
@@ -192,6 +191,64 @@ void doMenuIntEdit( char * display, char * menuitem, bool selected,	bool * editi
 	// print value
 	len = sprintf(str, "%3d%s", *value, percentage?"%":"");
 	memcpy(&display[LCDCOLUMNS-1-3-(percentage?1:0)], str, len);
+}
+
+
+void doMenu16BitEdit( char * display, char * menuitem, bool selected, bool * editing,
+		volatile uint16_t * value, const uint16_t * validvalues, uint16_t input )
+{
+	char str[LCDCOLUMNS+1] = "";
+
+	for ( int i=0;i<LCDCOLUMNS;i++) display[i] = ' ';
+
+	int len = sprintf(str, "%c%s:", (selected) ? '>' :' ', menuitem);
+	memcpy(display, str, len);
+
+	if ( selected  )
+	{
+		if ( input == KEY_ENTER )
+	//	if ( CheckButtonPressed(Config_Input) )
+		{
+			*editing = !*editing;
+			GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
+		}
+
+		if ( *editing )
+		{
+			display[LCDCOLUMNS-1-6] = '<';
+			display[LCDCOLUMNS-1] = '>';
+
+			int change = 0;
+
+			if ( input == KEY_LEFT )
+				change+=1;
+
+			if ( input == KEY_RIGHT )
+				change-=1;
+
+			int position = 0;
+
+			// find current value position. will default to first item if an invalid value was given.
+			for ( uint16_t i=1;validvalues[i]!=0;i++)
+			{
+				if ( *value == validvalues[i] ) position = i;
+			}
+
+			// work out new value change attempted.
+			if ( change < 0 && position > 0)
+			{
+				*value = validvalues[position-1];
+			} else if ( change > 0 && validvalues[position+1] != 0)
+			{
+				*value = validvalues[position+1];
+			}
+	//		if ( change + *value >= min && change + *value <= max ) *value+=change;
+		}
+	}
+
+	// print value
+	len = sprintf(str, "%5d", *value);
+	memcpy(&display[LCDCOLUMNS-1-5], str, len);
 }
 
 
@@ -367,14 +424,14 @@ bool doPedalCalibration( uint16_t input )
 
 	if ( APPSL_close || APPSR_close )
 	{
-		lcd_send_stringline(1, "", MENUPRIORITY-1);
-		lcd_send_stringline(2, "Press APPS & Brake", MENUPRIORITY-1);
+		lcd_send_stringline(1, "Press APPS & Regen", MENUPRIORITY-1);
+		lcd_send_stringline(2," No brake pressure!", MENUPRIORITY-1);
 		lcd_send_stringline(3, str, MENUPRIORITY-1);
 	} else
 	if ( REG_close )
 	{
 		lcd_send_stringline(1, "", MENUPRIORITY-1);
-		lcd_send_stringline(2, "Press Brake", MENUPRIORITY-1);
+		lcd_send_stringline(2, "Press Regen", MENUPRIORITY-1);
 		lcd_send_stringline(3, str, MENUPRIORITY-1);
 	} else
 	{
@@ -445,13 +502,14 @@ bool doPedalCalibration( uint16_t input )
 
 
 #define MENU_NM		 (1)
-#define MENU_ACCEL 	 (2)
-#define MENU_LIMPDIS (3)
-#define MENU_FANS	 (4)
-#define MENU_FANMAX	 (5)
-#define MENU_CALIB   (6)
-#define MENU_INVEN	 (7)
-#define MENU_HV		 (8)
+#define MENU_RPM	 (2)
+#define MENU_ACCEL 	 (3)
+#define MENU_LIMPDIS (4)
+#define MENU_FANS	 (5)
+#define MENU_FANMAX	 (6)
+#define MENU_CALIB   (7)
+#define MENU_INVEN	 (8)
+#define MENU_HV		 (9)
 
 #define MENU_LAST	 (MENU_HV)
 
@@ -472,6 +530,8 @@ bool DoMenu( uint16_t input )
 	const uint8_t torquevals[] = {0,5,10,25,65,0}; // zero terminated so function can find end.
 
 	const uint8_t fanvals[] = {10,20,30,40,50,60,70,80,90,100,0};
+
+	const uint16_t rpmvals[] = {500, 1500, 3000, 5000, 7000, 9000, 11000, 13000, 15000, 0};
 
 	if ( inmenu )
 	{
@@ -554,8 +614,18 @@ bool DoMenu( uint16_t input )
 
 		sprintf(MenuLines[1], "%cBack & Save", (selection==0) ? '>' :' ');
 
-		doMenuIntEdit( MenuLines[1+MENU_NM], "Max Nm", (selection==MENU_NM), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input, false );
-		doMenuPedalEdit( MenuLines[1+MENU_ACCEL], "Accel", (selection==MENU_ACCEL), &inedit, &getEEPROMBlock(0)->PedalProfile, input );
+		doMenu8BitEdit( MenuLines[1+MENU_NM], "Max Nm", (selection==MENU_NM), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input, false );
+
+		uint16_t currpm = getEEPROMBlock(0)->maxRpm;
+		doMenu16BitEdit( MenuLines[1+MENU_RPM], "RPM Max", (selection==MENU_RPM), &inedit, &currpm, rpmvals, input );
+
+		if ( currpm != getEEPROMBlock(0)->maxRpm )
+		{
+			getEEPROMBlock(0)->maxRpm = currpm;
+// add rr
+		}
+
+        doMenuPedalEdit( MenuLines[1+MENU_ACCEL], "Accel", (selection==MENU_ACCEL), &inedit, &getEEPROMBlock(0)->PedalProfile, input );
 		doMenuBoolEdit( MenuLines[1+MENU_LIMPDIS], "LimpDisable", (selection==MENU_LIMPDIS), &inedit, &getEEPROMBlock(0)->LimpMode, input);
 
 
@@ -571,7 +641,7 @@ bool DoMenu( uint16_t input )
 		uint8_t curfanmaxcur = ceil((100.0 / 255 * getEEPROMBlock(0)->FanMax )); // convert to %
 
 		uint8_t curfanmax = curfanmaxcur;
-		doMenuIntEdit( MenuLines[1+MENU_FANMAX], "Fan Max", (selection==MENU_FANMAX), &inedit, &curfanmax, fanvals, input, true );
+		doMenu8BitEdit( MenuLines[1+MENU_FANMAX], "Fan Max", (selection==MENU_FANMAX), &inedit, &curfanmax, fanvals, input, true );
 		if ( curfanmax != curfanmaxcur ) // value changed.
 		{
 			getEEPROMBlock(0)->FanMax = floor(curfanmax * 2.55);

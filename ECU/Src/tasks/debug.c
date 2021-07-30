@@ -631,6 +631,18 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 }
 
 
+static bool showShutdown(char *str, bool state, bool prev)
+{
+	if ( prev )
+		UARTprintf("%13s %s\r\n", str, state?"Closed":"Open");
+	else
+		UARTprintf("%13s Unknown\r\n", str);
+	if ( !prev ) return false;
+	return state;
+}
+
+
+
 static void debugShutdown( const char *tkn2, const char *tkn3 )
 {
 	uint8_t shutdownstate=0;
@@ -685,17 +697,27 @@ static void debugShutdown( const char *tkn2, const char *tkn3 )
 	{
 		UARTwrite("Current state of shutdown switches:\r\n");
 
-		UARTwritetwoline("ECU          ", ShutdownCircuitState()?"Closed":"Open");
-		UARTwritetwoline("BOTS         ", Shutdown.BOTS?"Closed":"Open");
-		UARTwritetwoline("Inertia      ", Shutdown.InertiaSwitch?"Closed":"Open");
-		UARTwritetwoline("BSPD After   ", Shutdown.BSPDAfter?"Closed":"Open");
-		UARTwritetwoline("BSPD Before  ", Shutdown.BSPDBefore?"Closed":"Open");
-		UARTwritetwoline("Cockpit      ", Shutdown.CockpitButton?"Closed":"Open");
-		UARTwritetwoline("Left         ", Shutdown.LeftButton?"Closed":"Open");
-		UARTwritetwoline("Right        ", Shutdown.RightButton?"Closed":"Open");
-		UARTwritetwoline("BMS          ", Shutdown.BMS?"Closed":"Open"); // BMSReason
-		UARTwritetwoline("IMD          ", Shutdown.IMD?"Closed":"Open");
-		UARTwritetwoline("AIR          ", Shutdown.AIROpen?"Closed":"Open");
+		bool last = true;
+		last = showShutdown("BSPD Before", Shutdown.BSPDBefore, true);
+		last = showShutdown("BSPD After",  Shutdown.BSPDAfter, true);
+		last = showShutdown("BOTS", Shutdown.BOTS, true);
+		last = showShutdown("Inertia", Shutdown.InertiaSwitch, true);
+
+		showShutdown("ECU", Shutdown.BSPDBefore, true);
+
+		last = showShutdown("Cockpit", Shutdown.CockpitButton, last);
+		last = showShutdown("Right", Shutdown.RightButton, last);
+		last = showShutdown("Left", Shutdown.LeftButton, last);
+
+
+		showShutdown("BMS", Shutdown.BMS, true);
+		showShutdown("IMD", Shutdown.IMD, true);
+
+
+		showShutdown("AIRm", Shutdown.AIRm, true);
+		showShutdown("AIRp", Shutdown.AIRp, true);
+		showShutdown("Pre", Shutdown.PRE, true);
+
 	}
 }
 
@@ -721,17 +743,36 @@ static void debugSensors( const char *tkn2 )
 
 		bool force = true;
 
-		UARTprintf("Current Analog nodes not seen[%s] ( %4X ) at (%lu):\r\n", getADCWait(), AnalogueNodesOnline, gettimer());
+		uint32_t adctimes[19] = { 0 };
+
+		adctimes[1] = AnalogNode1.time;
+		adctimes[9] = AnalogNode9.time;
+		adctimes[10] = AnalogNode10.time;
+		adctimes[11] = AnalogNode11.time;
+
+		ADCState_t ADCStateDebug;
+
+		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
+		memcpy(&ADCStateDebug, &ADCState, sizeof(ADCState));
+		xSemaphoreGive(ADCUpdate);
+
+		uint32_t curtime = gettimer();
+
+		CAN_SendStatus(10, 0, gettimer());
+
+		UARTprintf("Current Analog nodes not seen[%s] ( %4X ), Oldest data (%lu) at (%lu):\r\n", getADCWait(), AnalogueNodesOnline, ADCStateDebug.Oldest, gettimer());
+
+		UARTprintf("Steering Angle %d\r\n", ADCState.SteeringAngle );
 
 		// anode 1
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode1Bit ) )
 		{
 			UARTprintf("Anode1: Torque Req L %3d%% (raw:%lu)   Regen %3d%% (raw:%lu) Last at (%lu)\r\n",
-				    ADCState.Torque_Req_L_Percent/10,
-					ADCState.APPSL,
-				    ADCState.Regen_Percent/10,
-					ADCState.Regen,
-					AnalogNode1.time);
+					ADCStateDebug.Torque_Req_L_Percent/10,
+					ADCStateDebug.APPSL,
+					ADCStateDebug.Regen_Percent/10,
+					ADCStateDebug.Regen,
+					adctimes[1]);
 		}
 
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode9Bit ) )
@@ -740,7 +781,7 @@ static void debugSensors( const char *tkn2 )
 					ADCStateSensors.BrakeTemp1,
 					ADCStateSensors.OilTemp1,
 					ADCStateSensors.WaterTemp1,
-					AnalogNode9.time);
+					adctimes[9]);
 		}
 
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode10Bit ) )
@@ -756,11 +797,11 @@ static void debugSensors( const char *tkn2 )
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode11Bit ) )
 		{
 			UARTprintf("Anode11: BrakeF Pres %dPa   BrakeF Pres %dPa   Torque Req R %3d%% (raw:%lu)   Last at (%lu)\r\n",
-			        ADCState.BrakeF,
-			        ADCState.BrakeR,
-			        ADCState.Torque_Req_R_Percent/10,
-					ADCState.APPSR,
-					AnalogNode11.time);
+					ADCStateDebug.BrakeF,
+					ADCStateDebug.BrakeR,
+					ADCStateDebug.Torque_Req_R_Percent/10,
+					ADCStateDebug.APPSR,
+					adctimes[11]);
 		}
 
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode12Bit ) )

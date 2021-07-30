@@ -9,15 +9,19 @@
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.jlink.jlink_txt_serial_number" value=""/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.jlink.reset_strategy" value="type_0_normal"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.jlink.restart_configurations" value="{&quot;fItems&quot;:[{&quot;fDisplayName&quot;:&quot;Type 0: Normal&quot;,&quot;fIsSuppressible&quot;:false,&quot;fResetAttribute&quot;:&quot;Type 0: Normal&quot;,&quot;fResetStrategies&quot;:[{&quot;fDisplayName&quot;:&quot;None&quot;,&quot;fLaunchAttribute&quot;:&quot;no_reset&quot;,&quot;fGdbCommands&quot;:[],&quot;fCmdOptions&quot;:[]},{&quot;fDisplayName&quot;:&quot;Type 0: Normal&quot;,&quot;fLaunchAttribute&quot;:&quot;type_0_normal&quot;,&quot;fGdbCommands&quot;:[&quot;monitor reset\n&quot;],&quot;fCmdOptions&quot;:[]}],&quot;fGdbCommandGroup&quot;:{&quot;name&quot;:&quot;Additional commands&quot;,&quot;commands&quot;:[]}}]}"/>
+    <intAttribute key="com.st.stm32cube.ide.mcu.debug.jlink.rtos_implementation" value="1"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.jlink.scan_chain_auto" value="true"/>
     <intAttribute key="com.st.stm32cube.ide.mcu.debug.jlink.scan_chain_irpre" value="0"/>
     <intAttribute key="com.st.stm32cube.ide.mcu.debug.jlink.scan_chain_pos" value="0"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.jlink.selected_rtos" value="RTOSPlugin_FreeRTOS"/>
+    <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.jlinkenable_rtos" value="true"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.access_port_id" value="0"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.enable_live_expr" value="true"/>
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.enable_swv" value="false"/>
     <intAttribute key="com.st.stm32cube.ide.mcu.debug.launch.formatVersion" value="2"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.ip_address_local" value="localhost"/>
+    <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.launch.limit_swo_clock.enabled" value="false"/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.limit_swo_clock.value" value=""/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.loadList" value="{&quot;fItems&quot;:[{&quot;fIsFromMainTab&quot;:true,&quot;fPath&quot;:&quot;Debug/ECU.elf&quot;,&quot;fProjectName&quot;:&quot;ECU&quot;,&quot;fPerformBuild&quot;:true,&quot;fDownload&quot;:true,&quot;fLoadSymbols&quot;:true}]}"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.override_start_address_mode" value="default"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.launch.remoteCommand" value="target extended-remote"/>
@@ -49,11 +53,18 @@
     <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.stlink_check_serial_number" value="false"/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.stlink_txt_serial_number" value=""/>
     <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.watchdog_config" value="none"/>
+    <booleanAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.enableRtosProxy" value="true"/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.rtosProxyCustomProperties" value=""/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.rtosProxyDriver" value="freertos"/>
+    <booleanAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.rtosProxyDriverAuto" value="false"/>
+    <stringAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.rtosProxyDriverPort" value="ARM_CM7"/>
+    <intAttribute key="com.st.stm32cube.ide.mcu.rtosproxy.rtosProxyPort" value="60000"/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doHalt" value="false"/>
     <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doReset" value="false"/>
     <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.initCommands" value=""/>
     <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.ipAddress" value="localhost"/>
     <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.jtagDevice" value="SEGGER J-LINK"/>
+    <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.jtagDeviceId" value="com.st.stm32cube.ide.mcu.debug.jlink"/>
     <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.pcRegister" value=""/>
     <intAttribute key="org.eclipse.cdt.debug.gdbjtag.core.portNumber" value="2331"/>
     <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.runCommands" value=""/>

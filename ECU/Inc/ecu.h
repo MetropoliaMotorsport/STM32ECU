@@ -56,8 +56,10 @@
 
 // Brake pressure values
 
-#define APPSBrakeHard			30 // 70
-#define APPSBrakeRelease		10 // 30
+
+#define APPSBrakeLight			65
+#define APPSBrakeHard			90 // 70
+#define APPSBrakeRelease		65 // 30
 //#define RTDMBRAKEPRESSURE		30
 #define RTDMBRAKEPRESSURE		10 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
 
@@ -357,11 +359,6 @@ typedef struct {
 	uint8_t I_AccuFans;
 	uint8_t Freq_IMD;
 	uint8_t DC_IMD;
-
-	bool AIRpsense;
-	bool AIRmsense;
-	bool PREsense;
-
 } CarStateType;
 
 typedef enum DeviceStatustype {

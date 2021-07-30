@@ -115,9 +115,6 @@ void PowerTask(void *argument)
 		}
 
 		// find oldest data.
-		xSemaphoreGive(ADCUpdate);
-
-
 		count++;
 		while ( xQueueReceive(PowerErrorQueue,&errormsg,0) )
 		{
@@ -161,7 +158,6 @@ void PowerTask(void *argument)
 			default:
 				break;
 			}
-
 #else
  // on PDM only fans and HV are controlled.
 
@@ -176,8 +172,6 @@ void PowerTask(void *argument)
 
 		powernodesOnlineSince |= powernodesOnline; // cumulatively add
 
-		PNodeWaitStr[0] = 0;
-
 		if ( ( powernodesOnline & PNodeAllBit ) == PNodeAllBit ) // all expected power nodes reported in. // TODO automate
 		{
 			if ( DeviceState.PowerNodes != OPERATIONAL )
@@ -185,6 +179,7 @@ void PowerTask(void *argument)
 				DebugMsg("Power nodes all online");
 			}
 			DeviceState.PowerNodes = OPERATIONAL;
+			PNodeWaitStr[0] = 0;
 			powernodesOnlineSince = 0;
 			curpowernodesOnline = powernodesOnline;
 			lastseenall = looptime;
@@ -298,13 +293,14 @@ int setRunningPower( bool HV, bool buzzer )
 bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is closed
 {
 #ifdef HPF20
-//	if ( !Shutdown.BOTS ) return false;
-//	if ( !Shutdown.BSPDAfter ) return false;
 //	if ( !Shutdown.BSPDBefore ) return false;
-	if ( !Shutdown.CockpitButton ) return false;
+//	if ( !Shutdown.BSPDAfter ) return false;
+//	if ( !Shutdown.BOTS ) return false;
 //	if ( !Shutdown.InertiaSwitch ) return false;
-	if ( !Shutdown.LeftButton ) return false;
+// ECU is here.
+	if ( !Shutdown.CockpitButton ) return false;
 	if ( !Shutdown.RightButton ) return false;
+	if ( !Shutdown.LeftButton ) return false;
 	if ( !Shutdown.BMS ) return false;
 //	if ( !Shutdown.IMD ) return false;
 #endif
@@ -320,18 +316,15 @@ char * ShutDownOpenStr( void )
 	// TODO move these into actual order of SDC.
 
 	snprintf(str, 40, "%s%s%s%s%s%s%s%s%s",
+		"",//		(!Shutdown.BSPDBefore)?"BSPDB,":""
+		"",//		(!Shutdown.BSPDAfter)?"BSPDA,":"",
+		"",//		(!Shutdown.BOTS)?"BOTS,":"",
+		(!Shutdown.InertiaSwitch)?"INRT,":"",
 		(!Shutdown.CockpitButton)?"DRV,":"",
-		(!Shutdown.LeftButton)?"LFT,":"",
 		(!Shutdown.RightButton)?"RGT,":"",
-"", //		(!Shutdown.InertiaSwitch)?"INRT,":"",
-
+		(!Shutdown.LeftButton)?"LFT,":"",
 		(!Shutdown.BMS)?"BMS,":"",
-"",//		(!Shutdown.IMD)?"IMD,":"",
-
-"",//		(!Shutdown.BOTS)?"BOTS,":"",
-"",//		(!Shutdown.BSPDAfter)?"BSPDA,":"",
-""//		(!Shutdown.BSPDBefore)?"BSPDB,":""
-
+		""//		(!Shutdown.IMD)?"IMD,":"",
 	);
 
 //	int len=strlen(str);

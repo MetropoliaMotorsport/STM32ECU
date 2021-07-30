@@ -8,6 +8,7 @@
 #ifndef BRAKE_H_
 #define BRAKE_H_
 
+bool getBrakeLight( void );
 bool getBrakeLow( void );
 uint8_t getBrakeHigh( void );
 

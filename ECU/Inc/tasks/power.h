@@ -44,7 +44,9 @@ typedef struct {
 	bool BMS;
 	uint8_t BMSReason;
 	bool IMD;
-	bool AIROpen;
+	bool AIRm;
+	bool AIRp;
+	bool PRE;
 
 } ShutdownState;
 

@@ -18,6 +18,7 @@
 #include "taskpriorities.h"
 #include "timerecu.h"
 #include "debug.h"
+#include "power.h"
 
 #define UINTOFFSET	360
 
@@ -119,8 +120,6 @@ void ADCTask(void *argument)
 
 	uint32_t lastseenall = 0;
 
-	uint32_t oldestcritical = 0;
-
 	uint32_t analoguenodesOnlineSince = 0;
 
 	ADCWaitStr[0] = 0;
@@ -137,21 +136,18 @@ void ADCTask(void *argument)
 		// copy received critical sensor data from last cycle to
 		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
 		memcpy(&ADCState, &ADCStateNew, sizeof(ADCState));
-
-		oldestcritical = getOldestANodeCriticalData();
+		ADCState.Oldest = getOldestANodeCriticalData();
+		xSemaphoreGive(ADCUpdate);
 
 		uint32_t curtime = gettimer();
 
 		if ( DeviceState.CriticalSensors == OPERATIONAL )
 		{
-			if ( curtime - CYCLETIME - 1  > oldestcritical )
+			if ( curtime - CYCLETIME*2 - 1  > ADCState.Oldest ) // TODO investigate, sometimes getting upto 39 ms
 			{
-				DebugPrintf("Oldest ANode data %d old at (%lu)", curtime-oldestcritical, curtime);
+				DebugPrintf("Oldest ANode data %d old at (%lu)", curtime-ADCState.Oldest, curtime);
 			}
 		}
-
-		// find oldest data.
-		xSemaphoreGive(ADCUpdate);
 
 		count++;
 
@@ -244,6 +240,15 @@ void ADCTask(void *argument)
 
 			analoguenodesOnlineSince = 0;
 		}
+
+
+		if ( getBrakeLight() )
+		{
+			setDevicePower( Brake,  true);
+		} else
+		{
+			setDevicePower( Brake,  false);
+		};
 
 		xSemaphoreGive(waitStr);
 

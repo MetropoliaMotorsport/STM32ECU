@@ -10,6 +10,11 @@
 #include "adcecu.h"
 
 
+bool getBrakeLight( void )
+{
+	return ( ADCState.BrakeR >= APPSBrakeLight || ADCState.BrakeF >= APPSBrakeLight );
+}
+
 bool getBrakeLow( void )
 {
 	return ( ADCState.BrakeR < APPSBrakeRelease || ADCState.BrakeF < APPSBrakeRelease );
