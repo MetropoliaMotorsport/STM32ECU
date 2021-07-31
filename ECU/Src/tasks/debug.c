@@ -38,7 +38,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10096"
+#define VERSION "10097"
 
 #define DEBUGSTACK_SIZE 128*8
 #define DEBUGTASKNAME  "DebugTask"
@@ -311,11 +311,13 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 	{
 		UARTwrite("Setting front power enabled.\r\n");
 
+		ShutdownCircuitSet(true);
 		setDevicePower( Front1, true );
 		setDevicePower( Front2, true );
 		setDevicePower( TSAL, true );
-		vTaskDelay(100);
-
+		UARTwrite("Power wait.\r\n");
+		vTaskDelay(6000);
+		setDevicePower( Inverters, true);
 		if ( !getNodeDevicePower(Front1) )
 		{
 			UARTwrite("Front1 not powered.\r\n");
@@ -398,18 +400,18 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 //					if ( percR > 1000 )
 //						percR = 1000;
 
-					int32_t requestNm = ((percR*maxNm)*0x4000)/1000;
+					int32_t requestNm = (percR*maxNm);//*0x4000)/1000; // speed is 0x4000 scaling.
 
 					for ( int i=0;i<MOTORCOUNT;i++)
 					{
 						if ( requestNm > 0 && ( ( 1 << i ) & motorsenabled ) )
 							InverterSetTorqueInd( i, requestNm, speed);
 						else
-							InverterSetTorqueInd( i, 0, 0);
+							InverterSetTorqueInd( i, 0, speed);
 					}
 
-					UARTprintf("Pedal: r%d%%, reqNm %d speed %d, maxNm %d, to MC[%s] 0[I%dc M%dc] 1[I%dc M%dc] 2[I%dc M%dc] 3[I%dc M%dc]\r\n ",
-							percR/10, requestNm/0x4000, speed, maxNm, getMotorsEnabledStr(),
+					UARTprintf("Pedal: r%d%%, reqNm %d, raw %d, speed %d, maxNm %d, to MC[%s] 0[I%dc M%dc] 1[I%dc M%dc] 2[I%dc M%dc] 3[I%dc M%dc]\r\n ",
+							percR/10, requestNm*30/1000, requestNm, speed, maxNm, getMotorsEnabledStr(),
 							getInvState(0)->InvTemp, getInvState(0)->MotorTemp,
 							getInvState(1)->InvTemp, getInvState(1)->MotorTemp,
 							getInvState(2)->InvTemp, getInvState(2)->MotorTemp,
@@ -542,6 +544,34 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 				InvSendSDO(getInvState(i)->COBID+(getInvState(i)->MCChannel*LENZE_MOTORB_OFFSET),
 						0x6048+(getInvState(i)->MCChannel*0x800),
 						0, getEEPROMBlock(0)->AccelRpms*4);
+			}
+		} else
+		{
+			UARTwrite("Invalid maxRPM given\r\n");
+		}
+	} else if ( streql( tkn2, "decel" )  )
+	{
+		if ( value1 >= 0 && value1 < 16000 )
+		{
+			UARTwrite("Setting decelRPM/s\r\n");
+
+			getEEPROMBlock(0)->DecelRpms = value1;
+			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			{
+				vTaskDelay(20);
+				while ( EEPROMBusy() )
+				{
+					vTaskDelay(20);
+				}
+				UARTwrite("Saved.\r\n");
+			} else
+				UARTwrite("Error saving config.\r\n");
+
+			for ( int i=0;i<MOTORCOUNT;i++)
+			{
+				InvSendSDO(getInvState(i)->COBID+(getInvState(i)->MCChannel*LENZE_MOTORB_OFFSET),
+						0x6049+(getInvState(i)->MCChannel*0x800),
+						0, getEEPROMBlock(0)->DecelRpms*4);
 			}
 		} else
 		{
@@ -1382,6 +1412,11 @@ static void DebugTask(void *pvParameters)
 				else if ( streql(tkn1, "sensors") )
 				{
 					debugSensors(tkn2);
+				}
+				else if ( streql(tkn1, "buzzer") )
+				{
+					UARTprintf("Sounding buzzer\r\n");
+					soundBuzzer();
 				}
 				else if ( streql(tkn1, "uarttest") )
 				{

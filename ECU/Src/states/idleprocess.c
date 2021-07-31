@@ -19,34 +19,30 @@
 #include "output.h"
 #include "power.h"
 #include "debug.h"
-
-bool CheckHV = false;
+#include "adcecu.h"
 
 uint32_t OperationalReceive( void )
 {
 	uint32_t returnvalue = 0;
-/*	if (returnvalue == 0xFF)
+	if (returnvalue == 0xFF)
 	{ returnvalue =
 #ifdef HPF19
 			(0x1 << FLeftSpeedReceived) + // initialise return value to all devices in error state ( bit set )
 				  (0x1 << FRightSpeedReceived) +
 #endif
 				  (0x1 << BMSReceived)+
+				  (0x1 << IVTReceived)+
 #ifndef POWERNODES
 				  (0x1 << PDMReceived)+
 #endif
 				  (0x1 << InverterReceived)+ // TODO inverter receive
 				  (0x1 << PedalADCReceived);
 #ifdef HPF20
-
-//				  (0x1 << InverterLReceived)+
-//				  (0x1 << InverterRReceived);
 #endif
 	}
-	*/
 
-	// change order, get status from pdo3, and then compare against pdo2?, 2 should be more current being higher priority
 
+	// check all inverters are present.
 	int invcount = 0;
 	for ( int i=0;i<MOTORCOUNT; i++)
 	{
@@ -56,7 +52,7 @@ uint32_t OperationalReceive( void )
 		}
 	}
 
-	if ( invcount == MOTORCOUNT )// GetInverterState() > OFFLINE )
+	if ( invcount == MOTORCOUNT )
 		returnvalue &= ~(0x1 << (InverterReceived));
 
 #ifdef HPF19
@@ -74,12 +70,11 @@ uint32_t OperationalReceive( void )
 #ifndef POWERNODES
 	if ( receivePDM() ) returnvalue &= ~(0x1 << PDMReceived);
 #endif
-//	if ( receiveBMS() )
+	if ( DeviceState.BMS == OPERATIONAL )
 		returnvalue &= ~(0x1 << BMSReceived);
 
-//	 receiveIVT();
-	// if ( receiveIVT() )
-		returnvalue &= ~(0x1 << IVTReceived); // assume IVT is present, don't go to error state if missing.
+	if ( DeviceState.IVT == OPERATIONAL )
+		returnvalue &= ~(0x1 << IVTReceived);
 
 		// need new function to check for ADC input, so that more workable with a CAN node.
     if ( DeviceState.ADCSanity == 0 ) returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
@@ -99,22 +94,21 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		DebugMsg("Entering Idle State");
+		ShutdownCircuitSet( false );
 							 //12345678901234567890
-		setRunningPower( CheckHV, false );
-		invRequestState( OPERATIONAL ); // request to go into ready for HV
+		invRequestState( BOOTUP ); // request to go into ready for HV
+
+		setOutput(STARTLED, Off);
+		setOutput(RTDMLED, Off);
 
 		lcd_clear();
-		//lcd_settitle("Ready to activate TS");
 		InverterAllowTorqueAll(false);
 
-		CheckHV = false;
 		HVEnableTimer = 0;
 		TSRequested = 0;
-		setOutput(RTDMLED, Off);
-		blinkOutput(RTDMLED, Off, 0);
 	}
-	readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 #ifndef everyloop
 	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
 #endif
@@ -122,12 +116,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		CAN_SendStatus(1, IdleState, readystate );
 	}
 
-	PrintRunning("Ready");
-
-	//readystate = OperationalReceiveLoop();
-
-
-//		vTaskDelay(5);
+	PrintRunning("TS:Off");
 
 	uint32_t received = OperationalReceive();
 
@@ -170,7 +159,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	#endif
 #endif
 #ifdef SHUTDOWNSWITCHCHECK
-	  && CheckShutdown() // only allow TS enabling if shutdown switches are all closed, as it would otherwise fail
+//	  && CheckShutdown() // only allow TS enabling if shutdown switches are all closed, as it would otherwise fail
 #endif
 	  ) // minimum accumulator voltage to allow TS, set a little above BMS limit, so we can
 	{
@@ -196,6 +185,16 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	setCurConfig();
 #endif
 
+	int16_t lastreq = CarState.Torque_Req;
+
+    CarState.Torque_Req = PedalTorqueRequest();  // calculate request from APPS
+
+
+    if ( abs(lastreq-CarState.Torque_Req) > 10 )
+    {
+    	DebugPrintf("Torquereq %d for Curve adj %d Act %d\r\n", CarState.Torque_Req , getTorqueReqCurve(ADCState.Torque_Req_R_Percent), ADCState.Torque_Req_R_Percent );
+    }
+
 // allow APPS checking before RTDM
 	vectoradjust adj;
 
@@ -205,50 +204,27 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	InverterSetTorque(&adj, 0);
 
-	uint8_t InvHVPresent = 0;
-
-	if ( DeviceState.IVTEnabled )
+	if ( readystate == 0 )
 	{
-		if ( CarState.VoltageINV > 60 )
-			InvHVPresent = 1;
-	} else InvHVPresent = 1; // just assume HV present after request if IVT not enabled. // TODO read from inverters.
-
-	if ( readystate == 0 && TSRequested && CarState.VoltageBMS > MINHV && InvHVPresent )
-	{
-		return TSActiveState;
-	}
-
-	if ( TSRequested == 1
-		&& HVEnableTimer+MS1000*9 < gettimer()
-		&& !InvHVPresent // make this optional so IVT can be disabled.
-		)
-	{
-        // error enabling high voltage, stop trying and alert.
-		CheckHV = false;
-//		CarState.HighVoltageReady = 0;
-//		blinkOutput(TSLED_Output,LEDBLINK_FOUR,1);
-		TSRequested = 0;
-
-		// SHOW ERROR.
-
-		if ( CheckShutdown() )
-		{
-			DebugMsg("Timeout activating TS, check TSMS & HVD");
-			lcd_send_stringline(1,"Error Activating TS", 255);
-			lcd_send_stringline(2,"Check TSMS & HVD.", 255);
-		}
-	}
-
-	if ( readystate == 0 && CheckTSActivationRequest() )
-	{
-		DebugMsg("TS Activation requested whilst ready.");
-		TSRequested = 1;
-		HVEnableTimer = gettimer();
-		CheckHV=true;
-//		CarState.HighVoltageReady = 1; // start timer, go to error state after 1am
+		blinkOutput(TSLED, LEDBLINK_ONE, 1);
 	} else
 	{
+		blinkOutput(TSLED, On, 1);
+	}
 
+	if ( CheckTSActivationRequest() )
+	{
+		if ( readystate == 0 )
+		{
+			DebugMsg("TS Activation requested whilst ready.");
+			TSRequested = 1;
+			HVEnableTimer = gettimer();
+			return TSActiveState;
+//		CarState.HighVoltageReady = 1; // start timer, go to error state after 1am
+		} else
+		{
+			DebugMsg("TS Activation requested whilst not ready.");
+		}
 	}
 
 	return IdleState;

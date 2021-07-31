@@ -62,8 +62,8 @@ void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to sa
 	ADCStateNew.APPSL=0;
 	ADCStateNew.APPSR=0;
 	ADCStateNew.Regen=0;
-	ADCStateNew.BrakeF = APPSBrakeHard;
-	ADCStateNew.BrakeR = APPSBrakeHard;
+	ADCStateNew.BrakeF = 0;//APPSBrakeHard;
+	ADCStateNew.BrakeR = 0;//APPSBrakeHard;
 	xSemaphoreGive(ADCUpdate);
     SetCriticalError();
 }

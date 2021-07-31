@@ -241,7 +241,6 @@ void ADCTask(void *argument)
 			analoguenodesOnlineSince = 0;
 		}
 
-
 		if ( getBrakeLight() )
 		{
 			setDevicePower( Brake,  true);
@@ -603,9 +602,6 @@ int getTorqueReqCurve( uint16_t ADCInput )
 	{
 	  return CANADC.Torque_Req_L_Percent;
 	}
-#endif
-#ifndef STMADC
-	return 0;
 #endif
 #ifdef NOAPPS
 	return 0;

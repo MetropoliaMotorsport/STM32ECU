@@ -51,12 +51,13 @@ extern QueueHandle_t OutputQueue;
 #ifdef HPF20
 
 typedef enum output {
-	BMSLED=7,
-	IMDLED=5,
-	BSPDLED=3,
+	BMSLED=8,
+	IMDLED=6,
+	BSPDLED=0,
 	TSLED=1,
-	TSOFFLED=17, // 0
-	RTDMLED=6,
+	STARTLED=4,
+	TSOFFLED=7, // 0
+	RTDMLED=3,
 	ERRORLED=2,
 	LED1=12,
 	LED2=13,

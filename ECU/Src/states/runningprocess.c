@@ -33,7 +33,7 @@ uint16_t PrintRunning( char *title )
 	if ( Torque > 99 ) Torque = 99;
 
 	sprintf(str,"%2linm(%2d%%) APPS:%c%c",
-			(CarState.Torque_Req*1000+15384-1)/15384,
+			(CarState.Torque_Req*30)/1000, // *1000+15384-1)/15384,
 			Torque, //CarState.Torque_Req,
 			(CarState.APPSstatus > 0)?'_':'A',
 			getBrakeHigh() ?' ':'H');
@@ -86,10 +86,11 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
 		DebugMsg("Entering RTDM State");
+		soundBuzzer();
 		lcd_clear();
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		setOutput(RTDMLED,On); // move to ActivateRTDM
-		blinkOutput(RTDMLED,On,0);
+		setOutput(STARTLED,Off);
 		allowstop = 0;
 		standstill = 0;
         limpcounter = 0;
@@ -113,7 +114,6 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	 * The vehicle must make a characteristic sound, continuously for at least one second and a maximum of three seconds when it enters ready-to-drive mode.
 	 */
 
-	setRunningPower( true, true ); // buzzer only sounds when value changes from 0 to 1
 	invRequestState( OPERATIONAL );
 
 	if ( CheckCriticalError() )
@@ -240,12 +240,11 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 		vectoradjust adj;
 
-		if ( CarState.TorqueVectoring )
-			doVectoring( CarState.Torque_Req, &adj );
+		doVectoring( CarState.Torque_Req, &adj );
 
 		if ( CarState.APPSstatus ) setOutput(TSLED,On); else setOutput(TSLED,Off);
 
-		InverterSetTorque(&adj, 0);
+		InverterSetTorque(&adj, getEEPROMBlock(0)->maxRpm);
 	}
 
 	// if drop status due to error, check if recoverable, or if limp mode possible.

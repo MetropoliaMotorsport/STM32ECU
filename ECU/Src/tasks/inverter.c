@@ -36,7 +36,7 @@ void InvInternalResetRDO( void );
 
 bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxData[8], bool resend );
 
-#define INVSTACK_SIZE 128*2
+#define INVSTACK_SIZE 128*3
 #define INVTASKNAME  "InvTask"
 StaticTask_t xINVTaskBuffer;
 StackType_t xINVStack[ INVSTACK_SIZE ];
@@ -95,7 +95,10 @@ void InverterSetTorque( vectoradjust *adj, int16_t MaxSpeed )
 	InverterState[FrontLeftInverter].Torque_Req = adj->FL;
 	InverterState[RearRightInverter].Torque_Req = adj->RR;
 	InverterState[FrontRightInverter].Torque_Req = adj->FR;
-	//InverterState[i].MaxSpeed = MaxSpeed; // convert to right value as needed.
+	InverterState[RearLeftInverter].MaxSpeed = MaxSpeed; // convert to right value as needed.
+	InverterState[FrontLeftInverter].MaxSpeed = MaxSpeed;
+	InverterState[RearRightInverter].MaxSpeed = MaxSpeed;
+	InverterState[FrontRightInverter].MaxSpeed = MaxSpeed;
 	xSemaphoreGive(InvUpdating);
 }
 
@@ -115,9 +118,11 @@ int InverterGetSpeed( void )
 	// find slowest wheel to define speed.
 	for ( int i = 0; i<MOTORCOUNT;i++)
 	{
-		if (InverterState[i].Speed < speed )
-			speed =InverterState[i].Speed;
+//		if (InverterState[i].Speed < speed )
+			speed += InverterState[i].Speed;
 	}
+
+	speed = ( speed / MOTORCOUNT );
 
 	return speed;
 }
@@ -257,6 +262,8 @@ void InvTask(void *argument)
 		invexpected[i] = getInvExpected(i);
 
 	}
+
+	setDevicePower( Inverters, false );
 
 	TickType_t lastseen[MOTORCOUNT];
 
@@ -611,7 +618,17 @@ long getInvSpeedValue( uint8_t *data )
 
 uint8_t invRequestState( DeviceStatus state )
 {
-	if ( DeviceState.Inverter != state )
+	int invcount = 0;
+
+	for ( int i=0;i<MOTORCOUNT; i++)
+	{
+		if ( getInvState(i)->InvState == state )
+		{
+			invcount++;
+		}
+	}
+
+	if ( invcount < MOTORCOUNT )
 	{
 		Inv_msg msg;
 		msg.state  = state;

@@ -160,12 +160,44 @@ void OutputTask(void *argument)
 		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), On);
 	}
 
-	vTaskDelay(2000);
+	vTaskDelay(200);
 
 	for ( int i=0;i<19;i++)
 	{
 		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), Off);
 	}
+
+#if 0
+	for ( int i=0;i<10;i++)
+	{
+		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), On);
+		vTaskDelay(1000);
+		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), Off);
+	}
+
+	vTaskDelay(1000);
+
+	HAL_GPIO_WritePin(getGpioPort(3), getGpioPin(3), On); // ok white button
+	HAL_GPIO_WritePin(getGpioPort(4), getGpioPin(4), On); // ok red button
+
+	HAL_GPIO_WritePin(getGpioPort(6), getGpioPin(6), On); // ok middle left
+
+	HAL_GPIO_WritePin(getGpioPort(7), getGpioPin(7), On); // left left
+
+	HAL_GPIO_WritePin(getGpioPort(8), getGpioPin(8), On); // right left
+
+	vTaskDelay(5000);
+
+	HAL_GPIO_WritePin(getGpioPort(3), getGpioPin(3), Off);
+
+	HAL_GPIO_WritePin(getGpioPort(4), getGpioPin(4), Off);
+
+	HAL_GPIO_WritePin(getGpioPort(6), getGpioPin(6), Off);
+
+	HAL_GPIO_WritePin(getGpioPort(7), getGpioPin(7), Off);
+
+	HAL_GPIO_WritePin(getGpioPort(8), getGpioPin(8), Off);
+#endif
 
 //	blinkOutput(IMDLED, Timed, 2000);
 //	blinkOutput(BMSLED, Timed, 2000);
@@ -389,54 +421,6 @@ void timeOutput(output output, uint32_t time)
 {
 	blinkOutput(output, Timed, time);
 }
-
-
-
-/**
- * @brief set the current state of LED's as defined by carstate variables.
- */
-void __setLEDs( void )
-{
-	// Check. 10 second delay for IMD led in simulink. IMD Light power off delay. missed earlier, significance?
-
-	setOutput(BMSLED, Shutdown.BMS);
-	setOutput(IMDLED, Shutdown.IMD);
-	setOutput(BSPDLED, Shutdown.BSPDBefore);
-}
-
-
-void startupLEDs(void)
-{
-	 //small onboard led display to indicate board startup
-	  setOutputNOW(LED1,On);
-	  setOutputNOW(LED2,On);
-	  setOutputNOW(LED3,On);
-	  vTaskDelay(300);
-	  setOutputNOW(LED1,Off);
-	  vTaskDelay(300);
-	  setOutputNOW(LED2,Off);
-	  vTaskDelay(300);
-	  setOutputNOW(LED3,Off);
-
-#ifdef OLDPOWEROn
-	  // display status LED's for two seconds to indicate power on.
-	  setOutput(1,On);
-	  setOutput(2,On);
-	  setOutput(3,On);
-	  // HAL_Delay(2000);
-	  vTaskDelay(500);
-#endif
-	  setOutput(BMSLED,On);
-	  setOutput(IMDLED,On);
-	  setOutput(BSPDLED,On);
-	  // HAL_Delay(2000);
-	  vTaskDelay(500);
-
-	  for(int i=0;i<=OUTPUTCount;i++){ // turn off all LED's
-		  setOutput(i, Off);
-	  }
-}
-
 
 int initOutput( void )
 {

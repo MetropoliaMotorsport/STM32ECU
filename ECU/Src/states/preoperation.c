@@ -124,7 +124,7 @@ void setTestMotors( bool state )
 }
 
 #define READYCONFIGBIT		0
-#define READYSDCBIT     	1
+//#define READYSDCBIT     	1
 #define READYDEVBIT			2
 #define READYINVBIT			3
 #define READYSENSBIT		4
@@ -157,6 +157,9 @@ int PreOperationState( uint32_t OperationLoops  )
     	SetErrorLogging( false );
 		preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
 		InverterAllowTorqueAll(false);
+
+		setOutput(TSLED, On);
+		setOutput(RTDMLED, Off);
 
 		ReadyToStart = 0xFFFF;
 #ifdef STMADC
@@ -257,12 +260,13 @@ int PreOperationState( uint32_t OperationLoops  )
 				strcpy(str, "Err:");
 
 
-				if (ReadyToStart & (0x1 << READYTESTING ) ) {	strcat(str, "TST " ); }
+//				if (ReadyToStart & (0x1 << READYTESTING ) ) {	strcat(str, "TST " ); }
 
 #ifdef STMADC // ADC is onboard, any issues with it are an error not a wait.
 				if (preoperationstate & (0x1 << PedalADCReceived) ) { strcat(str, "ADC " ); }
 #endif
 
+#if 0
 				if (ReadyToStart & (0x1 << READYSDCBIT ) ) {
 
 					strcat(str, "SDC(" );
@@ -271,6 +275,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 					strcat(str, ") " );
 				}
+#endif
 
 				if (ReadyToStart & (0x1 << READYTSALBIT ) ) { strcat(str, "TSAL " );  }
 
@@ -395,8 +400,6 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	}
 
-	setRunningPower( false, false );
-
 	vTaskDelay(5);
 
 	preoperationstate = DevicesOnline(preoperationstate);
@@ -421,22 +424,49 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	// Check startup requirements.
 
+#if 0
 	if ( !CheckShutdown() )
 	{
 		blinkOutput(TSOFFLED, BlinkMed, 1);
 #ifdef SHUTDOWNSWITCHCHECK
-	    ReadyToStart += 2;
+	    ReadyToStart |= (0x1 << READYSDCBIT );
 #endif
 	}  else
 	{
 		blinkOutput(TSOFFLED, On, 0);
 		setOutput(TSOFFLED,On);
 	}
+#endif
 
 	static int percR = -1;
 	static int32_t requestNm = 0;
 	static bool waitprecharge = false;
 	static bool doneprecharge = false;
+
+	if ( !getDevicePower(Front1) ||
+		 !getDevicePower(Front2) ||
+		 !getDevicePower(Inverters) )
+	{
+		blinkOutput(TSLED, On, LEDBLINKNONSTOP);
+	}
+
+	if ( CheckTSActivationRequest() )
+	{
+		invRequestState( BOOTUP );
+		resetDevicePower(Inverters);
+		setDevicePower( Inverters, true );
+		resetDevicePower(Front1);
+		setDevicePower( Front1, true );
+		resetDevicePower(Front2);
+		setDevicePower( Front2, true );
+		setDevicePower( RightPump, true );
+		setDevicePower( LeftPump, true );
+		setDevicePower( RightFans, true );
+		setDevicePower( LeftFans, true );
+		lcd_send_stringline( 3, "Power requested!", 3);
+		DebugMsg("Power requested.");
+	}
+#if 0
 
 	if ( CheckRTDMActivationRequest() || testmotors != testmotorslast ) // manual startup power request whilst in testing phases, allows to reset if error occurred.
 	{
@@ -568,8 +598,9 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		lcd_send_stringline(2,str,254);
 	}
+#endif
 
-	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYTESTING); }
+//	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYTESTING); }
 
 //	if ( errorPower() ) { ReadyToStart += 1; }
 
@@ -588,14 +619,14 @@ int PreOperationState( uint32_t OperationLoops  )
 //				ReadyToStart |= (1<<READYINVBIT);
 //	} // require inverters to be online
 
-
 	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYSENSBIT); } // require critical sensor nodes online for startup.
 	if ( DeviceState.PowerNodes != OPERATIONAL ) { ReadyToStart |= (1<<READYPOWERBIT); }
 	if ( !getDevicePower(TSAL) ) { ReadyToStart |= (1<<READYTSALBIT); } // require TSAL power to allow startup.
 
 	if ( ReadyToStart == 0 )
 	{
-		blinkOutput(TSLED, LEDBLINK_ONE, 1);
+		blinkOutput(STARTLED, On,1);
+//		setOutput(STARTLED, On);
 			// devices are ready and in pre operation state.
 			// check for request to move to active state.
 
@@ -607,12 +638,11 @@ int PreOperationState( uint32_t OperationLoops  )
 		if ( CheckActivationRequest() ) // check if driver has requested activation and if so proceed
 		{
 			OperationLoops = 0;
-
-			setOutput(RTDMLED,Off);
 			return OperationalReadyState; // normal operational state on request
 		}
 	} else
 	{ // hardware not ready for active state
+		blinkOutput(STARTLED, LEDBLINK_TWO, 1);
 		if ( OperationLoops == 50 ) // 0.5 seconds, send reset nmt, try to get inverters online if not online at startup.
 		{
 

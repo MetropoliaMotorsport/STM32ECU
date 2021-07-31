@@ -511,7 +511,7 @@ bool doPedalCalibration( uint16_t input )
 #define MENU_INVEN	 (8)
 #define MENU_HV		 (9)
 
-#define MENU_LAST	 (MENU_HV)
+#define MENU_LAST	 (MENU_INVEN)
 
 #define MENUSIZE	 (MENU_LAST+1)
 
@@ -653,6 +653,7 @@ bool DoMenu( uint16_t input )
 
 		doMenuBoolEdit( MenuLines[1+MENU_INVEN], "InvEnabled", (selection==MENU_INVEN), &inedit, &getEEPROMBlock(0)->InvEnabled, input);
 
+#if 0
 		bool curhvState = getEEPROMBlock(0)->alwaysHV;
 		doMenuBoolEdit( MenuLines[1+MENU_HV], "HV Startup", (selection==MENU_HV), &inedit, &curhvState, input);
 		if ( curhvState != getEEPROMBlock(0)->alwaysHV )
@@ -660,6 +661,7 @@ bool DoMenu( uint16_t input )
 			getEEPROMBlock(0)->alwaysHV = curhvState;
 			ShutdownCircuitSet(curhvState);
 		}
+#endif
 
 		lcd_send_stringline( 0, MenuLines[0], MENUPRIORITY );
 

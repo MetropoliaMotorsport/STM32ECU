@@ -139,8 +139,6 @@ int Startup( uint32_t OperationLoops  )
 	CAN_NMT(0x81,FRSpeed_COBID);
 #endif
 
-	ShutdownCircuitSet( true ); // as requested for testing.
-
 	vTaskDelay(5);
 
 	return PreOperationalState;
@@ -151,7 +149,6 @@ int LimpProcess( uint32_t OperationLoops  )
 {
 	lcd_settitle("LimpProcess(NA)");
 	CAN_SendStatus(1, LimpState, 0 );
-	setRunningPower( true, false );
 	return LimpState;
 }
 
@@ -159,7 +156,6 @@ int TestingProcess( uint32_t OperationLoops  )
 {
 	lcd_settitle("TestingProcess(NA)");
 	CAN_SendStatus(1, TestingState, 0 );
-	setRunningPower( true, false );
 	return TestingState;
 }
 

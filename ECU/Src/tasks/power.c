@@ -108,7 +108,7 @@ void PowerTask(void *argument)
 
 		if ( DeviceState.PowerNodes == OPERATIONAL )
 		{
-			if ( curtime - CYCLETIME - 1  > oldestcritical )
+			if ( curtime - CYCLETIME*2 - 1  > oldestcritical )
 			{
 				DebugPrintf("Oldest PNode data %d old at (%lu)", curtime-oldestcritical, curtime);
 			}
@@ -212,7 +212,7 @@ void PowerTask(void *argument)
 			powernodesOnlineSince = 0;
 		}
 
-		if ( ( powernodesOnlineSince & PNODECRITICALBITS ) == PNODECRITICALBITS )
+		if ( ( curpowernodesOnline & PNODECRITICALBITS ) == PNODECRITICALBITS )
 		{
 			DeviceState.CriticalPower = OPERATIONAL;
 			// we've received all the SCS data
@@ -252,42 +252,6 @@ void PowerTask(void *argument)
 	}
 
 	vTaskDelete(NULL);
-}
-
-int setRunningPower( bool HV, bool buzzer )
-{
-#ifdef PDM
-	return sendPDM( int buzzer );
-#else
-	bool HVR = true;
-
-//	if ( GetInverterState() < STOPPED ) HVR = false;
-
-	if ( ( HVR && HV ) )
-	{
-// request HV on.
-		ShutdownCircuitSet( true );
-		setDevicePower( Buzzer, buzzer );
-		return 1;
-//		return CANSendPDM(10,buzzer); // send PDM message anyway as it's being monitored for HV state in SIM even though has no effect
-	} else
-	{
-	//	ShutdownCircuitSet( false );
-		return 0;
-//	    return CANSendPDM(0,buzzer);
-	}
-#if 0
-	if ( ( ADCState.BrakeF > 5 ) ||      // ensure brake light power turned on if any indication brakes are being pressed.
-		 ( ADCState.BrakeR > 5 ) || 		// TODO find suitable minimum values to trigger on.
-		 ( ADCState.Regen_Percent > 5) )
-	{
-		setDevicePower( Brake,  true);
-	} else
-	{
-		setDevicePower( Brake,  false);
-	};
-#endif
-#endif
 }
 
 bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is closed
@@ -400,7 +364,7 @@ bool setPowerState( DevicePowerState devicestate, bool enabled )
 
 void resetPower( void )
 {
-	setRunningPower( false, false ); // send high voltage off request to PDM.
+
 }
 
 void FanPWMControl( uint8_t leftduty, uint8_t rightduty )
@@ -455,6 +419,20 @@ char * getDevicePowerNameLong( DevicePower device )
 	return "Error";
 }
 
+xTimerHandle timerHndlBuzzer;
+
+bool soundBuzzer( void )
+{
+	resetDevicePower(Buzzer);
+	setDevicePower(Buzzer, true);
+	xTimerStart( timerHndlBuzzer, 0 );
+	return true;
+}
+
+
+static void stopBuzzer(xTimerHandle pxTimer) {
+	setDevicePower(Buzzer, false);
+}
 
 bool getPowerHVReady( void )
 {
@@ -496,6 +474,12 @@ int initPower( void )
 
 	vQueueAddToRegistry(PowerErrorQueue, "PowerErrorQueue" );
 
+	timerHndlBuzzer = xTimerCreate(
+	      "buzzertimer", /* name */
+	      pdMS_TO_TICKS(1000), /* period/time */
+	      pdFALSE, /* auto reload */
+	      (void*)0, /* timer ID */
+	      stopBuzzer); /* callback */
 
 	PowerTaskHandle = xTaskCreateStatic(
 						  PowerTask,

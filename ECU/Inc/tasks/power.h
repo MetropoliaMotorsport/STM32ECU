@@ -105,6 +105,8 @@ char * getPNodeWait( void );
 bool getPowerHVReady( void );
 void FanPWMControl( uint8_t leftduty, uint8_t rightduty );
 
+bool soundBuzzer( void );
+
 int initPower( void );
 
 extern TaskHandle_t PowerTaskHandle;

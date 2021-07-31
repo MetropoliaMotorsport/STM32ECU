@@ -129,8 +129,11 @@ bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, con
 
 void BMSTimeout( uint16_t id )
 {
-	CarState.VoltageBMS=0;
-    SetCriticalError();
+	if ( DeviceState.BMS != OFFLINE )
+	{
+		CarState.VoltageBMS=0;
+		SetCriticalError();
+	}
 }
 
 

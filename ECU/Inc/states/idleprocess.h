@@ -10,6 +10,6 @@
 
 int IdleProcess( uint32_t OperationLoops );
 uint32_t OperationalReceive( void );
-char OperationalReceiveLoop( void );
+//char OperationalReceiveLoop( void );
 
 #endif /* IDLEPROCESS_H_ */
