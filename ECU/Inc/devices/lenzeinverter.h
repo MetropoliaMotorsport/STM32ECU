@@ -49,6 +49,7 @@
 #define InverterFR_Channel			(1)
 
 #define TORQUESLOPESCALING			(90)
+#define NMSCALING					(90)
 
 #endif /* LENZEINVERTER_H_ */
 

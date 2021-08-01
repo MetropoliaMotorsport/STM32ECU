@@ -279,7 +279,7 @@ uint16_t PedalTorqueRequest( void ) // returns current Nm request amount.
 	{
 	//	return getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax//*0x4000)/1000;
 
-		return getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax/30; //  *0.01/10*1000 unnecessary calculations, works out to 1, gets rid of floating point
+		return (getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax*NMSCALING)/1000; //  *0.01/10*1000 unnecessary calculations, works out to 1, gets rid of floating point
 
 		// return torquerequest;// Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
 	}

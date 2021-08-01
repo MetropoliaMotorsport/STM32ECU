@@ -33,7 +33,7 @@ uint16_t PrintRunning( char *title )
 	if ( Torque > 99 ) Torque = 99;
 
 	sprintf(str,"%2linm(%2d%%) APPS:%c%c",
-			(CarState.Torque_Req*30)/1000, // *1000+15384-1)/15384,
+			(CarState.Torque_Req/90), // *1000+15384-1)/15384,
 			Torque, //CarState.Torque_Req,
 			(CarState.APPSstatus > 0)?'_':'A',
 			getBrakeHigh() ?' ':'H');
