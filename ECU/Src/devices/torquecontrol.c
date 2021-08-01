@@ -10,6 +10,7 @@
 #include "adcecu.h"
 #include "brake.h"
 #include "timerecu.h"
+#include "inverter.h"
 
 #ifdef MATLAB
 #include "Controller_design.h"

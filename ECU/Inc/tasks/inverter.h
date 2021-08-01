@@ -10,6 +10,7 @@
 
 #include "ecumain.h"
 #include "torquecontrol.h"
+#include "lenzeinverter.h"
 
 typedef struct Inv_msg {
 	DeviceStatus state;
