@@ -279,10 +279,10 @@ bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	}
 
 	if ( DataLength >> 16 == PowerNode35.dlcsize
-		&& ( CANRxData[0] >= 0 && CANRxData[0] <= MAXFANCURRENT )
-		&& ( CANRxData[1] >= 0 && CANRxData[1] <= MAXFANCURRENT )
-		&& ( CANRxData[2] >= 0 && CANRxData[2] <= MAXPUMPCURRENT )
-		&& ( CANRxData[3] >= 0 && CANRxData[3] <= MAXPUMPCURRENT )
+//		&& ( CANRxData[0] >= 0 && CANRxData[0] <= MAXFANCURRENT )
+//		&& ( CANRxData[1] >= 0 && CANRxData[1] <= MAXFANCURRENT )
+//		&& ( CANRxData[2] >= 0 && CANRxData[2] <= MAXPUMPCURRENT )
+//		&& ( CANRxData[3] >= 0 && CANRxData[3] <= MAXPUMPCURRENT )
 		)
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode35Bit ), eSetBits);
