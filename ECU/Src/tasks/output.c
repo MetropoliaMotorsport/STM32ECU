@@ -160,7 +160,7 @@ void OutputTask(void *argument)
 		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), On);
 	}
 
-	vTaskDelay(200);
+	vTaskDelay(2000);
 
 	for ( int i=0;i<19;i++)
 	{
@@ -276,6 +276,8 @@ void OutputTask(void *argument)
 					}
 				} else if ( msg.state == On )
 				{
+				//	if ( xBlinkHandle[msg.output] != NULL )
+				//	vTaskSuspend( xBlinkHandle[msg.output] );
 					HAL_GPIO_WritePin(getGpioPort(msg.output), getGpioPin(msg.output), On);
 					Output[msg.output].state = On;
 				} else

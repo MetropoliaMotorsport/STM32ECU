@@ -656,7 +656,7 @@ void resetInv( void )
 		InverterState[i].MCChannel = false;
 		InverterState[i].InvRequested = BOOTUP;
 
-		InverterState[i].AllowRegen = false;
+		InverterState[i].AllowRegen = getEEPROMBlock(0)->Regen;
 		InverterState[i].AllowTorque = false;
 
 		Errors.InvAllowReset[i] = 1;

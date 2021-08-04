@@ -151,6 +151,7 @@ int PreOperationState( uint32_t OperationLoops  )
 #endif
     if ( OperationLoops == 0 )
 	{
+ //   	setOutput(LED2,On);
     	DebugMsg("Entering Pre Operation State");
     	// pre operation state is to allow hardware to get ready etc, no point in logging errors at this point.
     	// the user can see operational state.
@@ -409,7 +410,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	setCurConfig();
 
 	// allow APPS checking before RTDM
-	int Torque_Req = PedalTorqueRequest();
+	int16_t Torque_Req = PedalTorqueRequest();
 
 	vectoradjust adj;
 
@@ -625,8 +626,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	if ( ReadyToStart == 0 )
 	{
-		blinkOutput(STARTLED, On,1);
-//		setOutput(STARTLED, On);
+		setOutput(STARTLED, On);
 			// devices are ready and in pre operation state.
 			// check for request to move to active state.
 
@@ -642,7 +642,7 @@ int PreOperationState( uint32_t OperationLoops  )
 		}
 	} else
 	{ // hardware not ready for active state
-		blinkOutput(STARTLED, LEDBLINK_TWO, 1);
+		blinkOutput(STARTLED, LEDBLINK_TWO, 0);
 		if ( OperationLoops == 50 ) // 0.5 seconds, send reset nmt, try to get inverters online if not online at startup.
 		{
 
@@ -653,7 +653,7 @@ int PreOperationState( uint32_t OperationLoops  )
 			if ( 1 ) // calculate this to max time for expecting everything online
 			{
 				// user pressed requesting startup sequence before devices ready
-				blinkOutput(TSLED, LEDBLINK_FOUR, 1);
+				blinkOutput(TSLED, LEDBLINK_FOUR, 1000);
 				CAN_SendStatus(1,PowerOnRequestBeforeReady,0);
 
 				lcd_send_stringline( 3, "Not ready.", 3);

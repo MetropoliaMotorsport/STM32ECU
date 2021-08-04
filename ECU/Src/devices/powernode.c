@@ -267,7 +267,6 @@ bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	}
 }
 
-
 bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle ) // Cooling
 {
 

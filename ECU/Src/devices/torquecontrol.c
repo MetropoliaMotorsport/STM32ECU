@@ -143,7 +143,7 @@ void doVectoring(int16_t Torque_Req, vectoradjust * adj)
  * APPS Check, Should ignore regen sensor and only use physical brake.
  *
  */
-uint16_t PedalTorqueRequest( void ) // returns current Nm request amount.
+int16_t PedalTorqueRequest( void ) // returns current Nm request amount.
 {
 	//T 11.8.8:  If an implausibility occurs between the values of the APPSs and persists for more than 100 ms
 
@@ -180,12 +180,17 @@ uint16_t PedalTorqueRequest( void ) // returns current Nm request amount.
 	    Torque_drivers_request = 0;
 	    CarState.APPSstatus = 1;
 	}
-
 	//   -Normal Driving Conditions
 	//   -Implausibility allowed : less or equal to 10 percent
 	//   -Brake Pressure allowed : less than 30
 	//   -Torque-Brake Violation : Free
 
+	else if ( CarState.Current > 1000 || CarState.Power > 1000 ) // if we're drawing more current than allowed, cut torque request till pedal released.
+	{
+		No_Torque_Until_Pedal_Released = 1;
+		Torque_drivers_request = 0;
+	    CarState.APPSstatus = 10;
+	}
 	else if( difference<=10
 			&& getBrakeLow() // 30
 			&& No_Torque_Until_Pedal_Released == 0 )
@@ -287,9 +292,7 @@ uint16_t PedalTorqueRequest( void ) // returns current Nm request amount.
 	  //	  return getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax*0.01)*1000/65)/10; // Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
 	else
 	{
-//	  CarState.Torque_Req_L = 0;  // wheels wrong way round? , swapped for now, was + left before.
-//	  CarState.Torque_Req_R = 0;
-	  return 0;
+		return 0;
 	}
 }
 

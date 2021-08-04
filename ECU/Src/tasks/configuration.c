@@ -16,6 +16,7 @@
 #include "semphr.h"
 #include "taskpriorities.h"
 #include "power.h"
+#include "inverter.h"
 
 // ADC conversion buffer, should be aligned in memory for faster DMA?
 typedef struct {
@@ -501,19 +502,21 @@ bool doPedalCalibration( uint16_t input )
 }
 
 
-#define MENU_NM		 (1)
-#define MENU_RPM	 (2)
-#define MENU_ACCEL 	 (3)
-#define MENU_LIMPDIS (4)
-#define MENU_FANS	 (5)
-#define MENU_FANMAX	 (6)
-#define MENU_CALIB   (7)
-#define MENU_INVEN	 (8)
-#define MENU_HV		 (9)
+#define MENU_NM		 	(1)
+#define MENU_RPM	 	(2)
+#define MENU_ACCEL 	 	(3)
+#define MENU_LIMPDIS 	(4)
+#define MENU_FANS	 	(5)
+#define MENU_FANMAX	 	(6)
+#define MENU_CALIB   	(7)
+#define MENU_INVEN	 	(8)
+#define MENU_REGEN	 	(9)
+#define MENU_REGENMAX	(10)
+#define MENU_HV		 	(11)
 
-#define MENU_LAST	 (MENU_INVEN)
+#define MENU_LAST	 	(MENU_REGENMAX)
 
-#define MENUSIZE	 (MENU_LAST+1)
+#define MENUSIZE	 	(MENU_LAST+1)
 
 
 bool DoMenu( uint16_t input )
@@ -532,6 +535,8 @@ bool DoMenu( uint16_t input )
 	const uint8_t fanvals[] = {10,20,30,40,50,60,70,80,90,100,0};
 
 	const uint16_t rpmvals[] = {500, 1500, 3000, 5000, 7000, 9000, 11000, 13000, 15000, 0};
+
+	const uint8_t regenvals[] = {1,3,5,10,0}; // zero terminated so function can find end.
 
 	if ( inmenu )
 	{
@@ -652,6 +657,28 @@ bool DoMenu( uint16_t input )
 		sprintf(MenuLines[1+MENU_CALIB], "%cAPPS Calib", (selection==MENU_CALIB) ? '>' :' ');
 
 		doMenuBoolEdit( MenuLines[1+MENU_INVEN], "InvEnabled", (selection==MENU_INVEN), &inedit, &getEEPROMBlock(0)->InvEnabled, input);
+
+		bool regenon = getEEPROMBlock(0)->Regen;
+		doMenuBoolEdit( MenuLines[1+MENU_REGEN], "Regen", (selection==MENU_REGEN), &inedit, &regenon, input);
+		if ( regenon != getEEPROMBlock(0)->Regen )
+		{
+			getEEPROMBlock(0)->Regen = regenon;
+
+			for ( int i=0; i<MOTORCOUNT;i++)
+			{
+				InverterState_t * invs = getInvState(i);
+				invs->AllowRegen = getEEPROMBlock(0)->Regen;
+			}
+		}
+
+		uint8_t regenmax = getEEPROMBlock(0)->regenMax;
+		doMenu8BitEdit( MenuLines[1+MENU_REGENMAX], "Regen Max", (selection==MENU_REGENMAX), &inedit, &regenmax, regenvals, input, true );
+		if ( regenmax != getEEPROMBlock(0)->regenMax ) // value changed.
+		{
+			getEEPROMBlock(0)->regenMax = curfanmax;
+//			CarState.regenMax = curfanmax;
+		}
+
 
 #if 0
 		bool curhvState = getEEPROMBlock(0)->alwaysHV;

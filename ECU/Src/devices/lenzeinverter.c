@@ -148,7 +148,7 @@ uint8_t InvSend( volatile InverterState_t *Inverter, bool reset )
 	int32_t vel = 0;
 	int16_t torque = 0;
 
-	if ( Inverter->AllowTorque )
+	if ( Inverter->AllowTorque && CarState.AllowTorque )
 	{
 		vel = Inverter->MaxSpeed * 0x4000; //*16; // TODO add gear ratio, rpm multiplied out.  div by 16
 

@@ -17,6 +17,7 @@ bool getBrakeLight( void )
 
 bool getBrakeLow( void )
 {
+	if ( getEEPROMBlock(0)->Regen && ADCState.Regen_Percent > 10 ) return true;
 	return ( ADCState.BrakeR < APPSBrakeRelease || ADCState.BrakeF < APPSBrakeRelease );
 }
 

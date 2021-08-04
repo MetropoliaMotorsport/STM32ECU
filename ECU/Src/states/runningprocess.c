@@ -215,9 +215,10 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         CarState.Torque_Req = PedalTorqueRequest();  // calculate request from APPS
 
-        if ( CarState.Torque_Req == 0 )
+        if ( CarState.Torque_Req == 0 ) // only check for regen if there is no active torque request, as it's opposite.
         {
-        		// TODO check for regen request if torque request zero.  send negative torque?
+    		if ( ADCState.Regen_Percent > 500 && getEEPROMBlock(0)->Regen ) // no torque request, but we do have a regen request, return that.
+    			CarState.Torque_Req = -( 1*NMSCALING );
         }
 
 #ifdef TORQUEVECTOR
@@ -242,7 +243,10 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 		doVectoring( CarState.Torque_Req, &adj );
 
-		if ( CarState.APPSstatus ) setOutput(TSLED,On); else setOutput(TSLED,Off);
+		if ( CarState.APPSstatus )
+			setOutput(TSLED,On);
+		else
+			setOutput(TSLED,Off);
 
 		InverterSetTorque(&adj, getEEPROMBlock(0)->maxRpm);
 	}

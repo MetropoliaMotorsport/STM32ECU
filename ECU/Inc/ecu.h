@@ -326,12 +326,13 @@ extern volatile uint32_t ADCloops;
 typedef struct {
 	uint8_t brake_balance;
 
-	uint8_t  TorqueVectoring;
+	uint8_t TorqueVectoring;
 
 	int32_t Torque_Req;
 	uint8_t Torque_Req_Max;
     uint8_t Torque_Req_CurrentMax;
     uint32_t PowerLimit;
+    bool AllowTorque;
     uint8_t DrivingMode;
     uint8_t PedalProfile;
 

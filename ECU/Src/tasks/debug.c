@@ -38,7 +38,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10098"
+#define VERSION "10099"
 
 #define DEBUGSTACK_SIZE 128*8
 #define DEBUGTASKNAME  "DebugTask"
@@ -340,7 +340,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 
 		UARTwrite("Setting inverters operational.\r\n");
 
-		uint16_t curreq = PedalTorqueRequest();
+		int16_t curreq = PedalTorqueRequest();
 		if ( curreq == 0 )
 		{
 			vTaskDelay(100);
@@ -386,7 +386,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 					UARTwrite(msg.str);
 				}
 
-				uint16_t requestRaw = ADCState.Torque_Req_R_Percent;//PedalTorqueRequest();
+				int16_t requestRaw = ADCState.Torque_Req_R_Percent;//PedalTorqueRequest();
 //				if ( abs(oldrequest-requestRaw) > 50 || gettimer() - lasttime > 1000) // only update if value changes.
 				if ( abs(oldrequest-requestRaw) > 5 || gettimer() - lasttime > 1000) // only update if value changes.
 				{
@@ -400,7 +400,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 //					if ( percR > 1000 )
 //						percR = 1000;
 
-					int32_t requestNm = (percR*maxNm*NMSCALING)/1000;//*0x4000)/1000; // speed is 0x4000 scaling.
+					int16_t requestNm = (percR*maxNm*NMSCALING)/1000;//*0x4000)/1000; // speed is 0x4000 scaling.
 
 					for ( int i=0;i<MOTORCOUNT;i++)
 					{
