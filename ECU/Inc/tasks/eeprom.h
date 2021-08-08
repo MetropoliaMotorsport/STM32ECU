@@ -111,6 +111,14 @@ typedef struct eepromdatastruct {
 
 } eepromdata; // max 1600bytes=50*32byte blocks.
 
+typedef struct {
+	uint32_t time;
+	uint16_t maxIVTI;
+	uint16_t maxMotorI[4];
+} runtimedata_t;
+
+extern runtimedata_t * runtimedata_p;
+
 // 503 - 16 blocks. allocate 50 blocks : 128 blocks total
 
 bool initEEPROM( void );

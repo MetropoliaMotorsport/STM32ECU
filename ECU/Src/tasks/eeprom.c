@@ -28,9 +28,7 @@ typedef union { // EEPROMU
 		uint8_t paddingact[31];
 		union {
 			uint8_t reserved1[32*8]; // blocks 2-9 256 bytes.
-			uint32_t time;
-			uint16_t maxIVTI;
-			uint16_t maxMotorI[4];
+			runtimedata_t runtimedata;
 		};
 		union {
 			uint8_t padding1[32*50]; // force the following structure to be aligned to start of a 50 block area.
@@ -47,6 +45,8 @@ typedef union { // EEPROMU
 } EEPROMdataType;
 
 DMA_BUFFER EEPROMdataType EEPROMdata;
+
+runtimedata_t * runtimedata_p = &EEPROMdata.runtimedata;
 
 volatile bool eepromwritinginprogress = false;
 volatile bool eepromreceivedone = false;

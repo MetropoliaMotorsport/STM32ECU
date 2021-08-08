@@ -1118,8 +1118,10 @@ void debugConfig( void )
 
 	UARTwrite("Running config menu.\r\n\r\n");
 	UARTwrite("q: quit\r\n");
-	UARTwrite("c: open config menu\r\n");
-	UARTwrite("Arrow keys & Enter, control menu.\r\n");
+	UARTwrite("s: Start/Stop button\r\n");
+	UARTwrite("t: Tractive System on button\r\n");
+	UARTwrite("r: RTDM on button\r\n");
+	UARTwrite("Arrow keys & Enter, joystick. \r\n");
 
 	while ( !quit )
 	{
@@ -1134,27 +1136,52 @@ void debugConfig( void )
 		if ( read == 'q' )
 			quit = true;
 		else if ( read == KEY_LEFT )
+		{
 			UARTprintf("Left\r\n");
+			setInput(Left_Input);
+		}
 		else if ( read == KEY_RIGHT )
+		{
 			UARTprintf("Right\r\n");
+			setInput(Right_Input);
+		}
 		else if ( read == KEY_UP )
+		{
 			UARTprintf("Up\r\n");
+			setInput(Up_Input);
+		}
 		else if ( read == KEY_DOWN )
+		{
 			UARTprintf("Down\r\n");
+			setInput(Down_Input);
+		}
 		else if ( read == KEY_ENTER )
 		{
 			UARTprintf("Enter\r\n");
+			setInput(Center_Input);
 		}
 		else if ( read == 'c' )
 		{
-			ConfigInput( 0xFFFF );
+			//ConfigInput( 0xFFFF );
 			read = 0;
+		}
+		else if ( read == 's' )
+		{
+			UARTprintf("Start/Stop\r\n");
+			setInput(StartStop_Input);
+		}
+		else if ( read == 't' )
+		{
+			UARTprintf("TS\r\n");
+			setInput(TS_Input);
+		}
+		else if ( read == 'r' )
+		{
+			UARTprintf("RTDM\r\n");
+			setInput(RTDM_Input);
 		}
 		else
 			UARTwritech(ch);
-
-		ConfigInput( read );
-
 	}
 
 	UARTwrite("Done.\r\n");
@@ -1386,6 +1413,10 @@ static void DebugTask(void *pvParameters)
 				} else
 
 				if ( streql(tkn1, "config" ) )
+				{
+					debugConfig();
+				} else
+				if ( streql(tkn1, "input" ) )
 				{
 					debugConfig();
 				} else

@@ -330,6 +330,11 @@ int GetUpDownPressed( void )
 }
 
 
+int setInput(input input)
+{
+	Input[input].pressed = true;
+}
+
 int GetLeftRightPressed( void )
 {
 	if(Input[Left_Input].pressed != 0){

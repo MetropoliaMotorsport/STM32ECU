@@ -336,20 +336,26 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		static bool showadc = false;
 
+		static bool showcurrent = false;
+
 		switch ( GetLeftRightPressed() )
 		{
-			case -1 : showbrakebal = !showbrakebal; break;
-			case 1 : showadc = !showadc; break;
+			case -1 : if (!showadc && !showcurrent) showbrakebal = !showbrakebal; break;
+			case 1 : if (!showbrakebal && !showcurrent) showadc = !showadc; break;
 		}
 
 		switch ( GetUpDownPressed() )
 		{
-			case -1 : showbrakebal = !showbrakebal; break;
-			case 1 : showadc = !showadc; break;
+			case -1 : break;
+			case 1 :  if (!showadc && !showbrakebal) showcurrent = !showcurrent; break;
+		}
+
+		if ( showcurrent )
+		{
+
 		}
 
 		if ( showbrakebal ) PrintBrakeBalance( );
-
 
 		if ( showadc )
 		{
