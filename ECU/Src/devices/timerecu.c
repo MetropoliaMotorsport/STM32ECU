@@ -78,7 +78,7 @@ void TIM6_IRQHandler()
 void TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM17) {
-	HAL_IncTick();
+		HAL_IncTick();
 	} else if ( htim->Instance == TIM6 )
 	{
 

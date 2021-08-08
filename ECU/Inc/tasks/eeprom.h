@@ -16,7 +16,7 @@
 
 #define EEPROMVERSIONSTR		("MMECUV0.1")
 
-typedef enum EEPROM_cmd { send, receive, read, write } EEPROM_cmd;
+typedef enum EEPROM_cmd { EEPROMCurConf, EEPROMRunningData, writeEEPROM0, writeEEPROM1, writeEEPROMC, FullConfigEEPROM, FullEEPROM } EEPROM_cmd;
 
 typedef struct EEPROM_msg {
 	EEPROM_cmd cmd;
@@ -123,7 +123,7 @@ eepromdata * getEEPROMBlock(int block );
 
 int readEEPROMAddr( uint16_t address, uint16_t size );
 
-void commitEEPROM( void ); // function for timer callback to handle writing.
+void commitEEPROM( void ); // function for timer callback to handle writing, not meant for public calling.
 
 int writeFullEEPROM( void );
 int writeFullConfigEEPROM( void );

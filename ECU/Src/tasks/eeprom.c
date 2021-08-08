@@ -26,7 +26,12 @@ typedef union { // EEPROMU
 		char version[32]; // block 0  32 bytes
 		uint8_t active; // block 1 32 bytes
 		uint8_t paddingact[31];
-		uint8_t reserved1[32*8]; // blocks 2-9 256 bytes.
+		union {
+			uint8_t reserved1[32*8]; // blocks 2-9 256 bytes.
+			uint32_t time;
+			uint16_t maxIVTI;
+			uint16_t maxMotorI[4];
+		};
 		union {
 			uint8_t padding1[32*50]; // force the following structure to be aligned to start of a 50 block area.
 			eepromdata block1; // block 10-59
@@ -111,17 +116,64 @@ void EEPROMTask(void *argument)
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT( EEPROMQueue );
 
-//	EEPROM_msg msg;
+	EEPROM_msg msg;
 
 	while( 1 )
 	{
-//		xQueueReceive(EEPROMQueue,&msg,portMAX_DELAY);
+		if ( ! eepromwritinginprogress) // no writing in progress, process next queue item to write.
+			// Read only needs to happen at startup.
+		{
+			if ( xQueueReceive(EEPROMQueue,&msg,0) )
+			{
+				eepromwritinginprogress = true;
+				HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0); // enable write pin.
 
-  //      raiseflag(busy);
+				switch ( msg.cmd )
+				{
+				case EEPROMCurConf:
+						Remaining_Bytes = 32;
+						// EEPROMdata.buffer = memory address of start of block, calculate relative address of write
+						Memory_Address = &getEEPROMBlock(0)->ConfigStart - EEPROMdata.buffer;
+					break;
 
-  //      process_queue_item(theOperation);
 
-    //    lower_flag(busy);
+				case EEPROMRunningData:
+
+					Remaining_Bytes = 32;
+					Memory_Address = &EEPROMdata.reserved1;
+	// add data dump save here.
+
+					break;
+
+				case writeEEPROM0:
+					Remaining_Bytes = sizeof(eepromdata);
+					Memory_Address =  &getEEPROMBlock(1)->BlockStart - EEPROMdata.buffer;
+					break;
+				case writeEEPROM1:
+					Remaining_Bytes = sizeof(eepromdata);
+					Memory_Address =  &getEEPROMBlock(2)->BlockStart - EEPROMdata.buffer;
+					break;
+				case writeEEPROMC:
+					Remaining_Bytes = sizeof(eepromdata);
+					Memory_Address =  &getEEPROMBlock(0)->BlockStart - EEPROMdata.buffer;
+					break;
+				case FullConfigEEPROM:
+					Remaining_Bytes = sizeof(eepromdata); // sizeof(EEPROMdata.padding1)
+						Memory_Address =  &getEEPROMBlock(0)->BlockStart - EEPROMdata.buffer;
+				break;
+				case FullEEPROM:
+					Remaining_Bytes = sizeof(EEPROMdata);
+					Memory_Address = 0;
+					break;
+				default:
+					break;
+				}
+
+				if ( HAL_TIM_Base_Start_IT(&htim16) != HAL_OK){ // start write timer.
+					Error_Handler();
+				}
+			}
+		}
 
 		DoEEPROMTimeouts(); // right now, eeprom functionality is mostly defined by can receive handler
 
@@ -304,10 +356,6 @@ int DoEEPROM( void )
 					//	memcpy(getEEPROMBuffer(), Buffer, 4096); // copy received data into local eeprom buffer before write.
 
 						// what to do with received data depends on what data was. Flag complete.
-
-	//						lcd_send_stringpos(3,0,"Writing To EEPROM.  ");
-
-	//						writeFullEEPROM();
 
 						// call a callback to process the fully received data?
 
@@ -715,7 +763,6 @@ int readEEPROM( void ){
 
 void commitEEPROM( void ) // progress EEPROM writing by sending next block over i2c, call from writing loop ( interrupt )
 {
-
 	HAL_TIM_Base_Stop_IT(&htim16);
 
 	static int errorcount = 0;
@@ -762,103 +809,38 @@ void commitEEPROM( void ) // progress EEPROM writing by sending next block over 
 
 int writeFullEEPROM( void )
 {
-	if ( ! eepromwritinginprogress){
-
-		HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0); // enable write pin.
-
-		//setup data to write.
-
-		Remaining_Bytes = sizeof(EEPROMdata);
-		Memory_Address = 0;
-
-		// EEPROMdata.buffer
-
-		eepromwritinginprogress = true;
-
-
-		if ( HAL_TIM_Base_Start_IT(&htim16) != HAL_OK){ // start write timer.
-			Error_Handler();
-		}
-		return 1;
-
-	} else return 0;
-
+	EEPROM_msg msg = {FullEEPROM};
+	return xQueueSend(EEPROMQueue,&msg,0);
 }
 
 
 int writeFullConfigEEPROM( void )
 {
-	if ( ! eepromwritinginprogress){
-
-		HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0); // enable write pin.
-
-		//setup data to write.
-		Remaining_Bytes = sizeof(eepromdata); // sizeof(EEPROMdata.padding1)
-		Memory_Address =  &getEEPROMBlock(0)->BlockStart - EEPROMdata.buffer;
-
-		// EEPROMdata.buffer
-
-		eepromwritinginprogress = true;
-
-
-		if ( HAL_TIM_Base_Start_IT(&htim16) != HAL_OK){ // start write timer.
-			Error_Handler();
-		}
-		return 1;
-
-	} else return 0;
-
+	EEPROM_msg msg = {FullConfigEEPROM};
+	return xQueueSend(EEPROMQueue,&msg,0);
 }
 
 
 int writeEEPROM( int bank )  //write one of the two config banks to EEPROM
 {
-	if ( ! eepromwritinginprogress){
+	if ( bank > 1 || bank < 0 ) return 0; // invalid bank number given.
 
-
-		if ( bank > 1 || bank < 0 ) return 0; // invalid bank number given.
-		HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0); // enable write pin.
-
-		//setup data to write.
-
-	//	if ( bank = 0 )	Memory_Address =
-
-		eepromwritinginprogress = true;
-
-		if ( HAL_TIM_Base_Start_IT(&htim16) != HAL_OK){ // start write timer.
-			Error_Handler();
-		}
-		return 1;
-
-	} else return 0;
+	EEPROM_msg msg = {bank?writeEEPROM1:writeEEPROM0};
+	return xQueueSend(EEPROMQueue,&msg,0);
 }
 
 
 int writeEEPROMCurConf( void )  //write one of the two config banks to EEPROM
 {
-	if ( ! eepromwritinginprogress){
+	EEPROM_msg msg = {EEPROMCurConf};
+	return xQueueSend(EEPROMQueue,&msg,0);
+}
 
-		HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0); // enable write pin.
-
-		//setup data to write.
-
-	//	if ( bank = 0 )	Memory_Address =
-
-		//setup data to write.
-
-		Remaining_Bytes = 32;
-		// EEPROMdata.buffer = memory address of start of block, calculate relative address of write
-
-		Memory_Address = &getEEPROMBlock(0)->ConfigStart - EEPROMdata.buffer;
-
-		eepromwritinginprogress = true;
-
-		if ( HAL_TIM_Base_Start_IT(&htim16) != HAL_OK){ // start write timer.
-			Error_Handler();
-		}
-		return 1;
-
-	} else return 0;
+int writeEEPROMRunningData( void )   // write emergency packet to end of EEPROM.
+{
+	EEPROM_msg msg = {EEPROMRunningData};
+	return xQueueSend(EEPROMQueue,&msg,0);
+	return 0;
 }
 
 
@@ -871,8 +853,6 @@ int writeEEPROMEmergency( void )   // write emergency packet to end of EEPROM.
 bool writeEEPROMDone( void )
 {
 	return !eepromwritinginprogress;
-
-	// handle switchin active block in here.
 }
 
 
