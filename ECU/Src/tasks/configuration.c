@@ -164,10 +164,10 @@ void doMenu8BitEdit( char * display, char * menuitem, bool selected, bool * edit
 			int change = 0;
 
 			if ( input == KEY_LEFT )
-				change+=1;
+				change-=1;
 
 			if ( input == KEY_RIGHT )
-				change-=1;
+				change+=1;
 
 			int position = 0;
 
@@ -222,10 +222,10 @@ void doMenu16BitEdit( char * display, char * menuitem, bool selected, bool * edi
 			int change = 0;
 
 			if ( input == KEY_LEFT )
-				change+=1;
+				change-=1;
 
 			if ( input == KEY_RIGHT )
-				change-=1;
+				change+=1;
 
 			int position = 0;
 
@@ -282,10 +282,10 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 			int change = 0;
 
 			if ( input == KEY_LEFT )
-				change+=1;
+				change-=1;
 
 			if ( input == KEY_RIGHT )
-				change-=1;
+				change+=1;
 
 			int max = 0;
 
@@ -672,11 +672,10 @@ bool DoMenu( uint16_t input )
 		}
 
 		uint8_t regenmax = getEEPROMBlock(0)->regenMax;
-		doMenu8BitEdit( MenuLines[1+MENU_REGENMAX], "Regen Max", (selection==MENU_REGENMAX), &inedit, &regenmax, regenvals, input, true );
+		doMenu8BitEdit( MenuLines[1+MENU_REGENMAX], "Regen Max", (selection==MENU_REGENMAX), &inedit, &regenmax, regenvals, input, false );
 		if ( regenmax != getEEPROMBlock(0)->regenMax ) // value changed.
 		{
-			getEEPROMBlock(0)->regenMax = curfanmax;
-//			CarState.regenMax = curfanmax;
+			getEEPROMBlock(0)->regenMax = regenmax;
 		}
 
 

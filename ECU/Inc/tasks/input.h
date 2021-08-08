@@ -14,8 +14,8 @@
 
 #define KEY_UP ('A'<<8)
 #define KEY_DOWN ('B'<<8)
-#define KEY_LEFT ('C'<<8)
-#define KEY_RIGHT ('D'<<8)
+#define KEY_LEFT ('D'<<8)
+#define KEY_RIGHT ('C'<<8)
 #define KEY_ENTER ('\r')
 #define KEY_ESC (27)
 #define KEY_BKSP (8)
