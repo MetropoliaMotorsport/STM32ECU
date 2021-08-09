@@ -1062,7 +1062,7 @@ void debugCurrent( const char * tkn2 )
 			for ( int i=0;i<MOTORCOUNT;i++)
 				UARTprintf("Motor %i Max %dA\r\n", i, runtimedata_p->maxMotorI[i]);
 		}
-		else if ( streql(tkn2, "clear") )
+		else if ( streql(tkn2, "clear") || streql(tkn2, "reset") )
 		{
 			UARTwrite("Clearing Current Max values\r\n");
 			clearRunningData();
