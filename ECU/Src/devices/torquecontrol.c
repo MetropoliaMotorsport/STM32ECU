@@ -185,12 +185,14 @@ int16_t PedalTorqueRequest( void ) // returns current Nm request amount.
 	//   -Brake Pressure allowed : less than 30
 	//   -Torque-Brake Violation : Free
 
+#if 0
 	else if ( CarState.Current > 1000 || CarState.Power > 1000 ) // if we're drawing more current than allowed, cut torque request till pedal released.
 	{
 		No_Torque_Until_Pedal_Released = 1;
 		Torque_drivers_request = 0;
 	    CarState.APPSstatus = 10;
 	}
+#endif
 	else if( difference<=10
 			&& getBrakeLow() // 30
 			&& No_Torque_Until_Pedal_Released == 0 )
