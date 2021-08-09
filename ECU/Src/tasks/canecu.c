@@ -1047,13 +1047,12 @@ char CANLogDataFast( void )
 
 	resetCanTx(CANTxData);
 
-	// TODO get torque
-
-	//storeBEint16(CarState.Inverters[RearLeftInverter].InvTorque, &CANTxData[0]); //actual_torque_left_inverter_raw can0 0x7c9 0,16be
-	//storeBEint16(CarState.Inverters[RearRightInverter].InvTorque, &CANTxData[2]); //actual_torque_right_inverter_raw can0 0x7c9 16,16be
+	for ( int i=0;i<MOTORCOUNT;i++)
+	{
+	   storeBEint16(getInvState(i)->Torque_Req, &CANTxData[i*2]);
+	}
 
 	CAN1Send( 0x7C9, 8, CANTxData );
-
 	resetCanTx(CANTxData);
 
   // not being sent in current simulink, but is set?
