@@ -1089,20 +1089,21 @@ char CANLogDataFast( void )
 	CAN1Send( 0x7C7, 8, CANTxData );
 
 	resetCanTx(CANTxData);
+	CANTxData[0] = (int8_t)CarState.Current;
+	for ( int i=0;i<MOTORCOUNT;i++)
+		CANTxData[1+i] = (int8_t)getInvState(i)->InvCurrent;
+
+	CAN1Send( 0x7CC, 8, CANTxData );
+
+	resetCanTx(CANTxData);
 	for ( int i=0;i<MOTORCOUNT;i++)
 	{
 		CANTxData[i] = getInvState(i)->InvTemp;
 		CANTxData[i+4] = getInvState(i)->MotorTemp;
 	}
 
-	CAN1Send( 0x7CB, 8, CANTxData );
+	CAN1Send( 0x7CD, 8, CANTxData );
 
-	resetCanTx(CANTxData);
-	CANTxData[0] = (int8_t)CarState.Current;
-	for ( int i=0;i<MOTORCOUNT;i++)
-		CANTxData[1+i] = (int8_t)getInvState(i)->InvCurrent;
-
-	CAN1Send( 0x7CC, 8, CANTxData );
 
 	CAN_SendTimeBase();
 
