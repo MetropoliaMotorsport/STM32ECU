@@ -64,6 +64,7 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	bool MCChannel;
 
 	int16_t AmbTemp;
+	int16_t InvVolt;
 	int16_t InvTemp;
 	int16_t MotorTemp;
 

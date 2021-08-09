@@ -306,8 +306,6 @@ bool processINVError( const uint8_t CANRxData[8], const uint32_t DataLength, con
 }
 
 
-static uint16_t invHV[4];
-
 bool processAPPCStatus( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	uint8_t inv=datahandle->index;
@@ -316,18 +314,12 @@ bool processAPPCStatus( const uint8_t CANRxData[8], const uint32_t DataLength, c
 	int16_t InvTemperature = getLEint16(&CANRxData[2])/16;
 
 	InverterState[inv].AmbTemp = InvTemperature;
+	InverterState[inv].InvVolt = InvInputVoltage;
 	if ( !InverterState[inv].MCChannel )
-		InverterState[inv+1].AmbTemp = InvTemperature;
-
-#if 0
-	char str[80];
-	if ( invHV[inv] != InvInputVoltage )
 	{
-		invHV[inv] = InvInputVoltage;
-		snprintf(str, 80, "Inverter %d & %d HV at %dV (%lu)", inv, inv+1, InvInputVoltage, gettimer());
-		DebugMsg(str);
+		InverterState[inv+1].AmbTemp = InvTemperature;
+		InverterState[inv+1].InvVolt = InvInputVoltage;
 	}
-#endif
 
 	if ( InvInputVoltage > 5 && InvInputVoltage < 640 )
 	{

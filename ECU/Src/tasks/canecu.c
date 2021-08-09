@@ -1070,14 +1070,18 @@ char CANLogDataFast( void )
  // IVT
 
 	storeBEint16(CarState.Current, &CANTxData[0]);
+#if 0
 #ifdef IVTEnable
 	storeBEint16(CarState.VoltageINV, &CANTxData[2]);
 	storeBEint16(CarState.VoltageIVTAccu, &CANTxData[6]);
 #endif
+#endif
+
+	storeBEint16(getInvState(0)->InvVolt, &CANTxData[2]);
+	storeBEint16(getInvState(2)->InvVolt, &CANTxData[2]);
+
 	storeBEint16(CarState.VoltageBMS, &CANTxData[4]);
 
-//	storeBEint16(CarState.Power, &CANTxData[6]);
-//	storeBEint16(ADCloops, &CANTxData[6]);
 #ifdef STMADC
 	ADCloops=0;
 #endif
