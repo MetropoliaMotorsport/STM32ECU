@@ -1078,16 +1078,6 @@ char CANLogDataFast( void )
 #endif
 	CAN1Send( 0x7CB, 8, CANTxData );
 
-
-	resetCanTx(CANTxData);
-
-	// TODO get inverter speeds
-
-	//storeBEint32(CarState.Inverters[RearLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
-
-	//storeBEint32(CarState.Inverters[RearRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
-	CAN1Send( 0x7C7, 8, CANTxData );
-
 	resetCanTx(CANTxData);
 	CANTxData[0] = (int8_t)CarState.Current;
 	for ( int i=0;i<MOTORCOUNT;i++)
