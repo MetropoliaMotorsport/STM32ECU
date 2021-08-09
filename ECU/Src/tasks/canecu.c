@@ -21,6 +21,7 @@
 #include "fdcan.h"
 #include "semphr.h"
 #include "taskpriorities.h"
+#include "eeprom.h"
 
 #ifdef ONECAN
 	#define sharedCAN
@@ -1088,14 +1089,16 @@ char CANLogDataFast( void )
 
 	resetCanTx(CANTxData);
 
+
+
+
 #ifndef HPF20
 	storeBEint32(CarState.SpeedFL, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
-
 	storeBEint32(CarState.SpeedFR, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
 #else
-	//storeBEint32(CarState.Inverters[FrontLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
-
-	//storeBEint32(CarState.Inverters[FrontRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
+	CANTxData[0] = CarState.Current;
+	for ( int i=0;i<MOTORCOUNT;i++)
+		CANTxData[1+i] = getInvState(i)->InvCurrent;
 #endif
 	CAN1Send( 0x7CC, 8, CANTxData );
 
