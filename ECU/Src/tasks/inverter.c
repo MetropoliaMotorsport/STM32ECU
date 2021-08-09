@@ -304,6 +304,8 @@ void InvTask(void *argument)
 	bool firstreceive[4] = {false};
 	bool firstbad[4] = {false};
 
+	CarState.AllowTorque = true; // hack for now, this should be controlled somewhere.
+
 	char str[80];
 
 	while( 1 )
