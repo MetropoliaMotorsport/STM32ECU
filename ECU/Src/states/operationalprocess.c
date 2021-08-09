@@ -177,6 +177,8 @@ int OperationalProcess( void )
 		loopoverrun = 0; // reset over run counter.
 	}
 
+	 DeviceState.LoggingEnabled = true;
+
 	uint32_t currenttimer = gettimer();
 
 	// check how much past 10ms timer is, if too far, soft error. Allow a few times, but not too many before entering an error state?

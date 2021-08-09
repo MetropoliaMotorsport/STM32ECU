@@ -350,7 +350,7 @@ int PreOperationState( uint32_t OperationLoops  )
 			case -1 : if ( showcurrent )
 				{
 					clearRunningData();
-					lcd_send_stringline( 0, "Clear IVTImax", 3);
+					lcd_send_stringline( 0, "Clear runningval", 3);
 				}
 				break;
 			case 1 :  if (!showadc && !showbrakebal) showcurrent = !showcurrent; break;
@@ -358,10 +358,20 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		if ( showcurrent )
 		{
-			sprintf(str, "IVTImax %6dA",
-					runtimedata_p->maxIVTI);
+			sprintf(str, "IVT %3dA  0%3dA",
+					runtimedata_p->maxIVTI,
+					runtimedata_p->maxMotorI[0]
+			);
 
 			lcd_send_stringline(0,str, 255);
+
+			sprintf(str, "1%3dA 2%3dA 3%3dA ",
+				runtimedata_p->maxMotorI[1],
+				runtimedata_p->maxMotorI[2],
+				runtimedata_p->maxMotorI[3] );
+
+			lcd_send_stringline(1,str, 255);
+
 		}
 
 		if ( showbrakebal ) PrintBrakeBalance( );
