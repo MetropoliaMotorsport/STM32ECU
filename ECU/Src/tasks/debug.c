@@ -38,7 +38,7 @@ typedef struct Debug_msg {
 } Debug_msg;
 
 
-#define VERSION "10099"
+#define VERSION "10101"
 
 #define DEBUGSTACK_SIZE 128*8
 #define DEBUGTASKNAME  "DebugTask"

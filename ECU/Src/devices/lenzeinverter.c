@@ -535,8 +535,13 @@ bool processINVValues1( const uint8_t CANRxData[8], const uint32_t DataLength, c
 		xTaskNotify( InvTaskHandle, ( 0x1 << (InverterState[inv].Motor*3+1) ), eSetBits);
 		InverterState[inv].Speed = ( Speed / 0x4000 ) / 16;
 		InverterState[inv].InvTorque = Torque;
-		InverterState[inv].InvCurrent = Torque;
+		InverterState[inv].InvCurrent = Current;
 
+		if ( Current > runtimedata_p->maxMotorI[inv] )
+		{
+			runtimedata_p->maxMotorI[inv] = Current;
+			runtimedata_p->time = getTime();
+		}
 		return true;
 	} else // bad data.
 	{
