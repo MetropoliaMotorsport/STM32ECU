@@ -99,6 +99,10 @@ static bool eepromwrite = false;
 static uint8_t eepromwritetype = 0;
 static uint32_t eepromwritestart = 0;
 
+static time_t lastruntimesaved = 0;
+
+xTimerHandle timerHndlRunningData;
+
 void EEPROMTask(void *argument)
 {
 
@@ -118,11 +122,20 @@ void EEPROMTask(void *argument)
 
 	EEPROM_msg msg;
 
+	lastruntimesaved = EEPROMdata.runtimedata.time;
+
 	while( 1 )
 	{
 		if ( ! eepromwritinginprogress) // no writing in progress, process next queue item to write.
 			// Read only needs to happen at startup.
 		{
+			if ( EEPROMdata.runtimedata.time != lastruntimesaved )
+			{
+				xTimerStart( timerHndlRunningData, 0 );
+				//writeEEPROMRunningData();
+				lastruntimesaved = EEPROMdata.runtimedata.time;
+			}
+
 			if ( xQueueReceive(EEPROMQueue,&msg,0) )
 			{
 				eepromwritinginprogress = true;
@@ -136,13 +149,11 @@ void EEPROMTask(void *argument)
 						Memory_Address = &getEEPROMBlock(0)->ConfigStart - EEPROMdata.buffer;
 					break;
 
-
 				case EEPROMRunningData:
 
 					Remaining_Bytes = 32;
-					Memory_Address = &EEPROMdata.reserved1;
+					Memory_Address = (void*)&EEPROMdata.runtimedata - (void*)EEPROMdata.buffer;
 	// add data dump save here.
-
 					break;
 
 				case writeEEPROM0:
@@ -861,6 +872,21 @@ bool stopEEPROM( void )
 	return false;
 }
 
+void clearRunningData( void )
+{
+	EEPROMdata.runtimedata.time = 0;
+	EEPROMdata.runtimedata.maxIVTI = 0;
+	EEPROMdata.runtimedata.maxMotorI[0] = 0;
+	EEPROMdata.runtimedata.maxMotorI[1] = 0;
+	EEPROMdata.runtimedata.maxMotorI[2] = 0;
+	EEPROMdata.runtimedata.maxMotorI[3] = 0;
+
+	writeEEPROMRunningData();
+}
+
+static void saveRunningData(xTimerHandle pxTimer) {
+	writeEEPROMRunningData();
+}
 
 
 bool initEEPROM( void )
@@ -898,6 +924,13 @@ bool initEEPROM( void )
 							  &EEPROMStaticQueue );
 
 	vQueueAddToRegistry(EEPROMQueue, "EEPROMQueue" );
+
+	timerHndlRunningData = xTimerCreate(
+	      "runningdata", /* name */
+	      pdMS_TO_TICKS(200), /* period/time */
+	      pdFALSE, /* auto reload */
+	      (void*)0, /* timer ID */
+		  saveRunningData); /* callback */
 
 	EEPROMTaskHandle = xTaskCreateStatic(
 						  EEPROMTask,

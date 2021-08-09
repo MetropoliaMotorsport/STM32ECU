@@ -139,6 +139,8 @@ int writeEEPROMCurConf( void );
 
 bool writeEEPROMDone( void );
 
+void clearRunningData( void );
+
 int EEPROMSend( void );
 
 bool stopEEPROM( void );

@@ -1054,6 +1054,21 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 	}
 }
 
+void debugCurrent( const char * tkn2 )
+{
+		if ( strlen(tkn2) == 0 ) // we need some sub commands, otherwise show help
+		{
+			UARTprintf("Current Max %dmA ( clear to reset )\r\n",runtimedata_p->maxIVTI);
+			for ( int i=0;i<MOTORCOUNT;i++)
+				UARTprintf("Motor %i Max %dA\r\n", i, runtimedata_p->maxMotorI[i]);
+		}
+		else if ( streql(tkn2, "clear") )
+		{
+			UARTwrite("Clearing Current Max values\r\n");
+			clearRunningData();
+		}
+}
+
 //run a small state machine on incoming uart charecters to seperate escape co
 uint16_t processUARTchar( const uint8_t ch, uint8_t * state )
 {
@@ -1179,6 +1194,12 @@ void debugConfig( void )
 		{
 			UARTprintf("RTDM\r\n");
 			setInput(RTDM_Input);
+		}
+		else if ( read == 'i' )
+		{
+			UARTprintf("Test save of I\r\n");
+			runtimedata_p->maxIVTI = 100;
+			runtimedata_p->time = getTime();
 		}
 		else
 			UARTwritech(ch);
@@ -1439,6 +1460,10 @@ static void DebugTask(void *pvParameters)
 				else if ( streql(tkn1, "power") )
 				{
 					debugPower(tkn2, tkn3);
+				}
+				else if ( streql(tkn1, "current") )
+				{
+					debugCurrent( tkn2 );
 				}
 				else if ( streql(tkn1, "sensors") )
 				{

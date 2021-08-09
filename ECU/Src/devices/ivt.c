@@ -14,6 +14,7 @@
 #include "ivt.h"
 #include "timerecu.h"
 #include "errors.h"
+#include "eeprom.h"
 
 uint8_t LastIVTI[6] = {0,0,0,0,0,0};
 uint8_t LastIVTU1[6] = {0,0,0,0,0,0};
@@ -66,7 +67,6 @@ bool processIVTIData( const uint8_t CANRxData[8], const uint32_t DataLength, con
 {
 	if ( DeviceState.IVTEnabled )
 	{
-
 		return processIVTData( CANRxData, DataLength, IVTI_ID);
 	} else return true;
 }
@@ -210,6 +210,11 @@ bool processIVTData( const uint8_t * CANRxData, const uint32_t DataLength, const
 				case IVTI_ID :
 		//			Errors.IVTIReceive = 0;
 					DeviceState.IVT = OPERATIONAL;
+					if ( value < runtimedata_p->maxIVTI )
+					{
+						runtimedata_p->maxIVTI = value;
+						runtimedata_p->time = getTime();
+					}
 					break;
 			}
 

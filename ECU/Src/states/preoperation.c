@@ -23,6 +23,7 @@
 #include "timerecu.h"
 #include "debug.h"
 #include "ivt.h"
+#include "eeprom.h"
 
 //#define PRINTDEBUGRUNNING
 
@@ -346,13 +347,21 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		switch ( GetUpDownPressed() )
 		{
-			case -1 : break;
+			case -1 : if ( showcurrent )
+				{
+					clearRunningData();
+					lcd_send_stringline( 0, "Clear IVTImax", 3);
+				}
+				break;
 			case 1 :  if (!showadc && !showbrakebal) showcurrent = !showcurrent; break;
 		}
 
 		if ( showcurrent )
 		{
+			sprintf(str, "IVTImax %6dA",
+					runtimedata_p->maxIVTI);
 
+			lcd_send_stringline(0,str, 255);
 		}
 
 		if ( showbrakebal ) PrintBrakeBalance( );
@@ -371,7 +380,7 @@ int PreOperationState( uint32_t OperationLoops  )
 					    ADCState.Torque_Req_R_Percent/10,
 					    ADCState.Regen_Percent/10);
 
-			lcd_send_stringline(0,str, 255);
+			lcd_send_stringline(0,str, 254);
 #endif
 		}
 	} else
@@ -621,10 +630,6 @@ int PreOperationState( uint32_t OperationLoops  )
 			ReadyToStart |= (1<<READYINVBIT);
 		}
 	}
-
-//	if ( DeviceState.Inverters == OFFLINE || DeviceState.Inverter == INERROR ) {
-//				ReadyToStart |= (1<<READYINVBIT);
-//	} // require inverters to be online
 
 	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYSENSBIT); } // require critical sensor nodes online for startup.
 	if ( DeviceState.PowerNodes != OPERATIONAL ) { ReadyToStart |= (1<<READYPOWERBIT); }
