@@ -347,6 +347,7 @@ typedef struct {
 	int32_t Current;
 	int32_t VoltageINV;
 	int32_t VoltageBMS;
+	uint16_t LowestCellV;
 	int32_t VoltageIVTAccu;
 	int32_t VoltageLV;
 	int32_t CurrentLV;

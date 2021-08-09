@@ -1092,6 +1092,8 @@ char CANLogDataFast( void )
 		CANTxData[i+4] = getInvState(i)->MotorTemp;
 	}
 
+	storeBEint16(CarState.LowestCellV, &CANTxData[5]);
+
 	CAN1Send( 0x7CD, 8, CANTxData );
 
 

@@ -98,6 +98,8 @@ bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, con
         	{
         		Shutdown.BMS = false;
         		Shutdown.BMSReason = CANRxData[1];
+
+        		CarState.LowestCellV = CANRxData[6]*256+CANRxData[7];
                 /*
                       0 : str := 'undefined';
                       1 : str := 'overvoltage';
