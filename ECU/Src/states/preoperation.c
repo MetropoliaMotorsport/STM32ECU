@@ -53,9 +53,9 @@ void setDriveMode(void)
 #endif
 			break;
 		case 4: // 35nm
-			CarState.Torque_Req_Max = 35;
+			CarState.Torque_Req_Max = 30;
 #ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
+			CarState.TorqueVectoring = 1;
 #endif
 			break;
 		case 5: // 35nm
@@ -65,9 +65,9 @@ void setDriveMode(void)
 #endif
 			break;
 		case 6: // 65nm
-			CarState.Torque_Req_Max = 65;
+			CarState.Torque_Req_Max = 55;
 #ifdef TORQUEVECTOR
-			CarState.TorqueVectoring = 0;
+			CarState.TorqueVectoring = 1;
 #endif
 			SetupLargeLowRangeTorque();
 			break;
