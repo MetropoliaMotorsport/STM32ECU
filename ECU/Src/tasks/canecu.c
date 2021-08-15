@@ -1076,9 +1076,9 @@ char CANLogDataFast( void )
 #endif
 
 	storeBEint16(getInvState(0)->InvVolt, &CANTxData[2]);
-	storeBEint16(getInvState(2)->InvVolt, &CANTxData[2]);
+	storeBEint16(getInvState(2)->InvVolt, &CANTxData[4]);
 
-	storeBEint16(CarState.VoltageBMS, &CANTxData[4]);
+	storeBEint16(CarState.VoltageBMS, &CANTxData[6]);
 
 #ifdef STMADC
 	ADCloops=0;
