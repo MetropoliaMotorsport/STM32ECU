@@ -1011,10 +1011,6 @@ char CANLogDataFast( void )
 	// build data logging blocks
 	uint8_t CANTxData[8];
 
-
- //   HAL_Delay(1); // for some reason without small delay here the first log ID 0x7C6 only sometimes sent
-    // investigate to find out why, perhaps fifo buffer not acting as expect?
-
 	resetCanTx(CANTxData);
 	// TODO get torque request
 	//storeBEint16(CarState.Inverters[RearLeftInverter].Torque_Req, &CANTxData[0]); 	//torq_req_l can0 0x7C6 0,16be
@@ -1029,10 +1025,12 @@ char CANLogDataFast( void )
 
 	resetCanTx(CANTxData);
 
-	// TODO get speed.
-	//storeBEint32(CarState.Inverters[RearLeftInverter].Speed, &CANTxData[0]); //wheel_speed_left_calculated can0 0x7c7 32,32BE
 
-	//storeBEint32(CarState.Inverters[RearRightInverter].Speed, &CANTxData[4]); //wheel_speed_right_calculated can0 0x7c7 0,32BE
+	for ( int i=0;i<MOTORCOUNT;i++)
+	{
+	   storeBEint16(getInvState(i)->Speed, &CANTxData[i*2]);
+	}
+
 	CAN1Send( 0x7C7, 8, CANTxData );
 
 	resetCanTx(CANTxData);
