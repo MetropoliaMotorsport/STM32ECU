@@ -1012,19 +1012,13 @@ char CANLogDataFast( void )
 	uint8_t CANTxData[8];
 
 	resetCanTx(CANTxData);
-	// TODO get torque request
-	//storeBEint16(CarState.Inverters[RearLeftInverter].Torque_Req, &CANTxData[0]); 	//torq_req_l can0 0x7C6 0,16be
-	//storeBEint16(CarState.Inverters[RearRightInverter].Torque_Req, &CANTxData[2]); 	//torq_req_r can0 0x7C6 16,16be
-
-	//storeBEint32(CarState.brake_balance,&CANTxData[0]); //brake_balance can0 0x7CA 0,32be
+	CANTxData[0] = ADCState.BrakeF; 	//brk_press_f can0 0x7C6 32,16bee
+	CANTxData[0] = ADCState.BrakeR; 	//brk_press_r can0 0x7C6 48,16be
 	storeBEint16(ADCState.SteeringAngle,&CANTxData[2]);
-	storeBEint16(ADCState.BrakeF, &CANTxData[4]); 	//brk_press_f can0 0x7C6 32,16bee
-	storeBEint16(ADCState.BrakeR, &CANTxData[6]); 	//brk_press_r can0 0x7C6 48,16be
 
 	CAN1Send( 0x7C6, 8, CANTxData ); // lagging in sending
 
 	resetCanTx(CANTxData);
-
 
 	for ( int i=0;i<MOTORCOUNT;i++)
 	{
