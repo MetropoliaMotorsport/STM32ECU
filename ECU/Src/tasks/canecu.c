@@ -1013,8 +1013,14 @@ char CANLogDataFast( void )
 
 	resetCanTx(CANTxData);
 	CANTxData[0] = ADCState.BrakeF; 	//brk_press_f can0 0x7C6 32,16bee
-	CANTxData[0] = ADCState.BrakeR; 	//brk_press_r can0 0x7C6 48,16be
+	CANTxData[1] = ADCState.BrakeR; 	//brk_press_r can0 0x7C6 48,16be
 	storeBEint16(ADCState.SteeringAngle,&CANTxData[2]);
+
+	CANTxData[4] = ADCState.Torque_Req_L_Percent/10;
+	CANTxData[5] = ADCState.Torque_Req_R_Percent/10;
+	CANTxData[6] = ADCState.Regen_Percent/10;
+
+// 	CANTxData[7] = highest coolant temp?
 
 	CAN1Send( 0x7C6, 8, CANTxData ); // lagging in sending
 
@@ -1027,15 +1033,9 @@ char CANLogDataFast( void )
 
 	CAN1Send( 0x7C7, 8, CANTxData );
 
-	resetCanTx(CANTxData);
+//	resetCanTx(CANTxData);
 
-	CANTxData[0] = ADCState.CoolantTempL; //temp_sensor1 can0 0x7c8 0,8
-	CANTxData[1] = CarState.Torque_Req_CurrentMax; // CarState.Torque_Req_Max; //torq_req_max can0 0x7c8 8,8
-	CANTxData[2] = ADCState.CoolantTempR; 	//temp_sensor_2 can0 0x7c8 16,8
-	CANTxData[3] = ADCState.DrivingMode; //future_torq_req_max can0 0x7c8 24,8
-	storeBEint16(ADCState.Torque_Req_L_Percent/10, &CANTxData[4]); //torq_req_l_perc can0 0x7c8 32,16be
-	storeBEint16(ADCState.Torque_Req_R_Percent/10, &CANTxData[6]); //torq_req_r_perc can0 0x7c8 48,16be
-	CAN1Send( 0x7C8, 8, CANTxData );
+//	CAN1Send( 0x7C8, 8, CANTxData );
 
 	resetCanTx(CANTxData);
 
@@ -1096,7 +1096,6 @@ char CANLogDataFast( void )
 	}
 
 	CAN1Send( 0x7CD, 8, CANTxData );
-
 
 	CAN_SendTimeBase();
 
