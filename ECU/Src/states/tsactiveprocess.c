@@ -88,6 +88,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 		} else
 		{
 			lcd_send_stringline(1,"TS Activate Fail.", 255);
+			DebugPrintf("TS Activation failure at %lu invV:%d Shutdown.Pre:%d, prechargetimer:%d", gettimer(), CarState.VoltageINV, Shutdown.PRE, prechargetimer);
 			prechargedone = 0;
 			return IdleState;
 		}
@@ -173,7 +174,11 @@ int TSActiveProcess( uint32_t OperationLoops )
 		if ( !prechargedone )
 		{
 			lcd_send_stringline(1,"Wait for Precharge", 254);
-		} else return IdleState;  // if requested disable TS drop state
+		} else
+		{
+			DebugPrintf("Returning to idle state at request.");
+			return IdleState;  // if requested disable TS drop state
+		}
 	}
 
 	return TSActiveState;
