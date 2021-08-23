@@ -476,7 +476,9 @@ int PreOperationState( uint32_t OperationLoops  )
 		blinkOutput(TSLED, On, LEDBLINKNONSTOP);
 	}
 
-	if ( CheckTSActivationRequest() )
+	static bool powerset = false;
+
+	if ( CheckTSActivationRequest() && !powerset )
 	{
 		invRequestState( BOOTUP );
 		resetDevicePower(Inverters);
@@ -491,6 +493,13 @@ int PreOperationState( uint32_t OperationLoops  )
 		setDevicePower( LeftFans, true );
 		lcd_send_stringline( 3, "Power requested!", 3);
 		DebugMsg("Power requested.");
+		powerset = true;
+	} else
+	{
+		setDevicePower( Inverters, false );
+		lcd_send_stringline( 3, "Power Inv off!", 3);
+		DebugMsg("Power off to inverters requested.");
+		powerset = false;
 	}
 #if 0
 
