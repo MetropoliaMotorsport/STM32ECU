@@ -239,7 +239,12 @@ int PreOperationState( uint32_t OperationLoops  )
 			if (preoperationstate & (0x1 << FLeftSpeedReceived) )  { strcat(str, "FSL " ); }
 			if (preoperationstate & (0x1 << FRightSpeedReceived) )  {strcat(str, "FSR " );  }
 #endif
-			if (preoperationstate & (0x1 << InverterReceived) ) { strcat(str, "INV " ); }
+			if (preoperationstate & (0x1 << InverterReceived) ) {
+				if ( getEEPROMBlock(0)->InvEnabled )
+					strcat(str, "INV " );
+				else
+					strcat(str, "INVDIS " );
+			}
 
 			if (preoperationstate & (0x1 << BMSReceived) ) { strcat(str, "BMS " );  }
 #ifndef POWERNODES
