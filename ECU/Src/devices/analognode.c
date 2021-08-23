@@ -433,13 +433,13 @@ void setAnalogNodesCriticalStr( const uint32_t nodesonline ) // 1 = APPS1 + rege
 
 	if ( !(nodesonline & ( 0x1 << ANode1Bit )) )
 	{
-		ANodeCritStr[pos] = '1';
+		ANodeCritStr[pos] = 'I';
 		ANodeCritStr[pos+1] = '\0';
 		pos++;
 	}
 	if ( !(nodesonline & ( 0x1 << ANode11Bit )) )
 	{
-		ANodeCritStr[pos] = 'A';
+		ANodeCritStr[pos] = '1';
 		ANodeCritStr[pos+1] = '\0';
 		pos++;
 	}
