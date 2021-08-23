@@ -478,29 +478,35 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	static bool powerset = false;
 
-	if ( CheckTSActivationRequest() && !powerset )
+	if ( CheckTSActivationRequest() )
 	{
-		invRequestState( BOOTUP );
-		resetDevicePower(Inverters);
-		setDevicePower( Inverters, true );
-		resetDevicePower(Front1);
-		setDevicePower( Front1, true );
-		resetDevicePower(Front2);
-		setDevicePower( Front2, true );
-		setDevicePower( RightPump, true );
-		setDevicePower( LeftPump, true );
-		setDevicePower( RightFans, true );
-		setDevicePower( LeftFans, true );
-		lcd_send_stringline( 3, "Power requested!", 3);
-		DebugMsg("Power requested.");
-		powerset = true;
-	} else
-	{
-		setDevicePower( Inverters, false );
-		lcd_send_stringline( 3, "Power Inv off!", 3);
-		DebugMsg("Power off to inverters requested.");
-		powerset = false;
+		if ( !powerset )
+		{
+			invRequestState( BOOTUP );
+			resetDevicePower(Inverters);
+			setDevicePower( Inverters, true );
+			resetDevicePower(Front1);
+			setDevicePower( Front1, true );
+			resetDevicePower(Front2);
+			setDevicePower( Front2, true );
+			setDevicePower( RightPump, true );
+			setDevicePower( LeftPump, true );
+			setDevicePower( RightFans, true );
+			setDevicePower( LeftFans, true );
+			lcd_send_stringline( 3, "Power requested!", 3);
+			DebugMsg("Power requested.");
+			powerset = true;
+		}
+		else
+		{
+			setDevicePower( Inverters, false );
+			lcd_send_stringline( 3, "Power Inv off!", 3);
+			DebugMsg("Power off to inverters requested.");
+			powerset = false;
+		}
+
 	}
+
 #if 0
 
 	if ( CheckRTDMActivationRequest() || testmotors != testmotorslast ) // manual startup power request whilst in testing phases, allows to reset if error occurred.
