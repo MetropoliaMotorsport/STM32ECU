@@ -30,6 +30,8 @@ int TSActiveProcess( uint32_t OperationLoops )
 
 	static uint32_t prechargetimer = 0;
 
+	char str[80] = "";
+
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
 		DebugMsg("Entering TS Active State");
@@ -72,6 +74,16 @@ int TSActiveProcess( uint32_t OperationLoops )
 		{
 			lcd_send_stringline(1,"Precharge Wait.", 255);
 		}
+		// check SDC now, should be powered.
+
+		strcat(str, "SDC(" );
+
+			strcat(str, ShutDownOpenStr());
+
+		strcat(str, ") " );
+
+		lcd_send_stringline(2, str, 255);
+
 	} else
 	{
 		if (  CarState.VoltageINV > 400 && ( Shutdown.PRE || prechargetimer+MS1000*6 <= curtime ) )
