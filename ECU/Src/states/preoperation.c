@@ -302,7 +302,13 @@ int PreOperationState( uint32_t OperationLoops  )
 					if (ReadyToStart & (0x1 << READYPOWERBIT ) ) { strcat(str, "PDM " );  } // ?
 				}
 #endif
-				if (ReadyToStart & (0x1 << READYINVBIT ) ) { strcat(str, "INV " );  }
+				if (ReadyToStart & (0x1 << READYINVBIT ) ) {
+
+					if ( getEEPROMBlock(0)->InvEnabled )
+						strcat(str, "INV " );
+					else
+						strcat(str, "INVDIS " );
+				}
 
 
 				strpad(str,20, true);
