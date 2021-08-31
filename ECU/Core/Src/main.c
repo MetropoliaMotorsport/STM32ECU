@@ -306,7 +306,7 @@ void Error_Handler(void)
 
 //	NVIC_DisableIRQ(TIM3_IRQn); // stop the timebase irq to stop blinking led and show hung for error.
 
-	CAN_SendStatus(49, 99, ErrorCode);
+	CAN_SendErrorStatus(49, 99, ErrorCode);
 	while ( 1 )
 	{
 

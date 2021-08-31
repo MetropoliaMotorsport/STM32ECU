@@ -126,7 +126,7 @@ void PowerTask(void *argument)
 				resetLV = true;
 
 				setAllPowerActualOff();
-				CAN_SendStatus(7, 0, 0);
+				CAN_SendErrorStatus(7, 0, 0);
 			} else
 			{
 				snprintf(str, MAXERROROUTPUT, "Power err: %d %lu %s at (%lu)", errormsg.nodeid, errormsg.error, PNodeGetErrStr( errormsg.error ), gettimer());

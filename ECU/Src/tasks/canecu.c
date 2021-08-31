@@ -757,9 +757,9 @@ char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode )
 
 	uint8_t CANTxData[8] = { stateless, substate, getByte(errorcode, 0), getByte(errorcode, 1), getByte(errorcode, 2), getByte(errorcode, 3),HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1),HAL_FDCAN_GetTxFifoFreeLevel(hfdcan2p)};
 #ifdef CAN2ERRORSTATUS
-	CAN2Send( ECU_CAN_ID, 8, CANTxData );
+	CAN2Send( ECU_CAN_ID+1, 8, CANTxData );
 #endif
-	return CAN1Send( ECU_CAN_ID, 8, CANTxData );
+	return CAN1Send( ECU_CAN_ID+1, 8, CANTxData );
 }
 
 
@@ -1137,7 +1137,7 @@ void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLeng
 		Errors.CANError++;
 		datahandle->receiveerr++;
 #ifdef SENDBADDATAERROR
-		CAN_SendStatus(ReceiveErr,0,datahandle->id);
+		CAN_SendErrorStatus(ReceiveErr,0,datahandle->id);
 #endif
 #ifdef RETRANSMITBADDATAERROR
 		reTransmitError(99,CANRxData, DataLength);
@@ -1177,7 +1177,7 @@ int receivedCANData( CANData * datahandle )
 
 				if ( !datahandle->errorsent )
 				{
-					CAN_SendStatus(ReceiveTimeout,0,(time-datahandle->time)/10); // TODO assign a better ID
+					CAN_SendErrorStatus(ReceiveTimeout,0,(time-datahandle->time)/10); // TODO assign a better ID
 					datahandle->errorsent = true;
 					Errors.CANTimeout++;
 					*datahandle->devicestate = OFFLINE;
@@ -1528,7 +1528,7 @@ int CheckCanError( void )
 	//	Errors.ErrorPlace = 0xAA;
 		  blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
 		  HAL_FDCAN_Stop(&hfdcan1);
-		  CAN_SendStatus(255,0,0);
+		  CAN_SendErrorStatus(255,0,0);
 
 		  if ( offcan1 == 0 )
 		  {
@@ -1560,7 +1560,7 @@ int CheckCanError( void )
 			Errors.ErrorPlace = 0xF1;
 			LogError("CANBUS1 Up");
 			DeviceState.CAN1 = OPERATIONAL;
-			CAN_SendStatus(254,0,0);
+			CAN_SendErrorStatus(254,0,0);
 		}
 	}
 #endif
@@ -1571,7 +1571,7 @@ int CheckCanError( void )
 	//	Errors.ErrorPlace = 0xAA;
 		blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
 		HAL_FDCAN_Stop(&hfdcan2);
-		CAN_SendStatus(255,0,0);
+		CAN_SendErrorStatus(255,0,0);
 		DeviceState.CAN0 = OFFLINE;
 
 		if ( offcan2 == 0 )
@@ -1600,7 +1600,7 @@ int CheckCanError( void )
 			offcan2 = 0;
 			LogError("CANBUS0 Up");
 			DeviceState.CAN0 = OPERATIONAL;
-			CAN_SendStatus(254,0,0);
+			CAN_SendErrorStatus(254,0,0);
 		}
 	}
 #endif

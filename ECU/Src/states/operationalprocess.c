@@ -189,7 +189,7 @@ int OperationalProcess( void )
 	// check loop timing.
 	if ( lastlooplength > CYCLETIME*1.1 )
 	{
-		CAN_SendStatus(1, OperationalStateOverrun, lastlooplength);
+		CAN_SendErrorStatus(1, OperationalStateOverrun, lastlooplength);
 
 		loopoverrun++; // bms
 
@@ -241,7 +241,8 @@ int OperationalProcess( void )
 			NewOperationalState = LimpProcess(loopcount);
 			break;
 
-		case OperationalErrorState : // critical error or unknown state.					CAN_SendStatus(1, OperationalState, OperationalErrorState);
+		case OperationalErrorState : // critical error or unknown state.
+			CAN_SendStatus(1, OperationalState, OperationalErrorState);
 		default : // unknown state, assume it's an error and go into error
 			NewOperationalState = OperationalErrorHandler( loopcount );
 			break;

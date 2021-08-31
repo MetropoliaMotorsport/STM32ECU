@@ -125,7 +125,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	if ( received != 0 ) // not all expected data received in window.
 	{
 		DebugMsg("Errorplace 0x9A not received data");
-		CAN_SendStatus(1, OperationalState, received);
+		CAN_SendErrorStatus(1, OperationalState, received);
 		Errors.ErrorPlace = 0x9A;
 		Errors.OperationalReceiveError = received;
 		Errors.State = OperationalState;

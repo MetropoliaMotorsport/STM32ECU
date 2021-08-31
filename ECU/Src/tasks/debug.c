@@ -788,7 +788,7 @@ static void debugSensors( const char *tkn2 )
 
 		uint32_t curtime = gettimer();
 
-		CAN_SendStatus(10, 0, gettimer());
+		CAN_SendErrorStatus(10, 0, gettimer());
 
 		UARTprintf("Current Analog nodes not seen[%s] ( %4X ), Oldest data (%lu) at (%lu):\r\n", getADCWait(), AnalogueNodesOnline, ADCStateDebug.Oldest, gettimer());
 

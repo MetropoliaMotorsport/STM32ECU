@@ -701,7 +701,7 @@ int PreOperationState( uint32_t OperationLoops  )
 			{
 				// user pressed requesting startup sequence before devices ready
 				blinkOutput(TSLED, LEDBLINK_FOUR, 1000);
-				CAN_SendStatus(1,PowerOnRequestBeforeReady,0);
+				CAN_SendErrorStatus(1,PowerOnRequestBeforeReady,0);
 
 				lcd_send_stringline( 3, "Not ready.", 3);
 			}
