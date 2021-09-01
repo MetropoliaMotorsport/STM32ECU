@@ -681,7 +681,7 @@ bool DoMenu( uint16_t input )
 
 #if (MENU_LAST == MENU_HV)
 		bool curhvState = getEEPROMBlock(0)->alwaysHV;
-		doMenuBoolEdit( MenuLines[1+MENU_HV], "HV Startup", (selection==MENU_HV), &inedit, &curhvState, input);
+		doMenuBoolEdit( MenuLines[1+MENU_HV], "HV@Startup", (selection==MENU_HV), &inedit, &curhvState, input);
 		if ( curhvState != getEEPROMBlock(0)->alwaysHV )
 		{
 			getEEPROMBlock(0)->alwaysHV = curhvState;

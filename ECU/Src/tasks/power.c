@@ -143,6 +143,7 @@ void PowerTask(void *argument)
 			{
 				LVdown = false;
 				resetPowerLost();
+				DebugPrintf("LV Power restored at (%lu)", curtime);
 			}
 		}
 
