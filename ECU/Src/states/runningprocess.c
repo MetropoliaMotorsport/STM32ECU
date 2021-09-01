@@ -218,7 +218,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
         if ( CarState.Torque_Req == 0 ) // only check for regen if there is no active torque request, as it's opposite.
         {
     		if ( ADCState.Regen_Percent > 500 && getEEPROMBlock(0)->Regen ) // no torque request, but we do have a regen request, return that.
-    			CarState.Torque_Req = -( 1*NMSCALING );
+    			CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) * NMSCALING ) / 1000 ) ;
         }
 
 #ifdef TORQUEVECTOR

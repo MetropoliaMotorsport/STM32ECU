@@ -826,7 +826,9 @@ static void debugSensors( const char *tkn2 )
 
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode11Bit ) )
 		{
-			UARTprintf("Anode11: BrakeF Pres %dPa   BrakeF Pres %dPa   Torque Req R %3d%% (raw:%lu)   Last at (%lu)\r\n",
+			UARTprintf("Anode11: BrakeTemp2 %dc   BrakeF Pres %dPa   BrakeF Pres %dPa   Torque Req R %3d%% (raw:%lu)   Last at (%lu)\r\n",
+
+					ADCStateSensors.BrakeTemp2,
 					ADCStateDebug.BrakeF,
 					ADCStateDebug.BrakeR,
 					ADCStateDebug.Torque_Req_R_Percent/10,

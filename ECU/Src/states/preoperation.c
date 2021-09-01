@@ -173,6 +173,7 @@ int PreOperationState( uint32_t OperationLoops  )
 		setDevicePower( Front1, true );
 		setDevicePower( Front2, true );
 		setDevicePower( TSAL, true );
+		setDevicePower( Current, true );
 
 //		setDevicePower(Buzzer, 0);
 
