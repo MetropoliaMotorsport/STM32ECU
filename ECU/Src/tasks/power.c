@@ -77,8 +77,6 @@ void PowerTask(void *argument)
 
 	char str[MAXERROROUTPUT];
 
-	bool resetLV = false;
-
 	resetPowerLost();
 	xQueueReset(PowerErrorQueue);
 
@@ -92,6 +90,9 @@ void PowerTask(void *argument)
 	uint32_t oldestcritical = 0;
 
 	bool fanssent = false;
+
+	bool LVdown = false;
+	uint32_t LVdowntime = 0;
 
 	while( 1 )
 	{
@@ -123,7 +124,8 @@ void PowerTask(void *argument)
 				snprintf(str, MAXERROROUTPUT, "Power err: LV Down at (%lu)",gettimer());
 
 				LogError( str );
-				resetLV = true;
+				LVdown = true;
+				LVdowntime = gettimer();
 
 				setAllPowerActualOff();
 				CAN_SendErrorStatus(7, 0, 0);
@@ -134,8 +136,15 @@ void PowerTask(void *argument)
 			}
 		}
 
-		if ( resetLV )
-			resetPowerLost();
+		if ( LVdown && gettimer() - LVdowntime > 500 )
+		{
+			// check if we have voltage back.
+			if ( checkPowerState() )
+			{
+				LVdown = false;
+				resetPowerLost();
+			}
+		}
 
 		// clear command queue
 		while ( xQueueReceive(PowerQueue,&msg,0) )

@@ -23,9 +23,13 @@ void resetPowerLost( void )
     powerlost = false;
 }
 
+bool checkPowerState( void )
+{
+	// pin pb0, if it's high, we have power?
+	return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0 );
+}
+
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp) {
-// send lost power indicator to canbus.
-//	CAN_SendStatus( 50, 100, 0xFFFF ); // TODO send loosing power error, choose message.
 	blinkOutput(LED2, Timed, 1000);
 	if ( !powerlost )
 		PowerLogError( 0, 0xFFFF);

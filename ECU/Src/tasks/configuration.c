@@ -514,7 +514,7 @@ bool doPedalCalibration( uint16_t input )
 #define MENU_REGENMAX	(10)
 #define MENU_HV		 	(11)
 
-#define MENU_LAST	 	(MENU_REGENMAX)
+#define MENU_LAST	 	(MENU_HV)
 
 #define MENUSIZE	 	(MENU_LAST+1)
 
@@ -679,7 +679,7 @@ bool DoMenu( uint16_t input )
 		}
 
 
-#if 0
+#if (MENU_LAST == MENU_HV)
 		bool curhvState = getEEPROMBlock(0)->alwaysHV;
 		doMenuBoolEdit( MenuLines[1+MENU_HV], "HV Startup", (selection==MENU_HV), &inedit, &curhvState, input);
 		if ( curhvState != getEEPROMBlock(0)->alwaysHV )

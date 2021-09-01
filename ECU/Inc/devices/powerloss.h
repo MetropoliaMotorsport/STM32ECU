@@ -8,6 +8,7 @@
 #ifndef POWERLOSS_H_
 #define POWERLOSS_H_
 
+bool checkPowerState( void );
 void resetPowerLost( void );
 int initPowerLossHandling( void );
 
