@@ -658,7 +658,7 @@ bool DoMenu( uint16_t input )
 		sprintf(MenuLines[1+MENU_CALIB], "%cAPPS Calib", (selection==MENU_CALIB) ? '>' :' ');
 
 
-		sprintf(MenuLines[1+MENU_STEERING], "%cAPPS SteeringC %3d", (selection==MENU_CALIB) ? '>' :' ', getEEPROMBlock(0)->steerCalib);
+		sprintf(MenuLines[1+MENU_STEERING], "%cAPPS SteeringC %3d", (selection==MENU_STEERING) ? '>' :' ', getEEPROMBlock(0)->steerCalib);
 
 		if ( selection == MENU_STEERING && input == KEY_ENTER )
 		{
