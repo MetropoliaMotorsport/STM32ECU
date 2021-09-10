@@ -509,10 +509,11 @@ bool doPedalCalibration( uint16_t input )
 #define MENU_FANS	 	(5)
 #define MENU_FANMAX	 	(6)
 #define MENU_CALIB   	(7)
-#define MENU_INVEN	 	(8)
-#define MENU_REGEN	 	(9)
-#define MENU_REGENMAX	(10)
-#define MENU_HV		 	(11)
+#define MENU_STEERING   (8)
+#define MENU_INVEN	 	(9)
+#define MENU_REGEN	 	(10)
+#define MENU_REGENMAX	(11)
+#define MENU_HV		 	(12)
 
 #define MENU_LAST	 	(MENU_HV)
 
@@ -655,6 +656,16 @@ bool DoMenu( uint16_t input )
 		}
 
 		sprintf(MenuLines[1+MENU_CALIB], "%cAPPS Calib", (selection==MENU_CALIB) ? '>' :' ');
+
+
+		sprintf(MenuLines[1+MENU_STEERING], "%cAPPS SteeringC %3d", (selection==MENU_CALIB) ? '>' :' ', getEEPROMBlock(0)->steerCalib);
+
+		if ( selection == MENU_STEERING && input == KEY_ENTER )
+		{
+			if ( ADCState.SteeringAngleAct != 0xFFFF )
+				getEEPROMBlock(0)->steerCalib = ADCState.SteeringAngleAct;
+			// value should update on display. add a set message.
+		}
 
 		doMenuBoolEdit( MenuLines[1+MENU_INVEN], "InvEnabled", (selection==MENU_INVEN), &inedit, &getEEPROMBlock(0)->InvEnabled, input);
 

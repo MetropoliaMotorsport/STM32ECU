@@ -105,6 +105,7 @@ typedef struct eepromdatastruct {
 	bool alwaysHV;
 	uint16_t DecelRpms;
 	bool Regen;
+	uint16_t steerCalib;
 	union {
 	uint8_t Blockend;
 	};
