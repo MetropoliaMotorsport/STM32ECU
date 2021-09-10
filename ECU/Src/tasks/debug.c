@@ -792,7 +792,7 @@ static void debugSensors( const char *tkn2 )
 
 		UARTprintf("Current Analog nodes not seen[%s] ( %4X ), Oldest data (%lu) at (%lu):\r\n", getADCWait(), AnalogueNodesOnline, ADCStateDebug.Oldest, gettimer());
 
-		UARTprintf("Steering Angle %d Duty %d State %s\r\n", ADCState.SteeringAngle, ADCState.SteeringDuty, getDeviceStatusStr(DeviceState.PWM));
+		UARTprintf("Steering Angle %d Duty %d Freq %d State %s\r\n", ADCState.SteeringAngle, ADCState.SteeringDuty, ADCState.SteeringFreq, getDeviceStatusStr(DeviceState.PWM));
 
 		// anode 1
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode1Bit ) )

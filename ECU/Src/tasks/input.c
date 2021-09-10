@@ -253,6 +253,12 @@ int getPWMDuty( void ) // returns duty cycle as %*100
 	return uwDutyCycle;
 }
 
+int getPWMFreq( void ) // returns duty cycle as %*100
+{
+	reading = 0;
+	return uwFrequency;
+}
+
 int checkReset( void )
 {
 #ifdef HPF19 // only got a UserBtn on Nucleo board.

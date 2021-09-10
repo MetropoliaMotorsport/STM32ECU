@@ -483,6 +483,7 @@ int getSteeringAnglePWM( void )
 	{
 		angle = getPWMDuty();
 		ADCState.SteeringDuty = angle;
+		ADCState.SteeringFreq = getPWMFreq();
 		angle = ( angle*360.0 );
 		angle = angle / 10000; // center around 180;
 		angle = angle - 180;

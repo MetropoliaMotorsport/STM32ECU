@@ -134,7 +134,7 @@ extern QueueHandle_t InputQueue;
 int initPWM( void );
 bool receivePWM( void );
 int getPWMDuty( void ); // returns duty cycle as %*10
-
+int getPWMFreq( void ); // returns duty cycle as hz
 
 int checkReset( void );
 int CheckActivationRequest( void );
