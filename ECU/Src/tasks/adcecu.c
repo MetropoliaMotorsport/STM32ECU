@@ -185,7 +185,7 @@ void ADCTask(void *argument)
 		}
 #endif
 
-	    ADCState.SteeringAngle = getSteeringAnglePWM();
+	    getSteeringAnglePWM();
 
 	    xSemaphoreTake(waitStr, portMAX_DELAY);
 
