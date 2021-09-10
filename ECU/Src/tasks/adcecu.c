@@ -487,8 +487,8 @@ int getSteeringAnglePWM( void )
 		angle = ( angle*360.0 );
 		angle = angle / 10000; // center around 180;
 		ADCState.SteeringAngleAct = angle;
-		angle += getEEPROMBlock(0)->steerCalib; // account for calibration
-		if ( angle >= 360 ) angle = angle - 360;
+		angle -= getEEPROMBlock(0)->steerCalib; // account for calibration
+		if ( angle < 0 ) angle = angle + 360;
 		angle = (angle - 180);
 		ADCState.SteeringAngle = angle;
 		xTaskNotify( ADCTaskHandle, ( 0x1 << SteeringAngleReceivedBit ), eSetBits);
