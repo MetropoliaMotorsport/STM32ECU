@@ -78,6 +78,7 @@ typedef struct {
 	uint32_t Oldest;
 	volatile char newdata;
 	int16_t SteeringAngle;
+	uint16_t SteeringDuty;
 	uint8_t BrakeF;
 	uint8_t BrakeR;
 	uint8_t CoolantTempL;

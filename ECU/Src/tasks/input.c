@@ -227,7 +227,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 			  DeviceState.PWM = INERROR;
 		  // ensure that frequenc is within expected range
 		  else
+		  {
 			  reading = 1;
+			  DeviceState.PWM = OPERATIONAL;
+		  }
 		}
 		else
 		{
@@ -240,7 +243,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 bool receivePWM( void )
 {
-	return (PWMtime > gettimer()-MS1*10 )? true : false;
+	return (PWMtime > gettimer()-MS1*CYCLETIME )? true : false;
 }
 
 

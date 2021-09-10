@@ -21,6 +21,7 @@
 #include "errors.h"
 
 #include "analognode.h"
+#include "timerecu.h"
 
 #define ANALOGNODECOUNT	11
 
