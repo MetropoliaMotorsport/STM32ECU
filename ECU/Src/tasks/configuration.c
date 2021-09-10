@@ -663,7 +663,7 @@ bool DoMenu( uint16_t input )
 		if ( selection == MENU_STEERING && input == KEY_ENTER )
 		{
 			if ( ADCState.SteeringAngleAct != 0xFFFF )
-				getEEPROMBlock(0)->steerCalib = ADCState.SteeringAngleAct;
+				getEEPROMBlock(0)->steerCalib = 180-ADCState.SteeringAngleAct;
 			// value should update on display. add a set message.
 		}
 
