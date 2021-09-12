@@ -242,7 +242,7 @@ void PowerTask(void *argument)
 
 	    xSemaphoreGive(waitStr);
 
-	    if ( Shutdown.TS_OFF )
+	    if ( CheckTSOff() )
 	    {
 	    	setOutput(TSOFFLED, On);
 	    }
@@ -287,6 +287,11 @@ bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is
 //	if ( !Shutdown.IMD ) return false;
 #endif
 	return true;
+}
+
+bool CheckTSOff( void ) // returns true if shutdown circuit other than ECU is closed
+{
+	return Shutdown.TS_OFF;
 }
 
 #define MAXSHUTDOWNSTR	40

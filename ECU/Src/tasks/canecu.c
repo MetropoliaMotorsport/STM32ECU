@@ -393,11 +393,6 @@ void CANRxTask(void *argument)
 			RxHeader.Identifier = msg.id;
 			RxHeader.DataLength = msg.dlc;
 
-			if ( msg.id == 0x601 )
-			{
-				volatile int i = 0;
-			}
-
 			if ( msg.bus == bus1)
 			{
 				if ( !processCan1Message(&RxHeader, msg.data) )

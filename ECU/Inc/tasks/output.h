@@ -105,6 +105,7 @@ void setOutputNOW(output output, output_state state); //  doesn't wait for timer
 void toggleOutput(output output);
 void toggleOutputMetal(output output);
 void blinkOutput(output output, output_state blinkingrate, uint32_t time);
+void timeOutput(output output, uint32_t time);
 void stopBlinkOutput(output output);
 
 void setLEDs( void );
