@@ -245,10 +245,12 @@ void PowerTask(void *argument)
 	    if ( CheckTSOff() )
 	    {
 	    	setOutput(TSOFFLED, On);
+	    	setOutput(LED6, On);
 	    }
 	    else
 	    {
 	    	setOutput(TSOFFLED, Off);
+	    	setOutput(LED6, Off);
 	    }
 
 		// set the fan PWM speed when seen fan power node online.

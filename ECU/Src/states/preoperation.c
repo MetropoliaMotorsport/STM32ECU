@@ -690,7 +690,7 @@ int PreOperationState( uint32_t OperationLoops  )
 		}
 	} else
 	{ // hardware not ready for active state
-		blinkOutput(STARTLED, LEDBLINK_TWO, 0);
+		blinkOutput(STARTLED, LEDBLINK_TWO, 1);
 		if ( OperationLoops == 50 ) // 0.5 seconds, send reset nmt, try to get inverters online if not online at startup.
 		{
 
