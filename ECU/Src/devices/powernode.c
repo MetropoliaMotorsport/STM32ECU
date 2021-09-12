@@ -396,7 +396,7 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 			Shutdown.PRE = newstate;
 		}
 
-		newstate = ! ( CANRxData[0] & (0x1 << 3) );
+		newstate = CANRxData[0] & (0x1 << 3);
 		if ( Shutdown.TS_OFF != newstate )
 		{
 			DebugPrintf("TS_OFF sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
