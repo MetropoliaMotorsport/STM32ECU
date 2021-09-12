@@ -1521,7 +1521,7 @@ int CheckCanError( void )
 	if ( CAN1Status.BusOff) // detect passive error instead and try to stay off bus till clears?
 	{
 	//	Errors.ErrorPlace = 0xAA;
-		  blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
+	//	  blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
 		  HAL_FDCAN_Stop(&hfdcan1);
 		  CAN_SendErrorStatus(255,0,0);
 

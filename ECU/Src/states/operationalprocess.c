@@ -118,9 +118,11 @@ int Startup( uint32_t OperationLoops  )
 
 	setOutput(RTDMLED,Off);
 	setOutput(TSLED,Off);
-	setOutput(TSOFFLED,On);
+	setOutput(TSOFFLED,Off);
+	setOutput(LED6,Off);
 	stopBlinkOutput(RTDMLED); // ensure nothing blinking.
 	stopBlinkOutput(TSOFFLED);
+	stopBlinkOutput(LED6);
 	stopBlinkOutput(TSLED);
 
 	// set relay output LED's off
