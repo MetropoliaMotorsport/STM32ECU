@@ -18,6 +18,7 @@
 #include "debug.h"
 #include "timerecu.h"
 #include "semphr.h"
+#include "output.h"
 
 TaskHandle_t PowerTaskHandle = NULL;
 
@@ -239,9 +240,16 @@ void PowerTask(void *argument)
 	//		DebugMsg(str);
 		}
 
-
 	    xSemaphoreGive(waitStr);
 
+	    if ( Shutdown.TS_OFF )
+	    {
+	    	setOutput(TSOFFLED, On);
+	    }
+	    else
+	    {
+	    	setOutput(TSOFFLED, Off);
+	    }
 
 		// set the fan PWM speed when seen fan power node online.
 		if ( !fanssent && powernodesOnline & ( 1 << POWERNODE_FAN_BIT ) )

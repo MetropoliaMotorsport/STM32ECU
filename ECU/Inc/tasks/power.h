@@ -47,6 +47,7 @@ typedef struct {
 	bool AIRm;
 	bool AIRp;
 	bool PRE;
+	bool TS_OFF;
 
 } ShutdownState;
 

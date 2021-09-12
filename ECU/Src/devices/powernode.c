@@ -158,6 +158,7 @@ void PNode37Timeout( uint16_t id )
 	Shutdown.AIRm = false;
 	Shutdown.AIRp = false;
 	Shutdown.PRE = false;
+	Shutdown.TS_OFF = false;
 }
 
 
@@ -366,7 +367,7 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	if ( 1 )
 #else
 	if ( DataLength >> 16 == PowerNode37.dlcsize
-		&& CANRxData[0] <= 0b00001101 // max possible value. check for zeros in unused fields?
+		&& CANRxData[0] <= 0b00011101 // max possible value. check for zeros in unused fields?
 		&& CANRxData[1] < 100
 		&& ( CANRxData[2] >= 0 && CANRxData[2] <= 100 )
 		)
@@ -393,6 +394,13 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		{
 			DebugPrintf("PRE sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
 			Shutdown.PRE = newstate;
+		}
+
+		newstate = ! ( CANRxData[0] & (0x1 << 3) );
+		if ( Shutdown.TS_OFF != newstate )
+		{
+			DebugPrintf("TS_OFF sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
+			Shutdown.TS_OFF = newstate;
 		}
 
 		//		CarState.I_BrakeLight = CANRxData[0];

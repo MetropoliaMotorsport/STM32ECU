@@ -107,7 +107,7 @@ int errorPDM( void )
 	if ( Shutdown.BMS )
 	{
 		returnval +=2;
-        blinkOutput(BMSLED,On,0); // ensure potential limp mode blinking disabled.
+		stopBlinkOutput(BMSLED); // ensure potential limp mode blinking disabled.
 		setOutputNOW(BMSLED,On);
 	} else setOutput(BMSLED,Off);
 

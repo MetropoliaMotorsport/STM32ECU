@@ -209,7 +209,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		blinkOutput(TSLED, LEDBLINK_ONE, 1);
 	} else
 	{
-		blinkOutput(TSLED, On, 1);
+		setOutput(TSLED, On);
 	}
 
 	if ( CheckTSActivationRequest() )

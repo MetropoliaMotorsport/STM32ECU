@@ -125,7 +125,7 @@ void BlinkTask( void * pvParameters )
 			}
 		} else
 		{
-			HAL_GPIO_WritePin(params->port, params->pin, params->state);
+			HAL_GPIO_WritePin(params->port, params->pin, params->state); // stopping blinking, set state.
 			Suspend = true;
 		}
 
@@ -152,7 +152,6 @@ void OutputTask(void *argument)
 	// T 11.9.5Indicators according to T 11.9.1 with safe state “illuminated”
 	// (e.g. absence of failures is not actively indicated) must be illuminated
 	// for 1 s to 3 s for visible check after power cycling the LVMS.
-
 
 
 	for ( int i=0;i<19;i++)
@@ -238,12 +237,16 @@ void OutputTask(void *argument)
 						case BlinkFast : ontime = 50; offtime = 100; break;
 						case BlinkVeryFast : ontime = 10; offtime = 10; break;
 						case Timed : ontime = 10; offtime = 0; break;
+						case Nochange : break;
 						default :
 						ontime = 500; offtime = 500;
 					}
 
-					Output[msg.output].ontime = ontime;
-					Output[msg.output].offtime = offtime;
+					if ( msg.state != Nochange )
+					{
+						Output[msg.output].ontime = ontime;
+						Output[msg.output].offtime = offtime;
+					}
 					Output[msg.output].start = gettimer();
 
 					if ( msg.time != 1)
@@ -283,7 +286,8 @@ void OutputTask(void *argument)
 				} else
 				{
 					HAL_GPIO_WritePin(getGpioPort(msg.output), getGpioPin(msg.output), Off);
-					Output[msg.output].ontime = Off;
+					Output[msg.output].state = Off;
+					//Output[msg.output].ontime = Off;
 //					if ( xBlinkHandle[msg.output] != NULL )
 //						vTaskSuspend( xBlinkHandle[msg.output] );
 				}
