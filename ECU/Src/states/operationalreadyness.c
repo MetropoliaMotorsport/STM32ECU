@@ -200,7 +200,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 		DebugPrintf("Received %d", received);
 		// show error state but allow to continue in some state if non critical sensor fails sanity.
 
-		blinkOutput(TSLED,LEDBLINK_FOUR,1); // indicate TS was requested before system ready.
+		blinkOutput(TSLED,LEDBLINK_FOUR,1000); // indicate TS was requested before system ready.
 		return OperationalReadyState; // maintain current state.
 	}
 	else // if ( GetInverterState() >= STOPPED  ) // Ready to switch on

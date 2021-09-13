@@ -68,7 +68,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	uint8_t prechargedone = 0;
 	if ( !Shutdown.PRE && prechargetimer+MS1000*6 > curtime )
 	{
-		blinkOutput(RTDMLED, LEDBLINK_TWO, LEDBLINKNONSTOP);
+		blinkOutput(RTDMLED, LEDBLINK_TWO, 100);
 		prechargedone = 0;
 		if ( prechargetimer+MS1000*6 > curtime )
 		{

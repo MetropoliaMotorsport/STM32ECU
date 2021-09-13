@@ -160,6 +160,7 @@ int PreOperationState( uint32_t OperationLoops  )
 		preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
 		InverterAllowTorqueAll(false);
 
+		setOutput(STARTLED, Off);
 		setOutput(TSLED, On);
 		setOutput(RTDMLED, Off);
 
@@ -690,7 +691,7 @@ int PreOperationState( uint32_t OperationLoops  )
 		}
 	} else
 	{ // hardware not ready for active state
-		blinkOutput(STARTLED, LEDBLINK_TWO, 1);
+		blinkOutput(STARTLED, BlinkSlow, 1000);
 		if ( OperationLoops == 50 ) // 0.5 seconds, send reset nmt, try to get inverters online if not online at startup.
 		{
 
@@ -701,7 +702,7 @@ int PreOperationState( uint32_t OperationLoops  )
 			if ( 1 ) // calculate this to max time for expecting everything online
 			{
 				// user pressed requesting startup sequence before devices ready
-				blinkOutput(TSLED, LEDBLINK_FOUR, 1000);
+				blinkOutput(TSLED, BlinkFast, 1000);
 				CAN_SendErrorStatus(1,PowerOnRequestBeforeReady,0);
 
 				lcd_send_stringline( 3, "Not ready.", 3);

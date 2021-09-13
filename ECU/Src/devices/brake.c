@@ -23,6 +23,7 @@ bool getBrakeLow( void )
 
 uint8_t getBrakeHigh( void )
 {
+//	if ( getEEPROMBlock(0)->Regen && ADCState.Regen_Percent > 10 ) return true;
 	return ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPSBrakeHard; // TODO add regen sensor.
 }
 

@@ -206,7 +206,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	if ( readystate == 0 )
 	{
-		blinkOutput(TSLED, LEDBLINK_ONE, 1);
+		blinkOutput(TSLED, LEDBLINK_ONE, 1000);
 	} else
 	{
 		setOutput(TSLED, On);
