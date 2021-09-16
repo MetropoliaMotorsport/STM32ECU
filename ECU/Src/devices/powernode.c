@@ -420,9 +420,12 @@ void setAllPowerActualOff( void )
 {
 	for ( int i = 0; DevicePowerList[i].device != None; i++ )
 	{
-		if ( DevicePowerList[i].actualstate == true );
-//		DevicePowerList[i].waiting = false;
-		DevicePowerList[i].actualstate = false;
+		if ( DevicePowerList[i].device != ECU )
+		{
+			if ( DevicePowerList[i].actualstate == true );
+	//		DevicePowerList[i].waiting = false;
+			DevicePowerList[i].actualstate = false;
+		}
 	}
 }
 
@@ -814,7 +817,7 @@ bool setNodeDevicePower( DevicePower device, bool state, bool reset )
 
 		if ( reset )
 		{
-			DevicePowerList[i].actualstate = state;
+			DevicePowerList[i].actualstate = state; // resetting internal state, so current expected actual state is false?
 			DevicePowerList[i].waiting = false;
 		}
 		else

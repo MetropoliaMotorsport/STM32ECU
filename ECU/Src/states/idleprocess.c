@@ -136,7 +136,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	{
 		DebugMsg("Errorplace 0xCA Critical error.");
 		Errors.ErrorPlace = 0xCA;
-		Errors.ErrorReason = 0;
+		Errors.ErrorReason = ReceivedCriticalError;
 		return OperationalErrorState;
 	}
 

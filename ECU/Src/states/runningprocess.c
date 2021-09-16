@@ -119,6 +119,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	if ( CheckCriticalError() )
 	{
 		Errors.ErrorReason = ReceivedCriticalError;
+		Errors.ErrorPlace = 0xE0;
 		return OperationalErrorState;
 	}
 
@@ -129,7 +130,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	if  ( !( GetInverterState() == OPERATIONAL
 		  || GetInverterState() == PREOPERATIONAL ) )
 	{
-		Errors.ErrorPlace = 0xE0;
+		Errors.ErrorPlace = 0xE1;
 		return OperationalErrorState;
 	}
 
@@ -154,15 +155,6 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	{
 		standstill = 0;
 		allowstop = 0;
-	}
-
-	// check for unexpected can registration messages-> error state.
-
-
-	if ( CheckCriticalError() )
-	{
-			Errors.ErrorPlace = 0xEE;
-			return OperationalErrorState; // something has triggered an error, drop to error state to deal with it.
 	}
 
 	if ( allowstop && CheckActivationRequest() ) // if requested disable Tractive System, drop state. This should shut off torque control immiedietly.

@@ -369,6 +369,7 @@ bool resetDevicePower( DevicePower device )
 
 	msg.cmd = PowerErrorReset;
 	msg.power = device;
+	msg.enabled = false;
 	return ( xQueueSend(PowerQueue, &msg, 0) );
 
 }
