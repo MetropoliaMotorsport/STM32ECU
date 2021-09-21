@@ -90,6 +90,7 @@ void ResetStateData( void ) // set default startup values for global state value
     CarState.LimpDisable = 0;
     CarState.PedalProfile = 0;
     CarState.DrivingMode = 0;
+    CarState.AllowRegen = false;
 
 	Errors.ErrorPlace = 0;
 	Errors.ErrorReason = 0;

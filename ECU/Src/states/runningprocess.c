@@ -157,6 +157,17 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		allowstop = 0;
 	}
 
+
+
+	if ( ADCState.Regen_Percent < 500 && CheckRTDMActivationRequest() )
+	{
+		blinkOutput(RTDMLED,BlinkFast,1000);
+		lcd_send_stringline( 3, "Allowing regen", 3);
+		DebugMsg("Allowing regen");
+		CarState.AllowRegen = true;
+	}
+
+
 	if ( allowstop && CheckActivationRequest() ) // if requested disable Tractive System, drop state. This should shut off torque control immiedietly.
 	{
 		return IdleState; // check if need to drop HV in a special order.
@@ -207,7 +218,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         CarState.Torque_Req = PedalTorqueRequest();  // calculate request from APPS
 
-//        if ( CarState.Torque_Req == 0 ) // only check for regen if there is no active torque request, as it's opposite.
+        if ( CarState.AllowRegen ) // only check for regen if alowed.
         {
     		if ( ADCState.Regen_Percent > 500 && getEEPROMBlock(0)->Regen ) // no torque request, but we do have a regen request, return that.
     			CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) * NMSCALING ) / 1000 ) ;

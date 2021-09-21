@@ -179,7 +179,7 @@ int16_t PedalTorqueRequest( void ) // returns current Nm request amount.
 	{
 	    Torque_drivers_request = 0;
 	    CarState.APPSstatus = 1;
-	} else if ( ADCState.Regen_Percent > 500 && getEEPROMBlock(0)->Regen )
+	} else if ( CarState.AllowRegen && ADCState.Regen_Percent > 500 && getEEPROMBlock(0)->Regen )
 	{
 	    Torque_drivers_request = 0;
 	    No_Torque_Until_Pedal_Released = 1;

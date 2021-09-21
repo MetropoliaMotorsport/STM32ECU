@@ -333,6 +333,7 @@ typedef struct {
     uint8_t Torque_Req_CurrentMax;
     uint32_t PowerLimit;
     bool AllowTorque;
+    bool AllowRegen;
     uint8_t DrivingMode;
     uint8_t PedalProfile;
 

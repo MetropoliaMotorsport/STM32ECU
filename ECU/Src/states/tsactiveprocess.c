@@ -42,6 +42,8 @@ int TSActiveProcess( uint32_t OperationLoops )
 		prechargetimer = gettimer();
 		InverterAllowTorqueAll(false);
 
+	    CarState.AllowRegen = false;
+
 		setOutput(TSLED, Off);
 		setOutput(RTDMLED, Off);
 	}
