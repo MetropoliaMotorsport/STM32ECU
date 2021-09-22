@@ -377,39 +377,39 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode37Bit ), eSetBits);
 
-		bool newstate = ! ( CANRxData[0] & (0x1 << 0) );
+		bool newstate = ! ( CANRxData[0] & (0x1 << 0) ); // DI3
+		if ( Shutdown.PRE != newstate )
+		{
+			DebugPrintf("PRE Plus sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
+			Shutdown.PRE = newstate;
+		}
+
+		newstate = ! ( CANRxData[0] & (0x1 << 2) ); // DI5
 		if ( Shutdown.AIRp != newstate )
 		{
 			DebugPrintf("AIR Plus sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
 			Shutdown.AIRp = newstate;
 		}
-
-		newstate = ! ( CANRxData[0] & (0x1 << 2) );
+#if 0
+		newstate = ! ( CANRxData[0] & (0x1 << 3) ); // DI6
 		if ( Shutdown.AIRm != newstate )
 		{
-			DebugPrintf("AIR Minus sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
+			DebugPrintf("AIR minus state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
 			Shutdown.AIRm = newstate;
 		}
-
-		newstate = ! ( CANRxData[0] & (0x1 << 3) );
-		if ( Shutdown.PRE != newstate )
-		{
-			DebugPrintf("PRE sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
-			Shutdown.PRE = newstate;
-		}
-
-		newstate = CANRxData[0] & (0x1 << 3);
-		if ( Shutdown.TS_OFF != newstate )
-		{
-			DebugPrintf("TS_OFF sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
-			Shutdown.TS_OFF = newstate;
-		}
-
-		newstate = CANRxData[0] & (0x1 << 3);
+#endif
+		newstate = CANRxData[0] & (0x1 << 3); // DI6
 		if ( Shutdown.IMD != newstate )
 		{
 			DebugPrintf("IMD sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
 			Shutdown.IMD = newstate;
+		}
+
+		newstate = CANRxData[0] & (0x1 << 4); // DI15
+		if ( Shutdown.TS_OFF != newstate )
+		{
+			DebugPrintf("TS_OFF sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
+			Shutdown.TS_OFF = newstate;
 		}
 
 		//		CarState.I_BrakeLight = CANRxData[0];
