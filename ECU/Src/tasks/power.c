@@ -245,11 +245,20 @@ void PowerTask(void *argument)
 	    if ( CheckTSOff() )
 	    {
 	    	setOutput(TSOFFLED, On);
-	    	setOutput(LED6, On);
 	    }
 	    else
 	    {
 	    	setOutput(TSOFFLED, Off);
+	    }
+
+	    if ( CheckIMD() )
+	    {
+	    	setOutput(IMDLED, On);
+	    	setOutput(LED6, On);
+	    }
+	    else
+	    {
+	    	setOutput(IMDLED, Off);
 	    	setOutput(LED6, Off);
 	    }
 
@@ -294,6 +303,11 @@ bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is
 bool CheckTSOff( void ) // returns true if shutdown circuit other than ECU is closed
 {
 	return Shutdown.TS_OFF;
+}
+
+bool CheckIMD( void ) // returns true if shutdown circuit other than ECU is closed
+{
+	return Shutdown.IMD;
 }
 
 #define MAXSHUTDOWNSTR	40

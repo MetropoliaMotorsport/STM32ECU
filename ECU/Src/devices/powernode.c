@@ -159,6 +159,7 @@ void PNode37Timeout( uint16_t id )
 	Shutdown.AIRp = false;
 	Shutdown.PRE = false;
 	Shutdown.TS_OFF = false;
+	Shutdown.IMD = false;
 }
 
 
@@ -328,12 +329,13 @@ bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		CarState.I_AccuFans = CANRxData[4];
 		CarState.Freq_IMD = CANRxData[5]; // IMD Shutdown.
 
+#if 0
 		// normal operational status, else assume error.
 		if ( CarState.Freq_IMD >= 5 && CarState.Freq_IMD < 15 )
 			Shutdown.IMD = true;
 		else
 			Shutdown.IMD = false;
-
+#endif
 		DeviceState.BrakeLight = OPERATIONAL;
 
 //		should be 10 Hz in normal situation (I think duty cycle was based on measured resistance or something)
@@ -401,6 +403,13 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		{
 			DebugPrintf("TS_OFF sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
 			Shutdown.TS_OFF = newstate;
+		}
+
+		newstate = CANRxData[0] & (0x1 << 3);
+		if ( Shutdown.IMD != newstate )
+		{
+			DebugPrintf("IMD sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
+			Shutdown.IMD = newstate;
 		}
 
 		//		CarState.I_BrakeLight = CANRxData[0];
