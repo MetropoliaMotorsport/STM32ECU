@@ -380,7 +380,7 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		bool newstate = ! ( CANRxData[0] & (0x1 << 0) ); // DI3
 		if ( Shutdown.PRE != newstate )
 		{
-			DebugPrintf("PRE Plus sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
+			DebugPrintf("PREcharge sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
 			Shutdown.PRE = newstate;
 		}
 
