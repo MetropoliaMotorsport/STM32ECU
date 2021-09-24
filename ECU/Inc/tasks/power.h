@@ -92,6 +92,7 @@ void ShutdownCircuitSet( bool state );
 int ShutdownCircuitCurrent( void );
 int ShutdownCircuitState( void );
 bool CheckTSOff( void );
+bool CheckIMD( void );
 bool CheckShutdown( void );
 char * ShutDownOpenStr( void );
 
