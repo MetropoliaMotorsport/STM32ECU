@@ -748,6 +748,7 @@ static void debugShutdown( const char *tkn2, const char *tkn3 )
 		showShutdown("AIRp", Shutdown.AIRp, true);
 		showShutdown("Pre", Shutdown.PRE, true);
 
+		showShutdown("TS OFF", Shutdown.TS_OFF, true);
 	}
 }
 
