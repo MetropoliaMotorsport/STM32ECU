@@ -12,18 +12,19 @@
 
 bool getBrakeLight( void )
 {
+	//	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && ADCState.Regen_Percent > 500 ) return true;
 	return ( ADCState.BrakeR >= APPSBrakeLight || ADCState.BrakeF >= APPSBrakeLight );
 }
 
 bool getBrakeLow( void )
 {
-	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && ADCState.Regen_Percent < 500 ) return true;
+//	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && ADCState.Regen_Percent < 500 ) return true;
 	return ( ADCState.BrakeR < APPSBrakeRelease || ADCState.BrakeF < APPSBrakeRelease );
 }
 
 uint8_t getBrakeHigh( void )
 {
-	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && ADCState.Regen_Percent > 500 ) return true;
+//	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && ADCState.Regen_Percent > 500 ) return true;
 	return ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPSBrakeHard;
 }
 
