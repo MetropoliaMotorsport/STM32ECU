@@ -175,7 +175,7 @@ void HandleInverter( InverterState_t * Inverter )
 		{
 //			if ( Inverter->Motor == 1 )
 			// check if we've got voltage available for moving up states, otherwise stay up.
-			if ( Inverter->HighVoltageAvailable )
+			if ( Inverter->HighVoltageAvailable &&  ( ( 1 << Inverter->Motor ) & getEEPROMBlock(0)->EnabledMotors ) ) // only process commands if control enabled
 			{
 				Inverter->InvCommand = command;
 			}
@@ -391,7 +391,7 @@ void InvTask(void *argument)
 				if ( InverterState[i].Device != OFFLINE )
 				{
 					online++;
-					if ( InverterState[i].Device < lowest )
+					if ( InverterState[i].Device < lowest || (  ( 1 << i ) & getEEPROMBlock(0)->EnabledMotors ) )
 						lowest = InverterState[i].Device;
 				}
 
