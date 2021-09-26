@@ -107,6 +107,7 @@ typedef struct eepromdatastruct {
 	bool Regen;
 	int16_t steerCalib;
 	union {
+	uint8_t regenMaxR;
 	uint8_t Blockend;
 	};
 

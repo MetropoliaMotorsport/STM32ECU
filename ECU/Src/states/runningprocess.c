@@ -219,12 +219,6 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         CarState.Torque_Req = PedalTorqueRequest();  // calculate request from APPS
 
-        if ( CarState.AllowRegen ) // only check for regen if alowed.
-        {
-    		if ( ADCState.Regen_Percent > 500 && getEEPROMBlock(0)->Regen ) // no torque request, but we do have a regen request, return that.
-    			CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) * NMSCALING ) / 1000 ) ;
-        }
-
 #ifdef TORQUEVECTOR
 
 // first check if we've requested toggling state and toggle it if accelerator pedal not pressed.
@@ -251,6 +245,18 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		}
 #endif
 		doVectoring( CarState.Torque_Req, &adj );
+
+        if ( CarState.AllowRegen ) // only check for regen if alowed.
+        {
+    		if ( ADCState.Regen_Percent > 500 && getEEPROMBlock(0)->Regen ) // no torque request, but we do have a regen request, return that.
+    		{
+    			CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) * NMSCALING ) / 1000 ) ;
+    			adj.FL = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) * NMSCALING ) / 1000 );
+    			adj.FR = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) * NMSCALING ) / 1000 );
+    			adj.RL = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) * NMSCALING ) / 1000 );
+    			adj.RR = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) * NMSCALING ) / 1000 );
+    		}
+        }
 
 		if ( CarState.APPSstatus )
 			setOutput(TSLED,On);

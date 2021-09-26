@@ -513,7 +513,8 @@ bool doPedalCalibration( uint16_t input )
 #define MENU_INVEN	 	(9)
 #define MENU_REGEN	 	(10)
 #define MENU_REGENMAX	(11)
-#define MENU_HV		 	(12)
+#define MENU_REGENMAXR  (12)
+#define MENU_HV		 	(13)
 
 #define MENU_LAST	 	(MENU_HV)
 
@@ -683,11 +684,20 @@ bool DoMenu( uint16_t input )
 		}
 
 		uint8_t regenmax = getEEPROMBlock(0)->regenMax;
-		doMenu8BitEdit( MenuLines[1+MENU_REGENMAX], "Regen Max", (selection==MENU_REGENMAX), &inedit, &regenmax, regenvals, input, false );
+		doMenu8BitEdit( MenuLines[1+MENU_REGENMAX], "Regen MaxF", (selection==MENU_REGENMAX), &inedit, &regenmax, regenvals, input, false );
 		if ( regenmax != getEEPROMBlock(0)->regenMax ) // value changed.
 		{
 			getEEPROMBlock(0)->regenMax = regenmax;
 		}
+
+		uint8_t regenmaxR = getEEPROMBlock(0)->regenMaxR;
+		doMenu8BitEdit( MenuLines[1+MENU_REGENMAXR], "Regen MaxR", (selection==MENU_REGENMAXR), &inedit, &regenmax, regenvals, input, false );
+		if ( regenmaxR != getEEPROMBlock(0)->regenMaxR ) // value changed.
+		{
+			getEEPROMBlock(0)->regenMaxR = regenmaxR;
+		}
+
+
 
 
 #if (MENU_LAST == MENU_HV)
