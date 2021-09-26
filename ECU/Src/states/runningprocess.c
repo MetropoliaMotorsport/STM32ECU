@@ -134,6 +134,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		return OperationalErrorState;
 	}
 
+
 	if ( readystate == 0 && GetInverterState() != OPERATIONAL )
 	{  // an inverter has changed state from operating after reaching it unexpectedly, fault status of some sort.
 		Errors.ErrorPlace = 0xE5;
@@ -243,7 +244,12 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 #endif
 
 		vectoradjust adj;
-
+#ifdef REQUIRETS
+		if ( CheckTSOff() || Shutdown.AIRp )
+		{
+			CarState.Torque_Req = 0;
+		}
+#endif
 		doVectoring( CarState.Torque_Req, &adj );
 
 		if ( CarState.APPSstatus )
