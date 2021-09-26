@@ -57,6 +57,7 @@ void setAllPowerActualOff( void );
 
 uint32_t powerErrorOccurred( DevicePower device );
 char * PNodeGetErrStr( uint32_t error );
+bool PNodeGetErrType( uint32_t error );
 
 int initPowerNodes( void );
 

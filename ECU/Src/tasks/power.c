@@ -132,8 +132,17 @@ void PowerTask(void *argument)
 				CAN_SendErrorStatus(7, 0, 0);
 			} else
 			{
-				snprintf(str, MAXERROROUTPUT, "Power err: %d %lu %s at (%lu)", errormsg.nodeid, errormsg.error, PNodeGetErrStr( errormsg.error ), gettimer());
-				LogError( str );
+
+				if ( PNodeGetErrType(errormsg.error ) ) // only show full errors for now.
+				{
+					snprintf(str, MAXERROROUTPUT, "Power err: %d %lu %s at (%lu)", errormsg.nodeid, errormsg.error, PNodeGetErrStr( errormsg.error ), gettimer());
+					LogError( str );
+				} else
+				{
+					snprintf(str, MAXERROROUTPUT, "Power warn: %d %lu %s at (%lu)", errormsg.nodeid, errormsg.error, PNodeGetErrStr( errormsg.error ), gettimer());
+					DebugMsg( str );
+				}
+
 			}
 		}
 

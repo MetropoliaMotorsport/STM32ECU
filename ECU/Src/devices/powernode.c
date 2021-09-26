@@ -398,14 +398,14 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 			Shutdown.AIRm = newstate;
 		}
 #endif
-		newstate = ! CANRxData[0] & (0x1 << 3); // DI6
+		newstate = ! ( CANRxData[0] & (0x1 << 3) ); // DI6
 		if ( Shutdown.IMD != newstate )
 		{
 			DebugPrintf("IMD sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
 			Shutdown.IMD = newstate;
 		}
 
-		newstate = CANRxData[0] & (0x1 << 4); // DI15
+		newstate = ( CANRxData[0] & (0x1 << 4) ); // DI15
 		if ( Shutdown.TS_OFF != newstate )
 		{
 			DebugPrintf("TS_OFF sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
@@ -610,73 +610,150 @@ char * PNodeGetErrStr( uint32_t error )
 {
 	switch ( error )
 	{
-	case U5I0_SWITCH_OFF 				: return "ERR Channel 0 Off";
-	case U5I1_SWITCH_OFF 				: return "ERR Channel 1 Off";
-	case U6I0_SWITCH_OFF 				: return "ERR Channel 2 Off";
-	case U6I1_SWITCH_OFF 				: return "ERR Channel 3 Off";
-	case U7I0_SWITCH_OFF 				: return "ERR Channel 4 Off";
-	case U7I1_SWITCH_OFF 				: return "ERR Channel 5 Off";
+	case U5I0_SWITCH_OFF 				: return "Ch0 Off";
+	case U5I1_SWITCH_OFF 				: return "Ch1 Off";
+	case U6I0_SWITCH_OFF 				: return "Ch2 Off";
+	case U6I1_SWITCH_OFF 				: return "Ch3 Off";
+	case U7I0_SWITCH_OFF 				: return "Ch4 Off";
+	case U7I1_SWITCH_OFF 				: return "Ch5 Off";
 
-	case ERR_CAN_BUFFER_FULL			: return "ERR_CAN_BUFFER_FULL";
-	case ERR_CAN_FIFO_FULL				: return "ERR_CAN_FIFO_FULL";
-	case ERR_MESSAGE_DISABLED			: return "ERR_MESSAGE_DISABLED";
-	case ERR_DLC_0						: return "ERR_DLC_0";
-	case ERR_DLC_LONG					: return "ERR_DLC_LONG";
-	case ERR_SEND_FAILED				: return "ERR_SEND_FAILED";
-	case ERR_RECIEVE_FAILED				: return "ERR_RECIEVE_FAILED";
-	case ERR_INVALID_COMMAND			: return "ERR_INVALID_COMMAND";
-	case ERR_COMMAND_SHORT				: return "ERR_COMMAND_SHORT";
-	case ERR_RECIEVED_INVALID_ID 		: return "ERR_RECIEVED_INVALID_ID";
-	case ERR_CANBUSOFFLINE				: return "ERR_CANBUSOFFLINE";
+	case ERR_CAN_BUFFER_FULL			: return "CAN_BUFFER_FULL";
+	case ERR_CAN_FIFO_FULL				: return "CAN_FIFO_FULL";
+	case ERR_MESSAGE_DISABLED			: return "MESSAGE_DISABLED";
+	case ERR_DLC_0						: return "DLC_0";
+	case ERR_DLC_LONG					: return "DLC_LONG";
+	case ERR_SEND_FAILED				: return "SEND_FAILED";
+	case ERR_RECIEVE_FAILED				: return "RECIEVE_FAILED";
+	case ERR_INVALID_COMMAND			: return "INVALID_COMMAND";
+	case ERR_COMMAND_SHORT				: return "COMMAND_SHORT";
+	case ERR_RECIEVED_INVALID_ID 		: return "RECIEVED_INVALID_ID";
+	case ERR_CANBUSOFFLINE				: return "CANBUSOFFLINE";
 
-	case ERR_MODIFY_INVALID_MESSAGE		: return "ERR_MODIFY_INVALID_MESSAGE";
-	case ERR_MODIFY_INVALID_THING		: return "ERR_MODIFY_INVALID_THING";
-	case ERR_CLEAR_INVALID_ERROR		: return "ERR_CLEAR_INVALID_ERROR";
+	case ERR_MODIFY_INVALID_MESSAGE		: return "MODIFY_INVALID_MESSAGE";
+	case ERR_MODIFY_INVALID_THING		: return "MODIFY_INVALID_THING";
+	case ERR_CLEAR_INVALID_ERROR		: return "CLEAR_INVALID_ERROR";
 
-	case ERR_MESS_INVALID_BYTES			: return "ERR_MESS_INVALID_BYTES";
-	case ERR_MESS_UNDEFINED				: return "ERR_MESS_UNDEFINED";
+	case ERR_MESS_INVALID_BYTES			: return "MESS_INVALID_BYTES";
+	case ERR_MESS_UNDEFINED				: return "MESS_UNDEFINED";
 
-	case WARN_UNDERVOLT_U5				: return "WARN_UNDERVOLT_CH0-1";
-	case WARN_OVERVOLT_U5				: return "WARN_OVERVOLT_CH0-1";
-	case WARN_UNDERTEMP_U5				: return "WARN_UNDERTEMP_CH0-1";
-	case WARN_OVERTEMP_U5				: return "WARN_OVERTEMP_CH0-1";
-	case WARN_UNDERCURR_U5I0			: return "WARN_UNDERCURR_CH0";
-	case WARN_OVERCURR_U5I0				: return "WARN_OVERCURR_CH0";
-	case WARN_UNDERCURR_U5I1			: return "WARN_UNDERCURR_CH1";
-	case WARN_OVERCURR_U5I1				: return "WARN_OVERCURR_CH1";
-	case ERROR_OVERCURR_TRIP_U5_0		: return "ERROR_OVERCURR_CH0";
-	case ERROR_OVERCURR_TRIP_U5_1		: return "ERROR_OVERCURR_CH1";
-	case WARN_UNDERVOLT_U6				: return "WARN_UNDERVOLT_CH2-3";
-	case WARN_OVERVOLT_U6				: return "WARN_OVERVOLT_CH2-3";
-	case WARN_UNDERTEMP_U6				: return "WARN_UNDERTEMP_CH2-3";
-	case WARN_OVERTEMP_U6				: return "WARN_OVERTEMP_CH2-3";
-	case WARN_UNDERCURR_U6I0			: return "WARN_UNDERCURR_CH2";
-	case WARN_OVERCURR_U6I0				: return "WARN_OVERCURR_CH2";
-	case WARN_UNDERCURR_U6I1			: return "WARN_UNDERCURR_CH3";
-	case WARN_OVERCURR_U6I1				: return "WARN_OVERCURR_CH3";
-	case ERROR_OVERCURR_TRIP_U6_0		: return "ERROR_OVERCURR_CH2";
-	case ERROR_OVERCURR_TRIP_U6_1		: return "ERROR_OVERCURR_CH3";
-	case WARN_UNDERVOLT_U7				: return "WARN_UNDERVOLT_CH4-5";
-	case WARN_OVERVOLT_U7				: return "WARN_OVERVOLT_CH4-5";
-	case WARN_UNDERTEMP_U7				: return "WARN_UNDERTEMP_CH4-5";
-	case WARN_OVERTEMP_U7				: return "WARN_OVERTEMP_CH4-5";
-	case WARN_UNDERCURR_U7I0			: return "WARN_UNDERCURR_CH4";
-	case WARN_OVERCURR_U7I0				: return "WARN_OVERCURR_CH4";
-	case WARN_UNDERCURR_U7I1			: return "WARN_UNDERCURR_CH5";
-	case WARN_OVERCURR_U7I1				: return "WARN_OVERCURR_CH5";
-	case ERROR_OVERCURR_TRIP_U7_0		: return "ERROR_OVERCURR_CH4";
-	case ERROR_OVERCURR_TRIP_U7_1		: return "ERROR_OVERCURR_CH5";
+	case WARN_UNDERVOLT_U5				: return "UNDERVOLT_CH0-1";
+	case WARN_OVERVOLT_U5				: return "OVERVOLT_CH0-1";
+	case WARN_UNDERTEMP_U5				: return "UNDERTEMP_CH0-1";
+	case WARN_OVERTEMP_U5				: return "OVERTEMP_CH0-1";
+	case WARN_UNDERCURR_U5I0			: return "UNDERCURR_CH0";
+	case WARN_OVERCURR_U5I0				: return "OVERCURR_CH0";
+	case WARN_UNDERCURR_U5I1			: return "UNDERCURR_CH1";
+	case WARN_OVERCURR_U5I1				: return "OVERCURR_CH1";
+	case ERROR_OVERCURR_TRIP_U5_0		: return "OVERCURR_CH0";
+	case ERROR_OVERCURR_TRIP_U5_1		: return "OVERCURR_CH1";
+	case WARN_UNDERVOLT_U6				: return "UNDERVOLT_CH2-3";
+	case WARN_OVERVOLT_U6				: return "OVERVOLT_CH2-3";
+	case WARN_UNDERTEMP_U6				: return "UNDERTEMP_CH2-3";
+	case WARN_OVERTEMP_U6				: return "OVERTEMP_CH2-3";
+	case WARN_UNDERCURR_U6I0			: return "UNDERCURR_CH2";
+	case WARN_OVERCURR_U6I0				: return "OVERCURR_CH2";
+	case WARN_UNDERCURR_U6I1			: return "UNDERCURR_CH3";
+	case WARN_OVERCURR_U6I1				: return "OVERCURR_CH3";
+	case ERROR_OVERCURR_TRIP_U6_0		: return "OVERCURR_CH2";
+	case ERROR_OVERCURR_TRIP_U6_1		: return "OVERCURR_CH3";
+	case WARN_UNDERVOLT_U7				: return "UNDERVOLT_CH4-5";
+	case WARN_OVERVOLT_U7				: return "OVERVOLT_CH4-5";
+	case WARN_UNDERTEMP_U7				: return "UNDERTEMP_CH4-5";
+	case WARN_OVERTEMP_U7				: return "OVERTEMP_CH4-5";
+	case WARN_UNDERCURR_U7I0			: return "UNDERCURR_CH4";
+	case WARN_OVERCURR_U7I0				: return "OVERCURR_CH4";
+	case WARN_UNDERCURR_U7I1			: return "UNDERCURR_CH5";
+	case WARN_OVERCURR_U7I1				: return "OVERCURR_CH5";
+	case ERROR_OVERCURR_TRIP_U7_0		: return "OVERCURR_CH4";
+	case ERROR_OVERCURR_TRIP_U7_1		: return "OVERCURR_CH5";
 
-	case ERROR_READ_TEMP				: return "ERROR_READ_TEMP";
-	case WARN_TEMP_MEASURE_OVERFLOW		: return "WARN_TEMP_MEASURE_OVERFLOW";
-	case WARN_VOLT_MEASURE_OVERFLOW		: return "WARN_VOLT_MEASURE_OVERFLOW";
+	case ERROR_READ_TEMP				: return "READ_TEMP";
+	case WARN_TEMP_MEASURE_OVERFLOW		: return "TEMP_MEASURE_OVERFLOW";
+	case WARN_VOLT_MEASURE_OVERFLOW		: return "VOLT_MEASURE_OVERFLOW";
 
-	case WARN_PWM_INVALID_CHANNEL		: return "WARN_PWM_INVALID_CHANNEL";
-	case WARN_PWM_CHANNEL_UNINITIALIZED	: return "WARN_PWM_CHANNEL_UNINITIALIZED";
-	case WARN_UNDEFINED_GPIO			: return "WARN_UNDEFINED_GPIO";
-	case WARN_PWM_NOT_ENABLED			: return "WARN_PWM_NOT_ENABLED";
+	case WARN_PWM_INVALID_CHANNEL		: return "PWM_INVALID_CHANNEL";
+	case WARN_PWM_CHANNEL_UNINITIALIZED	: return "PWM_CHANNEL_UNINITIALIZED";
+	case WARN_UNDEFINED_GPIO			: return "UNDEFINED_GPIO";
+	case WARN_PWM_NOT_ENABLED			: return "PWM_NOT_ENABLED";
 	default:
 		return "Unknown";
+	}
+}
+
+bool PNodeGetErrType( uint32_t error )
+{
+	switch ( error )
+	{
+	case U5I0_SWITCH_OFF 				:
+	case U5I1_SWITCH_OFF 				:
+	case U6I0_SWITCH_OFF 				:
+	case U6I1_SWITCH_OFF 				:
+	case U7I0_SWITCH_OFF 				:
+	case U7I1_SWITCH_OFF 				:
+
+	case ERR_CAN_BUFFER_FULL			:
+	case ERR_CAN_FIFO_FULL				:
+	case ERR_MESSAGE_DISABLED			:
+	case ERR_DLC_0						:
+	case ERR_DLC_LONG					:
+	case ERR_SEND_FAILED				:
+	case ERR_RECIEVE_FAILED				:
+	case ERR_INVALID_COMMAND			:
+	case ERR_COMMAND_SHORT				:
+	case ERR_RECIEVED_INVALID_ID 		:
+	case ERR_CANBUSOFFLINE				:
+
+	case ERR_MODIFY_INVALID_MESSAGE		:
+	case ERR_MODIFY_INVALID_THING		:
+	case ERR_CLEAR_INVALID_ERROR		:
+
+	case ERR_MESS_INVALID_BYTES			:
+	case ERR_MESS_UNDEFINED				: return true;
+
+	case WARN_UNDERVOLT_U5				:
+	case WARN_OVERVOLT_U5				:
+	case WARN_UNDERTEMP_U5				:
+	case WARN_OVERTEMP_U5				:
+	case WARN_UNDERCURR_U5I0			:
+	case WARN_OVERCURR_U5I0				:
+	case WARN_UNDERCURR_U5I1			:
+	case WARN_OVERCURR_U5I1				:
+
+	case WARN_UNDERVOLT_U6				:
+	case WARN_OVERVOLT_U6				:
+	case WARN_UNDERTEMP_U6				:
+	case WARN_OVERTEMP_U6				:
+	case WARN_UNDERCURR_U6I0			:
+	case WARN_OVERCURR_U6I0				:
+	case WARN_UNDERCURR_U6I1			:
+	case WARN_OVERCURR_U6I1				:
+
+	case WARN_UNDERVOLT_U7				:
+	case WARN_OVERVOLT_U7				:
+	case WARN_UNDERTEMP_U7				:
+	case WARN_OVERTEMP_U7				:
+	case WARN_UNDERCURR_U7I0			:
+	case WARN_OVERCURR_U7I0				:
+	case WARN_UNDERCURR_U7I1			:
+	case WARN_OVERCURR_U7I1				: return false;
+
+	case ERROR_OVERCURR_TRIP_U5_0		:
+	case ERROR_OVERCURR_TRIP_U5_1		:
+	case ERROR_OVERCURR_TRIP_U6_0		:
+	case ERROR_OVERCURR_TRIP_U6_1		:
+	case ERROR_OVERCURR_TRIP_U7_0		:
+	case ERROR_OVERCURR_TRIP_U7_1		:
+
+	case ERROR_READ_TEMP				: return true;
+	case WARN_TEMP_MEASURE_OVERFLOW		:
+	case WARN_VOLT_MEASURE_OVERFLOW		:
+
+	case WARN_PWM_INVALID_CHANNEL		:
+	case WARN_PWM_CHANNEL_UNINITIALIZED	:
+	case WARN_UNDEFINED_GPIO			:
+	case WARN_PWM_NOT_ENABLED			: return false;
+	default:
+		return true;
 	}
 }
 
