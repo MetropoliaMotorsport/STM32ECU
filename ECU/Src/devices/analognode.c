@@ -94,9 +94,9 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 		)
 	{
 		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
-		ADCStateNew.Torque_Req_L_Percent = getTorqueReqPercL(AccelL);
+	//	ADCStateNew.Torque_Req_L_Percent = getTorqueReqPercL(AccelL);
 		ADCStateNew.Regen_Percent = getBrakeTravelPerc(Regen);
-		ADCStateNew.APPSL = AccelL;
+	//	ADCStateNew.APPSL = AccelL;
 		ADCStateNew.Regen = Regen;
 		xSemaphoreGive(ADCUpdate);
 		xTaskNotify( ADCTaskHandle, ( 0x1 << ANode1Bit ), eSetBits);
@@ -180,6 +180,11 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
         ADCStateNew.BrakeR = BrakeR;
         ADCStateNew.Torque_Req_R_Percent = getTorqueReqPercR(AccelR);
 		ADCStateNew.APPSR = AccelR;
+
+		ADCStateNew.Torque_Req_L_Percent = getTorqueReqPercL(AccelR);
+		ADCStateNew.APPSL = AccelR;
+
+
 		xSemaphoreGive(ADCUpdate);
 		xTaskNotify( ADCTaskHandle, ( 0x1 << ANode11Bit ), eSetBits);
 		return true;
