@@ -398,7 +398,7 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 			Shutdown.AIRm = newstate;
 		}
 #endif
-		newstate = CANRxData[0] & (0x1 << 3); // DI6
+		newstate = ! CANRxData[0] & (0x1 << 3); // DI6
 		if ( Shutdown.IMD != newstate )
 		{
 			DebugPrintf("IMD sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
