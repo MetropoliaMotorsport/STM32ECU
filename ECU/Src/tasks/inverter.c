@@ -175,7 +175,11 @@ void HandleInverter( InverterState_t * Inverter )
 		{
 //			if ( Inverter->Motor == 1 )
 			// check if we've got voltage available for moving up states, otherwise stay up.
-			if ( Inverter->HighVoltageAvailable )
+			if ( Inverter->HighVoltageAvailable
+#ifdef TIMEINVSTATECHANGE
+					&& Inverter->Changetime > gettimer()
+#endif
+			)
 			{
 				Inverter->InvCommand = command;
 			}
@@ -310,12 +314,17 @@ void InvTask(void *argument)
 
 	while( 1 )
 	{
-		// TODO change to a single element queue.
 		if ( xQueueReceive(InvQueue,&msg,0) ) // queue to receive requested operational state.
 		{
 			for ( int i=0;i<MOTORCOUNT;i++)
 			{
 				InverterState[i].InvRequested = msg.state;
+				if ( msg.sate == OPERATIONAL )
+				{
+					InverterState[i].Changetime = gettimer()+i*500; // delay each change to operational by half a second.
+				}
+				else
+					InverterState[i].Changetime = 0;
 			}
 		}
 

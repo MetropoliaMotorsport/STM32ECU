@@ -33,6 +33,7 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	uint8_t Motor; // index value, for when passed as an individual struct
 
 	bool HighVoltageAvailable;
+	uint32_t Changetime;
 
 	DeviceStatus Device;
 
