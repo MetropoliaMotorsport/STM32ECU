@@ -68,7 +68,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	uint32_t curtime = gettimer();
 
 	uint8_t prechargedone = 0;
-	if ( !Shutdown.PRE && prechargetimer+MS1000*6 > curtime )
+	if ( prechargetimer+MS1000*6 > curtime ) // !Shutdown.PRE &&
 	{
 		blinkOutput(RTDMLED, LEDBLINK_TWO, 100);
 		prechargedone = 0;
@@ -88,7 +88,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 
 	} else
 	{
-		if (  CarState.VoltageINV > 400 && ( Shutdown.PRE || prechargetimer+MS1000*6 <= curtime ) )
+		if (  CarState.VoltageINV > 400 && ( prechargetimer+MS1000*6 <= curtime ) ) // Shutdown.PRE ||
 		{
 			setOutput(RTDMLED, On);
 			lcd_send_stringline(1,"Precharge Done.", 255);
