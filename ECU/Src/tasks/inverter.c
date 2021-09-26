@@ -320,7 +320,7 @@ void InvTask(void *argument)
 			for ( int i=0;i<MOTORCOUNT;i++)
 			{
 				InverterState[i].InvRequested = msg.state;
-				if ( msg.sate == OPERATIONAL )
+				if ( msg.state == OPERATIONAL )
 				{
 					InverterState[i].Changetime = gettimer()+i*500; // delay each change to operational by half a second.
 				}
