@@ -538,7 +538,7 @@ bool DoMenu( uint16_t input )
 
 	const uint16_t rpmvals[] = {500, 1500, 3000, 5000, 7000, 9000, 11000, 13000, 15000, 19000, 20000, 0};
 
-	const uint8_t regenvals[] = {1,3,5,10,0}; // zero terminated so function can find end.
+	const uint8_t regenvals[] = {1,3,4,5,6,7,8,9,10,11,12,0}; // zero terminated so function can find end.
 
 	if ( inmenu )
 	{
@@ -691,7 +691,7 @@ bool DoMenu( uint16_t input )
 		}
 
 		uint8_t regenmaxR = getEEPROMBlock(0)->regenMaxR;
-		doMenu8BitEdit( MenuLines[1+MENU_REGENMAXR], "Regen MaxR", (selection==MENU_REGENMAXR), &inedit, &regenmax, regenvals, input, false );
+		doMenu8BitEdit( MenuLines[1+MENU_REGENMAXR], "Regen MaxR", (selection==MENU_REGENMAXR), &inedit, &regenmaxR, regenvals, input, false );
 		if ( regenmaxR != getEEPROMBlock(0)->regenMaxR ) // value changed.
 		{
 			getEEPROMBlock(0)->regenMaxR = regenmaxR;
