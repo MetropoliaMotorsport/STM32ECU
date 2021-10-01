@@ -34,54 +34,69 @@ void setDriveMode(void)
 		CarState.LimpDisable = 0;
 		CarState.DrivingMode = ADCState.DrivingMode;
 
-		case 1: // 5nm  5 , 5,    0,     5,   5,    10,    15,    20,   25,     30,    64,    65,   0
+		case 1: // 5nm
 			CarState.Torque_Req_Max = 5;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 0;
 #endif
 			break;
+
 		case 2: // 25nm
 			CarState.Torque_Req_Max = 25;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 0;
 #endif
 			break;
+
 		case 3: // 25nm
 			CarState.Torque_Req_Max = 25;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 1;
 #endif
 			break;
-		case 4: // 35nm
+
+		case 4: // 30nm
 			CarState.Torque_Req_Max = 30;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 1;
 #endif
 			break;
-		case 5: // 35nm
-			CarState.Torque_Req_Max = 35;
+
+		case 5: // 45nm
+			CarState.Torque_Req_Max = 45;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 1;
 #endif
 			break;
-		case 6: // 65nm
+
+		case 6: // 55nm
 			CarState.Torque_Req_Max = 55;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 1;
 #endif
 			SetupLargeLowRangeTorque();
 			break;
+
 		case 7: // 65nm Track
+			CarState.Torque_Req_Max = 65;
+#ifdef TORQUEVECTOR
+			CarState.TorqueVectoring = 0;
+#endif
+			SetupLargeLowRangeTorque();
+			break;
+
+		case 8: // 65nm
 			CarState.Torque_Req_Max = 65;
 #ifdef TORQUEVECTOR
 			CarState.TorqueVectoring = 1;
 #endif
 			SetupLargeLowRangeTorque();
-			break;
-		case 8: // 65nm Accel
-			CarState.Torque_Req_Max = 65;
-			CarState.LimpDisable = 1;
-			SetupLowTravelTorque();
+
+//          Left here to remember these options
+//			CarState.LimpDisable = 1;
+//			SetupLowTravelTorque(); //This is the acceleration pedal mode.
+
+
 			break;
 
 	}
