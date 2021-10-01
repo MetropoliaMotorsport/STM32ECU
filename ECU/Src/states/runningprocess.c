@@ -297,7 +297,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	// check data validity, // any critical errors, drop state.
 
-#if 0
+
 	if  ( !( GetInverterState( CarState.LeftInvState ) == INVERTEROPERATING
 		  || GetInverterState( CarState.LeftInvState ) == INVERTERON ) )
 	{
@@ -319,7 +319,6 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		Errors.ErrorPlace = 0xED;
 		return OperationalErrorState;
 	}
-#endif
     
     #define RTDMStopTime    3 // 3 seconds.ww
 
@@ -376,12 +375,11 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	if ( readystate == 0 ) // only start to request torque when inverters ready.
 	{
         // check if limp mode allowed ( don't want for acceleration test ), and if so, if BMS has requested.
-#if 0
+        
         if ( ( CarState.LimpRequest && !CarState.LimpDisable ) || ADCState.CoolantTempR > COOLANTLIMPTEMP )
         {
             CarState.LimpActive = 1;
         }
-#endif 0
         
         if ( CarState.LimpActive && CarState.Torque_Req_CurrentMax > LIMPNM )
         {

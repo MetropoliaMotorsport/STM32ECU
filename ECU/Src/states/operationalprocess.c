@@ -240,7 +240,6 @@ uint16_t CheckErrors( void )
 	}
 #endif
 
-#if 0
 	if ( errorPDM() )
 	{
 		return 98; // PDM error, stop operation.
@@ -252,7 +251,6 @@ uint16_t CheckErrors( void )
 	{
 		return 99; // serious error, no operation allowed. -- inverter
 	}
-#endif
 
 	// inverter emergency message has been sent, halt.
 /*	if ( CanState.InverterLERR.newdata == 1 || CanState.InverterRERR.newdata == 1 )
