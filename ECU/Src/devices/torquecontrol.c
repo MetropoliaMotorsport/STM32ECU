@@ -34,7 +34,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 {
 #ifdef MATLAB
 	rtU.bus_Vehicle_velocity = IMUReceived.VelBodyX*0.01;
-	rtU.bus_Vehicle_acceleration =  IMUReceived.AccelX*0.01;
+	rtU.bus_Vehicle_acceleration = IMUReceived.AccelX*0.01;
 
 	rtU.bus_rotation_speed_FL = getInvState(invFL)->Speed * 0.10472; // convert wheel rpm to rad/s
 	rtU.bus_rotation_speed_FR = getInvState(invFR)->Speed * 0.10472;
@@ -63,8 +63,14 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	// run the matlab code.
 	SubsystemModelReference_step();
 
-	CAN_Send4vals( 0x7CD, rtY.TCS_TCS_FL, rtY.TCS_TCS_FR, rtY.TCS_TCS_RL, rtY.TCS_TCS_RR );
-	CAN_Send4vals( 0x7CE, rtY.TCS_RPMmaxFL, rtY.TCS_RPMmaxFR, rtY.TCS_RPMmaxRL, rtY.TCS_RPMmaxRR );
+	CAN_Send4vals( 0x7CD,
+			(int16_t)rtU.bus_Vehicle_velocity,
+			(int16_t)rtU.bus_Vehicle_acceleration,
+			(int16_t)rtU.bus_Vehicle_yaw_rate,
+			0);
+	CAN_Send4vals( 0x7CE, rtY.TCS_TCS_FL*NMSCALING, rtY.TCS_TCS_FR*NMSCALING, rtY.TCS_TCS_RL*NMSCALING, rtY.TCS_TCS_RR*NMSCALING);
+	CAN_Send4vals( 0x7CF, rtY.TCS_RPMmaxFL, rtY.TCS_RPMmaxFR, rtY.TCS_RPMmaxRL, rtY.TCS_RPMmaxRR );
+
 
 	int maxreq = 0;
 

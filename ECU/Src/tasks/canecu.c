@@ -997,6 +997,13 @@ char CAN_SendErrors( void )
 
 char CAN_Send4vals( uint16_t id, uint16_t val1, uint16_t val2, uint16_t val3, uint16_t val4 )
 {
+
+	inline void storeBEint16( const uint16_t input, uint8_t Data[2] )
+	{
+		Data[0] = getByte(input,1);
+		Data[1] = getByte(input,0);
+	}
+
 	uint8_t CANTxData[8] = { getByte(val1, 0), getByte(val1, 1),
 							 getByte(val2, 0), getByte(val2, 1),
 							 getByte(val3, 0), getByte(val3, 1),
