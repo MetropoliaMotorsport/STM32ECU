@@ -19,6 +19,8 @@
 
 #define HPF20
 
+// #define APPSFIX // uncomment if APPSL not readng to temporarily copy APPSR, do not use longterm.
+
 //#define HPF19
 
 // HPF 20 doesn't use any local ADC, all via analogue nodes, and PWM.
@@ -28,7 +30,7 @@
 	#define SCREEN
 	#define POWERNODES
 	#define ANALOGNODES
-	//#define MATLAB
+	#define MATLAB
 	#define USEIMU
 	#define PWMSTEERING
 	#define LENZE
@@ -328,7 +330,7 @@ typedef struct {
 
 	uint8_t TorqueVectoring;
 
-	int32_t Torque_Req;
+	float Torque_Req;
 	uint8_t Torque_Req_Max;
     uint8_t Torque_Req_CurrentMax;
     uint32_t PowerLimit;

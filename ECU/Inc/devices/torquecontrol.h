@@ -9,16 +9,23 @@
 #define TORQUECONTROL_H_
 
 typedef struct vectoradjusttype {
-	int16_t FL;
-	int16_t FR;
-	int16_t RL;
-	int16_t RR;
+	float FL;
+	float FR;
+	float RL;
+	float RR;
 } vectoradjust;
 
-int initVectoring( void );
-void doVectoring(int16_t Torque_Req, vectoradjust * adj);
+typedef struct speedadjusttype {
+	uint16_t FL;
+	uint16_t FR;
+	uint16_t RL;
+	uint16_t RR;
+} speedadjust;
 
-int16_t PedalTorqueRequest( void );
+int initVectoring( void );
+void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd );
+
+float PedalTorqueRequest( void );
 
 #endif /* TORQUECONTROL_H_ */
 

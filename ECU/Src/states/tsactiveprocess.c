@@ -165,8 +165,9 @@ int TSActiveProcess( uint32_t OperationLoops )
 	CarState.Torque_Req = PedalTorqueRequest(); // no actual request, merely being calculated.
 
 	vectoradjust adj;
+	speedadjust spd;
 
-	doVectoring(CarState.Torque_Req , &adj);
+	doVectoring( CarState.Torque_Req, &adj, &spd );
 
 	InverterSetTorque(&adj, 0);
 

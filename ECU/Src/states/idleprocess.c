@@ -185,10 +185,9 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 	setCurConfig();
 #endif
 
-	int16_t lastreq = CarState.Torque_Req;
+	float lastreq = CarState.Torque_Req;
 
     CarState.Torque_Req = PedalTorqueRequest();  // calculate request from APPS
-
 
     if ( abs(lastreq-CarState.Torque_Req) > 10 )
     {
@@ -197,8 +196,9 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 // allow APPS checking before RTDM
 	vectoradjust adj;
+	speedadjust spd;
 
-	doVectoring( CarState.Torque_Req, &adj );
+	doVectoring( CarState.Torque_Req, &adj, &spd );
 
 	if ( CarState.APPSstatus ) setOutput(TSLED,On); else setOutput(TSLED,Off);
 

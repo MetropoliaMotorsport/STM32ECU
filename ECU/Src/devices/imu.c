@@ -18,6 +18,7 @@ bool processIMUDeltaA( const uint8_t CANRxData[8], const uint32_t DataLength, co
 bool processIMUEuler( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processIMUVel( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 //bool processIMUVelAcc( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processIMUVelBody(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processIMUGPS( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 
@@ -39,6 +40,7 @@ CANData IMUDeltaA = { &DeviceState.IMU, IMUDeltaA_ID, 6, processIMUDeltaA, IMUTi
 CANData IMUEuler = { &DeviceState.IMU, IMUEuler_ID, 6, processIMUEuler, IMUTimeout, IMUTIMEOUT };
 CANData IMUVel = { &DeviceState.IMU, IMUVel_ID, 6, processIMUVel, IMUTimeout, IMUTIMEOUT };
 //CANData IMUVelAcc = { &DeviceState.IMU, IMUVelAcc_ID, 6, processIMUVelAcc, IMUTimeout, IMUTIMEOUT };
+CANData IMUVelBody = { &DeviceState.IMU, IMUVELBody_ID, 8, processIMUVelBody, IMUTimeout, IMUTIMEOUT };
 CANData IMUGPS = { &DeviceState.IMU, IMUGPS_ID, 8, processIMUGPS, IMUTimeout, IMUTIMEOUT };
 // gps retursn all FF when no lock.
 //CANData IMUAUTO = { &DeviceState.IMU, IMUAUTO_ID, 8, processIMUAUTO, IMUTimeout, IMUTIMEOUT };
@@ -217,6 +219,23 @@ bool processIMUVelAcc( const uint8_t CANRxData[8], const uint32_t DataLength, co
 }
 #endif
 
+bool processIMUVelBody(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
+{
+  if ( true // verify data format.
+  )
+  {
+	  IMUReceived.VelBodyX = getLEint16(&CANRxData[0]);
+	  IMUReceived.VelBodyY = getLEint16(&CANRxData[2]);
+	  IMUReceived.VelBodyZ = getLEint16(&CANRxData[4]);
+
+	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  return true;
+  }
+  else
+	return false;
+}
+
+
 bool processIMUGPS( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
@@ -306,6 +325,7 @@ int initIMU( void )
 	RegisterCan2Message(&IMUVelAcc);
 #endif
 
+	RegisterCan2Message(&IMUVelBody);
 	RegisterCan2Message(&IMUGPS);
 	return 0;
 }

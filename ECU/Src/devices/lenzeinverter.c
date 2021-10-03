@@ -150,12 +150,12 @@ uint8_t InvSend( volatile InverterState_t *Inverter, bool reset )
 
 	if ( Inverter->AllowTorque && CarState.AllowTorque )
 	{
-		vel = Inverter->MaxSpeed * 0x4000; //*16; // TODO add gear ratio, rpm multiplied out.  div by 16
+		vel = Inverter->MaxSpeed * SPEEDSCALING; //*16; // TODO add gear ratio, rpm multiplied out.  div by 16
 
 		if ( Inverter->Torque_Req < 0 && !Inverter->AllowRegen )
 			torque = 0;
 		else
-			torque = Inverter->Torque_Req;
+			torque = Inverter->Torque_Req * NMSCALING;
 	}
 
     // store values for primary request.
@@ -525,7 +525,7 @@ bool processINVValues1( const uint8_t CANRxData[8], const uint32_t DataLength, c
 	if ( 1 ) //abs(Speed) < 15000 && abs(Torque) < 1000 && abs(Current) < 1000 )
 	{
 		xTaskNotify( InvTaskHandle, ( 0x1 << (InverterState[inv].Motor*3+1) ), eSetBits);
-		InverterState[inv].Speed = ( Speed / 0x4000 ) / 16;
+		InverterState[inv].Speed = ( Speed / SPEEDSCALING ) / 16;// wheel rpm not inv. / 16;
 		InverterState[inv].InvTorque = Torque;
 		InverterState[inv].InvCurrent = Current;
 

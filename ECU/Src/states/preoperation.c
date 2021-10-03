@@ -451,8 +451,9 @@ int PreOperationState( uint32_t OperationLoops  )
 	int16_t Torque_Req = PedalTorqueRequest();
 
 	vectoradjust adj;
+	speedadjust spd;
 
-	doVectoring(Torque_Req, &adj);
+	doVectoring( Torque_Req, &adj, &spd );
 
 //	if ( testmotorslast ) InverterSetTorque(&adj, 1000);
 

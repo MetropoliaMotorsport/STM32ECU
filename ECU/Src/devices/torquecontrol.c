@@ -11,11 +11,11 @@
 #include "brake.h"
 #include "timerecu.h"
 #include "inverter.h"
+#include "imu.h"
 
 #ifdef MATLAB
-#include "Controller_design.h"
-//#include "Controller_design_private.h"
-//#include "Controller_design_types.h"
+
+#include "SubsystemModelReference.h"   /* Model's header file */
 #include "rtwtypes.h"
 #endif
 
@@ -25,62 +25,101 @@
 int initVectoring( void )
 {
 #ifdef MATLAB
-	  Controller_design_initialize();
+	  SubsystemModelReference_initialize();
 #endif
 	return 0;
 }
 
-void doVectoring(int16_t Torque_Req, vectoradjust * adj)
+void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 {
 #ifdef MATLAB
-	 rtU.Steering = ADCState.SteeringAngle;
-	 rtU.Modeselection = CarState.TorqueVectoringMode;
-	 rtU.Yawrate =  IMUReceived.GyroZ*0.001;
-	 rtU.velocity =  IMUReceived.VelBodyX*0.01;
+	rtU.bus_Vehicle_velocity = IMUReceived.VelBodyX*0.01;
+	rtU.bus_Vehicle_acceleration =  IMUReceived.AccelX*0.01;
 
-	 if ( rtU.velocity < 2.7 ) rtU.velocity = 0;
+	rtU.bus_rotation_speed_FL = getInvState(invFL)->Speed * 0.10472; // convert wheel rpm to rad/s
+	rtU.bus_rotation_speed_FR = getInvState(invFR)->Speed * 0.10472;
+	rtU.bus_rotation_speed_RL = getInvState(invRL)->Speed * 0.10472;
+	rtU.bus_rotation_speed_RR = getInvState(invRR)->Speed * 0.10472;
 
-	 // run the matlab code.
-	 Controller_design_step();
+	rtU.bus_Torque_FL = Torque_Req;
+	rtU.bus_Torque_FR = Torque_Req;
+	rtU.bus_Torque_RL = Torque_Req;
+	rtU.bus_Torque_RR = Torque_Req;
 
-	 CAN_SendTorq2( /*rtY.val1*/ IMUReceived.GyroZ, rtY.val2, rtY.val3, IMUReceived.VelBodyX);
+	rtU.bus_Vehicle_yaw_rate = IMUReceived.GyroZ*0.001;
+	rtU.bus_Vehicle_str_ang = ADCState.SteeringAngle;
 
-	 int maxreq = 0;
+	rtU.bus_Pedal_torque_position = ADCState.Torque_Req_R_Percent/10.0;
 
-	 //maxreq=Torque_Req*3; //(1000*(CarState.Torque_Req_CurrentMax*3)/65);
+	rtU.bus_Traction_control_active = getEEPROMBlock(0)->TorqueVectoring;;
+	rtU.bus_Velocity_control_active = getEEPROMBlock(0)->TorqueVectoring;;
+	rtU.bus_feedback_active = 1;
+	rtU.bus_feedforward_active = 1;
+	rtU.bus_Torque_vectoring_active = 0;//getEEPROMBlock(0)->TorqueVectoring;
 
-	 // limit max actual possible request per wheel depending on current max power request
-	 if ( CarState.Torque_Req_CurrentMax > 0 && CarState.Torque_Req_CurrentMax <=20 )
-	     maxreq=Torque_Req*3;
+/*
+	if ( rtU.velocity < 2.7 ) rtU.velocity = 0;
+*/
+	// run the matlab code.
+	SubsystemModelReference_step();
 
-	 if ( CarState.Torque_Req_CurrentMax > 20 && CarState.Torque_Req_CurrentMax <= 40 )
-	     maxreq=(1000*45/65);
+	CAN_Send4vals( 0x7CD, rtY.TCS_TCS_FL, rtY.TCS_TCS_FR, rtY.TCS_TCS_RL, rtY.TCS_TCS_RR );
+	CAN_Send4vals( 0x7CE, rtY.TCS_RPMmaxFL, rtY.TCS_RPMmaxFR, rtY.TCS_RPMmaxRL, rtY.TCS_RPMmaxRR );
 
-	 if ( CarState.Torque_Req_CurrentMax > 40  )
-	     maxreq=1000;
+	int maxreq = 0;
 
-	 adj->RL = Torque_Req+(rtY.tql*1000/65); // take requested adjustment in nm and convert it to to actual request format.
-	 if ( adj->RL > ( Torque_Req * 3 ) ) adj->RL = Torque_Req*3; // limit adjustment to max 3x original request.
+	//maxreq=Torque_Req*3; //(1000*(CarState.Torque_Req_CurrentMax*3)/65);
 
-	 adj->FL = Torque_Req+(rtY.tql*1000/65); // take requested adjustment in nm and convert it to to actual request format.
-	 if ( adj->FL > ( Torque_Req * 3 ) ) adj->FL = Torque_Req*3; // limit adjustment to max 3x original request.
+	/*
+
+	// limit max actual possible request per wheel depending on current max power request
+	if ( CarState.Torque_Req_CurrentMax > 0 && CarState.Torque_Req_CurrentMax <=20 )
+		maxreq=Torque_Req*3;
+
+	if ( CarState.Torque_Req_CurrentMax > 20 && CarState.Torque_Req_CurrentMax <= 40 )
+		maxreq=(1000*45/65);
+
+	if ( CarState.Torque_Req_CurrentMax > 40  )
+		maxreq=1000;
 
 
-	 adj->RR = Torque_Req-(rtY.tqr*1000/65);
-	 if ( adj->RR > ( Torque_Req * 3 ) ) adj->RR = Torque_Req*3;
+	adj->RL = Torque_Req+(rtY.tql*1000/65); // take requested adjustment in nm and convert it to to actual request format.
+	if ( adj->RL > ( Torque_Req * 3 ) ) adj->RL = Torque_Req*3; // limit adjustment to max 3x original request.
 
-	 adj->FR = Torque_Req-(rtY.tqr*1000/65);
-	 if ( adj->FR > ( Torque_Req * 3 ) ) adj->FR = Torque_Req*3;
+	adj->FL = Torque_Req+(rtY.tql*1000/65); // take requested adjustment in nm and convert it to to actual request format.
+	if ( adj->FL > ( Torque_Req * 3 ) ) adj->FL = Torque_Req*3; // limit adjustment to max 3x original request.
 
-	 if ( adj->RL < 0 ) adj->RL = 0;
-	 if ( adj->RR < 0 ) adj->RR = 0;
-	 if ( adj->FL < 0 ) adj->FL = 0;
-	 if ( adj->FR < 0 ) adj->FR = 0;
 
-	 if	( adj->RL > maxreq ) adj->RL = maxreq;
-	 if ( adj->RR > maxreq ) adj->RR = maxreq;
-	 if	( adj->FL > maxreq ) adj->FL = maxreq;
-	 if ( adj->FR > maxreq ) adj->FR = maxreq;
+	adj->RR = Torque_Req-(rtY.tqr*1000/65);
+	if ( adj->RR > ( Torque_Req * 3 ) ) adj->RR = Torque_Req*3;
+
+	adj->FR = Torque_Req-(rtY.tqr*1000/65);
+	if ( adj->FR > ( Torque_Req * 3 ) ) adj->FR = Torque_Req*3;
+
+	if ( adj->RL < 0 ) adj->RL = 0;
+	if ( adj->RR < 0 ) adj->RR = 0;
+	if ( adj->FL < 0 ) adj->FL = 0;
+	if ( adj->FR < 0 ) adj->FR = 0;
+
+	if	( adj->RL > maxreq ) adj->RL = maxreq;
+	if ( adj->RR > maxreq ) adj->RR = maxreq;
+	if	( adj->FL > maxreq ) adj->FL = maxreq;
+	if ( adj->FR > maxreq ) adj->FR = maxreq;
+
+*/
+
+	// don't actually use output values yet.
+	adj->FL = Torque_Req * NMSCALING;
+	adj->FR = Torque_Req * NMSCALING;
+	adj->RL = Torque_Req * NMSCALING;
+	adj->RR = Torque_Req * NMSCALING;
+
+	uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
+
+	spd->FL =maxSpeed;
+	spd->FR =maxSpeed;
+	spd->RL =maxSpeed;
+	spd->RR =maxSpeed;
 
 #else
   #ifdef SIMPLETORQUEVECTOR
@@ -89,51 +128,58 @@ void doVectoring(int16_t Torque_Req, vectoradjust * adj)
 	  * Full(=10Nm) torque change should be reached linearily at >90/<-90 of steering angle.
 	  */
 	 // outdated, still for RWD
-		int TorqueVectorAddition;
+	int TorqueVectorAddition;
 
-		// ensure torque request altering only happens when a torque request actually exists.
+	// ensure torque request altering only happens when a torque request actually exists.
 
-		if ( CarState.TorqueVectoring && Torque_Req > 0 && ADCState.Torque_Req_R_Percent > 0 && ADCState.Torque_Req_L_Percent > 0 && abs(ADCState.SteeringAngle) > 40 )
-		{
-			TorqueVectorAddition = ConvertNMToRequest(getTorqueVector(ADCState.SteeringAngle))/10; // returns 10x NM request.
+	if ( CarState.TorqueVectoring && Torque_Req > 0 && ADCState.Torque_Req_R_Percent > 0 && ADCState.Torque_Req_L_Percent > 0 && abs(ADCState.SteeringAngle) > 40 )
+	{
+		TorqueVectorAddition = ConvertNMToRequest(getTorqueVector(ADCState.SteeringAngle))/10; // returns 10x NM request.
 
-			if  ( abs(TorqueVectorAddition) > Torque_Req ){
-				if ( TorqueVectorAddition < 0 ) TorqueVectorAddition = 0-Torque_Req;
-				else TorqueVectorAddition = Torque_Req;
-			}
-
-			int Left = Torque_Req + TorqueVectorAddition;
-			int Right = Torque_Req - TorqueVectorAddition;
-			// also check wheel speed.
-
-			if ( Left > 1000 ) Left = 1000;
-			if ( Right > 1000 ) Right = 1000;
-			if ( Left < 0 ) Left = 0;
-			if ( Right < 0 ) Right = 0;
-
-			adj->RL = Left;
-			adj->RR = Right;
-			adj->FL = 0;
-			adj->FR = 0;
-
-			return 1; // we modified.
+		if  ( abs(TorqueVectorAddition) > Torque_Req ){
+			if ( TorqueVectorAddition < 0 ) TorqueVectorAddition = 0-Torque_Req;
+			else TorqueVectorAddition = Torque_Req;
 		}
-		else
-		{
-			adj->RL = Left;
-			adj->RR = Right;
-			adj->FL = 0;
-			adj->FR = 0;
-			return 0; // we set to zero.
-		}
+
+		int Left = Torque_Req + TorqueVectorAddition;
+		int Right = Torque_Req - TorqueVectorAddition;
+		// also check wheel speed.
+
+		if ( Left > 1000 ) Left = 1000;
+		if ( Right > 1000 ) Right = 1000;
+		if ( Left < 0 ) Left = 0;
+		if ( Right < 0 ) Right = 0;
+
+		adj->RL = Left;
+		adj->RR = Right;
+		adj->FL = 0;
+		adj->FR = 0;
+
+		return 1; // we modified.
+	}
+	else
+	{
+		adj->RL = Left;
+		adj->RR = Right;
+		adj->FL = 0;
+		adj->FR = 0;
+		return 0; // we set to zero.
+	}
 
 
   #else
-	 // no actual adjustment for now.
-	 adj->FL = Torque_Req;
-	 adj->FR = Torque_Req;
-	 adj->RL = Torque_Req;
-	 adj->RR = Torque_Req;
+	// no actual adjustment for now.
+	adj->FL = Torque_Req;
+	adj->FR = Torque_Req;
+	adj->RL = Torque_Req;
+	adj->RR = Torque_Req;
+
+	uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
+
+	spd->FL =maxSpeed;
+	spd->FR =maxSpeed;
+	spd->RL =maxSpeed;
+	spd->RR =maxSpeed;
   #endif
 #endif
 }
@@ -143,7 +189,7 @@ void doVectoring(int16_t Torque_Req, vectoradjust * adj)
  * APPS Check, Should ignore regen sensor and only use physical brake.
  *
  */
-int16_t PedalTorqueRequest( void ) // returns current Nm request amount.
+float PedalTorqueRequest( void ) // returns current Nm request amount.
 {
 	//T 11.8.8:  If an implausibility occurs between the values of the APPSs and persists for more than 100 ms
 
@@ -290,13 +336,8 @@ int16_t PedalTorqueRequest( void ) // returns current Nm request amount.
 	// calculate actual torque request
 	if ( Torque_drivers_request != 0)
 	{
-	//	return getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax//*0x4000)/1000;
-
-		return (getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax*NMSCALING)/1000; //  *0.01/10*1000 unnecessary calculations, works out to 1, gets rid of floating point
-
-		// return torquerequest;// Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
+		return (getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax)/1000.0; //*NMSCALING)/1000;
 	}
-	  //	  return getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax*0.01)*1000/65)/10; // Torque_Req_R_Percent is 1000=100%, so div 10 to give actual value.
 	else
 	{
 		return 0;

@@ -995,6 +995,21 @@ char CAN_SendErrors( void )
 	return 1;
 }
 
+char CAN_Send4vals( uint16_t id, uint16_t val1, uint16_t val2, uint16_t val3, uint16_t val4 )
+{
+	uint8_t CANTxData[8] = { getByte(val1, 0), getByte(val1, 1),
+							 getByte(val2, 0), getByte(val2, 1),
+							 getByte(val3, 0), getByte(val3, 1),
+							 getByte(val4, 0), getByte(val4, 1)};
+	return CAN1Send( id, 8, CANTxData );
+}
+
+char CAN_SendTorq2( int16_t val1, uint16_t val2, uint16_t val3, int16_t val4)
+{
+	uint8_t CANTxData[8] = { getByte(val1, 0), getByte(val1, 1), getByte(val2, 0), getByte(val2, 1), getByte(val3, 0), getByte(val3, 1), getByte(val4, 0), getByte(val4, 1)};
+	CAN1Send( 0x7CE, 8, CANTxData );
+}
+
 
 char CANLogDataSlow( void )
 {

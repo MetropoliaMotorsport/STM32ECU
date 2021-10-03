@@ -71,6 +71,11 @@ typedef volatile struct IMUDataType {
 	int16_t VelAccE; // *10^-2		    East
 	int16_t VelAccD; // *10^-2			Down
 
+	//0x139
+	int16_t VelBodyX; // *10^-2 m/s
+	int16_t VelBodyY; // *10^-2 m/s
+	int16_t VelBodyZ; // *10^-2 m/s
+
 	//0x177
 	uint16_t Lat_Accur; // *10^-2 m
 	uint16_t LONG_Accur; // *10^-2
@@ -101,6 +106,7 @@ extern IMUData IMUReceived;
 #define IMUEuler_ID				(0x132)
 #define IMUVel_ID				(0x137)
 #define IMUVelAcc_ID			(0x138)
+#define IMUVELBody_ID			(0x139)
 #define IMUGPS_ID				(0x177)
 #define IMUAUTO_ID				(0x220)
 

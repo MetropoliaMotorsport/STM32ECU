@@ -38,18 +38,25 @@
 
 // define which wheel is which, allows to keep the order same within arrays without being concerned about order of connection.
 
-#define InverterRL_COBID			(Inverter1_NodeID) // which inverter is it on.
-#define InverterRL_Channel			(0)				   // is it motor A or B
+#define InverterRL_COBID			(Inverter2_NodeID) // which inverter is it on.
+#define InverterRL_Channel			(1)				   // is it motor A or B
 #define InverterRR_COBID			(Inverter1_NodeID)
 #define InverterRR_Channel			(1)
 
 #define InverterFL_COBID			(Inverter2_NodeID)
 #define InverterFL_Channel			(0)
-#define InverterFR_COBID			(Inverter2_NodeID)
-#define InverterFR_Channel			(1)
+#define InverterFR_COBID			(Inverter1_NodeID)
+#define InverterFR_Channel			(0)
+
+#define invFL						(1+InverterFL_Channel)
+#define invFR						(0+InverterFR_Channel)
+#define invRL						(1+InverterRL_Channel)
+#define invRR						(0+InverterRR_Channel)
+
 
 #define TORQUESLOPESCALING			(90)
 #define NMSCALING					(90)
+#define SPEEDSCALING				(0x4000)
 
 #endif /* LENZEINVERTER_H_ */
 

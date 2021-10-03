@@ -79,7 +79,7 @@ void InverterAllowTorque(uint8_t inv, bool allow );
 void InverterAllowTorqueAll( bool allow );
 InverterState_t * getInvState(uint8_t inv );
 bool invertersStateCheck( DeviceStatus state );
-void InverterSetTorque( vectoradjust *adj, int16_t MaxSpeed );
+void InverterSetTorque( vectoradjust *adj, speedadjust *spd );
 int InverterGetSpeed( void );
 void InverterSetTorqueInd( uint8_t inv, int16_t req, int16_t speed );
 

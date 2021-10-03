@@ -238,23 +238,24 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 #endif
 
 		vectoradjust adj;
+		speedadjust spd;
 #ifdef REQUIRETS
 		if ( CheckTSOff() || Shutdown.AIRp )
 		{
 			CarState.Torque_Req = 0;
 		}
 #endif
-		doVectoring( CarState.Torque_Req, &adj );
+		doVectoring( CarState.Torque_Req, &adj, &spd );
 
         if ( CarState.AllowRegen ) // only check for regen if alowed.
         {
     		if ( ADCState.Regen_Percent > 500 && getEEPROMBlock(0)->Regen ) // no torque request, but we do have a regen request, return that.
     		{
-    			CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) * NMSCALING ) / 1000 ) ;
-    			adj.FL = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) * NMSCALING ) / 1000 );
-    			adj.FR = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) * NMSCALING ) / 1000 );
-    			adj.RL = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) * NMSCALING ) / 1000 );
-    			adj.RR = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) * NMSCALING ) / 1000 );
+    			CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 ) ;
+    			adj.FL = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
+    			adj.FR = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
+    			adj.RL = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
+    			adj.RR = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
     		}
         }
 
@@ -263,7 +264,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		else
 			setOutput(TSLED,Off);
 
-		InverterSetTorque(&adj, getEEPROMBlock(0)->maxRpm);
+		InverterSetTorque(&adj, &spd);
 	}
 
 	// if drop status due to error, check if recoverable, or if limp mode possible.

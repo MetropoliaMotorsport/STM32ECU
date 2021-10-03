@@ -88,17 +88,17 @@ void InverterAllowTorqueAll( bool allow )
 	}
 }
 
-void InverterSetTorque( vectoradjust *adj, int16_t MaxSpeed )
+void InverterSetTorque( vectoradjust *adj, speedadjust *spd )
 {
 	xSemaphoreTake(InvUpdating, portMAX_DELAY);
 	InverterState[RearLeftInverter].Torque_Req = adj->RL;
 	InverterState[FrontLeftInverter].Torque_Req = adj->FL;
 	InverterState[RearRightInverter].Torque_Req = adj->RR;
 	InverterState[FrontRightInverter].Torque_Req = adj->FR;
-	InverterState[RearLeftInverter].MaxSpeed = MaxSpeed; // convert to right value as needed.
-	InverterState[FrontLeftInverter].MaxSpeed = MaxSpeed;
-	InverterState[RearRightInverter].MaxSpeed = MaxSpeed;
-	InverterState[FrontRightInverter].MaxSpeed = MaxSpeed;
+	InverterState[RearLeftInverter].MaxSpeed = spd->RL; // convert to right value as needed.
+	InverterState[FrontLeftInverter].MaxSpeed = spd->FL;
+	InverterState[RearRightInverter].MaxSpeed = spd->RR;
+	InverterState[FrontRightInverter].MaxSpeed = spd->FR;
 	xSemaphoreGive(InvUpdating);
 }
 
