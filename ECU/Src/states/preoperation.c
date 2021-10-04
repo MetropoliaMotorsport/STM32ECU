@@ -448,7 +448,7 @@ int PreOperationState( uint32_t OperationLoops  )
 	setCurConfig();
 
 	// allow APPS checking before RTDM
-	int16_t Torque_Req = PedalTorqueRequest();
+	float Torque_Req = PedalTorqueRequest();
 
 	vectoradjust adj;
 	speedadjust spd;
