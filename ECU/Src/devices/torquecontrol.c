@@ -63,13 +63,13 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	// run the matlab code.
 	SubsystemModelReference_step();
 
-	CAN_Send4vals( 0x7CD,
+	CAN_Send4vals( 0x7CE,
 			(int16_t)rtU.bus_Vehicle_velocity,
 			(int16_t)rtU.bus_Vehicle_acceleration,
 			(int16_t)rtU.bus_Vehicle_yaw_rate,
 			0);
-	CAN_Send4vals( 0x7CE, rtY.TCS_TCS_FL*NMSCALING, rtY.TCS_TCS_FR*NMSCALING, rtY.TCS_TCS_RL*NMSCALING, rtY.TCS_TCS_RR*NMSCALING);
-	CAN_Send4vals( 0x7CF, rtY.TCS_RPMmaxFL, rtY.TCS_RPMmaxFR, rtY.TCS_RPMmaxRL, rtY.TCS_RPMmaxRR );
+	CAN_Send4vals( 0x7CF, rtY.TCS_TCS_FL*NMSCALING, rtY.TCS_TCS_FR*NMSCALING, rtY.TCS_TCS_RL*NMSCALING, rtY.TCS_TCS_RR*NMSCALING);
+	CAN_Send4vals( 0x7D0, rtY.TCS_RPMmaxFL, rtY.TCS_RPMmaxFR, rtY.TCS_RPMmaxRL, rtY.TCS_RPMmaxRR );
 
 
 	int maxreq = 0;
