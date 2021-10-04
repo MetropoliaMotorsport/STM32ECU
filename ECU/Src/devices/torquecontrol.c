@@ -51,11 +51,11 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 	rtU.bus_Pedal_torque_position = ADCState.Torque_Req_R_Percent/10.0;
 
-	rtU.bus_Traction_control_active = getEEPROMBlock(0)->TorqueVectoring;;
-	rtU.bus_Velocity_control_active = getEEPROMBlock(0)->TorqueVectoring;;
+	rtU.bus_Traction_control_active = 1;//getEEPROMBlock(0)->TorqueVectoring;;
+	rtU.bus_Velocity_control_active = 1;//getEEPROMBlock(0)->TorqueVectoring;;
 	rtU.bus_feedback_active = 1;
 	rtU.bus_feedforward_active = 1;
-	rtU.bus_Torque_vectoring_active = 0;//getEEPROMBlock(0)->TorqueVectoring;
+	rtU.bus_Torque_vectoring_active = 1;//getEEPROMBlock(0)->TorqueVectoring;
 
 /*
 	if ( rtU.velocity < 2.7 ) rtU.velocity = 0;
@@ -70,7 +70,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 			0);
 	CAN_Send4vals( 0x7CF, rtY.TCS_TCS_FL*NMSCALING, rtY.TCS_TCS_FR*NMSCALING, rtY.TCS_TCS_RL*NMSCALING, rtY.TCS_TCS_RR*NMSCALING);
 	CAN_Send4vals( 0x7D0, rtY.TCS_RPMmaxFL, rtY.TCS_RPMmaxFR, rtY.TCS_RPMmaxRL, rtY.TCS_RPMmaxRR );
-
+	CAN_Send4vals( 0x7D1, rtY.TV_TV_torqueFL*NMSCALING, rtY.TV_TV_torqueFR*NMSCALING, rtY.TV_TV_torqueRL*NMSCALING, rtY.TV_TV_torqueRR*NMSCALING );
 
 	int maxreq = 0;
 
