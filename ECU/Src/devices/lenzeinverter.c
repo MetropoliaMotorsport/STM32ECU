@@ -39,49 +39,49 @@ bool getInvSDOSet( void );
 
 //		{ TimeoutFunction, ID, DLC, receivefunction, dotimeout, timeout, index.
 CANData InverterCANErr[MOTORCOUNT]= {
-		{ NULL, InverterRL_COBID+COBERR_ID + ( InverterRL_Channel * LENZE_MOTORB_OFFSET ), 8, processINVError, NULL, 0, 0 },
-		{ NULL, InverterRR_COBID+COBERR_ID + ( InverterRR_Channel * LENZE_MOTORB_OFFSET ), 8, processINVError, NULL, 0, 1 },
+		{ NULL, Inverter1_NodeID+COBERR_ID, 				      8, processINVError, NULL, 0, 0 },
+		{ NULL, Inverter1_NodeID+COBERR_ID + LENZE_MOTORB_OFFSET, 8, processINVError, NULL, 0, 1 },
 #if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID+COBERR_ID + ( InverterFL_Channel * LENZE_MOTORB_OFFSET ), 8, processINVError, NULL, 0, 2 },
-		{ NULL, InverterFR_COBID+COBERR_ID + ( InverterFR_Channel * LENZE_MOTORB_OFFSET ), 8, processINVError, NULL, 0, 3 }
+		{ NULL, Inverter2_NodeID+COBERR_ID, 				      8, processINVError, NULL, 0, 2 },
+		{ NULL, Inverter2_NodeID+COBERR_ID + LENZE_MOTORB_OFFSET, 8, processINVError, NULL, 0, 3 }
 #endif
 };
 
 #define TPDSTATUS_ID 			( LENZE_TPDO2_ID )
 CANData InverterCANMotorStatus[MOTORCOUNT] = { // status values
-		{ NULL, InverterRL_COBID + TPDSTATUS_ID + ( InverterRL_Channel * 0x100 ), 8, processINVStatus, NULL, 0, 0 },
-		{ NULL, InverterRR_COBID + TPDSTATUS_ID + ( InverterRR_Channel * 0x100 ), 8, processINVStatus, NULL, 0, 1 },
+		{ NULL, Inverter1_NodeID + TPDSTATUS_ID, 		 8, processINVStatus, NULL, 0, 0 },
+		{ NULL, Inverter1_NodeID + TPDSTATUS_ID + 0x100, 8, processINVStatus, NULL, 0, 1 },
 #if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID + TPDSTATUS_ID + ( InverterFL_Channel * 0x100 ), 8, processINVStatus, NULL, 0, 2 },
-		{ NULL, InverterFR_COBID + TPDSTATUS_ID + ( InverterFR_Channel * 0x100 ), 8, processINVStatus, NULL, 0, 3 }
+		{ NULL, Inverter2_NodeID + TPDSTATUS_ID,		 8, processINVStatus, NULL, 0, 2 },
+		{ NULL, Inverter2_NodeID + TPDSTATUS_ID + 0x100, 8, processINVStatus, NULL, 0, 3 }
 #endif
 };
 
 #define TPDVal1_ID				( LENZE_TPDO3_ID )
 CANData InverterCANMotorValues1[MOTORCOUNT] = { // speed/torque
-		{ NULL, InverterRL_COBID + TPDVal1_ID + ( InverterRL_Channel * 0x100 ), 8, processINVValues1, NULL, INVERTERTIMEOUT, 0 },
-		{ NULL, InverterRR_COBID + TPDVal1_ID + ( InverterRR_Channel * 0x100 ), 8, processINVValues1, NULL, INVERTERTIMEOUT, 1 },
+		{ NULL, Inverter1_NodeID + TPDVal1_ID,         8, processINVValues1, NULL, INVERTERTIMEOUT, 0 },
+		{ NULL, Inverter1_NodeID + TPDVal1_ID + 0x100, 8, processINVValues1, NULL, INVERTERTIMEOUT, 1 },
 #if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID + TPDVal1_ID + ( InverterFL_Channel * 0x100 ), 8, processINVValues1, NULL, INVERTERTIMEOUT, 2 },
-		{ NULL, InverterFR_COBID + TPDVal1_ID + ( InverterFR_Channel * 0x100 ), 8, processINVValues1, NULL, INVERTERTIMEOUT, 3 }
+		{ NULL, Inverter2_NodeID + TPDVal1_ID, 		   8, processINVValues1, NULL, INVERTERTIMEOUT, 2 },
+		{ NULL, Inverter2_NodeID + TPDVal1_ID + 0x100, 8, processINVValues1, NULL, INVERTERTIMEOUT, 3 }
 #endif
 };
 
 #define TPDVal2_ID				( LENZE_TPDO4_ID )
 CANData InverterCANMotorValues2[MOTORCOUNT] = { // speed
-		{ NULL, InverterRL_COBID + TPDVal2_ID + ( InverterRL_Channel * 0x100 ), 8, processINVValues2, NULL, 0, 0 },
-		{ NULL, InverterRR_COBID + TPDVal2_ID + ( InverterRR_Channel * 0x100 ), 8, processINVValues2, NULL, 0, 1 },
+		{ NULL, Inverter1_NodeID + TPDVal2_ID,		   8, processINVValues2, NULL, 0, 0 },
+		{ NULL, Inverter1_NodeID + TPDVal2_ID + 0x100, 8, processINVValues2, NULL, 0, 1 },
 #if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID + TPDVal2_ID + ( InverterFL_Channel * 0x100 ), 8, processINVValues2, NULL, 0, 2 },
-		{ NULL, InverterFR_COBID + TPDVal2_ID + ( InverterFR_Channel * 0x100 ), 8, processINVValues2, NULL, 0, 3 }
+		{ NULL, Inverter2_NodeID + TPDVal2_ID, 		  8, processINVValues2, NULL, 0, 2 },
+		{ NULL, Inverter2_NodeID + TPDVal2_ID + 0x100, 8, processINVValues2, NULL, 0, 3 }
 #endif
 };
 
 
 CANData InverterCANNMT[INVERTERCOUNT] = {
-		{ NULL, InverterRL_COBID+COBNMT_ID + ( InverterRL_Channel * 0x100 ), 2, processINVNMT, NULL, 0, 0 },
+		{ NULL, Inverter1_NodeID+COBNMT_ID, 2, processINVNMT, NULL, 0, 0 },
 #if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID+COBNMT_ID + ( InverterFL_Channel * 0x100 ), 2, processINVNMT, NULL, 0, 2 },
+		{ NULL, Inverter2_NodeID+COBNMT_ID, 2, processINVNMT, NULL, 0, 2 },
 #endif
 };
 
@@ -96,11 +96,11 @@ CANData InverterCANAPPCStatus[INVERTERCOUNT] = {
 
 // use APPC RDO1 sending as trigger to signify online.
 CANData InverterCANMotorRDO[MOTORCOUNT] = { // torque
-		{ NULL, InverterRL_COBID+LENZE_RDO_ID + ( InverterRL_Channel * LENZE_MOTORB_OFFSET ), 8, processINVRDO, NULL, 0, 0 },
-		{ NULL, InverterRR_COBID+LENZE_RDO_ID + ( InverterRR_Channel * LENZE_MOTORB_OFFSET ), 8, processINVRDO, NULL, 0, 1 },
+		{ NULL, Inverter1_NodeID+LENZE_RDO_ID, 						 8, processINVRDO, NULL, 0, 0 },
+		{ NULL, Inverter1_NodeID+LENZE_RDO_ID + LENZE_MOTORB_OFFSET, 8, processINVRDO, NULL, 0, 1 },
 #if INVERTERCOUNT > 1
-		{ NULL, InverterFL_COBID+LENZE_RDO_ID + ( InverterFL_Channel * LENZE_MOTORB_OFFSET ), 8, processINVRDO, NULL, 0, 2 },
-		{ NULL, InverterFR_COBID+LENZE_RDO_ID + ( InverterFR_Channel * LENZE_MOTORB_OFFSET ), 8, processINVRDO, NULL, 0, 3 },
+		{ NULL, Inverter2_NodeID+LENZE_RDO_ID, 						 8, processINVRDO, NULL, 0, 2 },
+		{ NULL, Inverter2_NodeID+LENZE_RDO_ID + LENZE_MOTORB_OFFSET, 8, processINVRDO, NULL, 0, 3 },
 #endif
 };
 
@@ -112,9 +112,9 @@ CANData InverterCANAPPCRDO[INVERTERCOUNT] = { // torque
 };
 
 CANData InverterCANAPPCErr[INVERTERCOUNT]= {
-		{ NULL, InverterRL_COBID+COBERR_ID+LENZE_APPC_OFFSET + ( InverterRL_Channel * 0x100 ), 8, processAPPCError, NULL, 0, 0 },
+		{ NULL, Inverter1_NodeID+COBERR_ID+LENZE_APPC_OFFSET, 8, processAPPCError, NULL, 0, 0 },
 #if MOTORCOUNT > 2
-		{ NULL, InverterFL_COBID+COBERR_ID+LENZE_APPC_OFFSET + ( InverterFL_Channel * 0x100 ), 8, processAPPCError, NULL, 0, 2 },
+		{ NULL, Inverter2_NodeID+COBERR_ID+LENZE_APPC_OFFSET, 8, processAPPCError, NULL, 0, 2 },
 #endif
 };
 

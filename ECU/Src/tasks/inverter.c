@@ -678,18 +678,18 @@ void resetInv( void )
 		Errors.InvAllowReset[i] = 1;
 	}
 
-	InverterState[0].COBID = InverterRL_COBID;
-	InverterState[1].COBID = InverterRR_COBID;
+	InverterState[0].COBID = Inverter1_NodeID;
+	InverterState[1].COBID = Inverter1_NodeID;
 
-	InverterState[0].MCChannel = InverterRL_Channel;
-	InverterState[1].MCChannel = InverterRR_Channel;
+	InverterState[0].MCChannel = 0;
+	InverterState[1].MCChannel = 1;
 
 #if MOTORCOUNT > 2
-	InverterState[2].COBID = InverterFL_COBID;
-	InverterState[3].COBID = InverterFR_COBID;
+	InverterState[2].COBID = Inverter2_NodeID;
+	InverterState[3].COBID = Inverter2_NodeID;
 
-	InverterState[2].MCChannel = InverterFL_Channel;
-	InverterState[3].MCChannel = InverterFR_Channel;
+	InverterState[2].MCChannel = 0;
+	InverterState[3].MCChannel = 1;
 #endif
 
 	Errors.InverterError = 0; // reset logged errors.
