@@ -115,10 +115,10 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 */
 
 	// don't actually use output values yet.
-	adj->FL = Torque_Req * NMSCALING;
-	adj->FR = Torque_Req * NMSCALING;
-	adj->RL = Torque_Req * NMSCALING;
-	adj->RR = Torque_Req * NMSCALING;
+	adj->FL = Torque_Req;
+	adj->FR = Torque_Req;
+	adj->RL = Torque_Req;
+	adj->RR = Torque_Req;
 
 	uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
 
