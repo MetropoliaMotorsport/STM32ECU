@@ -52,7 +52,7 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	bool AllowReset;
 
 	int16_t MaxSpeed;
-	int16_t Torque_Req;
+	float Torque_Req;
 	int16_t InvTorque;
 	int16_t InvCurrent;
 	uint32_t errortime;
@@ -81,7 +81,7 @@ InverterState_t * getInvState(uint8_t inv );
 bool invertersStateCheck( DeviceStatus state );
 void InverterSetTorque( vectoradjust *adj, speedadjust *spd );
 int InverterGetSpeed( void );
-void InverterSetTorqueInd( uint8_t inv, int16_t req, int16_t speed );
+void InverterSetTorqueInd( uint8_t inv, float req, int16_t speed );
 
 
 bool registerInverterCAN( void );

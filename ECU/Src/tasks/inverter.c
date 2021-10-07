@@ -102,7 +102,7 @@ void InverterSetTorque( vectoradjust *adj, speedadjust *spd )
 	xSemaphoreGive(InvUpdating);
 }
 
-void InverterSetTorqueInd( uint8_t inv, int16_t req, int16_t speed )
+void InverterSetTorqueInd( uint8_t inv, float req, int16_t speed )
 {
 	xSemaphoreTake(InvUpdating, portMAX_DELAY);
 	InverterState[inv].Torque_Req = req;

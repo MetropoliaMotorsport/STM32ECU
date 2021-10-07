@@ -400,7 +400,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 //					if ( percR > 1000 )
 //						percR = 1000;
 
-					int16_t requestNm = (percR*maxNm*NMSCALING)/1000;//*0x4000)/1000; // speed is 0x4000 scaling.
+					float requestNm = (percR*maxNm)/1000;//*0x4000)/1000; // speed is 0x4000 scaling.
 
 					for ( int i=0;i<MOTORCOUNT;i++)
 					{
@@ -411,7 +411,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 					}
 
 					UARTprintf("Pedal: r%d%%, reqNm %d, raw %d, speed %d, maxNm %d, to MC[%s] 0[I%dc M%dc] 1[I%dc M%dc] 2[I%dc M%dc] 3[I%dc M%dc]\r\n ",
-							percR/10, requestNm/NMSCALING, requestNm, speed, maxNm, getMotorsEnabledStr(),
+							percR/10, (int16_t)requestNm, requestNm, speed, maxNm, getMotorsEnabledStr(),
 							getInvState(0)->InvTemp, getInvState(0)->MotorTemp,
 							getInvState(1)->InvTemp, getInvState(1)->MotorTemp,
 							getInvState(2)->InvTemp, getInvState(2)->MotorTemp,
