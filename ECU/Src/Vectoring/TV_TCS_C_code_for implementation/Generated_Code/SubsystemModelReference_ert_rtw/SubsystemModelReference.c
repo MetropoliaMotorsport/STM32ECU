@@ -774,7 +774,7 @@ void SubsystemModelReference_step(void)
    *  Constant: '<S12>/Constant'
    *  Inport: '<Root>/bus_Vehicle_str_ang'
    */
-  rtb_Product_i = rtU.bus_Vehicle_str_ang * 4.0;
+  rtb_Product_i = rtU.bus_Vehicle_str_ang * 10.0;
 
   /* Saturate: '<S12>/Yaw moment saturation' */
   if (rtb_Product_i > 3600.0) {
@@ -813,7 +813,7 @@ void SubsystemModelReference_step(void)
   /* Product: '<S10>/Divide1' incorporates:
    *  Constant: '<S10>/Constant'
    */
-  rtb_Desiredtorquedifferenceatfr = rtb_Gain1 / 14.399999999999999;
+  rtb_Desiredtorquedifferenceatfr = rtb_Gain1 / 14.82;
 
   /* Gain: '<S7>/Gain' */
   rtb_Gain_k = 0.5 * rtb_Desiredtorquedifferenceatfr;
@@ -827,7 +827,7 @@ void SubsystemModelReference_step(void)
   /* Product: '<S10>/Divide2' incorporates:
    *  Constant: '<S10>/Constant1'
    */
-  rtb_Desiredtorquedifferenceatre = rtb_Gain_e / 14.399999999999999;
+  rtb_Desiredtorquedifferenceatre = rtb_Gain_e / 14.82;
 
   /* Gain: '<S7>/Gain1' */
   rtb_Gain1_a = 0.5 * rtb_Desiredtorquedifferenceatre;
@@ -1610,7 +1610,7 @@ void SubsystemModelReference_step(void)
    *  Constant: '<S24>/Constant2'
    *  Constant: '<S24>/Constant5'
    */
-  rtb_Product2_a = rtb_Product_m * 30.0 * 12.0;
+  rtb_Product2_a = rtb_Product_m * 30.0 * 12.35;
 
   /* Product: '<S24>/Divide' */
   rtb_Divide_m4 = rtb_Product2_a / 0.6440264939859075;
@@ -1642,7 +1642,7 @@ void SubsystemModelReference_step(void)
    *  Constant: '<S36>/Constant2'
    *  Constant: '<S36>/Constant5'
    */
-  rtb_Product2_m = rtb_Product_mu * 30.0 * 12.0;
+  rtb_Product2_m = rtb_Product_mu * 30.0 * 12.35;
 
   /* Product: '<S36>/Divide' */
   rtb_Divide_f = rtb_Product2_m / 0.6440264939859075;
@@ -1674,7 +1674,7 @@ void SubsystemModelReference_step(void)
    *  Constant: '<S48>/Constant2'
    *  Constant: '<S48>/Constant5'
    */
-  rtb_Product2_d = rtb_Product_g * 30.0 * 12.0;
+  rtb_Product2_d = rtb_Product_g * 30.0 * 12.35;
 
   /* Product: '<S48>/Divide' */
   rtb_Divide_k0 = rtb_Product2_d / 0.6440264939859075;
@@ -1706,7 +1706,7 @@ void SubsystemModelReference_step(void)
    *  Constant: '<S60>/Constant2'
    *  Constant: '<S60>/Constant5'
    */
-  rtb_Product2_f = rtb_Product_o * 30.0 * 12.0;
+  rtb_Product2_f = rtb_Product_o * 30.0 * 12.35;
 
   /* Product: '<S60>/Divide' */
   rtb_Divide_ak = rtb_Product2_f / 0.6440264939859075;
