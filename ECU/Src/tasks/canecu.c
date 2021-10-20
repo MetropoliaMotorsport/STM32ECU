@@ -1058,7 +1058,7 @@ char CANLogDataFast( void )
 
 	for ( int i=0;i<MOTORCOUNT;i++)
 	{
-		int16_t torquereqint = getInvState(i)->Torque_Req;
+		int16_t torquereqint = getInvState(i)->Torque_Req * 90;
 		storeBEint16(torquereqint, &CANTxData[i*2]);
 	}
 
