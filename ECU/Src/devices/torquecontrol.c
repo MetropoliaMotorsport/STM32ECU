@@ -64,9 +64,12 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	SubsystemModelReference_step();
 
 	CAN_Send4vals( 0x7CE,
-			(int16_t)rtU.bus_Vehicle_velocity,
-			(int16_t)rtU.bus_Vehicle_acceleration,
-			(int16_t)rtU.bus_Vehicle_yaw_rate,
+			//(int16_t)rtU.bus_Vehicle_velocity,
+			//(int16_t)rtU.bus_Vehicle_acceleration,
+			//(int16_t)rtU.bus_Vehicle_yaw_rate,
+			IMUReceived.VelBodyX,
+			IMUReceived.AccelX,
+			IMUReceived.GyroZ,
 			0);
 	CAN_Send4vals( 0x7CF, (int16_t)rtY.TCS_TCS_FL*NMSCALING, (int16_t)rtY.TCS_TCS_FR*NMSCALING, (int16_t)rtY.TCS_TCS_RL*NMSCALING, (int16_t)rtY.TCS_TCS_RR*NMSCALING);
 	CAN_Send4vals( 0x7D0, rtY.TCS_RPMmaxFL, rtY.TCS_RPMmaxFR, rtY.TCS_RPMmaxRL, rtY.TCS_RPMmaxRR );
