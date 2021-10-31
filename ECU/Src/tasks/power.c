@@ -95,6 +95,9 @@ void PowerTask(void *argument)
 	bool LVdown = false;
 	uint32_t LVdowntime = 0;
 
+	bool IMDset = false;
+	bool TSOFFset = true;
+
 	while( 1 )
 	{
 		lastpowernodesOnline = powernodesOnline;
@@ -253,22 +256,38 @@ void PowerTask(void *argument)
 
 	    if ( CheckTSOff() )
 	    {
-	    	setOutput(TSOFFLED, On);
+	    	if ( !TSOFFset )
+	    	{
+	    		setOutput(TSOFFLED, On);
+	    		TSOFFset =  true;
+	    	}
 	    }
 	    else
 	    {
-	    	setOutput(TSOFFLED, Off);
+	    	if ( TSOFFset )
+	    	{
+	    		setOutput(TSOFFLED, Off);
+	    		TSOFFset = false;
+	    	}
 	    }
 
 	    if ( CheckIMD() )
 	    {
-	    	setOutput(IMDLED, On);
-	    	setOutput(LED6, On);
+	    	if ( !IMDset )
+	    	{
+				setOutput(IMDLED, On);
+				setOutput(LED6, On);
+				IMDset = true;
+	    	}
 	    }
 	    else
 	    {
-	    	setOutput(IMDLED, Off);
-	    	setOutput(LED6, Off);
+	    	if ( IMDset )
+	    	{
+				setOutput(IMDLED, Off);
+				setOutput(LED6, Off);
+				IMDset = false;
+	    	}
 	    }
 
 		// set the fan PWM speed when seen fan power node online.

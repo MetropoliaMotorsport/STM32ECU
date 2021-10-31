@@ -7,6 +7,7 @@
 
 #include "ecumain.h"
 #include "imu.h"
+#include "debug.h"
 
 bool processIMUStatus( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processIMUUTC( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
@@ -115,6 +116,12 @@ bool processIMUAccel( const uint8_t CANRxData[8], const uint32_t DataLength, con
 	  IMUReceived.AccelY = getLEint16(&CANRxData[2]);
 	  IMUReceived.AccelZ = getLEint16(&CANRxData[4]);
 
+	  static bool sent = false;
+	  if ( !sent )
+	  {
+		  DebugPrintf("First IMU AccelX: %d", IMUReceived.AccelX);
+	  }
+
 	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
 	  return true;
   }
@@ -130,6 +137,12 @@ bool processIMUGyro( const uint8_t CANRxData[8], const uint32_t DataLength, cons
 	  IMUReceived.GyroX = getLEint16(&CANRxData[0]);
 	  IMUReceived.GyroY = getLEint16(&CANRxData[2]);
 	  IMUReceived.GyroZ = getLEint16(&CANRxData[4]);
+
+	  static bool sent = false;
+	  if ( !sent )
+	  {
+		  DebugPrintf("First IMU GyroZ: %d", IMUReceived.GyroZ);
+	  }
 
 	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
 	  return true;
@@ -227,6 +240,12 @@ bool processIMUVelBody(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	  IMUReceived.VelBodyX = getLEint16(&CANRxData[0]);
 	  IMUReceived.VelBodyY = getLEint16(&CANRxData[2]);
 	  IMUReceived.VelBodyZ = getLEint16(&CANRxData[4]);
+
+	  static bool sent = false;
+	  if ( !sent )
+	  {
+		  DebugPrintf("First IMU VelBodyX: %d", IMUReceived.VelBodyX);
+	  }
 
 	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
 	  return true;
