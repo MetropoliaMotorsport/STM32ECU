@@ -70,7 +70,13 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 			IMUReceived.VelBodyX,
 			IMUReceived.AccelX,
 			IMUReceived.GyroZ,
-			0);
+			IMUReceived.VelN);
+
+//	  IMUReceived.VelN;
+//	  IMUReceived.VelE;
+//	  IMUReceived.VelD;
+
+
 	CAN_Send4vals( 0x7CF, (int16_t)rtY.TCS_TCS_FL*NMSCALING, (int16_t)rtY.TCS_TCS_FR*NMSCALING, (int16_t)rtY.TCS_TCS_RL*NMSCALING, (int16_t)rtY.TCS_TCS_RR*NMSCALING);
 	CAN_Send4vals( 0x7D0, rtY.TCS_RPMmaxFL, rtY.TCS_RPMmaxFR, rtY.TCS_RPMmaxRL, rtY.TCS_RPMmaxRR );
 	CAN_Send4vals( 0x7D1, (int16_t)rtY.TV_TV_torqueFL*NMSCALING, (int16_t)rtY.TV_TV_torqueFR*NMSCALING, (int16_t)rtY.TV_TV_torqueRL*NMSCALING, (int16_t)rtY.TV_TV_torqueRR*NMSCALING );

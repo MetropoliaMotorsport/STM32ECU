@@ -3,6 +3,8 @@
  *
  *  Created on: 28 Jul 2020
  *      Author: Visa
+ *
+ * Device CAN data acquisition for IMU unit
  */
 
 #include "ecumain.h"
@@ -21,7 +23,7 @@ bool processIMUVel( const uint8_t CANRxData[8], const uint32_t DataLength, const
 //bool processIMUVelAcc( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processIMUVelBody(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processIMUGPS( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-
+bool processIMUGPSVel( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 void IMUTimeout( uint16_t id );
 
@@ -42,6 +44,7 @@ CANData IMUEuler = { &DeviceState.IMU, IMUEuler_ID, 6, processIMUEuler, IMUTimeo
 CANData IMUVel = { &DeviceState.IMU, IMUVel_ID, 6, processIMUVel, IMUTimeout, IMUTIMEOUT };
 //CANData IMUVelAcc = { &DeviceState.IMU, IMUVelAcc_ID, 6, processIMUVelAcc, IMUTimeout, IMUTIMEOUT };
 CANData IMUVelBody = { &DeviceState.IMU, IMUVELBody_ID, 8, processIMUVelBody, IMUTimeout, IMUTIMEOUT };
+CANData IMUGPSVel = { &DeviceState.IMU, IMUGPSVel_ID, 8, processIMUGPSVel, IMUTimeout, IMUTIMEOUT };
 CANData IMUGPS = { &DeviceState.IMU, IMUGPS_ID, 8, processIMUGPS, IMUTimeout, IMUTIMEOUT };
 // gps retursn all FF when no lock.
 //CANData IMUAUTO = { &DeviceState.IMU, IMUAUTO_ID, 8, processIMUAUTO, IMUTimeout, IMUTIMEOUT };
@@ -207,6 +210,12 @@ bool processIMUVel( const uint8_t CANRxData[8], const uint32_t DataLength, const
 	  IMUReceived.VelE = getLEint16(&CANRxData[2]);
 	  IMUReceived.VelD = getLEint16(&CANRxData[4]);
 
+	  static bool sent = false;
+	  if ( !sent )
+	  {
+		  DebugPrintf("First IMU Vel: %d", IMUReceived.VelN);
+	  }
+
 	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
 	  return true;
   }
@@ -255,6 +264,23 @@ bool processIMUVelBody(const uint8_t CANRxData[8], const uint32_t DataLength, co
 }
 
 
+bool processIMUGPSVel( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
+{
+  if ( true // verify data format.
+  )
+  {
+		//0x177
+	//  IMUReceived.Lat_Accur = getLEint16(&CANRxData[0]); // *10^-2 m
+	// IMUReceived.LONG_Accur = getLEint16(&CANRxData[2]); // *10^-2
+	//  IMUReceived.ALT_Accur = getLEint16(&CANRxData[4]); // *10^-2
+//		uint16_t BASE_STATION_ID;
+
+	//  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  return true;
+  }
+  else
+	return false;
+}
 bool processIMUGPS( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
   if ( true // verify data format.
@@ -345,6 +371,7 @@ int initIMU( void )
 #endif
 
 	RegisterCan2Message(&IMUVelBody);
+	RegisterCan2Message(&IMUGPSVel);
 	RegisterCan2Message(&IMUGPS);
 	return 0;
 }

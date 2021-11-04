@@ -107,6 +107,7 @@ extern IMUData IMUReceived;
 #define IMUVel_ID				(0x137)
 #define IMUVelAcc_ID			(0x138)
 #define IMUVELBody_ID			(0x139)
+#define IMUGPSVel_ID			(0x171)
 #define IMUGPS_ID				(0x177)
 #define IMUAUTO_ID				(0x220)
 
