@@ -259,7 +259,7 @@ bool processIMUVelBody(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	  if ( !sent )
 	  {
 		  DebugPrintf("First IMU VelBodyX: %d", IMUReceived.VelBodyX);
-		  sent = true:
+		  sent = true;
 	  }
 
 	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);

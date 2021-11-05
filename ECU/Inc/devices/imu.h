@@ -65,7 +65,7 @@ typedef volatile struct IMUDataType {
 	int16_t VelN; // *10^-2 m/s  North
 	int16_t VelE; // *10^-2		 East
 	int16_t VelD; // *10^-2		 Down
-	real VelMag;
+	float VelMag;
 
 	//0x138
 	int16_t VelAccN; // *10^-2 m/s^2   North   -- not being sent?
@@ -81,7 +81,7 @@ typedef volatile struct IMUDataType {
 	int16_t VelGPSN;
 	int16_t VelGPSE;
 	int16_t VelGPSD;
-	real VelGPSMag;
+	float VelGPSMag;
 
 
 	//0x177
