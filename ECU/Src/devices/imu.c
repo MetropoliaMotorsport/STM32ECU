@@ -123,6 +123,7 @@ bool processIMUAccel( const uint8_t CANRxData[8], const uint32_t DataLength, con
 	  if ( !sent )
 	  {
 		  DebugPrintf("First IMU AccelX: %d", IMUReceived.AccelX);
+		  sent = true;
 	  }
 
 	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
@@ -145,6 +146,7 @@ bool processIMUGyro( const uint8_t CANRxData[8], const uint32_t DataLength, cons
 	  if ( !sent )
 	  {
 		  DebugPrintf("First IMU GyroZ: %d", IMUReceived.GyroZ);
+		  sent = true;
 	  }
 
 	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
@@ -210,10 +212,13 @@ bool processIMUVel( const uint8_t CANRxData[8], const uint32_t DataLength, const
 	  IMUReceived.VelE = getLEint16(&CANRxData[2]);
 	  IMUReceived.VelD = getLEint16(&CANRxData[4]);
 
+	  IMUReceived.VelMag = sqrt(pow(IMUReceived.VelE,2) + pow(IMUReceived.VelE,2));
+
 	  static bool sent = false;
 	  if ( !sent )
 	  {
 		  DebugPrintf("First IMU Vel: %d", IMUReceived.VelN);
+		  sent = true;
 	  }
 
 	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
@@ -254,6 +259,7 @@ bool processIMUVelBody(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	  if ( !sent )
 	  {
 		  DebugPrintf("First IMU VelBodyX: %d", IMUReceived.VelBodyX);
+		  sent = true:
 	  }
 
 	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
@@ -269,11 +275,11 @@ bool processIMUGPSVel( const uint8_t CANRxData[8], const uint32_t DataLength, co
   if ( true // verify data format.
   )
   {
-		//0x177
-	//  IMUReceived.Lat_Accur = getLEint16(&CANRxData[0]); // *10^-2 m
-	// IMUReceived.LONG_Accur = getLEint16(&CANRxData[2]); // *10^-2
-	//  IMUReceived.ALT_Accur = getLEint16(&CANRxData[4]); // *10^-2
-//		uint16_t BASE_STATION_ID;
+		//0x171
+	  IMUReceived.VelGPSN = getLEint16(&CANRxData[0]); // *10^-2 m
+	  IMUReceived.VelGPSE = getLEint16(&CANRxData[2]); // *10^-2
+	  IMUReceived.VelGPSD = getLEint16(&CANRxData[4]); // *10^-2
+	  IMUReceived.VelGPSMag = sqrt(pow(IMUReceived.VelE,2) + pow(IMUReceived.VelE,2));
 
 	//  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
 	  return true;
