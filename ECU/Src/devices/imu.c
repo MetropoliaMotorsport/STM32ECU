@@ -43,8 +43,8 @@ CANData IMUDeltaA = { &DeviceState.IMU, IMUDeltaA_ID, 6, processIMUDeltaA, IMUTi
 CANData IMUEuler = { &DeviceState.IMU, IMUEuler_ID, 6, processIMUEuler, IMUTimeout, IMUTIMEOUT };
 CANData IMUVel = { &DeviceState.IMU, IMUVel_ID, 6, processIMUVel, IMUTimeout, IMUTIMEOUT };
 //CANData IMUVelAcc = { &DeviceState.IMU, IMUVelAcc_ID, 6, processIMUVelAcc, IMUTimeout, IMUTIMEOUT };
-CANData IMUVelBody = { &DeviceState.IMU, IMUVELBody_ID, 8, processIMUVelBody, IMUTimeout, IMUTIMEOUT };
-CANData IMUGPSVel = { &DeviceState.IMU, IMUGPSVel_ID, 8, processIMUGPSVel, IMUTimeout, IMUTIMEOUT };
+CANData IMUVelBody = { &DeviceState.IMU, IMUVELBody_ID, 6, processIMUVelBody, IMUTimeout, IMUTIMEOUT };
+CANData IMUGPSVel = { &DeviceState.IMU, IMUGPSVel_ID, 6, processIMUGPSVel, IMUTimeout, IMUTIMEOUT };
 CANData IMUGPS = { &DeviceState.IMU, IMUGPS_ID, 8, processIMUGPS, IMUTimeout, IMUTIMEOUT };
 // gps retursn all FF when no lock.
 //CANData IMUAUTO = { &DeviceState.IMU, IMUAUTO_ID, 8, processIMUAUTO, IMUTimeout, IMUTIMEOUT };
