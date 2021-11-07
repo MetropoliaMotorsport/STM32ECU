@@ -51,7 +51,7 @@ CANData IMUGPS = { &DeviceState.IMU, IMUGPS_ID, 8, processIMUGPS, IMUTimeout, IM
 
 enum { COUNTER_BASE = __COUNTER__ };
 
-#define LOCAL_COUNTER (__COUNTER__ - COUNTER_BASE)
+#define MENU_COUNTER (__COUNTER__ - COUNTER_BASE)
 
 IMUData IMUReceived;
 
@@ -84,7 +84,7 @@ bool processIMUUTC( const uint8_t CANRxData[8], const uint32_t DataLength, const
 	  IMUReceived.Sec = CANRxData[5];
 	  IMUReceived.tenthsms = getLEint16(&CANRxData[6]);
 
-	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;
   }
   else
@@ -102,7 +102,7 @@ bool processIMUInfo( const uint8_t CANRxData[8], const uint32_t DataLength, cons
 	  IMUReceived.IMU_Status = getLEint16(&CANRxData[4]);
 	  IMUReceived.Temperature = getLEint32(&CANRxData[6]);
 
-	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;
   }
   else
@@ -126,7 +126,7 @@ bool processIMUAccel( const uint8_t CANRxData[8], const uint32_t DataLength, con
 		  sent = true;
 	  }
 
-	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;
   }
   else
@@ -149,7 +149,7 @@ bool processIMUGyro( const uint8_t CANRxData[8], const uint32_t DataLength, cons
 		  sent = true;
 	  }
 
-	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;
   }
   else
@@ -165,7 +165,7 @@ bool processIMUDeltaV( const uint8_t CANRxData[8], const uint32_t DataLength, co
 	  IMUReceived.DeltaVY = getLEint16(&CANRxData[2]);
 	  IMUReceived.DeltaVZ = getLEint16(&CANRxData[4]);
 
-	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;
   }
   else
@@ -181,7 +181,7 @@ bool processIMUDeltaA( const uint8_t CANRxData[8], const uint32_t DataLength, co
 	  IMUReceived.DeltaAY = getLEint16(&CANRxData[2]);
 	  IMUReceived.DeltaAZ = getLEint16(&CANRxData[4]);
 
-	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;
   }
   else
@@ -195,7 +195,7 @@ bool processIMUEuler( const uint8_t CANRxData[8], const uint32_t DataLength, con
   {
 		//0x137
 	  IMUReceived.Yaw = getLEint16(&CANRxData[4]);
-	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;
   }
   else
@@ -221,7 +221,7 @@ bool processIMUVel( const uint8_t CANRxData[8], const uint32_t DataLength, const
 		  sent = true;
 	  }
 
-	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;
   }
   else
@@ -238,7 +238,7 @@ bool processIMUVelAcc( const uint8_t CANRxData[8], const uint32_t DataLength, co
 	  IMUReceived.VelAccE = getLEint16(&CANRxData[2]);
 	  IMUReceived.VelAccD = getLEint16(&CANRxData[4]);
 
-	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;
   }
   else
@@ -262,7 +262,7 @@ bool processIMUVelBody(const uint8_t CANRxData[8], const uint32_t DataLength, co
 		  sent = true;
 	  }
 
-	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;
   }
   else
@@ -298,7 +298,7 @@ bool processIMUGPS( const uint8_t CANRxData[8], const uint32_t DataLength, const
 	  IMUReceived.ALT_Accur = getLEint16(&CANRxData[4]); // *10^-2
 //		uint16_t BASE_STATION_ID;
 
-	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;
   }
   else
@@ -316,7 +316,7 @@ bool processIMUAUTO( const uint8_t CANRxData[8], const uint32_t DataLength, cons
 	  IMUReceived.ALT_Accur = getLEint16(&CANRxData[4]); // *10^-2
 //		uint16_t BASE_STATION_ID;
 
-	  IMUReceived.Received &= ~(0x1 << LOCAL_COUNTER);
+	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;
   }
   else
@@ -343,7 +343,7 @@ int requestIMU( int nodeid )
 
 int returnCounter( void )
 {
-	return  LOCAL_COUNTER;
+	return  MENU_COUNTER;
 }
 
 void resetIMU( void )

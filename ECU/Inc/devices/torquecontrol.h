@@ -8,6 +8,12 @@
 #ifndef TORQUECONTROL_H_
 #define TORQUECONTROL_H_
 
+#define TORQUE_VECTORINGBIT	(0)
+#define TORQUE_TRACTIONBIT	(1)
+#define TORQUE_VELOCITYBIT	(2)
+#define TORQUE_FEEDBACKBIT	(3)
+#define TORQUE_FEEDACTBIT	(4)
+
 typedef struct vectoradjusttype {
 	float FL;
 	float FR;

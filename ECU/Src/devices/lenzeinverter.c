@@ -592,7 +592,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 
 	if ( Inverter->Motor > 2 )
 	{
-		snprintf(str, 60, "Inverter %d startup invalid motor %d at (%lu)!", Inverter->Motor, time);
+		snprintf(str, 60, "Inverter %d startup invalid motor %d at (%lu)!", Inverter->Motor, Inverter->Motor, time);
 		DebugMsg(str);
 	}
 

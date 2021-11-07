@@ -302,9 +302,57 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 }
 
 
+char *VelSrc[3] = {"VelBodyX", "VelMag", "VelGPS"};
+
+void doMenuVelSrcEdit( char * display, char * menuitem, bool selected, bool * editing,
+		volatile uint8_t * value, uint16_t input )
+{
+	char str[LCDCOLUMNS+1] = "";
+
+	for ( int i=0;i<LCDCOLUMNS;i++) display[i] = ' ';
+
+	int len = sprintf(str, "%c%s", (selected) ? '>' :' ', menuitem);
+	memcpy(display, str, len);
+
+	if ( selected  )
+	{
+		if ( input == KEY_ENTER )
+	//	if ( CheckButtonPressed(Config_Input) )
+		{
+			*editing = !*editing;
+	//		GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
+		}
+
+
+		if ( *editing )
+		{
+			display[LCDCOLUMNS-1-10] = '<';
+			display[LCDCOLUMNS-1] = '>';
+
+			int change = 0;
+
+			if ( input == KEY_LEFT )
+				change-=1;
+
+			if ( input == KEY_RIGHT )
+				change+=1;
+
+			int max = 3;
+
+			if ( change + *value >= 0 && change + *value <= max-1 ) *value+=change;
+		}
+	}
+
+	// print value
+	len = sprintf(str, "%9s", VelSrc[*value]);
+	if ( len > 9 ) len = 9;
+	memcpy(&display[LCDCOLUMNS-1-9], str, len);
+}
+
+
 
 void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * editing,
-		volatile bool * value, uint16_t input )
+		volatile uint8_t * value, uint8_t bit, uint16_t input )
 {
 	char str[LCDCOLUMNS+1] = "";
 
@@ -334,12 +382,12 @@ void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * edit
 			}
 
 			if ( change != 0 )
-				*value= !*value;
+				*value ^= (1 << bit);
 		}
 	}
 
 	// print value
-	len = sprintf(str, "%5s", (*value)? "True" : "False");
+	len = sprintf(str, "%5s", (*value) & (1 << bit ) ? "True" : "False");
 	memcpy(&display[LCDCOLUMNS-1-5], str, len);
 }
 
@@ -501,36 +549,137 @@ bool doPedalCalibration( uint16_t input )
 
 }
 
-
 #define MENU_NM		 	(1)
-#define MENU_RPM	 	(2)
-#define MENU_ACCEL 	 	(3)
-#define MENU_LIMPDIS 	(4)
-#define MENU_FANS	 	(5)
-#define MENU_FANMAX	 	(6)
-#define MENU_CALIB   	(7)
-#define MENU_STEERING   (8)
-#define MENU_INVEN	 	(9)
-#define MENU_REGEN	 	(10)
-#define MENU_REGENMAX	(11)
-#define MENU_REGENMAXR  (12)
-#define MENU_HV		 	(13)
-
+#define MENU_TORQUE		(2)
+#define MENU_RPM	 	(3)
+#define MENU_ACCEL 	 	(4)
+#define MENU_LIMPDIS 	(5)
+#define MENU_FANS	 	(6)
+#define MENU_FANMAX	 	(7)
+#define MENU_CALIB   	(8)
+#define MENU_STEERING   (9)
+#define MENU_INVEN	 	(10)
+#define MENU_REGEN	 	(11)
+#define MENU_REGENMAX	(12)
+#define MENU_REGENMAXR  (13)
+#define MENU_HV		 	(14)
 #define MENU_LAST	 	(MENU_HV)
 
-#define MENUSIZE	 	(MENU_LAST+1)
+#define MAINMENUSIZE	(MENU_LAST+1)
+
+// struct to track menu positioning and status.
+typedef struct {
+	uint8_t top;
+	uint8_t menusize;
+	uint8_t selection;
+	bool inedit;
+} menustruct_t;
+
+
+void MenuInput( menustruct_t *menu, uint16_t *input )
+{
+	if ( !menu->inedit )
+	{
+		if ( *input == KEY_DOWN )
+		{
+			menu->selection += 1;
+			*input = 0;
+		}
+		if ( *input == KEY_UP )
+		{
+			if ( menu->selection > 0)
+				menu->selection -= 1;
+			*input = 0;
+		}
+
+		if ( menu->selection <  0) menu->selection=0;
+		if ( menu->selection > menu->menusize-1) menu->selection=menu->menusize-1;
+
+		if ( menu->top + 2 < menu->selection ) menu->top +=1;
+		if ( menu->selection < menu->top ) menu->top -=1;
+	}
+}
+
+bool DoMenuMain ( uint16_t input )
+{
+	return false;
+}
+
+bool DoMenuInv ( uint16_t input )
+{
+	return false;
+}
+
+
+bool DoMenuTorque ( uint16_t input )
+{
+#define TORQUEMENU_VECTORING	(1)
+#define TORQUEMENU_TRACTION   	(2)
+#define TORQUEMENU_VELOCITY   	(3)
+#define TORQUEMENU_FEEDBACK		(4)
+#define TORQUEMENU_FEEDACT		(5)
+#define TORQUEMENU_VELSOURCE	(6)
+#define TORQUEMENU_LAST	 		(TORQUEMENU_VELSOURCE)
+#define TORQUEMENUSIZE			(TORQUEMENU_LAST+1)
+
+	static menustruct_t menu = {
+			.inedit = false,
+			.top = 0,
+			.selection = 0,
+			.menusize = TORQUEMENUSIZE
+	};
+
+	static char MenuLines[TORQUEMENUSIZE+1][21] = { 0 };
+
+	if ( menu.selection == 0 && input == KEY_ENTER ) // CheckButtonPressed(Config_Input) )
+	{
+		menu.inedit = false;
+		return false;
+	}
+
+	MenuInput(&menu, &input); // handle menu movement.
+
+	strcpy(MenuLines[0], "Vectoring Menu:");
+	sprintf(MenuLines[1], "%cBack...", (menu.selection==0) ? '>' :' ');
+	doMenuBoolEdit( MenuLines[1+TORQUEMENU_VECTORING], "Vectoring", (menu.selection==TORQUEMENU_VECTORING), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_VECTORINGBIT, input);
+	doMenuBoolEdit( MenuLines[1+TORQUEMENU_TRACTION], "Traction", (menu.selection==TORQUEMENU_TRACTION), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_TRACTIONBIT, input);
+	doMenuBoolEdit( MenuLines[1+TORQUEMENU_VELOCITY], "Velocity", (menu.selection==TORQUEMENU_VELOCITY), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_VELOCITYBIT, input);
+	doMenuBoolEdit( MenuLines[1+TORQUEMENU_FEEDBACK], "Feedback", (menu.selection==TORQUEMENU_FEEDBACK), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_FEEDBACKBIT, input);
+	doMenuBoolEdit( MenuLines[1+TORQUEMENU_FEEDACT], "FeedbackAct", (menu.selection==TORQUEMENU_FEEDACT), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_FEEDACTBIT, input);
+	doMenuVelSrcEdit( MenuLines[1+TORQUEMENU_VELSOURCE], "VelSrc", (menu.selection==TORQUEMENU_VELSOURCE), &menu.inedit, &getEEPROMBlock(0)->TorqueVelsource, input );
+
+	lcd_send_stringline( 0, MenuLines[0], MENUPRIORITY );
+
+	for ( int i=0;i<3;i++)
+	{
+		 lcd_send_stringline( i+1, MenuLines[i+menu.top+1], MENUPRIORITY );
+	}
+
+	return true; // done with menu
+}
+
+bool DoMenuSetting ( uint16_t input )
+{
+	return false;
+}
+
 
 
 bool DoMenu( uint16_t input )
 {
 	static bool inmenu = false;
-	static int8_t selection = 0;
-	static int8_t top = 0;
-	static bool inedit = false;
 	static bool incalib = false;
 	static bool dofullsave = false;
+	static int8_t submenu = 0;
 
-	static char MenuLines[MENUSIZE+1][21] = { 0 };
+	static menustruct_t menu = {
+			.inedit = false,
+			.top = 0,
+			.selection = 0,
+			.menusize = MAINMENUSIZE
+	};
+
+	static char MenuLines[MAINMENUSIZE+1][21] = { 0 };
 
 	const uint8_t torquevals[] = {0, 5, 10, 15, 20, 25,65,0}; // zero terminated so function can find end.
 
@@ -542,10 +691,10 @@ bool DoMenu( uint16_t input )
 
 	if ( inmenu )
 	{
-		if ( selection == 0 && input == KEY_ENTER ) // CheckButtonPressed(Config_Input) )
+		if ( submenu == 0 && menu.selection == 0 && input == KEY_ENTER ) // CheckButtonPressed(Config_Input) )
 		{
 			inmenu = false;
-			inedit = false;
+			menu.inedit = false;
 
 			lcd_send_stringline( 1, "", MENUPRIORITY );
 			lcd_send_stringline( 2, "Saving settings.", MENUPRIORITY );
@@ -562,7 +711,33 @@ bool DoMenu( uint16_t input )
 			return false;
 		}
 
-		if ( !incalib && selection == MENU_CALIB && input == KEY_ENTER ) // CheckButtonPressed(Config_Input) )
+		if ( submenu == 0 ) // only check for entering a menu if not in one.
+		{
+			if ( menu.selection == MENU_TORQUE && input == KEY_ENTER )
+			{
+				submenu = MENU_TORQUE;
+				input = 0;
+			}
+
+		}
+
+		if ( submenu != 0 ) // we're in a sub menu, process it instead of current menu.
+		{
+			switch ( menu.selection ) // run the sub menu.
+			{
+				case MENU_TORQUE :
+						if ( !DoMenuTorque(input) )
+							submenu = 0; // check if sub menu is done.
+						break;
+				default :
+						submenu = 0;
+			}
+			input = 0; // in a sub menu, no input processing here.
+			return true;
+		}
+
+
+		if ( !incalib && menu.selection == MENU_CALIB && input == KEY_ENTER ) // CheckButtonPressed(Config_Input) )
 		{
 			if ( DeviceState.CriticalSensors == OPERATIONAL )
 			{
@@ -597,34 +772,18 @@ bool DoMenu( uint16_t input )
 				return true;
 		}
 
-		if ( !inedit )
-		{
-			if ( input == KEY_DOWN )
-			{
-				selection += 1;
-				input = 0;
-			}
-			if ( input == KEY_UP )
-			{
-				selection -= 1;
-				input = 0;
-			}
-
-			if ( selection <  0) selection=0;
-			if ( selection > MENUSIZE-1) selection=MENUSIZE-1;
-
-			if ( top + 2 < selection ) top +=1;
-			if ( selection < top ) top -=1;
-		}
+		MenuInput(&menu, &input);
 
 		strcpy(MenuLines[0], "Config Menu:");
 
-		sprintf(MenuLines[1], "%cBack & Save", (selection==0) ? '>' :' ');
+		sprintf(MenuLines[1], "%cBack & Save", (menu.selection==0) ? '>' :' ');
 
-		doMenu8BitEdit( MenuLines[1+MENU_NM], "Max Nm", (selection==MENU_NM), &inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input, false );
+		doMenu8BitEdit( MenuLines[1+MENU_NM], "Max Nm", (menu.selection==MENU_NM), &menu.inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input, false );
+
+		snprintf(MenuLines[1+MENU_TORQUE], sizeof(MenuLines[0]), "%cTorqueVect...", (menu.selection==MENU_TORQUE) ? '>' :' ');
 
 		uint16_t currpm = getEEPROMBlock(0)->maxRpm;
-		doMenu16BitEdit( MenuLines[1+MENU_RPM], "RPM Max", (selection==MENU_RPM), &inedit, &currpm, rpmvals, input );
+		doMenu16BitEdit( MenuLines[1+MENU_RPM], "RPM Max", (menu.selection==MENU_RPM), &menu.inedit, &currpm, rpmvals, input );
 
 		if ( currpm != getEEPROMBlock(0)->maxRpm )
 		{
@@ -632,12 +791,12 @@ bool DoMenu( uint16_t input )
 // add rr
 		}
 
-        doMenuPedalEdit( MenuLines[1+MENU_ACCEL], "Accel", (selection==MENU_ACCEL), &inedit, &getEEPROMBlock(0)->PedalProfile, input );
-		doMenuBoolEdit( MenuLines[1+MENU_LIMPDIS], "LimpDisable", (selection==MENU_LIMPDIS), &inedit, &getEEPROMBlock(0)->LimpMode, input);
+        doMenuPedalEdit( MenuLines[1+MENU_ACCEL], "Accel", (menu.selection==MENU_ACCEL), &menu.inedit, &getEEPROMBlock(0)->PedalProfile, input );
+		doMenuBoolEdit( MenuLines[1+MENU_LIMPDIS], "LimpDisable", (menu.selection==MENU_LIMPDIS), &menu.inedit, (uint8_t*)&getEEPROMBlock(0)->LimpMode, 0, input);
 
 
 		bool curfans = getEEPROMBlock(0)->Fans;
-		doMenuBoolEdit( MenuLines[1+MENU_FANS], "Fans", (selection==MENU_FANS), &inedit, &curfans, input);
+		doMenuBoolEdit( MenuLines[1+MENU_FANS], "Fans", (menu.selection==MENU_FANS), &menu.inedit, (uint8_t*)&curfans, 0, input);
 		if ( curfans != getEEPROMBlock(0)->Fans )
 		{
 			getEEPROMBlock(0)->Fans = curfans;
@@ -648,7 +807,7 @@ bool DoMenu( uint16_t input )
 		uint8_t curfanmaxcur = ceil((100.0 / 255 * getEEPROMBlock(0)->FanMax )); // convert to %
 
 		uint8_t curfanmax = curfanmaxcur;
-		doMenu8BitEdit( MenuLines[1+MENU_FANMAX], "Fan Max", (selection==MENU_FANMAX), &inedit, &curfanmax, fanvals, input, true );
+		doMenu8BitEdit( MenuLines[1+MENU_FANMAX], "Fan Max", (menu.selection==MENU_FANMAX), &menu.inedit, &curfanmax, fanvals, input, true );
 		if ( curfanmax != curfanmaxcur ) // value changed.
 		{
 			getEEPROMBlock(0)->FanMax = floor(curfanmax * 2.55);
@@ -656,22 +815,21 @@ bool DoMenu( uint16_t input )
 //			DebugPrintf("Setting fanmax to %d", getEEPROMBlock(0)->FanMax);
 		}
 
-		sprintf(MenuLines[1+MENU_CALIB],    "%cAPPS Calib", (selection==MENU_CALIB) ? '>' :' ');
+		snprintf(MenuLines[1+MENU_CALIB], sizeof(MenuLines[0]), "%cAPPS Calib", (menu.selection==MENU_CALIB) ? '>' :' ');
 
+		snprintf(MenuLines[1+MENU_STEERING], sizeof(MenuLines[0]), "%cSteeringCalib %+4d", (menu.selection==MENU_STEERING) ? '>' :' ', ADCState.SteeringAngle);
 
-		sprintf(MenuLines[1+MENU_STEERING], "%cSteeringCalib %+4d", (selection==MENU_STEERING) ? '>' :' ', ADCState.SteeringAngle);
-
-		if ( selection == MENU_STEERING && input == KEY_ENTER )
+		if ( menu.selection == MENU_STEERING && input == KEY_ENTER )
 		{
 			if ( ADCState.SteeringAngleAct != 0xFFFF )
 				getEEPROMBlock(0)->steerCalib = 180-ADCState.SteeringAngleAct;
 			// value should update on display. add a set message.
 		}
 
-		doMenuBoolEdit( MenuLines[1+MENU_INVEN], "InvEnabled", (selection==MENU_INVEN), &inedit, &getEEPROMBlock(0)->InvEnabled, input);
+		doMenuBoolEdit( MenuLines[1+MENU_INVEN], "InvEnabled", (menu.selection==MENU_INVEN), &menu.inedit, (uint8_t*)&getEEPROMBlock(0)->InvEnabled, 0, input);
 
 		bool regenon = getEEPROMBlock(0)->Regen;
-		doMenuBoolEdit( MenuLines[1+MENU_REGEN], "Regen", (selection==MENU_REGEN), &inedit, &regenon, input);
+		doMenuBoolEdit( MenuLines[1+MENU_REGEN], "Regen", (menu.selection==MENU_REGEN), &menu.inedit, (uint8_t*)&regenon, 0, input);
 		if ( regenon != getEEPROMBlock(0)->Regen )
 		{
 			getEEPROMBlock(0)->Regen = regenon;
@@ -684,25 +842,23 @@ bool DoMenu( uint16_t input )
 		}
 
 		uint8_t regenmax = getEEPROMBlock(0)->regenMax;
-		doMenu8BitEdit( MenuLines[1+MENU_REGENMAX], "Regen MaxF", (selection==MENU_REGENMAX), &inedit, &regenmax, regenvals, input, false );
+		doMenu8BitEdit( MenuLines[1+MENU_REGENMAX], "Regen MaxF", (menu.selection==MENU_REGENMAX), &menu.inedit, &regenmax, regenvals, input, false );
 		if ( regenmax != getEEPROMBlock(0)->regenMax ) // value changed.
 		{
 			getEEPROMBlock(0)->regenMax = regenmax;
 		}
 
 		uint8_t regenmaxR = getEEPROMBlock(0)->regenMaxR;
-		doMenu8BitEdit( MenuLines[1+MENU_REGENMAXR], "Regen MaxR", (selection==MENU_REGENMAXR), &inedit, &regenmaxR, regenvals, input, false );
+		doMenu8BitEdit( MenuLines[1+MENU_REGENMAXR], "Regen MaxR", (menu.selection==MENU_REGENMAXR), &menu.inedit, &regenmaxR, regenvals, input, false );
 		if ( regenmaxR != getEEPROMBlock(0)->regenMaxR ) // value changed.
 		{
 			getEEPROMBlock(0)->regenMaxR = regenmaxR;
 		}
 
 
-
-
 #if (MENU_LAST == MENU_HV)
 		bool curhvState = getEEPROMBlock(0)->alwaysHV;
-		doMenuBoolEdit( MenuLines[1+MENU_HV], "HV@Startup", (selection==MENU_HV), &inedit, &curhvState, input);
+		doMenuBoolEdit( MenuLines[1+MENU_HV], "HV@Startup", (menu.selection==MENU_HV), &menu.inedit,(uint8_t*)&curhvState, 0, input);
 		if ( curhvState != getEEPROMBlock(0)->alwaysHV )
 		{
 			getEEPROMBlock(0)->alwaysHV = curhvState;
@@ -714,7 +870,7 @@ bool DoMenu( uint16_t input )
 
 		for ( int i=0;i<3;i++)
 		{
-			 lcd_send_stringline( i+1, MenuLines[i+top+1], MENUPRIORITY );
+			 lcd_send_stringline( i+1, MenuLines[i+menu.top+1], MENUPRIORITY );
 		}
 		return true;
 	}
@@ -723,6 +879,7 @@ bool DoMenu( uint16_t input )
 	{
 
 		inmenu = true;
+		submenu = 0;
 		dofullsave = false;
 
 		return true;

@@ -33,7 +33,21 @@ int initVectoring( void )
 void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 {
 #ifdef MATLAB
-	rtU.bus_Vehicle_velocity = IMUReceived.VelBodyX*0.01;
+
+	switch ( getEEPROMBlock(0)->TorqueVelsource )
+	{
+	case 1 :
+		rtU.bus_Vehicle_velocity = IMUReceived.VelMag*0.01;
+		break;
+	case 2 :
+		rtU.bus_Vehicle_velocity = IMUReceived.VelGPSMag*0.01;
+		break;
+	default:
+		rtU.bus_Vehicle_velocity = IMUReceived.VelBodyX*0.01;
+	}
+
+	int16_t VELUSED = rtU.bus_Vehicle_velocity * 100;
+
 	rtU.bus_Vehicle_acceleration = IMUReceived.AccelX*0.01;
 
 	rtU.bus_rotation_speed_FL = getInvState(invFL)->Speed * 0.10472; // convert wheel rpm to rad/s
@@ -51,11 +65,11 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 	rtU.bus_Pedal_torque_position = ADCState.Torque_Req_R_Percent/10.0;
 
-	rtU.bus_Traction_control_active = 1;//getEEPROMBlock(0)->TorqueVectoring;;
-	rtU.bus_Velocity_control_active = 1;//getEEPROMBlock(0)->TorqueVectoring;;
-	rtU.bus_feedback_active = 1;
-	rtU.bus_feedforward_active = 1;
-	rtU.bus_Torque_vectoring_active = 1;//getEEPROMBlock(0)->TorqueVectoring;
+	rtU.bus_Traction_control_active = getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TRACTIONBIT)?true:false;
+	rtU.bus_Velocity_control_active = getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VELOCITYBIT)?true:false;
+	rtU.bus_feedback_active = getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_FEEDBACKBIT)?true:false;
+	rtU.bus_feedforward_active = getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_FEEDACTBIT)?true:false;
+	rtU.bus_Torque_vectoring_active = getEEPROMBlock(0)->TorqueVectoring & (1 << TORQUE_VECTORINGBIT)?true:false;
 
 /*
 	if ( rtU.velocity < 2.7 ) rtU.velocity = 0;
@@ -67,10 +81,10 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 			//(int16_t)rtU.bus_Vehicle_velocity,
 			//(int16_t)rtU.bus_Vehicle_acceleration,
 			//(int16_t)rtU.bus_Vehicle_yaw_rate,
-			IMUReceived.VelBodyX,
+			VELUSED,//IMUReceived.VelBodyX,
 			IMUReceived.AccelX,
 			IMUReceived.GyroZ,
-			IMUReceived.VelN);
+			0);
 
 //	  IMUReceived.VelN;
 //	  IMUReceived.VelE;
