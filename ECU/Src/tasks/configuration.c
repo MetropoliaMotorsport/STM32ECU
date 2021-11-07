@@ -264,6 +264,11 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 	int len = sprintf(str, "%c%s", (selected) ? '>' :' ', menuitem);
 	memcpy(display, str, len);
 
+
+	int max = 0;
+	for ( max=0; GetPedalProfile(max, false)!=NULL;max++);
+	if ( *value > max-1 ) *value = 0;
+
 	if ( selected  )
 	{
 		if ( input == KEY_ENTER )
@@ -272,7 +277,6 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 			*editing = !*editing;
 	//		GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
 		}
-
 
 		if ( *editing )
 		{
@@ -286,10 +290,6 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 
 			if ( input == KEY_RIGHT )
 				change+=1;
-
-			int max = 0;
-
-			for ( max=0; GetPedalProfile(max, false)!=NULL;max++);
 
 			if ( change + *value >= 0 && change + *value <= max-1 ) *value+=change;
 		}
