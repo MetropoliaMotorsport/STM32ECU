@@ -314,7 +314,9 @@ void doMenuVelSrcEdit( char * display, char * menuitem, bool selected, bool * ed
 	int len = sprintf(str, "%c%s", (selected) ? '>' :' ', menuitem);
 	memcpy(display, str, len);
 
-	if ( selected  )
+	if ( *value > 2 ) *value = 0;
+
+	if ( selected )
 	{
 		if ( input == KEY_ENTER )
 	//	if ( CheckButtonPressed(Config_Input) )
@@ -322,7 +324,6 @@ void doMenuVelSrcEdit( char * display, char * menuitem, bool selected, bool * ed
 			*editing = !*editing;
 	//		GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
 		}
-
 
 		if ( *editing )
 		{
