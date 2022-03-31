@@ -160,6 +160,7 @@ void PNode37Timeout( uint16_t id )
 	Shutdown.PRE = false;
 	Shutdown.TS_OFF = false;
 	Shutdown.IMD = false;
+	SetCriticalError(); // TS_OFF is a critical signal.
 }
 
 
