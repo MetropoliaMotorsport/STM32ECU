@@ -33,6 +33,7 @@ uint8_t ConfigInputQueueStorageArea[ ConfigInputQUEUE_LENGTH * ConfigInputITEMSI
 
 QueueHandle_t ConfigInputQueue;
 
+CANData ECUConfig;
 
 #define ConfigSTACK_SIZE 128*8
 #define ConfigTASKNAME  "ConfigTask"

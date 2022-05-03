@@ -53,7 +53,7 @@
 volatile char usecanADC;
 #endif
 
-volatile char minmaxADC;
+//extern volatile char minmaxADC;
 // ADC
 
 #ifdef STMADC
@@ -98,7 +98,7 @@ typedef struct {
 extern volatile ADCState_t ADCState;
 extern volatile ADCState_t ADCStateNew;
 
-volatile struct {
+typedef struct {
 // node sensor data.
 	int OilTemp1;
 	int OilTemp2;
@@ -137,8 +137,9 @@ volatile struct {
 	int TireTemp10;
 	int TireTemp11;
 	int TireTemp12;
-} ADCStateSensors;
+} ADCStateSensors_t;
 
+extern volatile ADCStateSensors_t ADCStateSensors;
 
 #ifdef HPF19
 struct  {
@@ -160,7 +161,7 @@ struct ADCTable {
 	uint16_t Elements;
 };
 
-struct ADCInterpolationTables { // pointers to array data for linear interpolation values, use elements field to know how large arrays are.
+typedef struct ADCInterpolationTables { // pointers to array data for linear interpolation values, use elements field to know how large arrays are.
 		struct ADCTable Steering;
 		struct ADCTable SteeringAngle;
 
@@ -180,7 +181,7 @@ struct ADCInterpolationTables { // pointers to array data for linear interpolati
 #ifdef TORQUEVECTOR
 		struct ADCTable TorqueVector;
 #endif
-} ADCInterpolationTables;
+} ADCInterpolationTables_t;
 
 int16_t linearInterpolate(uint16_t Input[], int16_t Output[], uint16_t count, uint16_t RawADCInput);
 

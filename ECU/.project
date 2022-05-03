@@ -72,4 +72,11 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>com.st.stm32cube.ide.mcu.MCUTSConvertedProjectNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>Test</name>
+			<type>2</type>
+			<location>/Users/visa/Code/STM32ECU/Delphi Stuff</location>
+		</link>
+	</linkedResources>
 </projectDescription>

@@ -54,8 +54,14 @@ DMA_BUFFER ALIGN_32BYTES (static uint32_t aADCxConvertedDataADC3[ADC_CONVERTED_D
 #include "adc_hpf20.h"
 #endif
 
+volatile char minmaxADC;
+
 volatile ADCState_t ADCState;
 volatile ADCState_t ADCStateNew;
+
+volatile ADCStateSensors_t ADCStateSensors;
+
+volatile ADCInterpolationTables_t ADCInterpolationTables;
 
 void ReadADC1(bool half);
 void ReadADC3(bool half);
