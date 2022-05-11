@@ -564,7 +564,8 @@ bool doPedalCalibration( uint16_t input )
 #define MENU_REGEN	 	(11)
 #define MENU_REGENMAX	(12)
 #define MENU_REGENMAXR  (13)
-#define MENU_HV		 	(14)
+#define MENU_TELEMETRY  (14)
+#define MENU_HV		 	(15)
 #define MENU_LAST	 	(MENU_HV)
 
 #define MAINMENUSIZE	(MENU_LAST+1)
@@ -857,6 +858,13 @@ bool DoMenu( uint16_t input )
 			getEEPROMBlock(0)->regenMaxR = regenmaxR;
 		}
 
+		bool curTM = getEEPROMBlock(0)->Telemetry;
+		doMenuBoolEdit( MenuLines[1+MENU_TELEMETRY], "Telemetry", (menu.selection==MENU_TELEMETRY), &menu.inedit, (uint8_t*)&curTM, 0, input);
+		if ( curTM != getEEPROMBlock(0)->Telemetry )
+		{
+			getEEPROMBlock(0)->Telemetry = curTM;
+			setDevicePower(Telemetry, curTM);
+		}
 
 #if (MENU_LAST == MENU_HV)
 		bool curhvState = getEEPROMBlock(0)->alwaysHV;

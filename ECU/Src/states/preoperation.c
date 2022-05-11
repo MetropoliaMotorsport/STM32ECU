@@ -174,12 +174,13 @@ int PreOperationState( uint32_t OperationLoops  )
 		setDevicePower( Front1, true );
 		setDevicePower( Front2, true );
 		setDevicePower( TSAL, true );
+
 //		setDevicePower( Current, true );
 
 //		setDevicePower(Buzzer, 0);
 
 //		setDevicePower(IVT, 1);
-//		setDevicePower(Telemetry, 1);
+		setDevicePower(Telemetry, getEEPROMBlock(0)->Telemetry); // if enabled in config, turn telemetry on.
 
 		initVectoring();
 
