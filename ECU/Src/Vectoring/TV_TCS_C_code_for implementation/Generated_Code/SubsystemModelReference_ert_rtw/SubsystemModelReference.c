@@ -1610,10 +1610,9 @@ void SubsystemModelReference_step(void)
    *  Constant: '<S24>/Constant2'
    *  Constant: '<S24>/Constant5'
    */
-  rtb_Product2_a = rtb_Product_m * 30.0 * 12.35;
 
   /* Product: '<S24>/Divide' */
-  rtb_Divide_m4 = rtb_Product2_a / 0.6440264939859075;
+  rtb_Divide_m4 = rtb_Product_m * 117.933812831 / 0.6440264;
 
   /* Product: '<S24>/Product3' */
   rtb_Product3_na = (real_T)rtb_AND1 * rtb_Divide_m4;
