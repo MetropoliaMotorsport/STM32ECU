@@ -684,13 +684,13 @@ bool DoMenu( uint16_t input )
 
 	static char MenuLines[MAINMENUSIZE+1][21] = { 0 };
 
-	const uint8_t torquevals[] = {0, 5, 10, 15, 20, 25,65,0}; // zero terminated so function can find end.
+	const uint8_t torquevals[] = {0, 5, 10, 15, 20, 25,0}; // zero terminated so function can find end.
 
 	const uint8_t fanvals[] = {10,20,30,40,50,60,70,80,90,100,0};
 
-	const uint16_t rpmvals[] = {500, 1500, 3000, 5000, 7000, 9000, 11000, 13000, 15000, 19000, 20000, 0};
+	const uint16_t rpmvals[] = {500, 3000, 5000, 10000, 15000, 19000, 20000, 0};
 
-	const uint8_t regenvals[] = {1,3,4,5,6,7,8,9,10,11,12,0}; // zero terminated so function can find end.
+	const uint8_t regenvals[] = {5,10,12,15,0}; // zero terminated so function can find end.
 
 	if ( inmenu )
 	{
