@@ -1637,14 +1637,9 @@ void SubsystemModelReference_step(void)
   /* Product: '<S36>/Product' */
   rtb_Product_mu = rtb_Divide_j * 1.24;
 
-  /* Product: '<S36>/Product2' incorporates:
-   *  Constant: '<S36>/Constant2'
-   *  Constant: '<S36>/Constant5'
-   */
-  rtb_Product2_m = rtb_Product_mu * 30.0 * 12.35;
 
   /* Product: '<S36>/Divide' */
-  rtb_Divide_f = rtb_Product2_m / 0.6440264939859075;
+  rtb_Divide_f = rtb_Product_mu * 117.933812831 / 0.6440264;
 
   /* Product: '<S36>/Product3' */
   rtb_Product3_l = (real_T)rtb_AND1 * rtb_Divide_f;
@@ -1669,14 +1664,8 @@ void SubsystemModelReference_step(void)
   /* Product: '<S48>/Product' */
   rtb_Product_g = rtb_Divide_m * 1.24;
 
-  /* Product: '<S48>/Product2' incorporates:
-   *  Constant: '<S48>/Constant2'
-   *  Constant: '<S48>/Constant5'
-   */
-  rtb_Product2_d = rtb_Product_g * 30.0 * 12.35;
-
   /* Product: '<S48>/Divide' */
-  rtb_Divide_k0 = rtb_Product2_d / 0.6440264939859075;
+  rtb_Divide_k0 = rtb_Product_g * 117.933812831 / 0.6440264;
 
   /* Product: '<S48>/Product3' */
   rtb_Product3_o = (real_T)rtb_AND1 * rtb_Divide_k0;
@@ -1701,14 +1690,10 @@ void SubsystemModelReference_step(void)
   /* Product: '<S60>/Product' */
   rtb_Product_o = rtb_Divide_h * 1.24;
 
-  /* Product: '<S60>/Product2' incorporates:
-   *  Constant: '<S60>/Constant2'
-   *  Constant: '<S60>/Constant5'
-   */
   rtb_Product2_f = rtb_Product_o * 30.0 * 12.35;
 
   /* Product: '<S60>/Divide' */
-  rtb_Divide_ak = rtb_Product2_f / 0.6440264939859075;
+  rtb_Divide_ak = rtb_Product2_f * 117.933812831 / 0.6440264;
 
   /* Product: '<S60>/Product3' */
   rtb_Product3_j = (real_T)rtb_AND1 * rtb_Divide_ak;
