@@ -44,9 +44,9 @@ typedef volatile struct IMUDataType {
 	int16_t AccelZ; // *10^-2
 
 	//0x122
-	int16_t GyroX; // *10^-3 // rad/s
-	int16_t GyroY; // *10^-3
-	int16_t GyroZ; // *10^-3 // yaw rate?
+	int16_t GyroX; // *10^-3 // Roll rate
+	int16_t GyroY; // *10^-3 // Pitch rate
+	int16_t GyroZ; // *10^-3 // yaw rate
 
 	//0x123
 	int16_t DeltaVX; // *10^-2 m/s^2

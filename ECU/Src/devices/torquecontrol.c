@@ -46,7 +46,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 		rtU.bus_Vehicle_velocity = IMUReceived.VelBodyX*0.01;
 	}
 
-	int16_t VELUSED = rtU.bus_Vehicle_velocity * 100;
+	int16_t VELUSED = IMUReceived.VelBodyX*0.01; // This is right velocity to be used in torque vectoring -> velocity in IMU x direction
 
 	rtU.bus_Vehicle_acceleration = IMUReceived.AccelX*0.01;
 
@@ -81,7 +81,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 			//(int16_t)rtU.bus_Vehicle_velocity,
 			//(int16_t)rtU.bus_Vehicle_acceleration,
 			//(int16_t)rtU.bus_Vehicle_yaw_rate,
-			VELUSED,//IMUReceived.VelBodyX,
+			VELUSED,//IMUReceived.VelBodyX, -> Scaled to right value -> No scaling should be done on the AIM side
 			IMUReceived.AccelX,
 			IMUReceived.GyroZ,
 			0);
