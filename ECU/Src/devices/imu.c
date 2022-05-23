@@ -166,6 +166,10 @@ bool processIMUDeltaV( const uint8_t CANRxData[8], const uint32_t DataLength, co
 	  IMUReceived.DeltaVZ = getLEint16(&CANRxData[4]);
 
 	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
+
+#ifdef retransmitIMU
+       reTransmitOnCan1(datahandle->id,CANRxData,DataLength);
+#endif
 	  return true;
   }
   else
@@ -261,6 +265,10 @@ bool processIMUVelBody(const uint8_t CANRxData[8], const uint32_t DataLength, co
 		  DebugPrintf("First IMU VelBodyX: %d", IMUReceived.VelBodyX);
 		  sent = true;
 	  }
+
+#ifdef retransmitIMU
+	  reTransmitOnCan1(datahandle->id,CANRxData,DataLength);
+#endif
 
 	  IMUReceived.Received &= ~(0x1 << MENU_COUNTER);
 	  return true;

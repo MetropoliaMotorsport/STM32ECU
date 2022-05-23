@@ -46,6 +46,8 @@ QueueHandle_t PowerQueue, PowerErrorQueue;
 
 ShutdownState Shutdown;
 
+bool HVLost;
+
 // task shall take power handling request, and forward them to nodes.
 // ensure contact is kept with brake light board as brake light is SCS.
 
@@ -64,6 +66,32 @@ char * getPNodeWait( void)
 	xSemaphoreGive(waitStr);
 	return PowerWaitStrRet;
 	// TODO add a mutex
+}
+
+void SetHVLost( void )
+{
+	if ( !HVLost )
+	{
+		HVLost = true;
+		DebugMsg("Logging HV Lost");
+	}
+}
+
+void ClearHVLost( void )
+{
+	if ( HVLost )
+	{
+		HVLost = false;
+		DebugMsg("Clearing HV Lost");
+	}
+}
+
+bool CheckHVLost( void )
+{
+	if ( Shutdown.AIRm == 0 || Shutdown.AIRp == 0 || Shutdown.TS_OFF || HVLost )
+	{
+		return true;
+	}
 }
 
 void PowerTask(void *argument)
@@ -85,6 +113,8 @@ void PowerTask(void *argument)
 	uint32_t lastpowernodesOnline = 0;
 	uint32_t powernodesOnlineSince = 0;
 	uint32_t count = 0;
+	uint32_t lastseenHV = 0;
+	bool HVactive = false;
 
 	uint32_t lastseenall = 0;
 
@@ -233,6 +263,20 @@ void PowerTask(void *argument)
 			}
 
 			powernodesOnlineSince = 0;
+		}
+
+		if ( CarState.VoltageINV > 400 )
+		{
+			lastseenHV = looptime;
+		}
+
+		if ( looptime - lastseenHV > PDMTIMEOUT )
+		{
+			if ( HVactive )
+			{
+				HVactive = false;
+				SetHVLost();
+			}
 		}
 
 		if ( ( curpowernodesOnline & PNODECRITICALBITS ) == PNODECRITICALBITS )
@@ -525,6 +569,8 @@ int initPower( void )
 	RegisterResetCommand(resetPower);
 
 	resetPower();
+
+	HVLost = false;
 
 	waitStr = xSemaphoreCreateMutex();
 

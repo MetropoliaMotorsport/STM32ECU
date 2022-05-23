@@ -36,6 +36,8 @@
 	#define LENZE
 	#define MOTORCOUNT		(4)
 	#define MEMORATAR
+
+	#define retransmitIMU
 #endif
 
 #ifdef HPF19
@@ -108,7 +110,8 @@
 
 // Coolant overtemp limits.
 #define COOLANTLIMPTEMP 75
-#define COOLANTLIMPEXITTEMP 70
+#define COOLANTLIMPTEMPHALF 70
+#define COOLANTLIMPEXITTEMP 65
 #define COOLANTMAXTEMP	80
 
 // Debug aids.
@@ -272,6 +275,7 @@
 #define OperationalStateOverrun		0xF
 #define PowerOnRequestBeforeReady 	0x10
 #define PowerOnRequestTimeout   	0x11
+#define HVlostError					0x12
 
 #ifdef HPF20
 #define BrakeFReceivedBit			ANode11Bit
@@ -344,7 +348,8 @@ typedef struct {
 	uint8_t APPSstatus;
 
     uint8_t LimpRequest;
-    bool LimpActive;
+    uint8_t LimpActive;
+	uint8_t LimpNM;
     bool LimpDisable;
 
 	int32_t Current;

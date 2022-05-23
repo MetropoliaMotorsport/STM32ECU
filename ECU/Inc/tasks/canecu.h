@@ -140,8 +140,8 @@ int getNMTstate(volatile CANData *data );
 void resetCanTx(volatile uint8_t CANTxData[8]);
 int ResetCanReceived( void );
 int ResetOperationCanReceived( void );
-uint8_t CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData );
-uint8_t CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData );
+uint8_t CAN1Send( uint16_t id, uint8_t dlc, const uint8_t *pTxData );
+uint8_t CAN2Send( uint16_t id, uint8_t dlc, const uint8_t *pTxData );
 uint8_t CANSendSDO( enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub, uint32_t data);
 char CAN_NMT( uint8_t, uint8_t );
 char CAN_ConfigRequest( uint8_t command, uint8_t success );
@@ -168,8 +168,8 @@ void ResetCanData(volatile CANData *data );
 
 
 char CAN_SendErrors( void );
-char reTransmitError(uint32_t canid, uint8_t *CANRxData, uint32_t DataLength );
-char reTransmitOnCan1(uint32_t canid, uint8_t *CANRxData, uint32_t DataLength );
+char reTransmitError(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength );
+char reTransmitOnCan1(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength );
 
 char CAN_SendTimeBase( void );
 

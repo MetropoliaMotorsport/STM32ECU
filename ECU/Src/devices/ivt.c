@@ -272,6 +272,7 @@ void IVTTimeout( uint16_t id )
 #endif
 	CarState.Power=0;
 	CarState.Current=0;
+	CarState.VoltageINV=0;
 
     SetCriticalError();
 }

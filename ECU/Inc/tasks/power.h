@@ -95,6 +95,10 @@ bool CheckTSOff( void );
 bool CheckIMD( void );
 bool CheckShutdown( void );
 char * ShutDownOpenStr( void );
+void SetHVLost( void );
+void ClearHVLost( void );
+bool CheckHVLost( void );
+
 
 // power node control commands
 bool getDevicePower( DevicePower device );

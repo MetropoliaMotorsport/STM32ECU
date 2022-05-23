@@ -134,6 +134,13 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		return OperationalErrorState;
 	}
 
+	if ( CheckHVLost() )
+	{
+	//	Errors.ErrorReason = HVlostError;
+	//	Errors.ErrorPlace = 0xE2;
+	//	return OperationalErrorState;
+	}
+
 
 	if ( readystate == 0 && GetInverterState() != OPERATIONAL )
 	{  // an inverter has changed state from operating after reaching it unexpectedly, fault status of some sort.
@@ -181,9 +188,19 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
         if ( ( CarState.LimpRequest && !CarState.LimpDisable ) || ADCState.CoolantTempR > COOLANTLIMPTEMP )
         {
             CarState.LimpActive = 1;
+			CarState.LimpNM = LIMPNM;
         }
 
-        if ( CarState.LimpActive && CarState.Torque_Req_CurrentMax > LIMPNM )
+		if ( !CarState.LimpActive && ADCState.CoolantTempR > COOLANTLIMPTEMPHALF )
+		{
+			CarState.LimpActive = 2;
+			CarState.LimpNM = CarState.Torque_Req_Max / 2;
+
+			if ( CarState.LimpNM < LIMPNM )
+				CarState.LimpNM = LIMPNM;
+		}
+
+        if ( CarState.LimpActive && CarState.Torque_Req_CurrentMax > CarState.LimpNM  )
         {
             limpcounter++;
             if ( ( limpcounter % 10 ) == 0 ) // every 100ms decrease nm request
@@ -247,7 +264,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 #endif
 		doVectoring( CarState.Torque_Req, &adj, &spd );
 
-        if ( CarState.AllowRegen ) // only check for regen if alowed.
+        if ( CarState.AllowRegen && CarState.LimpActive == 0 ) // only check for regen if alowed and not in limp.
         {
     		if ( ADCState.Regen_Percent > 500 && getEEPROMBlock(0)->Regen ) // no torque request, but we do have a regen request, return that.
     		{

@@ -525,7 +525,7 @@ int getNMTstate(volatile CANData *data )
   return 0;
 }
 
-uint8_t CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
+uint8_t CAN1Send( uint16_t id, uint8_t dlc, const uint8_t *pTxData )
 {
 	can_msg msg;
 
@@ -554,7 +554,7 @@ uint8_t CAN1Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
 }
 
 
-uint8_t CAN2Send( uint16_t id, uint8_t dlc, uint8_t *pTxData )
+uint8_t CAN2Send( uint16_t id, uint8_t dlc, const uint8_t *pTxData )
 {
 	can_msg msg;
 	msg.id = id;
@@ -610,7 +610,7 @@ uint8_t CANSendSDO( enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub, uin
 //canReceiveData
 
 
-char reTransmitError(uint32_t canid, uint8_t *CANRxData, uint32_t DataLength )
+char reTransmitError(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength )
 {
 #ifndef RETRANSMITBADDATA
 	return 0;
@@ -624,7 +624,7 @@ char reTransmitError(uint32_t canid, uint8_t *CANRxData, uint32_t DataLength )
 	return 0;
 }
 
-char reTransmitOnCan1(uint32_t canid, uint8_t *CANRxData, uint32_t DataLength )
+char reTransmitOnCan1(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength )
 {
 #ifndef sharedCAN // only retransmit if can1 and can2 are not sharing lines.
 	CAN1Send( canid, DataLength >> 16, CANRxData ); // return values.
