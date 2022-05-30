@@ -266,7 +266,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         if ( CarState.AllowRegen && CarState.LimpActive == 0 ) // only check for regen if alowed and not in limp.
         {
-    		if ( ADCState.Regen_Percent > 500 && getEEPROMBlock(0)->Regen ) // no torque request, but we do have a regen request, return that.
+    		if ( ADCState.Regen_Percent > 100 && getEEPROMBlock(0)->Regen ) // no torque request, but we do have a regen request, return that.
     		{
     			CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 ) ;
     			adj.FL = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
