@@ -34,6 +34,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 {
 #ifdef MATLAB
 
+#if 0
 	switch ( getEEPROMBlock(0)->TorqueVelsource )
 	{
 	case 1 :
@@ -45,6 +46,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	default:
 		rtU.bus_Vehicle_velocity = IMUReceived.VelBodyX*0.01;
 	}
+#endif
 
 	int16_t VELUSED = IMUReceived.VelBodyX*0.01; // This is right velocity to be used in torque vectoring -> velocity in IMU x direction
 
@@ -139,10 +141,10 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 	if ( getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT)?true:false )
 	{
-		adj->FL = rtY.TV_TV_torqueFL;
-		adj->FR = rtY.TV_TV_torqueFR;
-		adj->RL = rtY.TV_TV_torqueRL;
-		adj->RR = rtY.TV_TV_torqueRR;	
+		adj->FL = Torque_Req + rtY.TV_TV_torqueFL;
+		adj->FR = Torque_Req - rtY.TV_TV_torqueFR;
+		adj->RL = Torque_Req + rtY.TV_TV_torqueRL;
+		adj->RR = Torque_Req - rtY.TV_TV_torqueRR;	
 	}
 	else
 	{
@@ -155,10 +157,27 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 	if ( getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TCSENABLEDBIT)?true:false )
 	{
-		spd->FL = rtY.TCS_RPMmaxFL;
-		spd->FR = rtY.TCS_RPMmaxFR;
-		spd->RL = rtY.TCS_RPMmaxRL;
-		spd->RR = rtY.TCS_RPMmaxRR;
+		adj->FL += Torque_Req + rtY.TCS_TCS_FL;
+		adj->FR += Torque_Req - rtY.TCS_TCS_FR;
+		adj->RL += Torque_Req + rtY.TCS_TCS_RL;
+		adj->RR += Torque_Req - rtY.TCS_TCS_RR;	
+
+#if 0
+		if ( rtY.TCS_RPMmaxFL < 100 || )
+
+		spd->FL += rtY.TCS_RPMmaxFL;
+		spd->FR += rtY.TCS_RPMmaxFR;
+		spd->RL += rtY.TCS_RPMmaxRL;
+		spd->RR += rtY.TCS_RPMmaxRR;
+#endif
+
+		uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
+
+		spd->FL =maxSpeed;
+		spd->FR =maxSpeed;
+		spd->RL =maxSpeed;
+		spd->RR =maxSpeed;
+
 	}
 	else
 	{
