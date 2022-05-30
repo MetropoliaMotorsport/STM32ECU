@@ -153,12 +153,22 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 		adj->RR = Torque_Req;
 	}
 
-	uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
+	if ( getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TCSENABLEDBIT)?true:false )
+	{
+		spd->FL = rtY.TCS_RPMmaxFL;
+		spd->FR = rtY.TCS_RPMmaxFR;
+		spd->RL = rtY.TCS_RPMmaxRL;
+		spd->RR = rtY.TCS_RPMmaxRR;
+	}
+	else
+	{
+		uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
 
-	spd->FL =maxSpeed;
-	spd->FR =maxSpeed;
-	spd->RL =maxSpeed;
-	spd->RR =maxSpeed;
+		spd->FL =maxSpeed;
+		spd->FR =maxSpeed;
+		spd->RL =maxSpeed;
+		spd->RR =maxSpeed;
+	}
 
 #else
   #ifdef SIMPLETORQUEVECTOR

@@ -14,6 +14,7 @@
 #define TORQUE_FEEDBACKBIT			(3)
 #define TORQUE_FEEDACTBIT			(4)
 #define TORQUE_VECTORINGENABLEDBIT	(5)
+#define TORQUE_TCSENABLEDBIT		(6)
 
 typedef struct vectoradjusttype {
 	float FL;
