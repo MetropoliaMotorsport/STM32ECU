@@ -616,12 +616,13 @@ bool DoMenuInv ( uint16_t input )
 
 bool DoMenuTorque ( uint16_t input )
 {
-#define TORQUEMENU_VECTORING	(1)
-#define TORQUEMENU_TRACTION   	(2)
-#define TORQUEMENU_VELOCITY   	(3)
-#define TORQUEMENU_FEEDBACK		(4)
-#define TORQUEMENU_FEEDACT		(5)
-#define TORQUEMENU_VELSOURCE	(6)
+#define TORQUEMENU_WHEELS		(1)
+#define TORQUEMENU_VECTORING	(2)
+#define TORQUEMENU_TRACTION   	(3)
+#define TORQUEMENU_VELOCITY   	(4)
+#define TORQUEMENU_FEEDBACK		(5)
+#define TORQUEMENU_FEEDACT		(6)
+#define TORQUEMENU_VELSOURCE	(7)
 #define TORQUEMENU_LAST	 		(TORQUEMENU_VELSOURCE)
 #define TORQUEMENUSIZE			(TORQUEMENU_LAST+1)
 
@@ -644,6 +645,7 @@ bool DoMenuTorque ( uint16_t input )
 
 	strcpy(MenuLines[0], "Vectoring Menu:");
 	sprintf(MenuLines[1], "%cBack...", (menu.selection==0) ? '>' :' ');
+	doMenuBoolEdit( MenuLines[1+TORQUEMENU_VECTORING], "ToWheels", (menu.selection==TORQUEMENU_WHEELS), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_VECTORINGENABLEDBIT, input);
 	doMenuBoolEdit( MenuLines[1+TORQUEMENU_VECTORING], "Vectoring", (menu.selection==TORQUEMENU_VECTORING), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_VECTORINGBIT, input);
 	doMenuBoolEdit( MenuLines[1+TORQUEMENU_TRACTION], "Traction", (menu.selection==TORQUEMENU_TRACTION), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_TRACTIONBIT, input);
 	doMenuBoolEdit( MenuLines[1+TORQUEMENU_VELOCITY], "Velocity", (menu.selection==TORQUEMENU_VELOCITY), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_VELOCITYBIT, input);

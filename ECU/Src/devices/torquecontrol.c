@@ -137,11 +137,21 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 */
 
+	if ( getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT)?true:false )
+	{
+		adj->FL = rtY.TV_TV_torqueFL;
+		adj->FR = rtY.TV_TV_torqueFR;
+		adj->RL = rtY.TV_TV_torqueRL;
+		adj->RR = rtY.TV_TV_torqueRR;	
+	}
+	else
+	{
 	// don't actually use output values yet.
-	adj->FL = Torque_Req;
-	adj->FR = Torque_Req;
-	adj->RL = Torque_Req;
-	adj->RR = Torque_Req;
+		adj->FL = Torque_Req;
+		adj->FR = Torque_Req;
+		adj->RL = Torque_Req;
+		adj->RR = Torque_Req;
+	}
 
 	uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
 
