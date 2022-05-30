@@ -1595,7 +1595,7 @@ void SubsystemModelReference_step(void)
   /* Logic: '<S3>/AND1' incorporates:
    *  Inport: '<Root>/bus_Velocity_control_active'
    */
-  rtb_AND1 = (rtb_AND_l && rtU.bus_Velocity_control_active);
+  rtb_AND1 =   1 ; // System is always on currently    //rtU.bus_Velocity_control_active; // Currently exluded the possibility to deactivate MAXRPM control as RPMlimit should be on all the time 
 
   /* Product: '<S34>/Divide' incorporates:
    *  Constant: '<S34>/Constant'
@@ -1615,7 +1615,13 @@ void SubsystemModelReference_step(void)
   rtb_Divide_m4 = rtb_Product_m * 117.933812831 / 0.6440264;
 
   /* Product: '<S24>/Product3' */
+    // If velocity is less than 1 m/s MaxRPMOutput is set to 1100 RPM 
+  if (rtU.bus_Vehicle_velocity >= 1) {
   rtb_Product3_na = (real_T)rtb_AND1 * rtb_Divide_m4;
+  }
+  else {
+	  rtb_Product3_na = 1100 ; // Set maxRPM to 1100 
+  }
 
   /* Saturate: '<S24>/Limit to max RPM' */
   if (rtb_Product3_na > 20000.0) {
@@ -1642,7 +1648,14 @@ void SubsystemModelReference_step(void)
   rtb_Divide_f = rtb_Product_mu * 117.933812831 / 0.6440264;
 
   /* Product: '<S36>/Product3' */
+  // If velocity is less than 1 m/s MaxRPMOutput is set to 1100 RPM 
+  if (rtU.bus_Vehicle_velocity >= 1) {
   rtb_Product3_l = (real_T)rtb_AND1 * rtb_Divide_f;
+  }
+  else {
+	  rtb_Product3_l = 1100 ; // Set maxRPM to 1100 
+  }
+  
 
   /* Saturate: '<S36>/Limit to max RPM' */
   if (rtb_Product3_l > 20000.0) {
@@ -1668,7 +1681,13 @@ void SubsystemModelReference_step(void)
   rtb_Divide_k0 = rtb_Product_g * 117.933812831 / 0.6440264;
 
   /* Product: '<S48>/Product3' */
-  rtb_Product3_o = (real_T)rtb_AND1 * rtb_Divide_k0;
+      // If velocity is less than 1 m/s MaxRPMOutput is set to 1100 RPM 
+  if (rtU.bus_Vehicle_velocity >= 1) {
+   rtb_Product3_o = (real_T)rtb_AND1 * rtb_Divide_k0;
+  }
+  else {
+	  rtb_Product3_o = 1100 ; // Set maxRPM to 1100 
+  }
 
   /* Saturate: '<S48>/Limit to max RPM' */
   if (rtb_Product3_o > 20000.0) {
@@ -1696,7 +1715,13 @@ void SubsystemModelReference_step(void)
   rtb_Divide_ak = rtb_Product2_f * 117.933812831 / 0.6440264;
 
   /* Product: '<S60>/Product3' */
+      // If velocity is less than 1 m/s MaxRPMOutput is set to 1100 RPM 
+  if (rtU.bus_Vehicle_velocity >= 1) {
   rtb_Product3_j = (real_T)rtb_AND1 * rtb_Divide_ak;
+  }
+  else {
+	  rtb_Product3_j = 1100 ; // Set maxRPM to 1100 
+  }
 
   /* Saturate: '<S60>/Limit to max RPM' */
   if (rtb_Product3_j > 20000.0) {
