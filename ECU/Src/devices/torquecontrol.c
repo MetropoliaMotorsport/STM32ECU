@@ -68,8 +68,8 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	} else if ( torquebal > 50 )
 	{
 		torquebal = torquebal / ( 100 - torquebal );
-		rtU.bus_Torque_FL = Torque_Req * torquebal;
-		rtU.bus_Torque_FR = Torque_Req * torquebal;
+		rtU.bus_Torque_FL = Torque_Req / torquebal;
+		rtU.bus_Torque_FR = Torque_Req / torquebal;
 		rtU.bus_Torque_RL = Torque_Req;
 		rtU.bus_Torque_RR = Torque_Req;
 	} else
@@ -77,8 +77,8 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 		torquebal = torquebal / ( 100 - torquebal );
 		rtU.bus_Torque_FL = Torque_Req;
 		rtU.bus_Torque_FR = Torque_Req;
-		rtU.bus_Torque_RL = Torque_Req * torquebal;
-		rtU.bus_Torque_RR = Torque_Req * torquebal;	
+		rtU.bus_Torque_RL = Torque_Req / torquebal;
+		rtU.bus_Torque_RR = Torque_Req / torquebal;	
 	}
 
 	rtU.bus_Torque_FL = Torque_Req;
