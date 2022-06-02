@@ -57,10 +57,34 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	rtU.bus_rotation_speed_RL = getInvState(invRL)->Speed * 0.10472;
 	rtU.bus_rotation_speed_RR = getInvState(invRR)->Speed * 0.10472;
 
+	float torquebal = getEEPROMBlock(0)->TorqueBal;
+
+	if ( torquebal == 50 || torquebal == 0 )
+	{
+		rtU.bus_Torque_FL = Torque_Req;
+		rtU.bus_Torque_FR = Torque_Req;
+		rtU.bus_Torque_RL = Torque_Req;
+		rtU.bus_Torque_RR = Torque_Req;
+	} else if ( torquebal > 50 )
+	{
+		torquebal = torquebal / ( 100 - torquebal );
+		rtU.bus_Torque_FL = Torque_Req * torquebal;
+		rtU.bus_Torque_FR = Torque_Req * torquebal;
+		rtU.bus_Torque_RL = Torque_Req;
+		rtU.bus_Torque_RR = Torque_Req;
+	} else
+	{
+		torquebal = torquebal / ( 100 - torquebal );
+		rtU.bus_Torque_FL = Torque_Req;
+		rtU.bus_Torque_FR = Torque_Req;
+		rtU.bus_Torque_RL = Torque_Req * torquebal;
+		rtU.bus_Torque_RR = Torque_Req * torquebal;	
+	}
+
 	rtU.bus_Torque_FL = Torque_Req;
-	rtU.bus_Torque_FR = Torque_Req;
+	rtU.bus_Torque_FR = Torque_Req * torquebal;
 	rtU.bus_Torque_RL = Torque_Req;
-	rtU.bus_Torque_RR = Torque_Req;
+	rtU.bus_Torque_RR = Torque_Req * torquebal;
 
 	rtU.bus_Vehicle_yaw_rate = IMUReceived.GyroZ*0.001;
 	rtU.bus_Vehicle_str_ang = ADCState.SteeringAngle;

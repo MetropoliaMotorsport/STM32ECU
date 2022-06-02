@@ -552,20 +552,21 @@ bool doPedalCalibration( uint16_t input )
 }
 
 #define MENU_NM		 	(1)
-#define MENU_TORQUE		(2)
-#define MENU_RPM	 	(3)
-#define MENU_ACCEL 	 	(4)
-#define MENU_LIMPDIS 	(5)
-#define MENU_FANS	 	(6)
-#define MENU_FANMAX	 	(7)
-#define MENU_CALIB   	(8)
-#define MENU_STEERING   (9)
-#define MENU_INVEN	 	(10)
-#define MENU_REGEN	 	(11)
-#define MENU_REGENMAX	(12)
-#define MENU_REGENMAXR  (13)
-#define MENU_TELEMETRY  (14)
-#define MENU_HV		 	(15)
+#define MENU_NMBAL		(2)
+#define MENU_TORQUE		(3)
+#define MENU_RPM	 	(4)
+#define MENU_ACCEL 	 	(5)
+#define MENU_LIMPDIS 	(6)
+#define MENU_FANS	 	(7)
+#define MENU_FANMAX	 	(8)
+#define MENU_CALIB   	(9)
+#define MENU_STEERING   (10)
+#define MENU_INVEN	 	(11)
+#define MENU_REGEN	 	(12)
+#define MENU_REGENMAX	(13)
+#define MENU_REGENMAXR  (14)
+#define MENU_TELEMETRY  (15)
+#define MENU_HV		 	(16)
 #define MENU_LAST	 	(MENU_HV)
 
 #define MAINMENUSIZE	(MENU_LAST+1)
@@ -690,6 +691,8 @@ bool DoMenu( uint16_t input )
 
 	const uint8_t torquevals[] = {0, 5, 10, 15, 20, 25,0}; // zero terminated so function can find end.
 
+	const uint8_t torquebalvals[] = {50, 60, 70, 80, 0}; // zero terminated so function can find end.
+
 	const uint8_t fanvals[] = {10,20,30,40,50,60,70,80,90,100,0};
 
 	const uint16_t rpmvals[] = {500, 3000, 5000, 10000, 15000, 19000, 20000, 0};
@@ -786,6 +789,8 @@ bool DoMenu( uint16_t input )
 		sprintf(MenuLines[1], "%cBack & Save", (menu.selection==0) ? '>' :' ');
 
 		doMenu8BitEdit( MenuLines[1+MENU_NM], "Max Nm", (menu.selection==MENU_NM), &menu.inedit, &getEEPROMBlock(0)->MaxTorque, torquevals, input, false );
+		doMenu8BitEdit( MenuLines[1+MENU_NMBAL], "Nm Bal", (menu.selection==MENU_NMBAL), &menu.inedit, &getEEPROMBlock(0)->TorqueBal, torquebalvals, input, false );
+
 
 		snprintf(MenuLines[1+MENU_TORQUE], sizeof(MenuLines[0]), "%cTorqueVect...", (menu.selection==MENU_TORQUE) ? '>' :' ');
 

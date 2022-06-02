@@ -108,8 +108,9 @@ typedef struct eepromdatastruct {
 	int16_t steerCalib;
 	uint8_t regenMaxR;
 	uint8_t TorqueVelsource;
-	union {
 	bool Telemetry;
+	union {
+	uint8_t TorqueBal;
 	uint8_t Blockend;
 	};
 } eepromdata; // max 1600bytes=50*32byte blocks.
