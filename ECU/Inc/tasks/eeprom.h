@@ -107,7 +107,7 @@ typedef struct eepromdatastruct {
 	bool Regen;
 	int16_t steerCalib;
 	uint8_t regenMaxR;
-	uint8_t TorqueVelsource;
+	uint8_t AvailableByte;
 	bool Telemetry;
 	union {
 	uint8_t TorqueBal;

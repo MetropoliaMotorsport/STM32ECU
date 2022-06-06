@@ -625,7 +625,7 @@ bool DoMenuTorque ( uint16_t input )
 #define TORQUEMENU_FEEDBACK		(6)
 #define TORQUEMENU_FEEDACT		(7)
 #define TORQUEMENU_VELSOURCE	(8)
-#define TORQUEMENU_LAST	 		(TORQUEMENU_VELSOURCE)
+#define TORQUEMENU_LAST	 		(TORQUEMENU_FEEDACT)
 #define TORQUEMENUSIZE			(TORQUEMENU_LAST+1)
 
 	static menustruct_t menu = {
@@ -654,7 +654,7 @@ bool DoMenuTorque ( uint16_t input )
 	doMenuBoolEdit( MenuLines[1+TORQUEMENU_VELOCITY], "Velocity", (menu.selection==TORQUEMENU_VELOCITY), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_VELOCITYBIT, input);
 	doMenuBoolEdit( MenuLines[1+TORQUEMENU_FEEDBACK], "Feedback", (menu.selection==TORQUEMENU_FEEDBACK), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_FEEDBACKBIT, input);
 	doMenuBoolEdit( MenuLines[1+TORQUEMENU_FEEDACT], "FeedbackAct", (menu.selection==TORQUEMENU_FEEDACT), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_FEEDACTBIT, input);
-	doMenuVelSrcEdit( MenuLines[1+TORQUEMENU_VELSOURCE], "VelSrc", (menu.selection==TORQUEMENU_VELSOURCE), &menu.inedit, &getEEPROMBlock(0)->TorqueVelsource, input );
+	//doMenuVelSrcEdit( MenuLines[1+TORQUEMENU_VELSOURCE], "VelSrc", (menu.selection==TORQUEMENU_VELSOURCE), &menu.inedit, &getEEPROMBlock(0)->TorqueVelsource, input );
 
 	lcd_send_stringline( 0, MenuLines[0], MENUPRIORITY );
 
