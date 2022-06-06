@@ -91,11 +91,11 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 	rtU.bus_Pedal_torque_position = ADCState.Torque_Req_R_Percent/10.0;
 
-	rtU.bus_Traction_control_active = getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TRACTIONBIT)?true:false;
-	rtU.bus_Velocity_control_active = getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VELOCITYBIT)?true:false;
-	rtU.bus_feedback_active = getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_FEEDBACKBIT)?true:false;
-	rtU.bus_feedforward_active = getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_FEEDACTBIT)?true:false;
-	rtU.bus_Torque_vectoring_active = getEEPROMBlock(0)->TorqueVectoring & (1 << TORQUE_VECTORINGBIT)?true:false;
+	rtU.bus_Traction_control_active = (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TRACTIONBIT))?true:false;
+	rtU.bus_Velocity_control_active = (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VELOCITYBIT))?true:false;
+	rtU.bus_feedback_active = (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_FEEDBACKBIT))?true:false;
+	rtU.bus_feedforward_active = (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_FEEDACTBIT))?true:false;
+	rtU.bus_Torque_vectoring_active = (getEEPROMBlock(0)->TorqueVectoring & (1 << TORQUE_VECTORINGBIT))?true:false;
 
 /*
 	if ( rtU.velocity < 2.7 ) rtU.velocity = 0;
@@ -163,7 +163,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 */
 
-	if ( getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT)?true:false )
+	if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT))?true:false )
 	{
 		adj->FL = Torque_Req + rtY.TV_TV_torqueFL;
 		adj->FR = Torque_Req - rtY.TV_TV_torqueFR;
@@ -179,7 +179,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 		adj->RR = Torque_Req;
 	}
 
-	if ( getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TCSENABLEDBIT)?true:false )
+	if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TCSENABLEDBIT))?true:false )
 	{
 		adj->FL += rtY.TCS_TCS_FL;
 		adj->FR += - rtY.TCS_TCS_FR;
