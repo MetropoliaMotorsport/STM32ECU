@@ -288,10 +288,10 @@ bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		)
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode35Bit ), eSetBits);
-//		CarState.I_LeftFans = CANRxData[0];
-//		CarState.I_RightFans =  CANRxData[1];
-//		CarState.I_LeftPump =  CANRxData[2];
-//		CarState.I_RightPump =  CANRxData[3];
+		CarState.I_LeftFans = CANRxData[0];
+		CarState.I_RightFans = CANRxData[1];
+		CarState.I_LeftPump = CANRxData[2];
+		CarState.I_RightPump = CANRxData[3];
 		return true;
 
 	} else // bad data.

@@ -99,6 +99,8 @@
 // Control cooling fan via APPS trigger.
 #define FANCONTROL
 
+#define PUMPMINIMUM_I ( 6 ) // 600mA?
+
 // Trigger percentage for FAN on APPS
 #define TORQUEFANLATCHPERCENTAGE 30
 
@@ -369,6 +371,12 @@ typedef struct {
 	uint8_t I_AccuFans;
 	uint8_t Freq_IMD;
 	uint8_t DC_IMD;
+
+	uint8_t I_LeftFans;
+	uint8_t I_RightFans;
+	uint8_t I_LeftPump;
+	uint8_t I_RightPump;
+
 } CarStateType;
 
 typedef enum DeviceStatustype {

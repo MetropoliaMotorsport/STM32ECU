@@ -114,6 +114,8 @@ void PowerTask(void *argument)
 	uint32_t powernodesOnlineSince = 0;
 	uint32_t count = 0;
 	uint32_t lastseenHV = 0;
+	uint32_t lastseenpumpR = 0;
+	uint32_t lastseenpumpL = 0;
 	bool HVactive = false;
 
 	uint32_t lastseenall = 0;
@@ -203,6 +205,20 @@ void PowerTask(void *argument)
 			case PowerError : break;
 
 			case DirectPowerCmd :
+				if ( msg.power == LeftPump )
+				{
+					if ( msg.enabled )
+						lastseenpumpL = curtime;
+					else
+						lastseenpumpL = 0;
+				} else if ( msg.power == RightPump )
+				{
+					if ( msg.enabled )
+						lastseenpumpR = curtime;
+					else
+						lastseenpumpR = 0;
+				}
+
 				setNodeDevicePower( msg.power, msg.enabled, false );
 				break;
 			case FanPowerCmd :
@@ -333,6 +349,29 @@ void PowerTask(void *argument)
 				IMDset = false;
 	    	}
 	    }
+
+		if ( lastseenpumpL ) // pump should be on if this is not 0., assume that both pumps should be running if one is.
+		{
+			if ( CarState.I_LeftPump > PUMPMINIMUM_I )
+				lastseenpumpL = curtime; // update we've seen OK value.
+			else if ( curtime > lastseenpumpL + 2000 )
+			{
+				// two seconds since saw an acceptable current from PUMP. reset it.
+				lastseenpumpL = curtime;
+				resetDevicePower(LeftPump);
+				setDevicePower(LeftPump, true);
+			}
+
+			if ( CarState.I_RightPump > PUMPMINIMUM_I )
+				lastseenpumpR = curtime;
+			else if ( curtime > lastseenpumpR + 2000 )
+			{
+				// two seconds since saw an acceptable current from PUMP. reset it.
+				lastseenpumpL = curtime;
+				resetDevicePower(RightPump);
+				setDevicePower(RightPump, true);
+			}
+		}
 
 		// set the fan PWM speed when seen fan power node online.
 		if ( !fanssent && powernodesOnline & ( 1 << POWERNODE_FAN_BIT ) )
