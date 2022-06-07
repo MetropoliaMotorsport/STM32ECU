@@ -350,6 +350,7 @@ void PowerTask(void *argument)
 	    	}
 	    }
 
+#ifdef PUMPMINIMUM_I
 		if ( lastseenpumpL ) // pump should be on if this is not 0., assume that both pumps should be running if one is.
 		{
 			if ( CarState.I_LeftPump > PUMPMINIMUM_I )
@@ -372,6 +373,7 @@ void PowerTask(void *argument)
 				setDevicePower(RightPump, true);
 			}
 		}
+#endif
 
 		// set the fan PWM speed when seen fan power node online.
 		if ( !fanssent && powernodesOnline & ( 1 << POWERNODE_FAN_BIT ) )
