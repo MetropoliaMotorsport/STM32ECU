@@ -34,7 +34,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 {
 #ifdef MATLAB
 
-	rtU.bus_Vehicle_velocity = IMUReceived.VelBodyX*0.001; // This is right velocity to be used in torque vectoring -> velocity in IMU x direction
+	rtU.bus_Vehicle_velocity = IMUReceived.VelBodyX*0.01; // This is right velocity to be used in torque vectoring -> velocity in IMU x direction
 
 	int16_t VELUSED = rtU.bus_Vehicle_velocity;
 
