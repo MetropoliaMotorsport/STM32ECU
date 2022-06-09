@@ -116,6 +116,8 @@ void PowerTask(void *argument)
 	uint32_t lastseenHV = 0;
 	uint32_t lastseenpumpR = 0;
 	uint32_t lastseenpumpL = 0;
+	uint32_t restartpumpR = 0;
+	uint32_t restartpumpL = 0;
 	bool HVactive = false;
 
 	uint32_t lastseenall = 0;
@@ -354,23 +356,43 @@ void PowerTask(void *argument)
 		if ( lastseenpumpL ) // pump should be on if this is not 0., assume that both pumps should be running if one is.
 		{
 			if ( CarState.I_LeftPump > PUMPMINIMUM_I )
+			{
 				lastseenpumpL = curtime; // update we've seen OK value.
+			}
 			else if ( curtime > lastseenpumpL + 2000 )
 			{
 				// two seconds since saw an acceptable current from PUMP. reset it.
 				lastseenpumpL = curtime;
 				resetDevicePower(LeftPump);
+				setDevicePower(LeftPump, false);
+				restartpumpL = curtime + 2000;
+			}
+
+			if ( restartpumpL && curtime > restartpumpL )
+			{
 				setDevicePower(LeftPump, true);
+				restartpumpL = 0;
 			}
 
 			if ( CarState.I_RightPump > PUMPMINIMUM_I )
+			{
+				restartpumpL = 0;
 				lastseenpumpR = curtime;
+			}
 			else if ( curtime > lastseenpumpR + 2000 )
 			{
 				// two seconds since saw an acceptable current from PUMP. reset it.
 				lastseenpumpL = curtime;
 				resetDevicePower(RightPump);
+				setDevicePower(RightPump, false);
+				restartpumpR + curtime + 2000;
 				setDevicePower(RightPump, true);
+			}
+
+			if ( restartpumpR && curtime > restartpumpR )
+			{
+				setDevicePower(RightPump, true);
+				restartpumpR = 0;
 			}
 		}
 #endif
