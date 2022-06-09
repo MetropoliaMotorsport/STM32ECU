@@ -136,11 +136,10 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	if ( CheckHVLost() )
 	{
-	//	Errors.ErrorReason = HVlostError;
-	//	Errors.ErrorPlace = 0xE2;
-	//	return OperationalErrorState;
+		Errors.ErrorReason = HVlostError;
+		Errors.ErrorPlace = 0xE2;
+		return OperationalErrorState;
 	}
-
 
 	if ( readystate == 0 && GetInverterState() != OPERATIONAL )
 	{  // an inverter has changed state from operating after reaching it unexpectedly, fault status of some sort.

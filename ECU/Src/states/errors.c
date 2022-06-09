@@ -93,6 +93,8 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 		ShutdownCircuitSet( false );
 
+		ClearHVLost();
+
 #ifdef PDM
         sendPDM( 0 ); //disable high voltage on error state;
 #endif

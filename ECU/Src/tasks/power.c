@@ -88,10 +88,11 @@ void ClearHVLost( void )
 
 bool CheckHVLost( void )
 {
-	if ( Shutdown.AIRm == 0 || Shutdown.AIRp == 0 || Shutdown.TS_OFF || HVLost )
+	if ( Shutdown.AIRm == 0 || Shutdown.AIRp == 0 || Shutdown.TS_OFF || HVLost || CarState.VoltageINV < 60 )
 	{
 		return true;
 	}
+	return false;
 }
 
 void PowerTask(void *argument)
@@ -288,6 +289,7 @@ void PowerTask(void *argument)
 			lastseenHV = looptime;
 		}
 
+#if 0
 		if ( looptime - lastseenHV > PDMTIMEOUT )
 		{
 			if ( HVactive )
@@ -296,6 +298,7 @@ void PowerTask(void *argument)
 				SetHVLost();
 			}
 		}
+#endif
 
 		if ( ( curpowernodesOnline & PNODECRITICALBITS ) == PNODECRITICALBITS )
 		{
