@@ -92,8 +92,8 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 			//(int16_t)rtU.bus_Vehicle_acceleration,
 			//(int16_t)rtU.bus_Vehicle_yaw_rate,
 			VELUSED,//IMUReceived.VelBodyX, -> Scaled to right value -> No scaling should be done on the AIM side
-			IMUReceived.AccelX*0.01,
-			IMUReceived.GyroZ*0.001,
+			IMUReceived.AccelX,
+			IMUReceived.GyroZ,
 			0);
 
 //	  IMUReceived.VelN;
