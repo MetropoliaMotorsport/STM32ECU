@@ -497,7 +497,7 @@ int getSteeringAnglePWM( void )
 		if ( angle < 0 ) angle = angle + 360;
 		if ( angle > 359 ) angle = angle - 360;
 		angle = (angle - 180);
-		ADCState.SteeringAngle = angle;
+		ADCState.SteeringAngle = -1 * angle; // flip positive.
 		xTaskNotify( ADCTaskHandle, ( 0x1 << SteeringAngleReceivedBit ), eSetBits);
 		return true;
 	} else
