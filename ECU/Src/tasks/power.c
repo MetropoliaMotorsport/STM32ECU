@@ -88,7 +88,8 @@ void ClearHVLost( void )
 
 bool CheckHVLost( void )
 {
-	if ( Shutdown.AIRm == 0 || Shutdown.AIRp == 0 || Shutdown.TS_OFF || HVLost || CarState.VoltageINV < 60 )
+	// if ( Shutdown.AIRm == 0 || Shutdown.AIRp == 0 || Shutdown.TS_OFF || HVLost ||
+	if ( CarState.VoltageINV < 60 )
 	{
 		return true;
 	}
