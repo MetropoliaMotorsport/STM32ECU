@@ -24,6 +24,7 @@
 #include "lenzeinverter.h"
 #include "inverter.h"
 #include "analognode.h"
+#include "output.h"
 
 // freeRTOS
 #include "semphr.h"
@@ -218,6 +219,54 @@ static void debugFanPWM( const int tokens, const int val1, const int val2 )
 		}
 	}
 }
+
+static void debugLEDs( const int tokens, const int val1, const int val2 )
+{
+	if ( tokens != 3 )
+	{
+		UARTwrite("Please give led no and state. 0 0 to reset debug mode.\r\n");
+	} else if ( val1 > 18 || val1 < 0 )
+	{
+		UARTwrite("Invalid Output number given (0-18)\r\n");
+	}
+	else
+	{
+		if ( val2 == 0 )
+		{
+			snprintf(str, 80, "Setting LED %d to off\r\n", val1);
+			UARTwrite(str);
+			if ( val1 == 0 )
+				blinkOutputDebug(0,Stopdebug, 500);
+			else
+				setOutputDebug(val1, Off); // debug commands disable other threads controlling output till reboot
+		} else if ( val2 == 1 )
+		{
+			snprintf(str, 80, "Setting LED %d to on\r\n", val1);
+			UARTwrite(str);
+			setOutputDebug(val1, On);
+		} else if ( val2 <= BlinkVeryFast )
+		{
+			switch ( val2 )
+			{
+			case BlinkVerySlow: snprintf(str, 80, "Setting LED %d to BlinkVerySlow for 5s\r\n", val1); break;
+			case BlinkSlow: snprintf(str, 80, "Setting LED %d to BlinkSlow for 5s\r\n", val1); break;
+			case BlinkMed: snprintf(str, 80, "Setting LED %d to BlinkMed for 5s\r\n", val1); break;
+			case BlinkFast: snprintf(str, 80, "Setting LED %d to BlinkFast for 5s\r\n", val1); break;
+			case BlinkVeryFast: snprintf(str, 80, "Setting LED %d to BlinkVeryFast for 5s\r\n", val1); break;
+			default:
+				break;
+			}
+
+			blinkOutputDebug(val1, val2, 5000);
+		} else
+		{
+			UARTwrite("Invalid LED state given 0 to 6\r\n");
+		}
+
+	}
+}
+
+
 
 static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
 {
@@ -1476,6 +1525,10 @@ static void DebugTask(void *pvParameters)
 				{
 					UARTprintf("Sounding buzzer\r\n");
 					soundBuzzer();
+				}
+				else if ( streql(tkn1, "led") )
+				{
+					debugLEDs(tokens, val1, val2);
 				}
 				else if ( streql(tkn1, "uarttest") )
 				{

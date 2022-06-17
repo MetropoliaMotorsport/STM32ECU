@@ -42,6 +42,7 @@ typedef volatile struct OutputType
     uint16_t offtime;
     uint32_t start;
     uint32_t duration;
+    bool debug;
 } OutputType;
 
 #ifdef HPF20
@@ -210,6 +211,8 @@ void OutputTask(void *argument)
 
 	struct output_msg msg;
 
+	bool debugmode = false;
+
 	while( 1 )
 	{
 
@@ -218,13 +221,30 @@ void OutputTask(void *argument)
         // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
 			if ( xQueueReceive(OutputQueue,&msg,0) )
 			{
+				if ( msg.debug )
+				{
+					if ( msg.state == Stopdebug)
+						debugmode = false;
+					else
+						debugmode = true;
+
+				}
+
+				if ( debugmode && !msg.debug)
+				{
+					continue;
+				}
+
 				if ( msg.state == Toggle )
 				{
 					Output[msg.output].state = !Output[msg.output].state;
+					Output[msg.output].debug = msg.debug;
 					toggleOutputMetal(msg.output);
+
 				} else if ( msg.state > On )
 				{
 					Output[msg.output].output = msg.output;
+					Output[msg.output].debug = msg.debug;
 
 					int ontime = 0;
 					int offtime = 0;
@@ -283,10 +303,12 @@ void OutputTask(void *argument)
 				//	vTaskSuspend( xBlinkHandle[msg.output] );
 					HAL_GPIO_WritePin(getGpioPort(msg.output), getGpioPin(msg.output), On);
 					Output[msg.output].state = On;
+					Output[msg.output].debug = msg.debug;
 				} else
 				{
 					HAL_GPIO_WritePin(getGpioPort(msg.output), getGpioPin(msg.output), Off);
 					Output[msg.output].state = Off;
+					Output[msg.output].debug = msg.debug;
 					//Output[msg.output].ontime = Off;
 //					if ( xBlinkHandle[msg.output] != NULL )
 //						vTaskSuspend( xBlinkHandle[msg.output] );
@@ -341,7 +363,26 @@ void setOutput(output output, output_state state)
 {
 	output_msg msg;
 
+	msg.debug = false;
 	msg.output = output;
+	if ( state >= On)
+		msg.state = On;
+	else
+		msg.state = Off;
+	msg.time = 0;
+
+	if ( xPortIsInsideInterrupt() )
+		xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
+	else
+		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
+}
+
+void setOutputDebug(output output, output_state state)
+{
+	output_msg msg;
+
+	msg.output = output;
+	msg.debug = true;
 	if ( state >= On)
 		msg.state = On;
 	else
@@ -358,6 +399,7 @@ void setOutputNOW(output output, output_state state)
 {
 	output_msg msg;
 
+	msg.debug = false;
 	msg.output = output;
 	if ( state >= On)
 	{
@@ -384,6 +426,7 @@ void toggleOutput(output output)
 {
 	output_msg msg;
 
+	msg.debug = false;
 	msg.output = output;
 	msg.state = Toggle;
 	msg.time = 0;
@@ -408,6 +451,7 @@ void blinkOutput(output output, output_state blinkingrate, uint32_t time) // max
 {
 	output_msg msg;
 
+	msg.debug = false;
 	msg.output = output;
 	msg.state = blinkingrate;
 	msg.time = time;
@@ -417,6 +461,22 @@ void blinkOutput(output output, output_state blinkingrate, uint32_t time) // max
 	else
 		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
 }
+
+void blinkOutputDebug(output output, output_state blinkingrate, uint32_t time) // max 30 seconds if timed.
+{
+	output_msg msg;
+
+	msg.output = output;
+	msg.state = blinkingrate;
+	msg.time = time;
+	msg.debug = true;
+
+	if ( xPortIsInsideInterrupt() )
+		xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
+	else
+		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
+}
+
 
 void stopBlinkOutput(output output)
 {

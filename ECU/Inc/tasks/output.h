@@ -21,12 +21,13 @@ D6 - pin 16 PE12  output7 RTMD LED ( CH13 )
 D7 - pin 17 PE14  output8 BMS ( CH8 )
 */
 
-typedef enum output_state { Off, On, BlinkVerySlow, BlinkSlow, BlinkMed, BlinkFast, BlinkVeryFast, Toggle, Timed, Nochange } output_state;
+typedef enum output_state { Off, On, BlinkVerySlow, BlinkSlow, BlinkMed, BlinkFast, BlinkVeryFast, Toggle, Timed, Nochange, Stopdebug } output_state;
 
 typedef struct output_msg {
 	uint32_t output;
 	enum output_state state;
 	uint32_t time;
+	bool debug;
 } output_msg;
 
 extern QueueHandle_t OutputQueue;
@@ -57,8 +58,8 @@ typedef enum output {
 	TSLED=1,
 	STARTLED=4,
 	TSOFFLED=7, // 0
-	RTDMLED=3,
-	ERRORLED=2,
+	RTDMLED=2,
+	ERRORLED=3,
 	LED1=12,
 	LED2=13,
 	LED3=14,
@@ -101,10 +102,12 @@ typedef enum output {
 #define LEDBLINKNONSTOP     0xFFFF
 
 void setOutput(output output, output_state state);
+void setOutputDebug(output output, output_state state);
 void setOutputNOW(output output, output_state state); //  doesn't wait for timer to set output
 void toggleOutput(output output);
 void toggleOutputMetal(output output);
 void blinkOutput(output output, output_state blinkingrate, uint32_t time);
+void blinkOutputDebug(output output, output_state blinkingrate, uint32_t time);
 void timeOutput(output output, uint32_t time);
 void stopBlinkOutput(output output);
 
