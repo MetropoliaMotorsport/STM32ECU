@@ -7,9 +7,9 @@
  *
  * Code generated for Simulink model 'RegenCS'.
  *
- * Model version                  : 1.56
+ * Model version                  : 1.57
  * Simulink Coder version         : 9.6 (R2021b) 14-May-2021
- * C/C++ source code generated on : Fri Jun 17 20:13:01 2022
+ * C/C++ source code generated on : Sun Jun 19 15:29:07 2022
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -22,10 +22,10 @@
 #include "RegenCS.h"
 
 /* External inputs (root inport signals with default storage) */
-ExtU regU;
+regExtU regU;
 
 /* External outputs (root outports fed by signals with default storage) */
-ExtY regY;
+regExtY regY;
 static real_T look1_binlx(real_T u0, const real_T bp0[], const real_T table[],
   uint32_T maxIndex);
 static real_T look1_binlx(real_T u0, const real_T bp0[], const real_T table[],
@@ -100,7 +100,7 @@ void RegenCS_step(void)
    *  Inport: '<Root>/SteeringAngleDeg'
    */
   rtb_SteerReducing = look1_binlx(fabs(regU.SteeringAngleDeg),
-    regConstP.SteerReducing_bp01Data, regConstP.SteerReducing_tableData, 9U);
+    regConstP_d.SteerReducing_bp01Data, regConstP_d.SteerReducing_tableData, 9U);
 
   /* Gain: '<S2>/Gain1' incorporates:
    *  Inport: '<Root>/TorqueBalance'
@@ -113,14 +113,15 @@ void RegenCS_step(void)
    *  Inport: '<Root>/RegenPos'
    *  Lookup_n-D: '<S2>/Regen total torque'
    */
-  rtb_Product4 = look1_binlx(regU.RegenPos, regConstP.Regentotaltorque_bp01Data,
-    regConstP.Regentotaltorque_tableData, 10U) * -regU.MaxRegen;
+  rtb_Product4 = look1_binlx(regU.RegenPos,
+    regConstP_d.Regentotaltorque_bp01Data,
+    regConstP_d.Regentotaltorque_tableData, 10U) * -regU.MaxRegen;
 
   /* Lookup_n-D: '<S2>/Torque balance' incorporates:
    *  Inport: '<Root>/RegenPos'
    */
   rtb_Torquebalance = look1_binlx(regU.RegenPos,
-    regConstP.Torquebalance_bp01Data, regConstP.Torquebalance_tableData, 9U);
+    regConstP_d.Torquebalance_bp01Data, regConstP_d.Torquebalance_tableData, 9U);
 
   /* Switch: '<S2>/Switch' incorporates:
    *  Gain: '<S2>/Gain'

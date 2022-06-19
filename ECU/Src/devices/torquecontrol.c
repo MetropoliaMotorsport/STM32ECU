@@ -12,9 +12,9 @@
 #include "timerecu.h"
 #include "inverter.h"
 #include "imu.h"
-
 #ifdef MATLAB
 
+#include "RegenCS.h"
 #include "SubsystemModelReference.h"   /* Model's header file */
 #include "rtwtypes.h"
 #endif
@@ -43,15 +43,17 @@ void doRegen(vectoradjust * adj)
 
 	RegenCS_step();
 
+
 	regY.RegenFL;
 	regY.RegenFR;
 	regY.RegenRL;
 	regY.RegenRR;
-
-	adj.FL = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
-	adj.FR = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
-	adj.RL = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
-	adj.RR = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
+#if 0
+	adj->FL = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
+	adj->FR = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
+	adj->RL = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
+	adj->RR = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
+#endif
 }
 
 void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )

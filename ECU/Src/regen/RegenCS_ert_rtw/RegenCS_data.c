@@ -7,9 +7,9 @@
  *
  * Code generated for Simulink model 'RegenCS'.
  *
- * Model version                  : 1.56
+ * Model version                  : 1.57
  * Simulink Coder version         : 9.6 (R2021b) 14-May-2021
- * C/C++ source code generated on : Fri Jun 17 20:13:01 2022
+ * C/C++ source code generated on : Sun Jun 19 15:29:07 2022
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -22,7 +22,7 @@
 #include "RegenCS.h"
 
 /* Constant parameters (default storage) */
-const ConstP regConstP = {
+const regConstP regConstP_d = {
   /* Expression: [1.0000 0.9444 0.8889 0.8333 0.7778 0.7222 0.6667 0.6111 0.5556 0.5000]
    * Referenced by: '<S1>/SteerReducing'
    */

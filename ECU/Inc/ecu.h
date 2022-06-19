@@ -38,6 +38,8 @@
 	#define MEMORATAR
 
 	#define retransmitIMU
+
+	#define LCDUART UART1
 #endif
 
 #ifdef HPF19

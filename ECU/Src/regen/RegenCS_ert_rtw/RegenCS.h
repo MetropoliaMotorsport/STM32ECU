@@ -7,9 +7,9 @@
  *
  * Code generated for Simulink model 'RegenCS'.
  *
- * Model version                  : 1.56
+ * Model version                  : 1.57
  * Simulink Coder version         : 9.6 (R2021b) 14-May-2021
- * C/C++ source code generated on : Fri Jun 17 20:13:01 2022
+ * C/C++ source code generated on : Sun Jun 19 15:29:07 2022
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: ARM Compatible->ARM Cortex-M
@@ -62,7 +62,7 @@ typedef struct {
    * Referenced by: '<S2>/Torque balance'
    */
   real_T Torquebalance_bp01Data[10];
-} ConstP;
+} regConstP;
 
 /* External inputs (root inport signals with default storage) */
 typedef struct {
@@ -72,7 +72,7 @@ typedef struct {
   real_T RegenBalanceOn;               /* '<Root>/RegenBalanceOn' */
   real_T TorqueBalance;                /* '<Root>/TorqueBalance' */
   real_T MaxRegen;                     /* '<Root>/MaxRegen' */
-} ExtU;
+} regExtU;
 
 /* External outputs (root outports fed by signals with default storage) */
 typedef struct {
@@ -80,16 +80,16 @@ typedef struct {
   real_T RegenFR;                      /* '<Root>/RegenFR' */
   real_T RegenRL;                      /* '<Root>/RegenRL' */
   real_T RegenRR;                      /* '<Root>/RegenRR' */
-} ExtY;
+} regExtY;
 
 /* External inputs (root inport signals with default storage) */
-extern ExtU regU;
+extern regExtU regU;
 
 /* External outputs (root outports fed by signals with default storage) */
-extern ExtY regY;
+extern regExtY regY;
 
 /* Constant parameters (default storage) */
-extern const ConstP regConstP;
+extern const regConstP regConstP_d;
 
 /* Model entry point functions */
 extern void RegenCS_initialize(void);

@@ -13,6 +13,7 @@
 #include "queue.h"
 #include "semphr.h"
 
+#include "uartecu.h"
 #include "i2c.h"
 #include "taskpriorities.h"
 
@@ -40,7 +41,7 @@ char ScrollTitle[ScrollWidth+1] = "";
       __attribute__((section(".dma_buffer")))
 #endif
 
-DMA_BUFFER ALIGN_32BYTES (uint8_t LCDBuffer[LCDBUFSIZE]);
+DMA_BUFFER ALIGN_32BYTES (uint8_t LCDBuffer[LCDBUFSIZE+1]);
 
 static uint8_t LinePriority[4] = {0};
 static uint32_t LinePriorityTime[4] = {0};
@@ -68,6 +69,15 @@ int lcd_geterrors( void )
 	return lcd_errorcount();
 }
 
+static int lcd_senduart( void )
+{
+	uint8_t screenstr[LCDROWS*LCDCOLUMNS+1];
+	
+	if ( UART_WaitTXDone( LCDUART, 0 ) ) // don't transmit if existing still in progress.
+	{
+		UART_Transmit(LCDUART, LCDBuffer, sizeof LCDBuffer); // this should terminate in 0 naturally as sync.
+	}
+}
 
 void LCDTask(void *argument)
 {
@@ -83,6 +93,8 @@ void LCDTask(void *argument)
     const TickType_t xFrequency = 32;
 
 	struct lcd_msg msg;
+
+	uint32_t lastuart = 0;
 
 	while ( 1 )
 	{
@@ -198,6 +210,13 @@ void LCDTask(void *argument)
 
 		lcd_updatedisplay();
 
+		uint32_t curtime = gettimer();
+		if (curtime > lastuart + ( 1000 / 5 ))
+		{
+			lastuart = curtime;
+			lcd_senduart();
+		}
+
 		vTaskDelay(xFrequency);
 
 	//	vTaskDelayUntil( &xLastWakeTime, xFrequency );
@@ -240,7 +259,6 @@ static int lcd_updatedisplay( void ) // batch send buffered LCD commands
 	int result = lcd_dosend();
 	return result;
 }
-
 
 
 int lcd_send_stringline( int row, char *str, uint8_t priority )

@@ -2,7 +2,7 @@
 ## Makefile generated for component 'RegenCS'. 
 ## 
 ## Makefile     : RegenCS.mk
-## Generated on : Fri Jun 17 20:08:36 2022
+## Generated on : Sun Jun 19 15:29:19 2022
 ## Final product: $(RELATIVE_PATH_TO_ANCHOR)/RegenCS.exe
 ## Product type : executable
 ## 
@@ -22,7 +22,7 @@ MAKEFILE                  = RegenCS.mk
 MATLAB_ROOT               = C:/PROGRA~1/MATLAB/R2021b
 MATLAB_BIN                = C:/PROGRA~1/MATLAB/R2021b/bin
 MATLAB_ARCH_BIN           = $(MATLAB_BIN)/win64
-START_DIR                 = C:/Users/semen/Desktop/JETSKI~1
+START_DIR                 = C:/Users/semen/Desktop
 SOLVER                    = 
 SOLVER_OBJ                = 
 CLASSIC_INTERFACE         = 0

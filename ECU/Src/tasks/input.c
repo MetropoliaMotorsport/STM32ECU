@@ -99,77 +99,172 @@ StackType_t xINPUTStack[ INPUTSTACK_SIZE ];
 
 TaskHandle_t InputTaskHandle;
 
+
+void updateInputs( void )
+{
+	for ( int i = 0;i<NO_INPUTS;i++)
+	{
+		if ( Input[i].port == NULL) continue; // don't bother processing an input being used for PWM
+
+		bool curstate = HAL_GPIO_ReadPin(Input[i].port, Input[i].pin );
+
+//#define BUTTONPULLUP
+#ifndef BUTTONPULLUP
+		curstate = !curstate;
+#else
+
+#endif
+		if ( curstate != Input[i].state) // current state of button has changed reset duration count.
+		{
+			Input[i].statecount = 0;
+			Input[i].held = 0;
+			Input[i].state = curstate;
+		}
+
+		Input[i].statecount++;
+
+		if ( Input[i].statecount == 0 ) Input[i].statecount = 0xFFFFFFFF; // don't allow wrap;
+		else if ( Input[i].statecount == 3 ) // button held for long enough to count as a change of state, register it.
+		{
+			if ( Input[i].first == true )
+			{
+					Input[i].first = false;
+			} else
+			{
+				char str[40];
+				if ( curstate )
+				{
+					snprintf(str, 40, "Button %d pressed", i );
+					DebugMsg(str);
+
+					Input[i].pressed = true;
+					Input[i].lastpressed=gettimer();
+					Input[i].count++;
+					// add button press to queue here.
+
+				} else
+				{
+					snprintf(str, 40, "Button %d released", i );
+					DebugMsg(str);
+					Input[i].lastreleased=gettimer();
+				}
+			}
+		} else if ( Input[i].statecount > 3 )
+		{
+			if ( curstate )
+			{
+				Input[i].held +=1; // add one for each cycle held.
+			}
+		}
+
+	}
+
+}
+
+TickType_t xLastWakeTime;
+
+// also handle printing debug messages here.
+uint8_t uartWaitInput( char *ch )
+{
+	if(!UART_Receive(DEBUGUART, (uint8_t *)ch, 1)) {
+		return 0;
+	}
+
+	while ( 1 )
+	{
+		if ( UART_WaitRXDone( DEBUGUART, 1 ) )
+		{
+			return 1;
+		}
+
+		uint32_t curtime = gettimer();
+
+		if ( curtime > xLastWakeTime + CYCLETIME )
+		{
+			xLastWakeTime = curtime;
+			updateInputs();
+		}
+		//vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
+	}
+}
+
+
 void InputTask(void *argument)
 {
 	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY );
 
-	TickType_t xLastWakeTime;
-
 	// Initialise the xLastWakeTime variable with the current time.
-	xLastWakeTime = xTaskGetTickCount();
+	xLastWakeTime = gettimer(); // xTaskGetTickCount();
+
+	char ch;
+
+	bool uartsynced = false;
+	uint8_t uartrxstate = 0;
+	uint8_t uartin[3] = {0}; // zero out array to ensure it ends in 0, for string termination.
 
 	while( 1 )
 	{
-		for ( int i = 0;i<NO_INPUTS;i++)
+		uartWaitInput(&ch);
+
+#if 1
+		switch ( uartrxstate )
 		{
-			if ( Input[i].port == NULL) continue; // don't bother processing an input being used for PWM
-
-			bool curstate = HAL_GPIO_ReadPin(Input[i].port, Input[i].pin );
-
-//#define BUTTONPULLUP
-#ifndef BUTTONPULLUP
-			curstate = !curstate;
-#else
-
-#endif
-			if ( curstate != Input[i].state) // current state of button has changed reset duration count.
+		case 0 :
+			// try and setup receive of header
+			if ( ch == 0xff )
 			{
-				Input[i].statecount = 0;
-				Input[i].held = 0;
-				Input[i].state = curstate;
+				uartrxstate = 1;
+			} else // keep state till get a sync char.
+			{
+				// not sync char, wait for next.
+				uartrxstate = 0;
+				break;
 			}
 
-			Input[i].statecount++;
+		case 1 :
+				if ( UART_Receive( UART1, &uartin[1], 2) )
+				{
+					uartrxstate = 2;
+					break;				
+				}
+				// let it fall through to next state
+			
+		case 2 :
+				if ( UART_Receive( UART1, &uartin[1], 2) )
+				{
+					uartrxstate = 3; // got full sync and first data package.
+					break;				
+				}
 
-			if ( Input[i].statecount == 0 ) Input[i].statecount = 0xFFFFFFFF; // don't allow wrap;
-			else if ( Input[i].statecount == 3 ) // button held for long enough to count as a change of state, register it.
+		case 3 :
+			if ( UART_Receive( UART1, uartin, 3) && uartin[0] == 0xff )
 			{
-				if ( Input[i].first == true )
+				if ( uartin[0] == 0xff )
 				{
-					 Input[i].first = false;
-				} else
-				{
-					char str[40];
-					if ( curstate )
+					switch ( uartin[1] )
 					{
-						snprintf(str, 40, "Button %d pressed", i );
-						DebugMsg(str);
 
-						Input[i].pressed = true;
-						Input[i].lastpressed=gettimer();
-						Input[i].count++;
-						// add button press to queue here.
-
-					} else
-					{
-						snprintf(str, 40, "Button %d released", i );
-						DebugMsg(str);
-						Input[i].lastreleased=gettimer();
+						default:
+							uartrxstate = 99;
+							break;
 					}
-				}
-			} else if ( Input[i].statecount > 3 )
-			{
-				if ( curstate )
+				} else if ( uartin[0] == 's' )
 				{
-					Input[i].held +=1; // add one for each cycle held.
+					// sync message.
+					uartrxstate = 0;
 				}
-			}
 
+			}
+			break;
+		case 99 : // error.
+		default :
+			// cancel any receive, reset state
+			uartrxstate = 0;
 		}
+#endif
+		// updateInputs();
 
 		// TODO add a reset procedure via long button press as another last resort.
-
-		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 	}
 
 	vTaskDelete(NULL);
@@ -461,6 +556,67 @@ void clearButtons(void)
 	{
 		Input[i].pressed = 0;
 	}
+}
+
+#define D_POT0 0x10
+#define D_POT1 0x11
+#define D_BTN0 0x20
+#define D_BTN1 0x21
+#define D_BTN2 0x22
+#define D_BTN3 0x23
+#define D_BTN4 0x24
+#define D_BAT  0x30
+#define D_CON  0x40
+
+#define D_BTN0_I Center_Input
+#define D_BTN1_I Left_Input
+#define D_BTN2_I Right_Input
+#define D_BTN3_I Up_Input
+#define D_BTN4_I Down_Input
+
+
+void receiveUARTInput( uint8_t id, uint8_t value)
+{
+	switch ( id )
+	{
+		case D_BTN0:
+			if ( value == 1 )
+			{
+				Input[D_BTN0_I].pressed = 1;
+				Input[D_BTN0_I].lastpressed = gettimer();
+			}
+			break;
+		case D_BTN1:
+			if ( value == 1 )
+			{
+				Input[D_BTN1_I].pressed = 1;
+				Input[D_BTN1_I].lastpressed = gettimer();
+			}
+			break;
+		case D_BTN2:
+			if ( value == 1 )
+			{
+				Input[D_BTN2_I].pressed = 1;
+				Input[D_BTN2_I].lastpressed = gettimer();
+			}
+			break;
+		case D_BTN3:
+			if ( value == 1 )
+			{
+				Input[D_BTN3_I].pressed = 1;
+				Input[D_BTN3_I].lastpressed = gettimer();
+			}
+			break;
+		case D_BTN4:
+			if ( value == 1 )
+			{
+				Input[D_BTN4_I].pressed = 1;
+				Input[D_BTN4_I].lastpressed = gettimer();
+			}
+			break;
+
+	}
+	return;
 }
 
 bool receiveCANInput( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle)
