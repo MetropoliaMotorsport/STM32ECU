@@ -20,6 +20,7 @@
 #include "lcd.h"
 #include "inverter.h"
 #include "debug.h"
+#include "RegenCS.h"
 
 uint16_t PrintRunning( char *title )
 {
@@ -267,11 +268,15 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
         {
     		if ( ADCState.Regen_Percent > 100 && getEEPROMBlock(0)->Regen ) // no torque request, but we do have a regen request, return that.
     		{
+				#if 1
     			CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 ) ;
     			adj.FL = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
     			adj.FR = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
     			adj.RL = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
     			adj.RR = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
+				#else
+    			doRegen(ADCState.Regen_percent, &adj);
+				#endif
     		}
         }
 
