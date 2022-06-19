@@ -32,28 +32,20 @@ int initVectoring( void )
 
 void doRegen(vectoradjust * adj)
 {
-	CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 ) ;
-
-	regU.RegenPos = 0;
+	regU.RegenPos = ( ADCState.Regen_Percent * 1200 ) / 8000; // scales to 0-150.
 	regU.SteeringAngleDeg = ADCState.SteeringAngle;
-	regU.SteerReducingOn = 0;
+	regU.SteerReducingOn = 1;
 	regU.RegenBalanceOn = 0;
-	regU.TorqueBalance = 0;
+	// 0-100, 100 = regen on front only.
+	regU.TorqueBalance = 50;
 	regU.MaxRegen = getEEPROMBlock(0)->regenMax;
 
 	RegenCS_step();
 
-
-	regY.RegenFL;
-	regY.RegenFR;
-	regY.RegenRL;
-	regY.RegenRR;
-#if 0
-	adj->FL = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
-	adj->FR = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
-	adj->RL = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
-	adj->RR = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
-#endif
+	adj->FL = regY.RegenFL;
+	adj->FR = regY.RegenFR;;
+	adj->RL = regY.RegenRL;
+	adj->RR = regY.RegenRR;
 }
 
 void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )

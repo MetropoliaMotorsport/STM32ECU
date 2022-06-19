@@ -39,6 +39,8 @@
 
 	#define retransmitIMU
 
+	#define MATLABREGEN
+
 	#define LCDUART UART1
 #endif
 

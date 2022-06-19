@@ -268,7 +268,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
         {
     		if ( ADCState.Regen_Percent > 100 && getEEPROMBlock(0)->Regen ) // no torque request, but we do have a regen request, return that.
     		{
-				#if 1
+				#ifndef MATLABREGEN
     			CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 ) ;
     			adj.FL = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
     			adj.FR = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
