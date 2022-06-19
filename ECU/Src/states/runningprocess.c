@@ -275,7 +275,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
     			adj.RL = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
     			adj.RR = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
 				#else
-    			doRegen(ADCState.Regen_percent, &adj);
+    			doRegen(ADCState.Regen_Percent, &adj);
 				#endif
     		}
         }
