@@ -46,6 +46,7 @@
 TrueSTUDIO/
 /Debug/
 /ECU/Debug/
+.vscode/
 __history/
 __recovery/
 *.stat
