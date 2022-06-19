@@ -209,14 +209,14 @@ void LCDTask(void *argument)
 		}
 
 		lcd_updatedisplay();
-
+#if 0
 		uint32_t curtime = gettimer();
 		if (curtime > lastuart + ( 1000 / 5 ))
 		{
 			lastuart = curtime;
 			lcd_senduart();
 		}
-
+#endif
 		vTaskDelay(xFrequency);
 
 	//	vTaskDelayUntil( &xLastWakeTime, xFrequency );
