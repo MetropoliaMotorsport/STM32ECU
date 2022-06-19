@@ -161,8 +161,7 @@ void updateInputs( void )
 
 }
 
-TickType_t xLastWakeTime;
-
+#if 0
 // also handle printing debug messages here.
 uint8_t uartWaitInput( char *ch )
 {
@@ -187,14 +186,14 @@ uint8_t uartWaitInput( char *ch )
 		//vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 	}
 }
-
+#endif
 
 void InputTask(void *argument)
 {
 	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY );
 
 	// Initialise the xLastWakeTime variable with the current time.
-	xLastWakeTime = gettimer(); // xTaskGetTickCount();
+	TickType_t xLastWakeTime = xTaskGetTickCount();
 
 	char ch;
 
@@ -204,9 +203,8 @@ void InputTask(void *argument)
 
 	while( 1 )
 	{
+#if 0
 		uartWaitInput(&ch);
-
-#if 1
 		switch ( uartrxstate )
 		{
 		case 0 :
@@ -262,7 +260,9 @@ void InputTask(void *argument)
 			uartrxstate = 0;
 		}
 #endif
-		// updateInputs();
+		updateInputs();
+
+		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 
 		// TODO add a reset procedure via long button press as another last resort.
 	}

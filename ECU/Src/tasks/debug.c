@@ -154,7 +154,7 @@ uint8_t uartWait( char *ch )
 
 	while ( 1 )
 	{
-		if ( UART_WaitRXDone( DEBUGUART, 0 ) )
+		if ( UART_WaitRXDone( DEBUGUART, 1 ) )
 		{
 			return 1;
 		}
@@ -243,7 +243,10 @@ static void debugLEDs( const int tokens, const int val1, const int val2 )
 		{
 			snprintf(str, 80, "Setting LED %d to on\r\n", val1);
 			UARTwrite(str);
-			setOutputDebug(val1, On);
+			if ( !setOutputDebug(val1, On) )
+				{
+				UARTwrite("Error");
+			}
 		} else if ( val2 <= BlinkVeryFast )
 		{
 			switch ( val2 )
@@ -257,7 +260,13 @@ static void debugLEDs( const int tokens, const int val1, const int val2 )
 				break;
 			}
 
-			blinkOutputDebug(val1, val2, 5000);
+			snprintf(str, 80, "Setting LED %d to %d\r\n", val1, val2);
+			UARTwrite(str);
+
+			if ( !blinkOutputDebug(val1, val2, 5000) )
+			{
+				UARTwrite("Error");
+			}
 		} else
 		{
 			UARTwrite("Invalid LED state given 0 to 6\r\n");

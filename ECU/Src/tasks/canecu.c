@@ -66,7 +66,7 @@ static StaticQueue_t CANTxStaticQueue, CANRxStaticQueue;
 /* The array to use as the queue's storage area.  This must be at least
 uxQueueLength * uxItemSize bytes. */
 uint8_t CANTxQueueStorageArea[ CANTxQUEUE_LENGTH * CANITEMSIZE ];
-uint8_t CANRxQueueStorageArea[ CANTxQUEUE_LENGTH * CANITEMSIZE ];
+uint8_t CANRxQueueStorageArea[ CANRxQUEUE_LENGTH * CANITEMSIZE ];
 
 QueueHandle_t CANTxQueue, CANRxQueue;
 

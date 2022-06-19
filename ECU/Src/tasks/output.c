@@ -215,11 +215,10 @@ void OutputTask(void *argument)
 
 	while( 1 )
 	{
-
-		while ( uxQueueMessagesWaiting( OutputQueue ) )
+//		while ( uxQueueMessagesWaiting( OutputQueue ) )
 		{
         // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
-			if ( xQueueReceive(OutputQueue,&msg,0) )
+			if ( xQueueReceive(OutputQueue,&msg,20) )
 			{
 				if ( msg.debug )
 				{
@@ -240,6 +239,11 @@ void OutputTask(void *argument)
 					Output[msg.output].state = !Output[msg.output].state;
 					Output[msg.output].debug = msg.debug;
 					toggleOutputMetal(msg.output);
+
+					if ( debugmode )
+					{
+						DebugPrintf("Toggling led %d", msg.output);
+					}
 
 				} else if ( msg.state > On )
 				{
@@ -267,6 +271,7 @@ void OutputTask(void *argument)
 						Output[msg.output].ontime = ontime;
 						Output[msg.output].offtime = offtime;
 					}
+
 					Output[msg.output].start = gettimer();
 
 					if ( msg.time != 1)
@@ -280,6 +285,11 @@ void OutputTask(void *argument)
 					// only create blink task when it's actually needed for first time
 
 					// should keep task list a little cleaner if only led's called to blink actually get populated.
+
+					if ( debugmode )
+					{
+						DebugPrintf("Setting led %d to state %d", msg.state);
+					}
 
 					// only actually create task first time LED is requested to be blinking.
 					if ( ( xBlinkHandle[msg.output] == NULL	|| eTaskGetState(xBlinkHandle[msg.output]) == eDeleted )
@@ -295,6 +305,10 @@ void OutputTask(void *argument)
 									  &xBlinkTaskBuffer[msg.output] );  /* Variable to hold the task's data structure. */
 					} else if ( msg.time > 0 && eTaskGetState(xBlinkHandle[msg.output]) == eSuspended )
 					{
+						if ( debugmode )
+						{
+							DebugPrintf("Resuming led %d", msg.output);
+						}
 						vTaskResume(xBlinkHandle[msg.output]);
 					}
 				} else if ( msg.state == On )
@@ -304,11 +318,20 @@ void OutputTask(void *argument)
 					HAL_GPIO_WritePin(getGpioPort(msg.output), getGpioPin(msg.output), On);
 					Output[msg.output].state = On;
 					Output[msg.output].debug = msg.debug;
+					if ( debugmode )
+					{
+						DebugPrintf("Setting led %d to on");
+					}
+
 				} else
 				{
 					HAL_GPIO_WritePin(getGpioPort(msg.output), getGpioPin(msg.output), Off);
 					Output[msg.output].state = Off;
 					Output[msg.output].debug = msg.debug;
+					if ( debugmode )
+					{
+						DebugPrintf("Setting led %d to off");
+					}
 					//Output[msg.output].ontime = Off;
 //					if ( xBlinkHandle[msg.output] != NULL )
 //						vTaskSuspend( xBlinkHandle[msg.output] );
@@ -318,7 +341,7 @@ void OutputTask(void *argument)
 
 		// input polling here?
 
-		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
+		//vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 	}
 
 	vTaskDelete(NULL);
@@ -377,7 +400,7 @@ void setOutput(output output, output_state state)
 		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
 }
 
-void setOutputDebug(output output, output_state state)
+BaseType_t setOutputDebug(output output, output_state state)
 {
 	output_msg msg;
 
@@ -390,9 +413,9 @@ void setOutputDebug(output output, output_state state)
 	msg.time = 0;
 
 	if ( xPortIsInsideInterrupt() )
-		xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
+		return xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
 	else
-		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
+		return xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
 }
 
 void setOutputNOW(output output, output_state state)
@@ -462,7 +485,7 @@ void blinkOutput(output output, output_state blinkingrate, uint32_t time) // max
 		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
 }
 
-void blinkOutputDebug(output output, output_state blinkingrate, uint32_t time) // max 30 seconds if timed.
+BaseType_t blinkOutputDebug(output output, output_state blinkingrate, uint32_t time) // max 30 seconds if timed.
 {
 	output_msg msg;
 
@@ -472,9 +495,9 @@ void blinkOutputDebug(output output, output_state blinkingrate, uint32_t time) /
 	msg.debug = true;
 
 	if ( xPortIsInsideInterrupt() )
-		xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
+		return xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
 	else
-		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
+		return xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
 }
 
 

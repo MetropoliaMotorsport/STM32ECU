@@ -102,12 +102,12 @@ typedef enum output {
 #define LEDBLINKNONSTOP     0xFFFF
 
 void setOutput(output output, output_state state);
-void setOutputDebug(output output, output_state state);
+BaseType_t setOutputDebug(output output, output_state state);
 void setOutputNOW(output output, output_state state); //  doesn't wait for timer to set output
 void toggleOutput(output output);
 void toggleOutputMetal(output output);
 void blinkOutput(output output, output_state blinkingrate, uint32_t time);
-void blinkOutputDebug(output output, output_state blinkingrate, uint32_t time);
+BaseType_t blinkOutputDebug(output output, output_state blinkingrate, uint32_t time);
 void timeOutput(output output, uint32_t time);
 void stopBlinkOutput(output output);
 
