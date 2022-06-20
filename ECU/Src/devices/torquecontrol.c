@@ -149,10 +149,10 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 	if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT))?true:false )
 	{
-		adj->FL = Torque_Req - rtY.TV_TV_torqueFL;
-		adj->FR = Torque_Req + rtY.TV_TV_torqueFR;
-		adj->RL = Torque_Req - rtY.TV_TV_torqueRL;
-		adj->RR = Torque_Req + rtY.TV_TV_torqueRR;
+		adj->FL = Torque_Req + rtY.TV_TV_torqueFL;
+		adj->FR = Torque_Req - rtY.TV_TV_torqueFR;
+		adj->RL = Torque_Req + rtY.TV_TV_torqueRL;
+		adj->RR = Torque_Req - rtY.TV_TV_torqueRR;
 	}
 	else
 	{
