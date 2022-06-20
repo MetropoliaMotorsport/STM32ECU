@@ -46,6 +46,15 @@ void doRegen(vectoradjust * adj)
 	adj->FR = regY.RegenFR;;
 	adj->RL = regY.RegenRL;
 	adj->RR = regY.RegenRR;
+
+	float avg = 0;
+	avg += adj->FL;
+	avg += adj->FR;
+	avg += adj->RL;
+	avg += adj->RR;	
+	avg = avg /4;
+
+	CarState.Torque_Req = avg;
 }
 
 void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )

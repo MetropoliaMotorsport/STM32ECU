@@ -104,7 +104,7 @@ typedef struct eepromdatastruct {
 	uint16_t TorqueSlope;
 	bool alwaysHV;
 	uint16_t DecelRpms;
-	bool Regen;
+	uint8_t Regen;
 	int16_t steerCalib;
 	uint8_t regenMaxR;
 	uint8_t AvailableByte;
