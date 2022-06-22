@@ -12,9 +12,9 @@
 #include "timerecu.h"
 #include "inverter.h"
 #include "imu.h"
-
 #ifdef MATLAB
 
+#include "RegenCS.h"
 #include "SubsystemModelReference.h"   /* Model's header file */
 #include "rtwtypes.h"
 #endif
@@ -28,6 +28,33 @@ int initVectoring( void )
 	  SubsystemModelReference_initialize();
 #endif
 	return 0;
+}
+
+void doRegen(vectoradjust * adj)
+{
+	regU.RegenPos = ( ADCState.Regen_Percent * 1200 ) / 8000; // scales to 0-150.
+	regU.SteeringAngleDeg = ADCState.SteeringAngle;
+	regU.SteerReducingOn = 1;
+	regU.RegenBalanceOn = 0;
+	// 0-100, 100 = regen on front only.
+	regU.TorqueBalance = 50;
+	regU.MaxRegen = getEEPROMBlock(0)->regenMax;
+
+	RegenCS_step();
+
+	adj->FL = regY.RegenFL;
+	adj->FR = regY.RegenFR;;
+	adj->RL = regY.RegenRL;
+	adj->RR = regY.RegenRR;
+
+	float avg = 0;
+	avg += adj->FL;
+	avg += adj->FR;
+	avg += adj->RL;
+	avg += adj->RR;	
+	avg = avg /4;
+
+	CarState.Torque_Req = avg;
 }
 
 void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
@@ -47,6 +74,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 	uint8_t torquebalInt = getEEPROMBlock(0)->TorqueBal;
 	uint8_t torquebal = 0;
+
 
 	if ( torquebalInt == 50 || torquebalInt == 0 )
 	{
@@ -86,6 +114,8 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 */
 	// run the matlab code.
 	SubsystemModelReference_step();
+
+	//RegenCS_step();
 
 	CAN_Send4vals( 0x7CE,
 			//(int16_t)rtU.bus_Vehicle_velocity,
