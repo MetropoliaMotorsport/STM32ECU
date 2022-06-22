@@ -430,9 +430,9 @@ bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is
 //	if ( !Shutdown.BOTS ) return false;
 //	if ( !Shutdown.InertiaSwitch ) return false;
 // ECU is here.
-	if ( !Shutdown.CockpitButton ) return false;
-	if ( !Shutdown.RightButton ) return false;
-	if ( !Shutdown.LeftButton ) return false;
+//	if ( !Shutdown.CockpitButton ) return false;
+//	if ( !Shutdown.RightButton ) return false;
+//	if ( !Shutdown.LeftButton ) return false;
 	if ( !Shutdown.BMS ) return false;
 //	if ( !Shutdown.IMD ) return false;
 #endif
