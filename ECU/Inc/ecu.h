@@ -38,6 +38,8 @@
 	#define MEMORATAR
 
 	#define retransmitIMU
+
+	#define MATLABREGEN
 #endif
 
 #ifdef HPF19

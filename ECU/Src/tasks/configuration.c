@@ -303,9 +303,9 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 }
 
 
-char *VelSrc[3] = {"VelBodyX", "VelMag", "VelGPS"};
+char *RegSrc[3] = {"Off", "Orig", "Matlab"};
 
-void doMenuVelSrcEdit( char * display, char * menuitem, bool selected, bool * editing,
+void doMenuRegSrcEdit( char * display, char * menuitem, bool selected, bool * editing,
 		volatile uint8_t * value, uint16_t input )
 {
 	char str[LCDCOLUMNS+1] = "";
@@ -346,7 +346,7 @@ void doMenuVelSrcEdit( char * display, char * menuitem, bool selected, bool * ed
 	}
 
 	// print value
-	len = sprintf(str, "%9s", VelSrc[*value]);
+	len = sprintf(str, "%9s", RegSrc[*value]);
 	if ( len > 9 ) len = 9;
 	memcpy(&display[LCDCOLUMNS-1-9], str, len);
 }
@@ -654,7 +654,6 @@ bool DoMenuTorque ( uint16_t input )
 	doMenuBoolEdit( MenuLines[1+TORQUEMENU_VELOCITY], "Velocity", (menu.selection==TORQUEMENU_VELOCITY), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_VELOCITYBIT, input);
 	doMenuBoolEdit( MenuLines[1+TORQUEMENU_FEEDBACK], "Feedback", (menu.selection==TORQUEMENU_FEEDBACK), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_FEEDBACKBIT, input);
 	doMenuBoolEdit( MenuLines[1+TORQUEMENU_FEEDACT], "FeedbackAct", (menu.selection==TORQUEMENU_FEEDACT), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_FEEDACTBIT, input);
-	//doMenuVelSrcEdit( MenuLines[1+TORQUEMENU_VELSOURCE], "VelSrc", (menu.selection==TORQUEMENU_VELSOURCE), &menu.inedit, &getEEPROMBlock(0)->TorqueVelsource, input );
 
 	lcd_send_stringline( 0, MenuLines[0], MENUPRIORITY );
 
@@ -840,8 +839,10 @@ bool DoMenu( uint16_t input )
 
 		doMenuBoolEdit( MenuLines[1+MENU_INVEN], "InvEnabled", (menu.selection==MENU_INVEN), &menu.inedit, (uint8_t*)&getEEPROMBlock(0)->InvEnabled, 0, input);
 
-		bool regenon = getEEPROMBlock(0)->Regen;
-		doMenuBoolEdit( MenuLines[1+MENU_REGEN], "Regen", (menu.selection==MENU_REGEN), &menu.inedit, (uint8_t*)&regenon, 0, input);
+		uint8_t regenon = getEEPROMBlock(0)->Regen;
+		//doMenuBoolEdit( MenuLines[1+MENU_REGEN], "Regen", (menu.selection==MENU_REGEN), &menu.inedit, (uint8_t*)&regenon, 0, input);
+		doMenuRegSrcEdit( MenuLines[1+MENU_REGEN], "RegSrc", (menu.selection==MENU_REGEN), &menu.inedit, &regenon, input );
+
 		if ( regenon != getEEPROMBlock(0)->Regen )
 		{
 			getEEPROMBlock(0)->Regen = regenon;
@@ -849,7 +850,7 @@ bool DoMenu( uint16_t input )
 			for ( int i=0; i<MOTORCOUNT;i++)
 			{
 				InverterState_t * invs = getInvState(i);
-				invs->AllowRegen = getEEPROMBlock(0)->Regen;
+				invs->AllowRegen = getEEPROMBlock(0)->Regen>0?true:false;
 			}
 		}
 

@@ -20,6 +20,8 @@
 #include "lcd.h"
 #include "inverter.h"
 #include "debug.h"
+#include "RegenCS.h"
+#include "imu.h"
 
 uint16_t PrintRunning( char *title )
 {
@@ -39,7 +41,9 @@ uint16_t PrintRunning( char *title )
 			getBrakeHigh() ?' ':'H');
 	lcd_send_stringline(1,str, 255);
 
-	int32_t ActualSpeed = InverterGetSpeed();
+	int32_t ActualSpeed = IMUReceived.VelBodyX*0.01*3.6;
+	
+	//InverterGetSpeed();
 
 	char angdir = ' ';
 
@@ -265,13 +269,18 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         if ( CarState.AllowRegen && CarState.LimpActive == 0 ) // only check for regen if alowed and not in limp.
         {
-    		if ( ADCState.Regen_Percent > 100 && getEEPROMBlock(0)->Regen ) // no torque request, but we do have a regen request, return that.
+    		if ( ADCState.Regen_Percent > 100 && getEEPROMBlock(0)->Regen>0 ) // no torque request, but we do have a regen request, return that.
     		{
-    			CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 ) ;
-    			adj.FL = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
-    			adj.FR = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
-    			adj.RL = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
-    			adj.RR = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
+				if ( getEEPROMBlock(0)->Regen == 2 )
+					doRegen(ADCState.Regen_Percent, &adj);
+				else
+				{
+					CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 ) ;
+					adj.FL = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
+					adj.FR = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
+					adj.RL = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
+					adj.RR = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );					
+				}
     		}
         }
 
