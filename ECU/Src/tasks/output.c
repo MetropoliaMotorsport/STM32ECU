@@ -221,6 +221,7 @@ void OutputTask(void *argument)
         // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
 			if ( xQueueReceive(OutputQueue,&msg,0) )
 			{
+				#if 0
 				if ( msg.debug )
 				{
 					if ( msg.state == Stopdebug)
@@ -234,6 +235,7 @@ void OutputTask(void *argument)
 				{
 					continue;
 				}
+				#endif
 
 				if ( msg.state == Toggle )
 				{
