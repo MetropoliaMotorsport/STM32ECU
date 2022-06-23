@@ -152,7 +152,7 @@ uint8_t InvSend( volatile InverterState_t *Inverter, bool reset )
 	{
 		vel = Inverter->MaxSpeed * SPEEDSCALING; //*16; // TODO add gear ratio, rpm multiplied out.  div by 16
 
-		if ( Inverter->Torque_Req < 0 && !Inverter->AllowRegen )
+		if ( Inverter->Torque_Req < 0 && !CarState.AllowRegen )
 			torque = 0;
 		else
 			torque = Inverter->Torque_Req * NMSCALING;

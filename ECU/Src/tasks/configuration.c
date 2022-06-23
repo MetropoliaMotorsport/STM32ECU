@@ -846,12 +846,13 @@ bool DoMenu( uint16_t input )
 		if ( regenon != getEEPROMBlock(0)->Regen )
 		{
 			getEEPROMBlock(0)->Regen = regenon;
-
+#if 0
 			for ( int i=0; i<MOTORCOUNT;i++)
 			{
 				InverterState_t * invs = getInvState(i);
 				invs->AllowRegen = getEEPROMBlock(0)->Regen>0?true:false;
 			}
+#endif
 		}
 
 		uint8_t regenmax = getEEPROMBlock(0)->regenMax;

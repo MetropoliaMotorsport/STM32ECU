@@ -672,7 +672,7 @@ void resetInv( void )
 		InverterState[i].InvTemp = 0;
 		InverterState[i].InvCurrent = 0;
 
-		InverterState[i].AllowRegen = getEEPROMBlock(0)->Regen>0?true:false;
+		//InverterState[i].AllowRegen = getEEPROMBlock(0)->Regen>0?true:false;
 		InverterState[i].AllowTorque = false;
 
 		Errors.InvAllowReset[i] = 1;

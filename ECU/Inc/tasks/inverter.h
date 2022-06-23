@@ -48,7 +48,7 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	uint16_t InvReqCommand;
 
 	bool AllowTorque;
-	bool AllowRegen;
+	//bool AllowRegen;
 	bool AllowReset;
 
 	int16_t MaxSpeed;
