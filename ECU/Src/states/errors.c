@@ -181,6 +181,11 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		strcat(str, "PDM " );
 	}
 
+	if ( DeviceState.timeout )
+	{
+		strcat(str, "NTO " );	
+	}
+
 	if ( ! ( DeviceState.ADCSanity == 0 ))
 	{
 		allowreset +=4;

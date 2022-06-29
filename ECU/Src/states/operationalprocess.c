@@ -59,6 +59,8 @@ void ResetStateData( void ) // set default startup values for global state value
 				(*ResetCommands[i])();
 	}
 
+	DeviceState.timeout = false;
+
 #ifdef FANCONTROL
 	CarState.FanPowered = 0;
 #else

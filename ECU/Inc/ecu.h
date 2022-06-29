@@ -437,6 +437,10 @@ typedef struct {
 	DeviceStatus PowerNode36; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
 	DeviceStatus PowerNode37; // [?], Current, TSAL.
 //	char ;
+
+	bool timeout;
+
+
 } DeviceStateType;
 
 // helpers
