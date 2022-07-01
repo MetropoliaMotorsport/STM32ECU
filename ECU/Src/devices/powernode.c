@@ -69,9 +69,11 @@ devicepowerreq DevicePowerList[] =
 		{ Accu, 36, 4 }, // TODO make sure this channel cannot be reset for latching rules.
 		{ AccuFan, 36, 5},
 
+
+		{ Current, 37, 1 },
 		{ Buzzer, 37, 2 },
 		{ Brake, 37, 3 },
-		{ Current, 37, 4 },
+		{ Back1, 37, 4 },
 		{ TSAL, 37, 5 }, // essential to be powered, else not compliant.
 
 		{ None }
