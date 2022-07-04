@@ -205,7 +205,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
     if ( allowreset == 0 )
     {
-    	lcd_setscrolltitle("ERROR (Can Reset) ");
+    	lcd_setscrolltitle("ERROR (Reset OK) ");
     } else
     {
     	lcd_setscrolltitle(str);
