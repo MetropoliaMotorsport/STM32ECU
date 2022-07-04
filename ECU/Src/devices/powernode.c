@@ -71,7 +71,8 @@ devicepowerreq DevicePowerList[] =
 
 		{ Buzzer, 37, 2 },
 		{ Brake, 37, 3 },
-		{ Current, 37, 4 },
+		{ Current, 37, 1 },
+		{ Back1, 37, 4 },
 		{ TSAL, 37, 5 }, // essential to be powered, else not compliant.
 
 		{ None }
