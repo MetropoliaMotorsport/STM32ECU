@@ -203,6 +203,8 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
     strpad(str,20, true);
 
+allowreset = 1;
+
     if ( allowreset == 0 )
     {
     	lcd_setscrolltitle("ERROR (Reset OK) ");
