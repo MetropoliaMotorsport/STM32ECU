@@ -324,7 +324,7 @@ void PowerTask(void *argument)
 	    {
 	    	if ( !TSOFFset )
 	    	{
-	    		setOutput(TSOFFLED, On);
+	    		setOutputNOW(TSOFFLED, On);
 	    		TSOFFset =  true;
 	    	}
 	    }
@@ -332,7 +332,7 @@ void PowerTask(void *argument)
 	    {
 	    	if ( TSOFFset )
 	    	{
-	    		setOutput(TSOFFLED, Off);
+	    		setOutputNOW(TSOFFLED, Off);
 	    		TSOFFset = false;
 	    	}
 	    }
@@ -341,8 +341,8 @@ void PowerTask(void *argument)
 	    {
 	    	if ( !IMDset )
 	    	{
-				setOutput(IMDLED, On);
-				setOutput(LED6, On);
+	    		setOutputNOW(IMDLED, On);
+	    		setOutputNOW(LED6, On);
 				IMDset = true;
 	    	}
 	    }
@@ -350,8 +350,8 @@ void PowerTask(void *argument)
 	    {
 	    	if ( IMDset )
 	    	{
-				setOutput(IMDLED, Off);
-				setOutput(LED6, Off);
+	    		setOutputNOW(IMDLED, Off);
+	    		setOutputNOW(LED6, Off);
 				IMDset = false;
 	    	}
 	    }
