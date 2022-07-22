@@ -214,6 +214,7 @@ allowreset = 1;
     }
 
 
+#if 0
 	// wait for restart request if allowed by error state.
 	if ( allowreset == 0 && ( checkReset() == 1 // manual reset
 #ifdef AUTORESET
@@ -229,6 +230,8 @@ allowreset = 1;
 		return StartupState;
 		// try to perform a full reset back to startup state here on user request.
 	}
+
+#endif
 
 		// check for restart request. -> pre operation.
   return OperationalErrorState;
