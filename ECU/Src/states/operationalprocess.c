@@ -130,15 +130,15 @@ int Startup( uint32_t OperationLoops  )
 	stopBlinkOutput(TSLED);
 
 	// set relay output LED's off
-	setOutput(BMSLED,Off);
+	//setOutput(BMSLED,Off);
 	setOutput(IMDLED,Off);
 	setOutput(BSPDLED,Off);
 
 	// Show status LED's for 2 seconds for rules compliance.
 
-	timeOutput(BMSLED, 2000);
-	timeOutput(IMDLED, 2000);
-	timeOutput(BSPDLED, 2000);
+	//timeOutput(BMSLED, 2000);
+	//timeOutput(IMDLED, 2000);
+	//timeOutput(BSPDLED, 2000);
 
 #ifdef FRONTSPEED
 	CAN_NMT(0x81,FLSpeed_COBID);
