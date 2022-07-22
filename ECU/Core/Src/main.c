@@ -289,9 +289,9 @@ void Error_Handler(void)
 	blinkOutput(TSOFFLED,LEDBLINK_FOUR, 255);
 
 	// set all LED's blinking
-	blinkOutput(BMSLED,LEDBLINK_FOUR, 255);
-	blinkOutput(BSPDLED,LEDBLINK_FOUR, 255);
-	blinkOutput(IMDLED,LEDBLINK_FOUR, 255);
+	//blinkOutput(BMSLED,LEDBLINK_FOUR, 255);
+	//blinkOutput(BSPDLED,LEDBLINK_FOUR, 255);
+	//blinkOutput(IMDLED,LEDBLINK_FOUR, 255);
 
 	setOutputNOW(LED1,On);
 	setOutputNOW(LED2,On);

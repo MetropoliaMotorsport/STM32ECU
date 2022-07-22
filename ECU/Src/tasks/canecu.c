@@ -1587,7 +1587,7 @@ int CheckCanError( void )
 	if ( CAN2Status.BusOff) // detect passive error instead and try to stay off bus till clears?
 	{
 	//	Errors.ErrorPlace = 0xAA;
-		blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
+		//blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
 		HAL_FDCAN_Stop(&hfdcan2);
 		CAN_SendErrorStatus(255,0,0);
 		DeviceState.CAN0 = OFFLINE;
