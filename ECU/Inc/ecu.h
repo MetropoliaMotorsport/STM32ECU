@@ -151,7 +151,7 @@
 // #define NOIVTTIMEOUT
 
 // Allow auto reset with shutdown buttons / DC Undervoltage on inverters.
-#define AUTORESET
+// #define AUTORESET
 
 // Send an error on incorrect data received
 #define SENDBADDATAERROR
