@@ -399,10 +399,10 @@ void setOutputDebug(output output, output_state state)
 
 void setOutputNOW(output output, output_state state)
 {
-	output_msg msg;
+	//output_msg msg;
 
-	msg.debug = false;
-	msg.output = output;
+	//msg.debug = false;
+	//msg.output = output;
 	if ( state >= On)
 	{
 		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), On);
@@ -413,12 +413,12 @@ void setOutputNOW(output output, output_state state)
 		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), Off);
 		msg.state = Off;
 	}
-	msg.time = 0;
+	//msg.time = 0;
 
-	if ( xPortIsInsideInterrupt() )
-		xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
-	else
-		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
+	//if ( xPortIsInsideInterrupt() )
+	//	xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
+	//else
+	//	xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
 }
 
 /**
