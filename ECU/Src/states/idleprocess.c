@@ -116,7 +116,11 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		CAN_SendStatus(1, IdleState, readystate );
 	}
 
-	PrintRunning("TS:Off");
+
+	if ( CarState.allowtsactivation )
+		PrintRunning("TS:Off");
+	else
+		PrintRunning("TS:BAD");
 
 	uint32_t received = OperationalReceive();
 
