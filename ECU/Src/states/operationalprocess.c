@@ -110,6 +110,7 @@ int Startup( uint32_t OperationLoops  )
 	{
 		DebugMsg("Entering Startup State");
 		CAN_SendStatus(1, StartupState, 0);
+		CarState.allowtsactivation = true;
 	}
 
 	lcd_settitle("Startup init");

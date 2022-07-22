@@ -379,6 +379,8 @@ typedef struct {
 	uint8_t I_LeftPump;
 	uint8_t I_RightPump;
 
+	bool allowtsactivation;
+
 } CarStateType;
 
 typedef enum DeviceStatustype {

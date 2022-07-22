@@ -214,7 +214,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	if ( CheckTSActivationRequest() )
 	{
-		if ( readystate == 0 )
+		if ( readystate == 0 && CarState.allowtsactivation)
 		{
 			DebugMsg("TS Activation requested whilst ready.");
 			TSRequested = 1;

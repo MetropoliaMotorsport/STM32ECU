@@ -94,6 +94,9 @@ int TSActiveProcess( uint32_t OperationLoops )
 			setOutput(RTDMLED, On);
 			lcd_send_stringline(1,"Precharge Done.", 255);
 			prechargedone = 1;
+
+			CarState.allowtsactivation = false;
+
 #ifdef HPF19
 			invRequestState(PREOPERATIONAL);
 #else
@@ -197,6 +200,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 			return IdleState;  // if requested disable TS drop state
 		}
 	}
+
 
 	return TSActiveState;
 }

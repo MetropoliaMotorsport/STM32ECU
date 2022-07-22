@@ -203,8 +203,6 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
     strpad(str,20, true);
 
-allowreset = 1;
-
     if ( allowreset == 0 )
     {
     	lcd_setscrolltitle("ERROR (Reset OK) ");
@@ -213,8 +211,6 @@ allowreset = 1;
     	lcd_setscrolltitle(str);
     }
 
-
-#if 0
 	// wait for restart request if allowed by error state.
 	if ( allowreset == 0 && ( checkReset() == 1 // manual reset
 #ifdef AUTORESET
@@ -230,8 +226,6 @@ allowreset = 1;
 		return StartupState;
 		// try to perform a full reset back to startup state here on user request.
 	}
-
-#endif
 
 		// check for restart request. -> pre operation.
   return OperationalErrorState;
