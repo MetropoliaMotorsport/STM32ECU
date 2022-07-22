@@ -167,10 +167,8 @@ void OutputTask(void *argument)
 		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), Off);
 	}
 
-
-	setOutputNOW(BMSLED,On);
-	vTaskDelay(2000);
 	setOutputNOW(BMSLED,Off);
+
 #if 0
 	for ( int i=0;i<10;i++)
 	{

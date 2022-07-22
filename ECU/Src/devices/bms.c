@@ -98,6 +98,7 @@ bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, con
 
         	if ( CANRxData[0] != 0 ) // In Safestate.
         	{
+				setOutputNOW(BMSLED,On);
         		Shutdown.BMS = false;
         		Shutdown.BMSReason = CANRxData[1];
                 /*
@@ -131,6 +132,7 @@ bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, con
 
 void BMSTimeout( uint16_t id )
 {
+	setOutputNOW(BMSLED,On);
 	Shutdown.BMS = false;
 	DebugMsg("BMS Timeout");
 	if ( DeviceState.BMS != OFFLINE )
