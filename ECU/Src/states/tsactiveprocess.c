@@ -37,6 +37,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 		CheckHVLost();
 		DebugMsg("Entering TS Active State");
 		ShutdownCircuitSet(true);
+		CarState.allowtsactivation = false;
 		 	 	 	 	 	 //12345678901234567890
 		lcd_clear();
 		//lcd_settitle("TS Active");
@@ -94,9 +95,6 @@ int TSActiveProcess( uint32_t OperationLoops )
 			setOutput(RTDMLED, On);
 			lcd_send_stringline(1,"Precharge Done.", 255);
 			prechargedone = 1;
-
-			CarState.allowtsactivation = false;
-
 #ifdef HPF19
 			invRequestState(PREOPERATIONAL);
 #else
