@@ -159,6 +159,8 @@ void MainTask(void *argument)
 
 	xEventGroupSync( xStartupSync, 1, 1, 100 );
 
+	CarState.allowtsactivation = true;
+
 	while(1)
 	{
 		TickType_t startloop = xLastWakeTime;
