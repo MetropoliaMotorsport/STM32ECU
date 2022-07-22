@@ -406,12 +406,12 @@ void setOutputNOW(output output, output_state state)
 	if ( state >= On)
 	{
 		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), On);
-		msg.state = On;
+		//msg.state = On;
 	}
 	else
 	{
 		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), Off);
-		msg.state = Off;
+		//msg.state = Off;
 	}
 	//msg.time = 0;
 
