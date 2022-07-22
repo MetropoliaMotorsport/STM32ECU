@@ -133,6 +133,7 @@ void PowerTask(void *argument)
 
 	bool IMDset = false;
 	bool TSOFFset = true;
+	bool BMSset = false;
 
 	while( 1 )
 	{
@@ -319,6 +320,22 @@ void PowerTask(void *argument)
 		}
 
 	    xSemaphoreGive(waitStr);
+
+		if ( !Shutdown.BMS )
+		{
+			if ( !BMSset)
+			{
+				setOutputNOW(BMSLED, On);
+				BMSset = true;
+			}
+		} else
+		{
+			if ( BMSset)
+			{
+				setOutputNOW(BMSLED, false);
+				BMSset = false;
+			}
+		}
 
 	    if ( CheckTSOff() )
 	    {
