@@ -100,7 +100,7 @@ bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, con
         	{
         		Shutdown.BMS = false;
         		Shutdown.BMSReason = CANRxData[1];
-				//setOutputNOW(BMSLED, false);
+				SetOutputNOW(BMSLED, false);
                 /*
                       0 : str := 'undefined';
                       1 : str := 'overvoltage';
