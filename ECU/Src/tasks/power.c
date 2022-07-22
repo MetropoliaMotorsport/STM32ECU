@@ -322,7 +322,7 @@ void PowerTask(void *argument)
 		}
 
 	    xSemaphoreGive(waitStr);
-#if 0
+#if 1
 		if ( !CheckBMS() )
 		{
 			if ( !BMSset)
@@ -330,7 +330,10 @@ void PowerTask(void *argument)
 				setOutputNOW(BMSLED, On);
 				BMSset = true;
 			}
-		} else
+		}
+#endif
+#if 0
+		else
 		{
 			if ( BMSset)
 			{
