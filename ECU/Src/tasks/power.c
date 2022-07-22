@@ -321,7 +321,7 @@ void PowerTask(void *argument)
 
 	    xSemaphoreGive(waitStr);
 
-		if ( !Shutdown.BMS )
+		if ( !CheckBMS() )
 		{
 			if ( !BMSset)
 			{
@@ -455,6 +455,12 @@ bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is
 #endif
 	return true;
 }
+
+bool CheckBMS( void ) // returns true if shutdown circuit other than ECU is closed
+{
+	return Shutdown.BMS;
+}
+
 
 bool CheckTSOff( void ) // returns true if shutdown circuit other than ECU is closed
 {
