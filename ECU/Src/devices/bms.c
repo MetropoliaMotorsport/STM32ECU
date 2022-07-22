@@ -134,7 +134,6 @@ bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, con
 
 void BMSTimeout( uint16_t id )
 {
-	setOutputNOW(BMSLED, true);
 	if ( DeviceState.BMS != OFFLINE )
 	{
 		CarState.VoltageBMS=0;
