@@ -91,6 +91,7 @@ bool PowerLogError( uint8_t nodeid, uint32_t errorcode);
 void ShutdownCircuitSet( bool state );
 int ShutdownCircuitCurrent( void );
 int ShutdownCircuitState( void );
+bool CheckBMS( void );
 bool CheckTSOff( void );
 bool CheckIMD( void );
 bool CheckShutdown( void );
