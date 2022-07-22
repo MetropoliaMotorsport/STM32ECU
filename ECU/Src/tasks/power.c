@@ -135,6 +135,8 @@ void PowerTask(void *argument)
 	bool TSOFFset = true;
 	bool BMSset = false;
 
+	//setOutputNOW(BMSLED, Off);
+
 	while( 1 )
 	{
 		lastpowernodesOnline = powernodesOnline;
@@ -320,7 +322,7 @@ void PowerTask(void *argument)
 		}
 
 	    xSemaphoreGive(waitStr);
-
+#if 0
 		if ( !CheckBMS() )
 		{
 			if ( !BMSset)
@@ -332,11 +334,11 @@ void PowerTask(void *argument)
 		{
 			if ( BMSset)
 			{
-				setOutputNOW(BMSLED, false);
+				setOutputNOW(BMSLED, Off);
 				BMSset = false;
 			}
 		}
-
+#endif
 	    if ( CheckTSOff() )
 	    {
 	    	if ( !TSOFFset )

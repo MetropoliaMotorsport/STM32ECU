@@ -130,7 +130,7 @@ int Startup( uint32_t OperationLoops  )
 	stopBlinkOutput(TSLED);
 
 	// set relay output LED's off
-	setOutput(BMSLED,Off);
+	//setOutput(BMSLED,Off);
 	setOutput(IMDLED,Off);
 	setOutput(BSPDLED,Off);
 
