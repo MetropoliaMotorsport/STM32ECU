@@ -169,6 +169,11 @@ void OutputTask(void *argument)
 
 	setOutputNOW(BMSLED,Off);
 
+	if ( !CheckBMS() )
+	{
+		setOutputNOW(BMSLED, On);
+	}
+
 #if 0
 	for ( int i=0;i<10;i++)
 	{
