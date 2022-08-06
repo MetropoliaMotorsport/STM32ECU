@@ -1709,10 +1709,8 @@ void SubsystemModelReference_step(void)
   /* Product: '<S60>/Product' */
   rtb_Product_o = rtb_Divide_h * 1.24;
 
-  rtb_Product2_f = rtb_Product_o * 30.0 * 12.35;
-
   /* Product: '<S60>/Divide' */
-  rtb_Divide_ak = rtb_Product2_f * 117.933812831 / 0.6440264;
+  rtb_Divide_ak = rtb_Product_o * 117.933812831 / 0.6440264;
 
   /* Product: '<S60>/Product3' */
       // If velocity is less than 1 m/s MaxRPMOutput is set to 1100 RPM 
