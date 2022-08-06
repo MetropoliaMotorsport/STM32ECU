@@ -174,6 +174,21 @@ void OutputTask(void *argument)
 		setOutputNOW(BMSLED, On);
 	}
 
+	setOutputNOW(IMDLED,Off);
+
+	if ( CheckIMD() )
+	{
+		setOutputNOW(IMDLED, On);
+	}
+
+	setOutputNOW(TSOFFLED, On);
+
+	if ( !CheckTSOff() )
+	{
+		setOutputNOW(TSOFFLED, Off);
+	}
+
+
 #if 0
 	for ( int i=0;i<10;i++)
 	{
