@@ -176,8 +176,8 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	if ( adj->FR > maxreq ) adj->FR = maxreq;
 
 */
-
-	if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT))?true:false )
+        if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT))?true:false && ADCState.Torque_Req_R_Percent > 100 )
+	//if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT))?true:false )
 	{
 		adj->FL = Torque_Req + rtY.TV_TV_torqueFL;
 		adj->FR = Torque_Req - rtY.TV_TV_torqueFR;
