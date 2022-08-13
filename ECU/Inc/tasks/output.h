@@ -110,6 +110,7 @@ void blinkOutput(output output, output_state blinkingrate, uint32_t time);
 void blinkOutputDebug(output output, output_state blinkingrate, uint32_t time);
 void timeOutput(output output, uint32_t time);
 void stopBlinkOutput(output output);
+void resetOutput(output output, output_state state);
 
 void setLEDs( void );
 void startupLEDs(void);

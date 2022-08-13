@@ -46,8 +46,8 @@ int TSActiveProcess( uint32_t OperationLoops )
 
 	    CarState.AllowRegen = false;
 
-		setOutput(TSLED, Off);
-		setOutput(RTDMLED, Off);
+	    resetOutput(TSLED, Off);
+	    resetOutput(RTDMLED, Off);
 	}
 
 	readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.

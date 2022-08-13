@@ -160,9 +160,9 @@ int PreOperationState( uint32_t OperationLoops  )
 		preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
 		InverterAllowTorqueAll(false);
 
-		setOutput(STARTLED, Off);
-		setOutput(TSLED, On);
-		setOutput(RTDMLED, Off);
+	    resetOutput(STARTLED, Off);
+	    resetOutput(TSLED, On);
+	    resetOutput(RTDMLED, Off);
 
 		ReadyToStart = 0xFFFF;
 #ifdef STMADC

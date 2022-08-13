@@ -100,8 +100,8 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 							 //12345678901234567890
 		invRequestState( BOOTUP ); // request to go into ready for HV
 
-		setOutput(STARTLED, Off);
-		setOutput(RTDMLED, Off);
+	    resetOutput(STARTLED, Off);
+	    resetOutput(RTDMLED, Off);
 
 		lcd_clear();
 		InverterAllowTorqueAll(false);

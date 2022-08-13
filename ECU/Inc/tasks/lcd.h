@@ -18,7 +18,7 @@ struct lcd_msg {
 
   enum lcd_msg_type type;
 
-  char string[LCDCOLUMNS+1];
+  char string[LCDCOLUMNS+2];
 
   uint8_t row;
 

@@ -34,17 +34,18 @@ QueueHandle_t OutputQueue;
 
 typedef volatile struct OutputType
 {
-	bool updated;
 	GPIO_TypeDef * port;
 	uint16_t pin;
     output output; // this is only really here to make seeing which led using in debugger.
     output_state state;
+    output_state blinkstate;
     uint16_t ontime;
     uint16_t offtime;
     uint32_t start;
     uint32_t time;
     uint32_t duration;
     bool debug;
+	bool updated;
 } OutputType;
 
 #ifdef HPF20
@@ -148,26 +149,12 @@ void BlinkTask( void * pvParameters )
 
 void updateOutput( uint32_t output )
 {
-
-	if ( Output[output].state == Off )
-	{
-		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), Off);
-		Output[output].state = Off;
-	} else if ( Output[output].state == On )
-	{
-	//	if ( xBlinkHandle[msg.output] != NULL )
-	//	vTaskSuspend( xBlinkHandle[msg.output] );
-		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), On);
-		Output[output].state = On;
-	} else if ( Output[output].state == Toggle )
-	{
-		toggleOutputMetal(output);
-	} else if ( Output[output].state > On )
+	if ( Output[output].blinkstate > On )
 	{
 		int ontime = 0;
 		int offtime = 0;
 
-		switch ( Output[output].state )
+		switch ( Output[output].blinkstate )
 		{
 			case BlinkVerySlow : ontime = 1000; offtime = 1000; break;
 			case BlinkSlow : ontime = 500; offtime = 500; break;
@@ -186,6 +173,7 @@ void updateOutput( uint32_t output )
 			Output[output].offtime = offtime;
 		}
 		Output[output].start = gettimer();
+		Output[output].blinkstate = Off; // value has been read, remove.
 
 		if ( Output[output].time != 1)
 		{
@@ -215,8 +203,19 @@ void updateOutput( uint32_t output )
 		{
 			vTaskResume(xBlinkHandle[output]);
 		}
-
-
+	} else if ( Output[output].state == Off )
+	{
+		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), Off);
+		Output[output].state = Off;
+	} else if ( Output[output].state == On )
+	{
+	//	if ( xBlinkHandle[msg.output] != NULL )
+	//	vTaskSuspend( xBlinkHandle[msg.output] );
+		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), On);
+		Output[output].state = On;
+	} else if ( Output[output].state == Toggle )
+	{
+		toggleOutputMetal(output);
 	}
 
 	Output[output].updated = false;
@@ -235,14 +234,14 @@ void OutputTask(void *argument)
 	// for 1 s to 3 s for visible check after power cycling the LVMS.
 
 
-	for ( int i=0;i<19;i++)
+	for ( int i=0;i<OUTPUTCount;i++)
 	{
 		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), On);
 	}
 
 	vTaskDelay(2000);
 
-	for ( int i=0;i<19;i++)
+	for ( int i=0;i<OUTPUTCount;i++)
 	{
 		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), Off);
 	}
@@ -310,14 +309,8 @@ void OutputTask(void *argument)
 	xLastWakeTime = xTaskGetTickCount();
 
 //	unsigned long counter;
-#ifdef OUTPUTQUEUE
-	struct output_msg msg;
-
-	bool debugmode = false;
-#endif
 	while( 1 )
 	{
-#ifndef OUTPUTQUEUE
 		for (int i=0; i < OUTPUTCount; i++)
 		{
 			if ( Output[i].updated )
@@ -325,109 +318,6 @@ void OutputTask(void *argument)
 		}
 		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
 // change to not use que, just check data every 20ms and update states
-#else OUTPUTQUEUE
-		while ( uxQueueMessagesWaiting( OutputQueue ) )
-		{
-        // UBaseType_t uxQueueMessagesWaiting( QueueHandle_t xQueue );
-			if ( xQueueReceive(OutputQueue,&msg,0) )
-			{
-				#if 0
-				if ( msg.debug )
-				{
-					if ( msg.state == Stopdebug)
-						debugmode = false;
-					else
-						debugmode = true;
-
-				}
-
-				if ( debugmode && !msg.debug)
-				{
-					continue;
-				}
-				#endif
-
-				if ( msg.state == Toggle )
-				{
-					Output[msg.output].state = !Output[msg.output].state;
-					Output[msg.output].debug = msg.debug;
-					toggleOutputMetal(msg.output);
-
-				} else if ( msg.state > On )
-				{
-					Output[msg.output].output = msg.output;
-					Output[msg.output].debug = msg.debug;
-
-					int ontime = 0;
-					int offtime = 0;
-
-					switch ( msg.state )
-					{
-						case BlinkVerySlow : ontime = 1000; offtime = 1000; break;
-						case BlinkSlow : ontime = 500; offtime = 500; break;
-						case BlinkMed : ontime = 200; offtime = 200; break;
-						case BlinkFast : ontime = 50; offtime = 100; break;
-						case BlinkVeryFast : ontime = 10; offtime = 10; break;
-						case Timed : ontime = 10; offtime = 0; break;
-						case Nochange : break;
-						default :
-						ontime = 500; offtime = 500;
-					}
-
-					if ( msg.state != Nochange )
-					{
-						Output[msg.output].ontime = ontime;
-						Output[msg.output].offtime = offtime;
-					}
-					Output[msg.output].start = gettimer();
-
-					if ( msg.time != 1)
-					{
-						if ( msg.time < ontime+offtime ) // ensure that one complete cycle will show
-							msg.time = ontime+offtime;
-					}
-
-					Output[msg.output].duration = msg.time;
-
-					// only create blink task when it's actually needed for first time
-
-					// should keep task list a little cleaner if only led's called to blink actually get populated.
-
-					// only actually create task first time LED is requested to be blinking.
-					if ( ( xBlinkHandle[msg.output] == NULL	|| eTaskGetState(xBlinkHandle[msg.output]) == eDeleted )
-							&& msg.time > 0 )
-					{
-						xBlinkHandle[msg.output]  = xTaskCreateStatic(
-									  BlinkTask,       /* Function that implements the task. */
-									  "BlinkTask",     /* Text name for the task. */
-									  BLINKSTACK_SIZE,      /* Number of indexes in the xStack array. */
-									  ( void * ) msg.output,    /* Parameter passed into the task. */
-									  2,/* Priority at which the task is created. */
-									  xStack[msg.output],          /* Array to use as the task's stack. */
-									  &xBlinkTaskBuffer[msg.output] );  /* Variable to hold the task's data structure. */
-					} else if ( msg.time > 0 && eTaskGetState(xBlinkHandle[msg.output]) == eSuspended )
-					{
-						vTaskResume(xBlinkHandle[msg.output]);
-					}
-				} else if ( msg.state == On )
-				{
-				//	if ( xBlinkHandle[msg.output] != NULL )
-				//	vTaskSuspend( xBlinkHandle[msg.output] );
-					HAL_GPIO_WritePin(getGpioPort(msg.output), getGpioPin(msg.output), On);
-					Output[msg.output].state = On;
-					Output[msg.output].debug = msg.debug;
-				} else
-				{
-					HAL_GPIO_WritePin(getGpioPort(msg.output), getGpioPin(msg.output), Off);
-					Output[msg.output].state = Off;
-					Output[msg.output].debug = msg.debug;
-					//Output[msg.output].ontime = Off;
-//					if ( xBlinkHandle[msg.output] != NULL )
-//						vTaskSuspend( xBlinkHandle[msg.output] );
-				}
-			}
-		}
-#endif
 	}
 
 	vTaskDelete(NULL);
@@ -470,30 +360,11 @@ int getGpioPin(output output)
  */
 void setOutput(output output, output_state state)
 {
-#ifndef OUTPUTQUEUE
 	Output[output].updated = true;
 	if ( state >= On)
 		Output[output].state = On;
 	else
 		Output[output].state = Off;
-	Output[output].time = 0;
-	Output[output].duration = 0;
-#else
-	output_msg msg;
-
-	msg.debug = false;
-	msg.output = output;
-	if ( state >= On)
-		msg.state = On;
-	else
-		msg.state = Off;
-	msg.time = 0;
-
-	if ( xPortIsInsideInterrupt() )
-		xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
-	else
-		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
-#endif
 }
 
 void setOutputDebug(output output, output_state state)
@@ -518,16 +389,26 @@ void setOutputNOW(output output, output_state state)
 {
 	//output_msg msg;
 
+	Output[output].updated = true;
+	if ( state >= On)
+		Output[output].state = On;
+	else
+		Output[output].state = Off;
+	Output[output].time = 0;
+	Output[output].duration = 0;
+
 	//msg.debug = false;
 	//msg.output = output;
+	GPIO_TypeDef* port = getGpioPort(output);
+	uint16_t pin = getGpioPin(output);
 	if ( state >= On)
 	{
-		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), On);
+		HAL_GPIO_WritePin(port, pin, On);
 		//msg.state = On;
 	}
 	else
 	{
-		HAL_GPIO_WritePin(getGpioPort(output), getGpioPin(output), Off);
+		HAL_GPIO_WritePin(port, pin, Off);
 		//msg.state = Off;
 	}
 	//msg.time = 0;
@@ -543,21 +424,11 @@ void setOutputNOW(output output, output_state state)
  */
 void toggleOutput(output output)
 {
-#ifndef OUTPUTQUEUE
-
-#else
-	output_msg msg;
-
-	msg.debug = false;
-	msg.output = output;
-	msg.state = Toggle;
-	msg.time = 0;
-
-	if ( xPortIsInsideInterrupt() )
-		xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
+	Output[output].updated = true;
+	if ( Output[output].state == On )
+		Output[output].state = Off;
 	else
-		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
-#endif
+		Output[output].state = Off;
 }
 
 void toggleOutputMetal(output output)
@@ -572,24 +443,9 @@ void toggleOutputMetal(output output)
 
 void blinkOutput(output output, output_state blinkingrate, uint32_t time) // max 30 seconds if timed.
 {
-#ifndef OUTPUTQUEUE
 	Output[output].updated = true;
 	Output[output].state = blinkingrate;
 	Output[output].time = time;
-#else
-
-	output_msg msg;
-
-	msg.debug = false;
-	msg.output = output;
-	msg.state = blinkingrate;
-	msg.time = time;
-
-	if ( xPortIsInsideInterrupt() )
-		xQueueSendFromISR( OutputQueue, ( void * ) &msg, NULL );
-	else
-		xQueueSend( OutputQueue, ( void * ) &msg, ( TickType_t ) 0 );
-#endif
 }
 
 void blinkOutputDebug(output output, output_state blinkingrate, uint32_t time) // max 30 seconds if timed.
@@ -612,7 +468,13 @@ void blinkOutputDebug(output output, output_state blinkingrate, uint32_t time) /
 
 void stopBlinkOutput(output output)
 {
-	 blinkOutput(output, Nochange, 0);
+	 blinkOutput(output, Nochange, Off);
+}
+
+void resetOutput(output output, output_state state)
+{
+	blinkOutput(output, Nochange, Off);
+	setOutput(output, Off);
 }
 
 void timeOutput(output output, uint32_t time)
