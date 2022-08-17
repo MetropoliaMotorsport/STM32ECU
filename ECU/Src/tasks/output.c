@@ -147,9 +147,13 @@ void BlinkTask( void * pvParameters )
 }
 
 
-void updateOutput( uint32_t output )
+void updateOutput( output output )
 {
-	if ( Output[output].blinkstate > On )
+	if ( output == TSLED )
+	{
+		volatile int i=0;
+	}
+	if ( Output[output].blinkstate > On &&  Output[output].blinkstate != Nochange )
 	{
 		int ontime = 0;
 		int offtime = 0;
@@ -162,7 +166,6 @@ void updateOutput( uint32_t output )
 			case BlinkFast : ontime = 50; offtime = 100; break;
 			case BlinkVeryFast : ontime = 10; offtime = 10; break;
 			case Timed : ontime = 10; offtime = 0; break;
-			case Nochange : break;
 			default :
 			ontime = 500; offtime = 500;
 		}
@@ -265,6 +268,11 @@ void OutputTask(void *argument)
 	if ( !CheckTSOff() )
 	{
 		setOutputNOW(TSOFFLED, Off);
+	}
+
+	for ( int i=0;i<OUTPUTCount;i++)
+	{
+		updateOutput(i);
 	}
 
 
@@ -444,7 +452,7 @@ void toggleOutputMetal(output output)
 void blinkOutput(output output, output_state blinkingrate, uint32_t time) // max 30 seconds if timed.
 {
 	Output[output].updated = true;
-	Output[output].state = blinkingrate;
+	Output[output].blinkstate = blinkingrate;
 	Output[output].time = time;
 }
 
@@ -479,6 +487,7 @@ void resetOutput(output output, output_state state)
 
 void timeOutput(output output, uint32_t time)
 {
+
 	blinkOutput(output, Timed, time);
 }
 

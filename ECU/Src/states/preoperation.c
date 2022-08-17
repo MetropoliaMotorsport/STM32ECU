@@ -139,6 +139,9 @@ int PreOperationState( uint32_t OperationLoops  )
 //	static int OperationLoops = 0;
 	static uint16_t preoperationstate;
 	static uint16_t ReadyToStart;
+	static uint32_t ledtimer;
+	static bool TSLEDstate;
+
 
 	char str[80] = "";
 
@@ -152,6 +155,8 @@ int PreOperationState( uint32_t OperationLoops  )
 #endif
     if ( OperationLoops == 0 )
 	{
+    	TSLEDstate = false;
+    	ledtimer = gettimer();
  //   	setOutput(LED2,On);
     	DebugMsg("Entering Pre Operation State");
     	// pre operation state is to allow hardware to get ready etc, no point in logging errors at this point.
@@ -439,6 +444,27 @@ int PreOperationState( uint32_t OperationLoops  )
 		}
 
 	}
+#if 0
+
+	static uint32_t count = 9;
+	static uint32_t lastcount = 0;
+
+	uint32_t curtime = gettimer();
+
+	if ( curtime > ledtimer+MS1000 )
+	{
+		ledtimer = curtime;
+		lastcount = count;
+		setOutput(lastcount, Off);
+		count++;
+		if ( count > 9 )
+			count = 1;
+		char str[32];
+		sprintf(str, "Led %d", count);
+		lcd_send_stringline( 3, str, 3);
+		setOutput(count, On);
+	}
+#endif
 
 	vTaskDelay(5);
 
@@ -458,11 +484,12 @@ int PreOperationState( uint32_t OperationLoops  )
 
 //	if ( testmotorslast ) InverterSetTorque(&adj, 1000);
 
+#if 1
 	if ( CarState.APPSstatus )
 		setOutput(RTDMLED,On);
 	else
 		setOutput(RTDMLED,Off);
-
+#endif
 	// Check startup requirements.
 
 #if 0
@@ -479,16 +506,15 @@ int PreOperationState( uint32_t OperationLoops  )
 	}
 #endif
 
-	static int percR = -1;
-	static int32_t requestNm = 0;
-	static bool waitprecharge = false;
-	static bool doneprecharge = false;
-
 	if ( !getDevicePower(Front1) ||
 		 !getDevicePower(Front2) ||
 		 !getDevicePower(Inverters) )
 	{
-		blinkOutput(TSLED, On, LEDBLINKNONSTOP);
+		if ( !TSLEDstate )
+		{
+			setOutput(TSLED, On);
+			TSLEDstate = true;
+		}
 	}
 
 	static bool powerset = false;
@@ -693,7 +719,8 @@ int PreOperationState( uint32_t OperationLoops  )
 		}
 	} else
 	{ // hardware not ready for active state
-		blinkOutput(STARTLED, BlinkSlow, 1000);
+		//setOutput(STARTLED, On);
+		blinkOutput(STARTLED, BlinkSlow, 100);
 		if ( OperationLoops == 50 ) // 0.5 seconds, send reset nmt, try to get inverters online if not online at startup.
 		{
 
@@ -708,6 +735,7 @@ int PreOperationState( uint32_t OperationLoops  )
 				CAN_SendErrorStatus(1,PowerOnRequestBeforeReady,0);
 
 				lcd_send_stringline( 3, "Not ready.", 3);
+
 			}
 		}
 	}

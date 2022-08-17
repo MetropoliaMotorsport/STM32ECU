@@ -120,14 +120,10 @@ int Startup( uint32_t OperationLoops  )
 
 	ResetStateData(); // set car state settings back to blank state.
 
-	setOutput(RTDMLED,Off);
-	setOutput(TSLED,Off);
-	setOutput(TSOFFLED,Off);
-	setOutput(LED6,Off);
-	stopBlinkOutput(RTDMLED); // ensure nothing blinking.
-	stopBlinkOutput(TSOFFLED);
-	stopBlinkOutput(LED6);
-	stopBlinkOutput(TSLED);
+	resetOutput(RTDMLED, Off);
+	resetOutput(TSOFFLED, Off);
+	resetOutput(TSLED, Off);
+	resetOutput(LED6, Off);
 
 	// set relay output LED's off
 	//setOutput(BMSLED,Off);
