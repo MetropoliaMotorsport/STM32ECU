@@ -178,7 +178,8 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		readystate = 0;
 		if ( !TSRequested )
 		{
-			blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP); // start blinking to indicate ready.
+			setOutput(TSLED, On); // turn on to indicate ready for action.
+			//blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP); // start blinking to indicate ready.
 		}
 	} else
 	{
@@ -210,10 +211,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	if ( readystate == 0 )
 	{
-		blinkOutput(TSLED, LEDBLINK_ONE, 1000);
-	} else
-	{
-		setOutput(TSLED, On);
+		blinkOutput(TSLED, LEDBLINK_ONE, 100);
 	}
 
 	if ( CheckTSActivationRequest() )
