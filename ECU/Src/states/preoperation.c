@@ -178,7 +178,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		setDevicePower( Front1, true );
 		setDevicePower( Front2, true );
-		setDevicePower( Back1, true );
+		//setDevicePower( Back1, true );
 		setDevicePower( TSAL, true );
 		setDevicePower( Current, true );
 
@@ -514,6 +514,15 @@ int PreOperationState( uint32_t OperationLoops  )
 		{
 			setOutput(TSLED, On);
 			TSLEDstate = true;
+		}
+	} if ( getDevicePower(Front1) &&
+			 getDevicePower(Front2) &&
+			 getDevicePower(Inverters) )
+	{
+		if ( TSLEDstate )
+		{
+			setOutput(TSLED, Off);
+			TSLEDstate = false;
 		}
 	}
 
