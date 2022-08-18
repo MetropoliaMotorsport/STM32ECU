@@ -59,7 +59,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	}
 
 	if ( CarState.VoltageINV < 400 )
-		PrintRunning("TS:LoV");
+		PrintRunning("TS:Low");
 	else
 		PrintRunning("TS:On");
 
@@ -68,6 +68,39 @@ int TSActiveProcess( uint32_t OperationLoops )
 	uint32_t received = OperationalReceive();
 
 	uint32_t curtime = gettimer();
+
+
+	static bool TSOFFset = false;
+	static bool tscheckready = false;
+	static uint32_t tsoffvoltage = 0;
+
+	if ( CarState.VoltageINV > 500 && prechargetimer+MS1000*6 > curtime ) // inverters have reached operating voltage and pre charge has been given time.
+	{
+		tscheckready = true; // start checking for loss of TS.
+		sprintf(str, "TSOff ready %ldV", CarState.VoltageINV);
+		lcd_send_stringline(3,str, 254);
+		TSOFFset = false;
+	}
+
+	if ( tscheckready )
+	{
+		if ( CheckTSOff() )
+		{
+			if ( !TSOFFset )
+			{
+				TSOFFset =  true;
+				tsoffvoltage = CarState.VoltageINV;
+			}
+			char str[32];
+			sprintf(str, "TSOff triggered %ldV", tsoffvoltage);
+			lcd_send_stringline(3,str, 254);
+		}
+		else
+		{
+			TSOFFset = false;
+		}
+	}
+
 
 	uint8_t prechargedone = 0;
 	if ( prechargetimer+MS1000*6 > curtime ) // !Shutdown.PRE &&
@@ -106,7 +139,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 			lcd_send_stringline(1,"TS Activate Fail.", 255);
 			DebugPrintf("TS Activation failure at %lu invV:%d Shutdown.Pre:%d, prechargetimer:%d", gettimer(), CarState.VoltageINV, Shutdown.PRE, prechargetimer);
 			prechargedone = 0;
-			return IdleState;
+			if ( !TSOFFset ) return IdleState;
 		}
 	}
 
