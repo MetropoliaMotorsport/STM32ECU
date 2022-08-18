@@ -346,7 +346,7 @@ void PowerTask(void *argument)
 	    {
 	    	if ( !TSOFFset )
 	    	{
-	    		setOutputNOW(TSOFFLED, On);
+	    		setOutput(TSOFFLED, On);
 	    		TSOFFset =  true;
 	    	}
 	    }
@@ -354,7 +354,8 @@ void PowerTask(void *argument)
 	    {
 	    	if ( TSOFFset )
 	    	{
-	    		setOutputNOW(TSOFFLED, Off);
+	    		DebugMsg("TSOff off");
+	    		setOutput(TSOFFLED, Off);
 	    		TSOFFset = false;
 	    	}
 	    }

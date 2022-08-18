@@ -116,10 +116,10 @@ void HardFault_Handler(void)
 	ConfigReset();
 //	CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
 	blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
-    blinkOutput(TSOFFLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+  //blinkOutput(TSOFFLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
 	blinkOutput(RTDMLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
 
-	setOutputNOW(IMDLED,On);
+	//setOutputNOW(IMDLED,On);
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
