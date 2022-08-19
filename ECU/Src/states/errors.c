@@ -20,6 +20,8 @@
 
 #define MAXERRORMSGLENGTH  MAXERROROUTPUT
 
+static bool criticalerrorset = false;
+
 struct error_msg {
   char msg[MAXERRORMSGLENGTH];
   time_t time;
@@ -236,6 +238,9 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 bool SetCriticalError()
 {
+	criticalerrorset = true;
+	return true;
+
 	// do a better fix
 	if ( CriticalError != NULL )
 	{
@@ -243,12 +248,15 @@ bool SetCriticalError()
 		return true;
 	//	return xSemaphoreGive( CriticalError );
 	}
-	else return false;
+	else return false; // was already set.
 }
 
 bool CheckCriticalError()
 {
-	return xSemaphoreTake( CriticalError, 0);
+	bool state = criticalerrorset;
+	criticalerrorset = false;
+	return state;
+	//return xSemaphoreTake( CriticalError, 0);
 }
 
 
