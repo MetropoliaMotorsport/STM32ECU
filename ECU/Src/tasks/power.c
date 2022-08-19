@@ -332,7 +332,7 @@ void PowerTask(void *argument)
 			}
 		}
 #endif
-#if 1
+#if 1 // allow AMS light to go out when normal operation is resumed. Light merely shows state of timeout of error.
 		else
 		{
 			if ( BMSset)
@@ -346,6 +346,7 @@ void PowerTask(void *argument)
 	    {
 	    	if ( !TSOFFset )
 	    	{
+				DebugMsg("TSOff on");
 	    		setOutput(TSOFFLED, On);
 	    		TSOFFset =  true;
 	    	}
