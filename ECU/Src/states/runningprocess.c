@@ -250,11 +250,11 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 		if ( CarState.TorqueVectoring ) // handle indicator of active state.
 		{
-			blinkOutput(TSOFFLED_Output,LEDBLINK_ONE,LEDBLINKNONSTOP); // blinking green led = vectoring on.
+			//blinkOutput(TSOFFLED_Output,LEDBLINK_ONE,LEDBLINKNONSTOP); // blinking green led = vectoring on.
 		} else
 		{
 	//		setOutput(TSOFFLED_Output,LEDON); // steady LED = not enabled
-			blinkOutput(TSOFFLED_Output,LEDON,LEDBLINKNONSTOP);
+			//blinkOutput(TSOFFLED_Output,LEDON,LEDBLINKNONSTOP);
 		}
 #endif
 

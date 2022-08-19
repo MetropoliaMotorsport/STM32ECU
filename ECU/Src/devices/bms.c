@@ -22,7 +22,7 @@ bool processBMSOpMode( const uint8_t CANRxData[8], const uint32_t DataLength, co
 bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 void BMSTimeout( uint16_t id );
 
-CANData  BMSVoltage = { &DeviceState.BMS, BMSVOLT_ID, 8, processBMSVoltageData, BMSTimeout, 1000 };
+CANData  BMSVoltage = { &DeviceState.BMS, BMSVOLT_ID, 8, processBMSVoltageData, BMSTimeout, 2500 };
 CANData  BMSOpMode = { &DeviceState.BMS, BMSBASE_ID, 8, processBMSOpMode, NULL, 0 };
 CANData  BMSError = { &DeviceState.BMS, BMSBASE_ID+1, 8, processBMSError, NULL, 0 };
 

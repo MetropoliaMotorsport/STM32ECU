@@ -332,7 +332,7 @@ void PowerTask(void *argument)
 			}
 		}
 #endif
-#if 0
+#if 1
 		else
 		{
 			if ( BMSset)
@@ -412,7 +412,7 @@ void PowerTask(void *argument)
 				lastseenpumpL = curtime;
 				resetDevicePower(RightPump);
 				setDevicePower(RightPump, false);
-				restartpumpR + curtime + 2000;
+				restartpumpR = curtime + 2000;
 				setDevicePower(RightPump, true);
 			}
 

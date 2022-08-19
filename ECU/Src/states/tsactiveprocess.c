@@ -111,6 +111,15 @@ int TSActiveProcess( uint32_t OperationLoops )
 	}
 
 
+	if ( prechargedone && CarState.VoltageINV <= 400)
+	{
+		lcd_send_stringline(1,"TS Lost.", 255);
+		DebugPrintf("TS failure at %lu invV:%d Shutdown.Pre:%d, prechargetimer:%d", gettimer(), CarState.VoltageINV, Shutdown.PRE, prechargetimer);
+		prechargedone = 0;
+		return IdleState;
+	}
+
+
 #if 0
 		&& HVEnableTimer+MS1000*9 < gettimer()
 		&& // make this optional so IVT can be disabled.
