@@ -325,6 +325,7 @@ void PowerTask(void *argument)
 #if 1
 		if ( !CheckBMS() )
 		{
+			SetCriticalError(); // keep flagging BMS error whilst on.
 			if ( !BMSset)
 			{
 				setOutputNOW(BMSLED, On);
@@ -363,6 +364,7 @@ void PowerTask(void *argument)
 
 	    if ( CheckIMD() )
 	    {
+			SetCriticalError(); // keep flagging IMD error whilst on to not allow operation.
 	    	if ( !IMDset )
 	    	{
 	    		setOutputNOW(IMDLED, On);
