@@ -106,7 +106,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		lcd_clear();
 		InverterAllowTorqueAll(false);
 
-		HVEnableTimer = 0;
+		HVEnableTimer = gettimer();
 		TSRequested = 0;
 	}
 #ifndef everyloop
@@ -116,6 +116,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		CAN_SendStatus(1, IdleState, readystate );
 	}
 
+	uint32_t curtime = gettimer();
 
 	if ( CarState.allowtsactivation )
 		PrintRunning("TS:Off");
@@ -209,7 +210,10 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	InverterSetTorque(&adj, 0);
 
-	if ( readystate == 0 )
+	if ( readystate == 0 && HVEnableTimer+2000 < curtime)
+	{
+		setOutput(TSLED,  On);
+	} else
 	{
 		blinkOutput(TSLED, LEDBLINK_ONE, 100);
 	}
@@ -222,9 +226,12 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 			TSRequested = 1;
 			HVEnableTimer = gettimer();
 			return TSActiveState;
-//		CarState.HighVoltageReady = 1; // start timer, go to error state after 1am
 		} else
 		{
+			// user pressed requesting startup sequence before devices ready
+			blinkOutput(TSLED, BlinkFast, 1000);
+			CAN_SendErrorStatus(1,PowerOnRequestBeforeReady,0);
+			lcd_send_stringline( 3, "Not ready.", 3);
 			DebugMsg("TS Activation requested whilst not ready.");
 		}
 	}
