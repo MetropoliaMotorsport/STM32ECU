@@ -141,6 +141,13 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		CAN_SendErrors();
 	}
 
+	if (  Shutdown.BMSReason != 0 )
+	{
+		char statusstr[32];
+		sprintf(statusstr, "ERROR State BMS %d", Shutdown.BMSReason );
+		lcd_setscrolltitle(statusstr);
+	}
+
 #ifdef PDM
 	receivePDM();
 #endif
