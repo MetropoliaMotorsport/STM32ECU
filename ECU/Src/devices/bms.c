@@ -11,6 +11,7 @@
 #include "bms.h"
 #include "output.h"
 #include "power.h"
+#include "debug.h"
 
 
 // bms operation mode, byte 4   normal mode, data logging.

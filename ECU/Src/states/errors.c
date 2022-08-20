@@ -23,7 +23,7 @@
 static bool criticalerrorset = false;
 
 struct error_msg {
-  char msg[MAXERRORMSGLENGTH];
+  char msg[MAXERRORMSGLENGTH+1];
   time_t time;
 };
 
@@ -33,8 +33,6 @@ static StaticQueue_t ERRORStaticQueue;
 uint8_t ERRORQueueStorageArea[ ERRORQUEUE_LENGTH * ERRORITEMSIZE ];
 
 QueueHandle_t ERRORQueue;
-
-SemaphoreHandle_t CriticalError;
 
 volatile ErrorsType Errors;
 
@@ -48,7 +46,7 @@ void LogError( char *message )
 	{
 		struct error_msg error;
 		error.time = getTime();
-		strncpy( error.msg, message, MAXERRORMSGLENGTH );
+		strncpy( error.msg, message, MAXERRORMSGLENGTH);
 		xQueueSendToBack(ERRORQueue,&error,0); // send it to error state handler queue for display to user.
 
 		lcd_send_stringline( 3, message, 2);
@@ -96,6 +94,8 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		ShutdownCircuitSet( false );
 
 		ClearHVLost();
+
+		ClearCriticalError();
 
 #ifdef PDM
         sendPDM( 0 ); //disable high voltage on error state;
@@ -236,34 +236,25 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 }
 
 
-bool SetCriticalError()
+void SetCriticalError(void)
 {
 	criticalerrorset = true;
-	return true;
-
-	// do a better fix
-	if ( CriticalError != NULL )
-	{
-		DebugMsg("Logging critical error");
-		return true;
-	//	return xSemaphoreGive( CriticalError );
-	}
-	else return false; // was already set.
+	DebugMsg("Logging critical error");
 }
 
-bool CheckCriticalError()
+bool CheckCriticalError(void)
 {
-	bool state = criticalerrorset;
+	return criticalerrorset;
+}
+
+void ClearCriticalError(void)
+{
 	criticalerrorset = false;
-	return state;
-	//return xSemaphoreTake( CriticalError, 0);
 }
 
 
 int initERRORState( void )
 {
-	CriticalError = xSemaphoreCreateBinary();
-
 	ERRORQueue = xQueueCreateStatic( ERRORQUEUE_LENGTH,
 							  ERRORITEMSIZE,
 							  ERRORQueueStorageArea,

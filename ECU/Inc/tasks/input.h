@@ -154,7 +154,7 @@ void InputTimerCallback( void );
 #endif
 
 void receiveInput(uint8_t * CANRxData);
-int setInput(input input);
+void setInput(input input);
 
 int initInput( void );
 

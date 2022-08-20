@@ -30,10 +30,10 @@ int initVectoring( void )
 	return 0;
 }
 
-void doRegen(vectoradjust * adj)
+void doRegen(uint16_t Torque_Req_Percent, int16_t SteeringAngle, vectoradjust * adj)
 {
-	regU.RegenPos = ( ADCState.Regen_Percent * 1200 ) / 8000; // scales to 0-150.
-	regU.SteeringAngleDeg = ADCState.SteeringAngle;
+	regU.RegenPos = ( Torque_Req_Percent * 1200 ) / 8000; // scales to 0-150.
+	regU.SteeringAngleDeg = SteeringAngle;
 	regU.SteerReducingOn = 1;
 	regU.RegenBalanceOn = 0;
 	// 0-100, 100 = regen on front only.

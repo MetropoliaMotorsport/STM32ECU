@@ -19,6 +19,7 @@
 #include "timerecu.h"
 #include "debug.h"
 #include "power.h"
+#include "brake.h"
 
 #define UINTOFFSET	360
 

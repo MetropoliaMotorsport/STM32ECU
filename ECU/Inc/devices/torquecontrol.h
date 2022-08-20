@@ -32,6 +32,7 @@ typedef struct speedadjusttype {
 
 int initVectoring( void );
 void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd );
+void doRegen(uint16_t Torque_Req_Percent, int16_t SteeringAngle, vectoradjust * adj);
 
 float PedalTorqueRequest( void );
 
