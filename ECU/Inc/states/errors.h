@@ -55,8 +55,9 @@ int ResetErrors( void );
 void LogError( char *message );
 void SetErrorLogging( bool log );
 
-bool SetCriticalError();
-bool CheckCriticalError();
+void SetCriticalError(void);
+bool CheckCriticalError(void);
+void ClearCriticalError(void);
 
 int OperationalErrorHandler( uint32_t OperationLoops );
 

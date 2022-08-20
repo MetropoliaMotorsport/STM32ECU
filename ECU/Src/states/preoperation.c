@@ -331,7 +331,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 			lcd_send_stringpos(1,0,"                    ", 255);
 			lcd_send_stringpos(2,0,"   Ready To Start   ", 255);
-			CheckCriticalError(); // clear any pending critical errors from startup procedure.
+			ClearCriticalError(); // clear any pending critical errors from startup procedure.
 		}
 
 	}

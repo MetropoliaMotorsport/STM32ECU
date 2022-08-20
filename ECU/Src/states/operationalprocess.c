@@ -21,6 +21,7 @@
 #include "timerecu.h"
 #include "power.h"
 #include "inverter.h"
+#include "debug.h"
 
 static int LastOperationalState = 0;
 static int NewOperationalState = 0;
