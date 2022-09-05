@@ -177,43 +177,50 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 */
     //    if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT))?true:false && ADCState.Torque_Req_R_Percent > 100 )
-	if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT))?true:false )
+
+	if ( Torquq_Req )
 	{
-		adj->FL = Torque_Req + rtY.TV_TV_torqueFL;
-		adj->FR = Torque_Req - rtY.TV_TV_torqueFR;
-		adj->RL = Torque_Req + rtY.TV_TV_torqueRL;
-		adj->RR = Torque_Req - rtY.TV_TV_torqueRR;
-	}
-	else
-	{
-	// don't actually use output values yet.
-		if ( torquebalInt == 50 || torquebalInt == 0 )
+		if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT))?true:false )
 		{
-			adj->FL = Torque_Req ;
-			adj->FR = Torque_Req;
-			adj->RL = Torque_Req;
-			adj->RR = Torque_Req;
-		} else if ( torquebalInt > 50 )
+			adj->FL = Torque_Req + rtY.TV_TV_torqueFL;
+			adj->FR = Torque_Req - rtY.TV_TV_torqueFR;
+			adj->RL = Torque_Req + rtY.TV_TV_torqueRL;
+			adj->RR = Torque_Req - rtY.TV_TV_torqueRR;
+		}
+		else
 		{
-			adj->FL = Torque_Req / torquebal ;
-			adj->FR = Torque_Req / torquebal;
-			adj->RL = Torque_Req;
-			adj->RR = Torque_Req;
-		} else
-		{
-			adj->FL = Torque_Req;
-			adj->FR = Torque_Req;
-			adj->RL = Torque_Req / torquebal;
-			adj->RR = Torque_Req / torquebal;			
+		// don't actually use output values yet.
+			if ( torquebalInt == 50 || torquebalInt == 0 )
+			{
+				adj->FL = Torque_Req;
+				adj->FR = Torque_Req;
+				adj->RL = Torque_Req;
+				adj->RR = Torque_Req;
+			} else if ( torquebalInt > 50 )
+			{
+				adj->FL = Torque_Req / torquebal;
+				adj->FR = Torque_Req / torquebal;
+				adj->RL = Torque_Req;
+				adj->RR = Torque_Req;
+			} else
+			{
+				adj->FL = Torque_Req;
+				adj->FR = Torque_Req;
+				adj->RL = Torque_Req / torquebal;
+				adj->RR = Torque_Req / torquebal;
+			}
 		}
 	}
 
 	if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TCSENABLEDBIT))?true:false )
 	{
-		adj->FL += - rtY.TCS_TCS_FL;
-		adj->FR += - rtY.TCS_TCS_FR;
-		adj->RL += - rtY.TCS_TCS_RL;
-		adj->RR += - rtY.TCS_TCS_RR;
+		if ( Torquq_Req )
+		{
+			adj->FL += - rtY.TCS_TCS_FL;
+			adj->FR += - rtY.TCS_TCS_FR;
+			adj->RL += - rtY.TCS_TCS_RL;
+			adj->RR += - rtY.TCS_TCS_RR;
+		}
 
 #if 0
 		if ( rtY.TCS_RPMmaxFL < 100 || )

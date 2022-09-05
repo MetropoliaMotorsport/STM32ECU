@@ -258,8 +258,8 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		}
 #endif
 
-		vectoradjust adj;
-		speedadjust spd;
+		vectoradjust adj = { 0 };
+		speedadjust spd = { 0 };
 #ifdef REQUIRETS
 		if ( CheckTSOff() || Shutdown.AIRp )
 		{
