@@ -101,7 +101,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	rtU.bus_Vehicle_yaw_rate = IMUReceived.GyroZ*0.001;
 	rtU.bus_Vehicle_str_ang = ADCState.SteeringAngle;
 
-	rtU.bus_Pedal_torque_position = ADCState.Torque_Req_R_Percent/1000.0;
+	rtU.bus_Pedal_torque_position = ADCState.Torque_Req_R_Percent/10.0;
 
 	rtU.bus_Traction_control_active = (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TRACTIONBIT))?true:false;
 	rtU.bus_Velocity_control_active = (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VELOCITYBIT))?true:false;
