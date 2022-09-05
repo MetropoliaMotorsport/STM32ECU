@@ -178,7 +178,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 */
     //    if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT))?true:false && ADCState.Torque_Req_R_Percent > 100 )
 
-	if ( Torquq_Req )
+	if ( Torque_Req )
 	{
 		if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT))?true:false )
 		{
@@ -214,7 +214,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 	if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TCSENABLEDBIT))?true:false )
 	{
-		if ( Torquq_Req )
+		if ( Torque_Req )
 		{
 			adj->FL += - rtY.TCS_TCS_FL;
 			adj->FR += - rtY.TCS_TCS_FR;
