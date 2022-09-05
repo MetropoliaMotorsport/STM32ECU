@@ -323,12 +323,14 @@
 
 //#define POWERNODERECEIVED
 
+#if 0
 #define RearLeftInverter		0
 #define RearRightInverter		1
 
 #ifdef HPF20
 #define FrontLeftInverter		2
 #define FrontRightInverter		3
+#endif
 #endif
 
 extern volatile uint32_t ADCloops;
