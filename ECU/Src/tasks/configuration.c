@@ -688,7 +688,7 @@ bool DoMenu( uint16_t input )
 
 	static char MenuLines[MAINMENUSIZE+1][21] = { 0 };
 
-	const uint8_t torquevals[] = {0, 5, 10, 15, 20, 25,0}; // zero terminated so function can find end.
+	const uint8_t torquevals[] = {0, 5, 10, 15, 18, 20, 25,0}; // zero terminated so function can find end.
 
 	const uint8_t torquebalvals[] = {50, 60, 70, 80, 0}; // zero terminated so function can find end.
 
