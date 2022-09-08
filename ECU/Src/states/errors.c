@@ -20,6 +20,8 @@
 
 #define MAXERRORMSGLENGTH  MAXERROROUTPUT
 
+static bool criticalerrorset = false;
+
 struct error_msg {
   char msg[MAXERRORMSGLENGTH+1];
   time_t time;
