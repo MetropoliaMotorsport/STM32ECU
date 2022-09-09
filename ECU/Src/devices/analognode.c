@@ -95,9 +95,13 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 		)
 	{
 		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
-#ifndef APPSFIX
+#ifndef APPSFIXL
 		ADCStateNew.Torque_Req_L_Percent = getTorqueReqPercL(AccelL);
 		ADCStateNew.APPSL = AccelL;
+#endif
+#ifdef APPSFIXR
+		ADCStateNew.Torque_Req_R_Percent = getTorqueReqPercL(AccelL);
+		ADCStateNew.APPSR = AccelL;
 #endif
 		ADCStateNew.Regen_Percent = getBrakeTravelPerc(Regen);
 		ADCStateNew.Regen = Regen;
@@ -181,9 +185,11 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
         ADCStateNew.BrakeF = BrakeF;
         ADCStateNew.BrakeR = BrakeR;
+#ifndef APPSFIXR
         ADCStateNew.Torque_Req_R_Percent = getTorqueReqPercR(AccelR);
 		ADCStateNew.APPSR = AccelR;
-#ifdef APPSFIX
+#endif
+#ifdef APPSFIXL
 		ADCStateNew.Torque_Req_L_Percent = getTorqueReqPercL(AccelR);
 		ADCStateNew.APPSL = AccelR;
 #endif
