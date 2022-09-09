@@ -708,8 +708,9 @@ int PreOperationState( uint32_t OperationLoops  )
 
 	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYSENSBIT); } // require critical sensor nodes online for startup.
 	if ( DeviceState.PowerNodes != OPERATIONAL ) { ReadyToStart |= (1<<READYPOWERBIT); }
+	#ifdef CHECKTSALPOWER
 	if ( !getDevicePower(TSAL) ) { ReadyToStart |= (1<<READYTSALBIT); } // require TSAL power to allow startup.
-
+	#endif
 	if ( ReadyToStart == 0 )
 	{
 		setOutput(STARTLED, On);

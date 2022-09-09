@@ -22,6 +22,8 @@
 //#define APPSFIXL // uncomment if APPSL not readng to temporarily copy APPSR, do not use longterm.
 //#define APPSFIXR // uncomment if APPSR not readng to temporarily copy APPSL, do not use longterm.
 
+//#define CHECKTSALPOWER
+
 #if defined(APPSFIXL) && defined(APPSFIXR)
 #error Only one apps fix.
 #endif
