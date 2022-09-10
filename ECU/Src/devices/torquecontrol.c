@@ -75,27 +75,47 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	uint8_t torquebalInt = getEEPROMBlock(0)->TorqueBal;
 	uint8_t torquebal = 0;
 
-
-	if ( torquebalInt == 50 || torquebalInt == 0 )
+	if ( Torque_Req > 0 )
 	{
-		rtU.bus_Torque_FL = Torque_Req;
-		rtU.bus_Torque_FR = Torque_Req;
-		rtU.bus_Torque_RL = Torque_Req;
-		rtU.bus_Torque_RR = Torque_Req;
-	} else if ( torquebalInt > 50 )
-	{
-		torquebal = torquebalInt / ( 100 - torquebalInt );
-		rtU.bus_Torque_FL = Torque_Req / torquebal;
-		rtU.bus_Torque_FR = Torque_Req / torquebal;
-		rtU.bus_Torque_RL = Torque_Req;
-		rtU.bus_Torque_RR = Torque_Req;
+		if ( torquebalInt == 50 || torquebalInt == 0 )
+		{
+			rtU.bus_Torque_FL = Torque_Req;
+			rtU.bus_Torque_FR = Torque_Req;
+			rtU.bus_Torque_RL = Torque_Req;
+			rtU.bus_Torque_RR = Torque_Req;
+			adj->FL = Torque_Req;
+			adj->FR = Torque_Req;
+			adj->RL = Torque_Req;
+			adj->RR = Torque_Req;
+		} else if ( torquebalInt > 50 )
+		{
+			torquebal = torquebalInt / ( 100 - torquebalInt );
+			rtU.bus_Torque_FL = Torque_Req / torquebal;
+			rtU.bus_Torque_FR = Torque_Req / torquebal;
+			rtU.bus_Torque_RL = Torque_Req;
+			rtU.bus_Torque_RR = Torque_Req;
+			adj->FL = Torque_Req / torquebal;
+			adj->FR = Torque_Req / torquebal;
+			adj->RL = Torque_Req;
+			adj->RR = Torque_Req;
+		} else
+		{
+			torquebal = torquebalInt / ( 100 - torquebalInt );
+			rtU.bus_Torque_FL = Torque_Req;
+			rtU.bus_Torque_FR = Torque_Req;
+			rtU.bus_Torque_RL = Torque_Req / torquebal;
+			rtU.bus_Torque_RR = Torque_Req / torquebal;
+			adj->FL = Torque_Req;
+			adj->FR = Torque_Req;
+			adj->RL = Torque_Req / torquebal;
+			adj->RR = Torque_Req / torquebal;
+		}
 	} else
 	{
-		torquebal = torquebalInt / ( 100 - torquebalInt );
-		rtU.bus_Torque_FL = Torque_Req;
-		rtU.bus_Torque_FR = Torque_Req;
-		rtU.bus_Torque_RL = Torque_Req / torquebal;
-		rtU.bus_Torque_RR = Torque_Req / torquebal;	
+		adj->FL = 0;
+		adj->FR = 0;
+		adj->RL = 0;
+		adj->RR = 0;
 	}
 
 	rtU.bus_Vehicle_yaw_rate = IMUReceived.GyroZ*0.001;
@@ -178,37 +198,14 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 */
     //    if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT))?true:false && ADCState.Torque_Req_R_Percent > 100 )
 
-	if ( Torque_Req )
+	if ( Torque_Req > 0 ) // if request was over 0 then process output of vectoring.
 	{
 		if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT))?true:false )
 		{
-			adj->FL = Torque_Req + rtY.TV_TV_torqueFL;
-			adj->FR = Torque_Req - rtY.TV_TV_torqueFR;
-			adj->RL = Torque_Req + rtY.TV_TV_torqueRL;
-			adj->RR = Torque_Req - rtY.TV_TV_torqueRR;
-		}
-		else
-		{
-		// don't actually use output values yet.
-			if ( torquebalInt == 50 || torquebalInt == 0 )
-			{
-				adj->FL = Torque_Req;
-				adj->FR = Torque_Req;
-				adj->RL = Torque_Req;
-				adj->RR = Torque_Req;
-			} else if ( torquebalInt > 50 )
-			{
-				adj->FL = Torque_Req / torquebal;
-				adj->FR = Torque_Req / torquebal;
-				adj->RL = Torque_Req;
-				adj->RR = Torque_Req;
-			} else
-			{
-				adj->FL = Torque_Req;
-				adj->FR = Torque_Req;
-				adj->RL = Torque_Req / torquebal;
-				adj->RR = Torque_Req / torquebal;
-			}
+			adj->FL += rtY.TV_TV_torqueFL;
+			adj->FR -= rtY.TV_TV_torqueFR;
+			adj->RL += rtY.TV_TV_torqueRL;
+			adj->RR -= rtY.TV_TV_torqueRR;
 		}
 	}
 
