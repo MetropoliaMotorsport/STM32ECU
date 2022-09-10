@@ -340,7 +340,7 @@ void setAnalogNodesStr( const uint32_t nodesonline ) // any of these missing sho
 	if ( ANodeAllBit & ( 0x1 << ANode1Bit ) )
 	if ( !(nodesonline & ( 0x1 << ANode1Bit )) )
 	{
-		ANodeStr[pos] = 'I';
+		ANodeStr[pos] = 'i';
 		ANodeStr[pos+1] = '\0';
 		pos++;
 	}
