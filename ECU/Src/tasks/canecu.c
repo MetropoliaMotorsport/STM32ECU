@@ -1098,7 +1098,7 @@ char CANLogDataFast( void )
 	CAN1Send( 0x7CB, 8, CANTxData );
 
 	resetCanTx(CANTxData);
-	CANTxData[0] = (int8_t)CarState.Current;
+	//CANTxData[0] = (int8_t)CarState.Current;
 	for ( int i=0;i<MOTORCOUNT;i++)
 		CANTxData[1+i] = (int8_t)getInvState(i)->InvCurrent;
 
