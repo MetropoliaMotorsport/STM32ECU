@@ -342,7 +342,7 @@ void wheel_read_input(void)
 
 		switch (rcvbuffer[0])
 		{
-		case 0: break;
+		case 0: return; // no data to read, continue.
 		case 1:
 			switch (rcvbuffer[1] )
 			{
