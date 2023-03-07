@@ -7,6 +7,7 @@
 #include "i2c.h"
 #include "i2c-lcd.h"
 #include "timerecu.h"
+#include "input.h"
 
 #include <stdbool.h>
 
@@ -31,6 +32,8 @@ extern uint8_t LCDBuffer[LCDBUFSIZE];
 #else
   #define SLAVE_ADDRESS_LCD 0x4E //0x4E // change this according to your setup NHD=3C or 3D, standard lcd = 4E
 #endif
+
+#define SLAVE_ADDRESS_WHEEL 0x20
 
 DMA_BUFFER ALIGN_32BYTES (static uint8_t sendbuffer[LCDBUFSIZE*2]); // allow for command codes etc.
 static int     sendbufferpos = 0;
@@ -309,6 +312,55 @@ int lcd_init (I2C_HandleTypeDef *i2chandle)
 }
 
 
+static bool interrupthigh( void )
+{
+	return true; // currently causes to check every cycle.
+}
+
+void wheel_read_input(void)
+{
+	// check if interrupt signal is high, if so read in a loop till it's not high, upto x reads
+
+	uint8_t rcvbuffer[2] = { 0 };
+
+	HAL_StatusTypeDef transmitstatus = HAL_OK;
+
+	int count = 0;
+
+	if ( !interrupthigh() ) // no interrupt flagged
+		return;
+
+	do
+	{
+		count++;
+		transmitstatus = HAL_I2C_Master_Receive_IT(lcdi2c, SLAVE_ADDRESS_WHEEL<<1,(uint8_t *) rcvbuffer, 2);
+		if ( transmitstatus != HAL_OK ) {
+			//wheelinerror = true;
+
+			return;
+		}
+
+		switch (rcvbuffer[0])
+		{
+		case 0: break;
+		case 1:
+			switch (rcvbuffer[1] )
+			{
+			case 1: setInput(Up_Input); break;
+			case 2: setInput(Right_Input); break;
+			case 3: setInput(Down_Input); break;
+			case 4: setInput(Left_Input); break;
+			case 5: setInput(Center_Input); break;
+			default:
+				break;
+			}
+		default:
+			break;
+		}
+
+	} while ( count < 10 && interrupthigh() ); // ensures we can't get stuck in an infinite loop waiting
+}
+
 // last resort direct lcd update command bypassing send task., not relying on interrupt, or RTOS.
 int lcd_send_stringposDIR( int row, int col, char *str )
 {
@@ -365,6 +417,8 @@ int lcd_dosend( void )
 		readytosend = true;
 		lastreset = gettimer();
 	}
+
+	wheel_read_input();
 
 	// used for initialisation, and any other special commands. send blocking to ensure works.
 	if ( sendbufferpos != 0 && readytosend )
