@@ -8,6 +8,8 @@
 #ifndef LENZEINVERTER_H_
 #define LENZEINVERTER_H_
 
+#include "ecu.h"
+
 // Inverter specific definitions. Called functions are defined in Inverter module for some level of device independance abstraction.
 
 #define INVERTERCOUNT				(MOTORCOUNT/2)
@@ -55,10 +57,21 @@
 //#define InverterFR_COBID			(Inverter1_NodeID)
 //#define InverterFR_Channel			(0)
 
-#define invFL						(2)//(1+InverterFL_Channel)
-#define invFR						(0)//(0+InverterFR_Channel)
-#define invRL						(3)//(1+InverterRL_Channel)
-#define invRR						(1)//(0+InverterRR_Channel)
+#ifdef HPF2023
+
+#define invFL						(0)
+#define invFR						(1)
+#define invRL						(2)
+#define invRR						(3)
+
+#else
+
+#define invFL						(2)
+#define invFR						(0)
+#define invRL						(3)
+#define invRR						(1)
+
+#endif
 
 
 #define TORQUESLOPESCALING			(90)
