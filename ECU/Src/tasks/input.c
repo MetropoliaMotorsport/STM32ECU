@@ -38,7 +38,12 @@ static volatile ButtonData Input[NO_INPUTS] = {
 		{ DI4_GPIO_Port, DI4_Pin}, //2  pin 24
 		{ DI5_GPIO_Port, DI5_Pin}, //3  pin 25
 		{ NULL, 0}, //4  pin 34 pin Also potential PWM Pin.
+
+#ifdef HPF2023
+		{ NULL, 0}, // DI7 used for wheel input interrupt signal
+#else
 		{ DI7_GPIO_Port, DI7_Pin},//{ DI7_GPIO_Port, DI7_Pin}, //5 pin 33 being used for PWM.
+#endif
 		{ DI8_GPIO_Port, DI8_Pin}, //6
 		{ DI10_GPIO_Port, DI10_Pin}, //7
 		{ DI11_GPIO_Port, DI11_Pin}, //8

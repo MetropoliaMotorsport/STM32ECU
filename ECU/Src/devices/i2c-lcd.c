@@ -312,15 +312,15 @@ int lcd_init (I2C_HandleTypeDef *i2chandle)
 
 }
 
-
 static bool interrupthigh( void )
 {
-	return true; // currently causes to check every cycle.
+	return HAL_GPIO_ReadPin(DI7_GPIO_Port, DI7_Pin );
+	//return true; // currently causes to check every cycle.
 }
 
 void wheel_read_input(void)
 {
-	// check if interrupt signal is high, if so read in a loop till it's not high, upto x reads
+	// check if interrupt signal is high, if so read in a loop till it's not high, upto x reads to prevent display blocking.
 
 	uint8_t rcvbuffer[2] = { 0 };
 
@@ -435,7 +435,9 @@ int lcd_dosend( void )
 		lastreset = gettimer();
 	}
 
+#ifdef HPF2023
 	wheel_read_input();
+#endif
 
 	// used for initialisation, and any other special commands. send blocking to ensure works.
 	if ( sendbufferpos != 0 && readytosend )
