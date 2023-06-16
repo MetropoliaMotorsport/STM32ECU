@@ -8,6 +8,7 @@
 #include "i2c-lcd.h"
 #include "timerecu.h"
 #include "input.h"
+#include "debug.h"
 
 #include <stdbool.h>
 
@@ -346,15 +347,31 @@ void wheel_read_input(void)
 		case 1:
 			switch (rcvbuffer[1] )
 			{
-			case 1: setInput(Up_Input); break;
-			case 2: setInput(Right_Input); break;
-			case 3: setInput(Down_Input); break;
-			case 4: setInput(Left_Input); break;
-			case 5: setInput(Center_Input); break;
+			case 1: DebugPrintf("Wheel: JST: U"); setInput(Up_Input); break;
+			case 2: DebugPrintf("Wheel: JST: R"); setInput(Right_Input); break;
+			case 3: DebugPrintf("Wheel: JST: D"); setInput(Down_Input); break;
+			case 4: DebugPrintf("Wheel: JST: L"); setInput(Left_Input); break;
+			case 5: DebugPrintf("Wheel: JST: C"); setInput(Center_Input); break;
 			default:
 				break;
 			}
+		case 2:
+			switch (rcvbuffer[1] )
+			{
+			case 1: DebugPrintf("Wheel: BTN: UL"); break;
+			case 2: DebugPrintf("Wheel: BTN: LL"); break;
+			case 3: DebugPrintf("Wheel: BTN: UR"); break;
+			case 4: DebugPrintf("Wheel: BTN: LR"); break;
+			default:
+				DebugPrintf("Wheel: BTN: Bad"); break;
+				break;
+			}
+		case 3:
+			DebugPrintf("Wheel: Enc L: %d", rcvbuffer[1]); break;
+		case 4:
+			DebugPrintf("Wheel: Enc R: %d", rcvbuffer[1]); break;
 		default:
+			DebugPrintf("Wheel: Unk: %02x %02x", rcvbuffer[0], rcvbuffer[1]);
 			break;
 		}
 
