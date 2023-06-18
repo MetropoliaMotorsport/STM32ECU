@@ -13,6 +13,12 @@
 
 //#define WATCHDOG
 
+#define BENCH // benchtest compile, don't complain about missing car systems.
+
+#define TESTBOARD
+
+#define RTTDEBUG
+
 #define LCDBUFFER
 
 #define MAXERROROUTPUT       (40)

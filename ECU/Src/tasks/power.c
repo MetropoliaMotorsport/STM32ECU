@@ -325,7 +325,9 @@ void PowerTask(void *argument)
 #if 1
 		if ( !CheckBMS() )
 		{
+#ifndef BENCH
 			SetCriticalError(); // keep flagging BMS error whilst on.
+#endif
 			if ( !BMSset)
 			{
 				setOutputNOW(BMSLED, On);
@@ -364,7 +366,9 @@ void PowerTask(void *argument)
 
 	    if ( CheckIMD() )
 	    {
+#ifndef BENCH
 			SetCriticalError(); // keep flagging IMD error whilst on to not allow operation.
+#endif
 	    	if ( !IMDset )
 	    	{
 	    		setOutputNOW(IMDLED, On);

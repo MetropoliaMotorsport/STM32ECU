@@ -251,11 +251,12 @@ int OperationalProcess( void )
 			break;
 	}
 
-
+#ifndef BENCH
 	if ( CheckCanError() )
 	{
 		NewOperationalState = OperationalErrorState;
 	}
+#endif
 
 #ifndef everyloop
 	if ( ( loopcount % LOGLOOPCOUNTFAST ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing

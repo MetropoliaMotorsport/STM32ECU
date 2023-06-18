@@ -47,7 +47,7 @@ static uint32_t LinePriorityTime[4] = {0};
 
 
 
-#define LCDSTACK_SIZE 128*8
+#define LCDSTACK_SIZE 128*10
 #define LCDTASKNAME  "LCDTask"
 StaticTask_t xLCDTaskBuffer;
 StackType_t xLCDStack[ LCDSTACK_SIZE ];
