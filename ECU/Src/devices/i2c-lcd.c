@@ -351,7 +351,7 @@ static bool interrupthigh( void )
 {
 	if ( interrupt )
 	{
-		DebugPrintf("Wheel i2c interrupttus \n", callcount);
+		DebugPrintf("Wheel i2c interrupts %d\n", interrupt);
 		return true;
 	}
 	return false;
@@ -377,7 +377,6 @@ void wheel_read_input(void)
 
 	while (HAL_I2C_GetState(lcdi2c) != HAL_I2C_STATE_READY)
 	{
-		DebugPrintf("Waiting for i2c readystate");
 		vTaskDelay(1);
 		count++;
 		if ( count == 33 )
@@ -401,7 +400,7 @@ void wheel_read_input(void)
 		callcount++;
 		count++;
 		rcvwait = true;
-		xSemaphoreTake(I2Crcvdone,0); // clear possible waiting semaphore.
+		//xSemaphoreTake(I2Crcvdone,0); // clear possible waiting semaphore.
 		transmitstatus = HAL_I2C_Master_Receive_IT(lcdi2c, SLAVE_ADDRESS_WHEEL<<1,(uint8_t *) rcvbuffer, 2);
 		if ( transmitstatus != HAL_OK ) {
 			//wheelinerror = true;
@@ -410,7 +409,7 @@ void wheel_read_input(void)
 			return;
 		}
 
-	    if (!xSemaphoreTake(I2Crcvdone, 2))
+	    if (!xSemaphoreTake(I2Crcvdone, 16)) // make sure can't get stuck waiting for i2c read.
 	    {
 	    	return;
 	    }
@@ -528,7 +527,6 @@ int lcd_dosend( void )
 #ifdef HPF2023
 	wheel_read_input();
 #endif
-	return 1;
 
 	// used for initialisation, and any other special commands. send blocking to ensure works.
 	if ( sendbufferpos != 0 && readytosend )
