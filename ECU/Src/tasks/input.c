@@ -518,7 +518,15 @@ bool receiveCANInput( const uint8_t CANRxData[8], const uint32_t DataLength, con
 #endif
 	return true;
 }
-
+#ifdef HPF2023
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if ( GPIO_Pin == WHLINT_Pin)
+	{
+		wheel_interrupt();
+	}
+}
+#endif
 
 // TODO make stop button interrupt trigger to make more robust?
 #ifndef RTOS

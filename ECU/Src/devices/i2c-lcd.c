@@ -312,10 +312,22 @@ int lcd_init (I2C_HandleTypeDef *i2chandle)
 
 }
 
+int callcount = 0;
+static uint32_t interrupt = 0;
+
+void wheel_interrupt( void )
+{
+	interrupt++;
+}
+
 static bool interrupthigh( void )
 {
-	return HAL_GPIO_ReadPin(DI7_GPIO_Port, DI7_Pin );
-	//return true; // currently causes to check every cycle.
+	if ( interrupt )
+	{
+		DebugPrintf("Wheel i2c interrupttus \n", callcount);
+		return true;
+	}
+	return false;
 }
 
 void wheel_read_input(void)
@@ -331,15 +343,47 @@ void wheel_read_input(void)
 	if ( !interrupthigh() ) // no interrupt flagged
 		return;
 
-	do
+	callcount++;
+
+	while (HAL_I2C_GetState(lcdi2c) != HAL_I2C_STATE_READY)
 	{
+		DebugPrintf("Waiting for i2c readystate");
+		vTaskDelay(1);
+		count++;
+		if ( count == 33 )
+		{
+			// reset i2c
+		}
+	}
+
+#if 0
+	if ( HAL_I2C_IsDeviceReady(lcdi2c, (uint16_t)(SLAVE_ADDRESS_WHEEL<<1), 2, 10 ) != HAL_OK) // HAL_ERROR or HAL_BUSY or HAL_TIMEOUT
+	{
+		DebugPrintf("Wheel i2c not ready\n", callcount);
+		return; // No ACK received at that address
+	}
+#endif
+
+	interrupt = 0;
+
+	while ( 1 )
+	{
+		callcount++;
 		count++;
 		transmitstatus = HAL_I2C_Master_Receive_IT(lcdi2c, SLAVE_ADDRESS_WHEEL<<1,(uint8_t *) rcvbuffer, 2);
 		if ( transmitstatus != HAL_OK ) {
 			//wheelinerror = true;
-
+			DebugPrintf("I2C read %d failed %d\n", callcount, transmitstatus);
+			interrupt = 1;
 			return;
 		}
+
+	    xSemaphoreTake(I2Crcvdone, portMAX_DELAY);
+		rcvwait = false;
+
+		// wait for receive to complete, or fail.
+
+		DebugPrintf("Wheel: rcv: %02x %02x - %lu", rcvbuffer[0], rcvbuffer[1], callcount);
 
 		switch (rcvbuffer[0])
 		{
@@ -355,6 +399,7 @@ void wheel_read_input(void)
 			default:
 				break;
 			}
+			break;
 		case 2:
 			switch (rcvbuffer[1] )
 			{
@@ -366,16 +411,26 @@ void wheel_read_input(void)
 				DebugPrintf("Wheel: BTN: Bad"); break;
 				break;
 			}
+			break;
 		case 3:
 			DebugPrintf("Wheel: Enc L: %d", rcvbuffer[1]); break;
 		case 4:
 			DebugPrintf("Wheel: Enc R: %d", rcvbuffer[1]); break;
 		default:
-			DebugPrintf("Wheel: Unk: %02x %02x", rcvbuffer[0], rcvbuffer[1]);
+			if ( rcvbuffer[1] == 0 )
+			{
+				interrupt = 0;
+				return;
+			}
 			break;
 		}
-
-	} while ( count < 10 && interrupthigh() ); // ensures we can't get stuck in an infinite loop waiting
+		if ( count == 10 ) // lots of reads, make sure display can get updated even if reads keep coming.
+		{
+			DebugPrintf("Wheel: rcv overrun");
+			interrupt++; // flag as needing further checking, unlikely to get this far in real use, but fallback.
+			return;
+		}
+	}
 }
 
 // last resort direct lcd update command bypassing send task., not relying on interrupt, or RTOS.
@@ -438,6 +493,7 @@ int lcd_dosend( void )
 #ifdef HPF2023
 	wheel_read_input();
 #endif
+	return 1;
 
 	// used for initialisation, and any other special commands. send blocking to ensure works.
 	if ( sendbufferpos != 0 && readytosend )

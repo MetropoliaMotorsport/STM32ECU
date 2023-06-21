@@ -18,6 +18,12 @@ void initInterrupts( void )
 	HAL_NVIC_EnableIRQ(TIM3_IRQn);
 #endif
 
+// button reads from wheel, interrupt triggers
+#ifdef HPF2023
+	HAL_NVIC_SetPriority(WHLINT_EXTI_IRQn, 15, 0);
+	HAL_NVIC_EnableIRQ(WHLINT_EXTI_IRQn);
+#endif
+
 #ifdef HPF19
 	// enable button interrupts -- handled in GPIO setup, set to low priority, human scale input, not priority.
 	HAL_NVIC_SetPriority(USER_Btn_EXTI_IRQn, 15, 0);
