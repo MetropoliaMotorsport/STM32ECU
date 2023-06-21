@@ -33,6 +33,8 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+#include "../RTT/SEGGER_RTT.h"
+
 typedef struct Debug_msg {
 	char str[MAXDEBUGOUTPUT];
 	//uint32_t msgval;
@@ -68,6 +70,11 @@ int UARTprintf(const char * format, ... )
 	va_start(ap, format);
 	n = vsnprintf ((char*)buffer, 128, format, ap);
 	va_end(ap);
+
+#ifdef RTTDEBUG
+	SEGGER_RTT_Write(0, buffer, n);
+#endif
+
 	if ( !UART_Transmit(DEBUGUART, (uint8_t*)buffer, n) )
 	{
 		return 0;
@@ -79,6 +86,9 @@ int UARTprintf(const char * format, ... )
 
 int UARTwritech( const char ch)
 {
+#ifdef RTTDEBUG
+
+#endif
 	if(!UART_Transmit(DEBUGUART, (uint8_t *)&ch, 1)) {
 		return 0;
 	}
@@ -95,6 +105,9 @@ void UARTwrite( const char *str)
 
 void UARTwriteRaw( const char *str)
 {
+#ifdef RTTDEBUG
+	SEGGER_RTT_printf(0, str);
+#endif
 	if ( !UART_Transmit(DEBUGUART, (uint8_t*)str, strlen(str)) )
 	{
 		return;
@@ -106,6 +119,11 @@ void UARTwriteRaw( const char *str)
 
 void UARTwritetwoline(const char *str, const char *str2)
 {
+#ifdef RTTDEBUG
+	SEGGER_RTT_printf(0, str);
+	SEGGER_RTT_printf(0, str2);
+	SEGGER_RTT_printf(0, "\r\n");
+#endif
 	UARTprintf(str);
 	UARTprintf(str2);
 	UARTprintf("\r\n");

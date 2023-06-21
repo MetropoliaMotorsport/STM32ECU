@@ -39,6 +39,7 @@
 #include "errors.h"
 #include "output.h"
 #include "timerecu.h"
+#include "../Src/RTT/SEGGER_RTT.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
