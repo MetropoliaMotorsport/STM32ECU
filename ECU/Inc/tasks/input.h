@@ -33,6 +33,10 @@ DI6 pin 24 PE11 ok   input 7
 DI7 pin 25 PF12 ok    input 8
  */
 
+#ifdef HPF2023
+#define WHLINT_Pin DI7_Pin
+#endif
+
 #ifdef HPF20
 // these seem wrong
 	#define DI2		(0)

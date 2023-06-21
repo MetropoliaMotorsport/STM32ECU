@@ -10,6 +10,7 @@
 #include "input.h"
 #include "debug.h"
 #include "semphr.h"
+#include "interrupts.h"
 
 #include <stdbool.h>
 
@@ -400,6 +401,7 @@ void wheel_read_input(void)
 		callcount++;
 		count++;
 		rcvwait = true;
+		xSemaphoreTake(I2Crcvdone,0); // clear possible waiting semaphore.
 		transmitstatus = HAL_I2C_Master_Receive_IT(lcdi2c, SLAVE_ADDRESS_WHEEL<<1,(uint8_t *) rcvbuffer, 2);
 		if ( transmitstatus != HAL_OK ) {
 			//wheelinerror = true;
@@ -408,7 +410,10 @@ void wheel_read_input(void)
 			return;
 		}
 
-	    xSemaphoreTake(I2Crcvdone, portMAX_DELAY);
+	    if (!xSemaphoreTake(I2Crcvdone, 2))
+	    {
+	    	return;
+	    }
 		rcvwait = false;
 
 		// wait for receive to complete, or fail.
