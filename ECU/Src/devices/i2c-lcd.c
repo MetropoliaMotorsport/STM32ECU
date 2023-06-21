@@ -9,12 +9,16 @@
 #include "timerecu.h"
 #include "input.h"
 #include "debug.h"
+#include "semphr.h"
 
 #include <stdbool.h>
 
 I2C_HandleTypeDef * lcdi2c;  // change your handler here accordingly
 extern SPI_HandleTypeDef hspi3;
 extern SPI_HandleTypeDef hspi4;
+
+SemaphoreHandle_t I2Crcvdone = NULL;
+StaticSemaphore_t I2CrcvdoneBuffer;
 
 #define US2066
 
@@ -42,14 +46,26 @@ static int     sendbufferpos = 0;
 volatile static bool inerror = false;
 volatile static bool readytosend = true;
 volatile static uint32_t lcderrorcount = 0;
+static bool rcvwait = false;
 
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-	if ( hi2c->Instance == I2C3 || hi2c->Instance == I2C4 ){ // LCD could be on either I2C3 or I2C4
+	if ( hi2c->Instance == I2C3 || hi2c->Instance == I2C4 ) // LCD could be on either I2C3 or I2C4
+	{
 		readytosend = true;
 		sendbufferpos = 0;
 		inerror = false;
 	}
+}
+
+void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+	if ( hi2c->Instance == I2C3 || hi2c->Instance == I2C4 ) // LCD could be on either I2C3 or I2C4
+	{
+		xSemaphoreGiveFromISR(I2Crcvdone, &xHigherPriorityTaskWoken);
+	}
+	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 int lcd_errorcount( void ){
@@ -58,11 +74,21 @@ int lcd_errorcount( void ){
 
 void LCD_I2CError( void )
 {
-//	volatile uint32_t err = HAL_I2C_ERROR_NONE;
-	// check error in i2c handle HAL_I2C_ERROR_AF
-	lcderrorcount++;
-	readytosend = false;
-	inerror = true;
+	if ( rcvwait )
+	{
+		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+		rcvwait = false;
+		xSemaphoreGiveFromISR(I2Crcvdone, &xHigherPriorityTaskWoken);
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+	} else
+	{
+	//	volatile uint32_t err = HAL_I2C_ERROR_NONE;
+		// check error in i2c handle HAL_I2C_ERROR_AF
+		lcderrorcount++;
+		readytosend = false;
+		inerror = true;
+	}
+
 }
 
 int lcd_getstate( void )
@@ -332,6 +358,10 @@ static bool interrupthigh( void )
 
 void wheel_read_input(void)
 {
+	if ( !I2Crcvdone )
+	{
+		I2Crcvdone = xSemaphoreCreateBinaryStatic( &I2CrcvdoneBuffer );
+	}
 	// check if interrupt signal is high, if so read in a loop till it's not high, upto x reads to prevent display blocking.
 
 	uint8_t rcvbuffer[2] = { 0 };
@@ -339,7 +369,6 @@ void wheel_read_input(void)
 	HAL_StatusTypeDef transmitstatus = HAL_OK;
 
 	int count = 0;
-
 	if ( !interrupthigh() ) // no interrupt flagged
 		return;
 
@@ -370,6 +399,7 @@ void wheel_read_input(void)
 	{
 		callcount++;
 		count++;
+		rcvwait = true;
 		transmitstatus = HAL_I2C_Master_Receive_IT(lcdi2c, SLAVE_ADDRESS_WHEEL<<1,(uint8_t *) rcvbuffer, 2);
 		if ( transmitstatus != HAL_OK ) {
 			//wheelinerror = true;
@@ -387,7 +417,6 @@ void wheel_read_input(void)
 
 		switch (rcvbuffer[0])
 		{
-		case 0: return; // no data to read, continue.
 		case 1:
 			switch (rcvbuffer[1] )
 			{
@@ -416,6 +445,7 @@ void wheel_read_input(void)
 			DebugPrintf("Wheel: Enc L: %d", rcvbuffer[1]); break;
 		case 4:
 			DebugPrintf("Wheel: Enc R: %d", rcvbuffer[1]); break;
+		case 0:
 		default:
 			if ( rcvbuffer[1] == 0 )
 			{
@@ -502,10 +532,10 @@ int lcd_dosend( void )
 		{
 			HAL_StatusTypeDef transmitstatus = HAL_I2C_Master_Transmit_IT(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, sendbufferpos);
 			if ( transmitstatus != HAL_OK ){
-					sendbufferpos=0;
-					inerror = true;
-					readytosend = false;
-					return 0;
+				sendbufferpos=0;
+				inerror = true;
+				readytosend = false;
+				return 0;
 			}
 			inerror = false;
 			readytosend = false;
