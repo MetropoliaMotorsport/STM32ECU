@@ -48,6 +48,42 @@ typedef struct devicepowerreqstruct {
 } devicepowerreq;
 
 
+#ifdef HPF2023
+
+
+// TODO this list should be sanity checked for duplicates at tune time.
+devicepowerreq DevicePowerList[] =
+{
+		{ Telemetry, 33, 4 },
+		{ Front1, 33, 5 },
+
+		{ ECU, 34, 4, true, 0, true }, // ECU has to have power or we aren't booted.. so just assume it.
+		{ Front2, 34, 5 },
+
+		{ LeftFans, 35, 2 },
+		{ RightFans, 35, 3 },
+		{ LeftPump, 35, 4 },
+		{ RightPump, 35, 5 },
+
+//		{ Brake, 36, 1 },
+//		{ Buzzer, 36, 2 },
+		{ IVT, 36, 3 },
+		{ Accu, 36, 4 }, // TODO make sure this channel cannot be reset for latching rules.
+		{ AccuFan, 36, 5},
+
+		{ Brake, 37, 0 },
+		{ Buzzer, 37, 1 },
+		{ Inverters, 37, 2 },
+//		{ Current, 37, 1 },
+
+		{ Back1, 37, 4 },
+		{ TSAL, 37, 5, true, 0, true }, // essential to be powered, else not compliant.
+
+		{ None }
+};
+
+#else
+
 // TODO this list should be sanity checked for duplicates at tune time.
 devicepowerreq DevicePowerList[] =
 {
@@ -79,6 +115,7 @@ devicepowerreq DevicePowerList[] =
 		{ None }
 };
 
+#endif
 
 nodepowerreq PowerRequests[] =
 {		{ 33, 0, 0, {0} },
@@ -157,12 +194,16 @@ void PNode36Timeout( uint16_t id )
 
 void PNode37Timeout( uint16_t id )
 {
+#ifdef HPF2023
+
+#else
 	Shutdown.AIRm = false;
 	Shutdown.AIRp = false;
 	Shutdown.PRE = false;
 	Shutdown.TS_OFF = false;
 	Shutdown.IMD = true;
-	SetCriticalError(); // TS_OFF is a critical signal.
+#endif
+	SetCriticalError(); // brakelight is a critical signal.
 }
 
 
@@ -380,6 +421,9 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode37Bit ), eSetBits);
 
+#ifdef HPF2023
+// no inputs on node 37.
+#else
 		bool newstate = ! ( CANRxData[0] & (0x1 << 0) ); // DI3
 		if ( Shutdown.PRE != newstate )
 		{
@@ -414,6 +458,7 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 			DebugPrintf("TS_OFF sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
 			Shutdown.TS_OFF = newstate;
 		}
+#endif
 
 		//		CarState.I_BrakeLight = CANRxData[0];
 		//		CarState.I_Buzzers = CANRxData[1];
