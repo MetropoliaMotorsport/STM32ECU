@@ -20,7 +20,7 @@
 #include "lcd.h"
 #include "inverter.h"
 #include "debug.h"
-#include "RegenCS.h"
+
 #include "imu.h"
 
 uint16_t PrintRunning( char *title )
@@ -266,24 +266,21 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 			CarState.Torque_Req = 0;
 		}
 #endif
-		doVectoring( CarState.Torque_Req, &adj, &spd );
 
         if ( CarState.AllowRegen && CarState.LimpActive == 0 ) // only check for regen if alowed and not in limp.
         {
     		if ( ADCState.Regen_Percent > 100 && getEEPROMBlock(0)->Regen>0 ) // no torque request, but we do have a regen request, return that.
     		{
-				if ( getEEPROMBlock(0)->Regen == 2 )
-					doRegen(ADCState.Regen_Percent, ADCState.SteeringAngle, &adj);
-				else
+				//if ( getEEPROMBlock(0)->Regen == 2 )
+				//	doRegen(ADCState.Regen_Percent, ADCState.SteeringAngle, &adj);
+				//else
 				{
 					CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 ) ;
-					adj.FL = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
-					adj.FR = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 );
-					adj.RL = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );
-					adj.RR = - ( ( ( getEEPROMBlock(0)->regenMaxR * ADCState.Regen_Percent ) ) / 1000 );					
 				}
     		}
         }
+
+		doVectoring( CarState.Torque_Req, &adj, &spd ); // process vectoring after getting positive or negative request.
 
 		if ( CarState.APPSstatus )
 			setOutput(TSLED,On);
