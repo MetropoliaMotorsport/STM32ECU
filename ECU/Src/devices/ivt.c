@@ -252,7 +252,9 @@ bool processIVTData( const uint8_t * CANRxData, const uint32_t DataLength, const
 					}
 					break;
 		//		case IVTAs_ID : break;
-				case IVTWh_ID : break;
+				case IVTWh_ID :
+					CarState.Wh = value;
+					break;
 			}
             
 #ifdef retransmitIVT

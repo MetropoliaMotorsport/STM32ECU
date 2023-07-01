@@ -376,11 +376,15 @@ typedef struct {
 	int32_t VoltageINV;
 	int32_t VoltageBMS;
 	uint16_t LowestCellV;
+	uint16_t HighestCellV;
 	int32_t VoltageIVTAccu;
 	int32_t VoltageLV;
 	int32_t CurrentLV;
 	int32_t VoltageAIRPDM;
 	int32_t Power;
+	int32_t Wh;
+    uint8_t BMSSOC;
+	float   SOC;
 
 	uint8_t I_BrakeLight;
 	uint8_t I_Buzzers;

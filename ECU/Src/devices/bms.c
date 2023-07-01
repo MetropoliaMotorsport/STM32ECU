@@ -21,11 +21,43 @@
 bool processBMSVoltageData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processBMSOpMode( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 void BMSTimeout( uint16_t id );
 
+#ifdef HPF2023
+CANData  BMSSOC = { &DeviceState.BMS, BMSSOC_ID, 8, processBMSSOC, BMSTimeout, 2500 };
+#endif
 CANData  BMSVoltage = { &DeviceState.BMS, BMSVOLT_ID, 8, processBMSVoltageData, BMSTimeout, 2500 };
 CANData  BMSOpMode = { &DeviceState.BMS, BMSBASE_ID, 8, processBMSOpMode, NULL, 0 };
 CANData  BMSError = { &DeviceState.BMS, BMSBASE_ID+1, 8, processBMSError, NULL, 0 };
+
+
+bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
+{
+	if ( DeviceState.BMSEnabled )
+	{
+//		uint16_t voltage = CANRxData[2]*256+CANRxData[3];
+
+		if ( true // no current validation on this message.
+/*				&& CANRxData[0] == 0
+				&& CANRxData[1] == 0
+				&& CANRxData[4] == 0
+				&& CANRxData[5] == 0
+				&& CANRxData[6] == 0
+				&& CANRxData[7] == 0 */
+	//			&& ( voltage > 480 && voltage < 600 )
+				)
+		{
+			CarState.BMSSOC = CANRxData[0];
+			uint16_t voltage = CANRxData[2]*256+CANRxData[3];
+			CarState.HighestCellV = voltage;
+			return true;
+		} else // bad data.
+		{
+			return false;
+		}
+	} else return true;
+}
 
 bool processBMSVoltageData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
@@ -96,6 +128,7 @@ bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, con
             )
         {
     		CarState.LowestCellV = CANRxData[6]*256+CANRxData[7];
+    		//CarState.HighestCellV =
 
         	if ( CANRxData[0] != 0 ) // In Safestate.
         	{
@@ -185,9 +218,13 @@ int initBMS( void )
 	RegisterCan1Message(&BMSOpMode);
 	RegisterCan1Message(&BMSError);
 #else
+	#ifdef HPF2023
+	RegisterCan2Message(&BMSSOC);
+	#else
 	RegisterCan2Message(&BMSVoltage);
 	RegisterCan2Message(&BMSOpMode);
 	RegisterCan2Message(&BMSError);
+	#endif
 #endif
 	return 0;
 }

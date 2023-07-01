@@ -126,26 +126,13 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	TorqueVectoring_step();
 
 
-#if 0
-
-	/* External inputs (root inport signals with default storage) */
-	typedef struct {
-	  real_T static_P_min_lim;             /* '<Root>/static_P_min_lim' */
-	  real_T pedal_rege_thresh_endurance_max;
-	                                  /* '<Root>/pedal_rege_thresh_endurance_max' */
-	  real_T IVT_WhCalculated;             /* '<Root>/IVT_WhCalculated' */
-	} Regeneration_ExtU;
-
-#endif
-
-
+	Regeneration_U.static_P_min_lim = -44;// regeneration power that we can regen always with from -100 - 0 kW should be negative
 	Regeneration_U.Torque_pedal = ADCState.Torque_Req_R_Percent/10.0;
 	Regeneration_U.brake_pedal_position = ADCState.Regen_Percent/10.0;
+	Regeneration_U.pedal_rege_thresh_endurance_max = 10; // allow regen if throttle less than 10%
+	Regeneration_U.IVT_WhCalculated = CarState.Wh;
 
-
-	Regeneration_U.U_cell_max_mV = 3500; // TODO get max cellv from bms message
-
-
+	Regeneration_U.U_cell_max_mV = CarState.HighestCellV; // TODO get max cellv from bms message
 
 	Regeneration_U.Slip_FL = TractionControl_Y.slipFL;
 	Regeneration_U.Slip_FR = TractionControl_Y.slipFR;
@@ -161,6 +148,8 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	  real_T SOC;                          /* '<Root>/SOC' */
 	} Regeneration_ExtY;
 #endif
+
+	CarState.SOC = Regeneration_Y.SOC;
 
 	adj->FL += Regeneration_Y.regenFL - TractionControl_Y.TC_FL - TorqueVectoring_Y.TVFL;
 	adj->FR += Regeneration_Y.regenFR - TractionControl_Y.TC_FR + TorqueVectoring_Y.TVFR;
