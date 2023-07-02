@@ -379,9 +379,11 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 		UARTwrite("Setting front power enabled.\r\n");
 
 		ShutdownCircuitSet(true);
+#ifndef HPF2023
 		setDevicePower( Front1, true );
 		setDevicePower( Front2, true );
 		setDevicePower( TSAL, true );
+#endif
 		UARTwrite("Power wait.\r\n");
 		vTaskDelay(6000);
 		setDevicePower( Inverters, true);

@@ -176,6 +176,9 @@ int PreOperationState( uint32_t OperationLoops  )
 
 		// set startup powerstates to bring devices up.
 
+#ifdef HPF2023
+		// nothing should need powering up manually at startup currently.
+#else
 		setDevicePower( Front1, true );
 		setDevicePower( Front2, true );
 		//setDevicePower( Back1, true );
@@ -186,7 +189,7 @@ int PreOperationState( uint32_t OperationLoops  )
 
 //		setDevicePower(IVT, 1);
 		setDevicePower(Telemetry, getEEPROMBlock(0)->Telemetry); // if enabled in config, turn telemetry on.
-
+#endif
 		initVectoring();
 
  //   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
@@ -535,10 +538,12 @@ int PreOperationState( uint32_t OperationLoops  )
 			invRequestState( BOOTUP );
 			resetDevicePower(Inverters);
 			setDevicePower( Inverters, true );
+#ifndef HPF2023
 			resetDevicePower(Front1);
 			setDevicePower( Front1, true );
 			resetDevicePower(Front2);
 			setDevicePower( Front2, true );
+#endif
 			setDevicePower( RightPump, true );
 			setDevicePower( LeftPump, true );
 			setDevicePower( RightFans, true );
