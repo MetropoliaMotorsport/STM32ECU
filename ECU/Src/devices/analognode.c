@@ -23,35 +23,43 @@
 #include "analognode.h"
 #include "timerecu.h"
 
+#ifdef HPF2023
+#define ANALOGNODECOUNT	4
+#else
 #define ANALOGNODECOUNT	11
+#endif
 
+void ANodeCritTimeout( uint16_t id );
 
 bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+CANData  AnalogNode1 =  { &DeviceState.AnalogNode1, AnalogNode1_ID, 6, processANode1Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
+CANData  AnalogNode10 = { &DeviceState.AnalogNode10, AnalogNode10_ID, 6, processANode10Data, NULL, NODETIMEOUT };
+CANData  AnalogNode11 = { &DeviceState.AnalogNode11, AnalogNode11_ID, 8, processANode11Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
+CANData  AnalogNode13 = { &DeviceState.AnalogNode13, AnalogNode13_ID, 4, processANode13Data, NULL, NODETIMEOUT };
+
+#ifdef HPF2023
+
+#else
+bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode14Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode15Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode16Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode17Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode18Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
-void ANodeCritTimeout( uint16_t id );
-
-CANData  AnalogNode1 =  { &DeviceState.AnalogNode1, AnalogNode1_ID, 6, processANode1Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
 CANData  AnalogNode9 =  { &DeviceState.AnalogNode9, AnalogNode9_ID, 4, processANode9Data, NULL, NODETIMEOUT };
-CANData  AnalogNode10 = { &DeviceState.AnalogNode10, AnalogNode10_ID, 6, processANode10Data, NULL, NODETIMEOUT };
-CANData  AnalogNode11 = { &DeviceState.AnalogNode11, AnalogNode11_ID, 8, processANode11Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
 CANData  AnalogNode12 = { &DeviceState.AnalogNode12, AnalogNode12_ID, 4, processANode12Data, NULL, NODETIMEOUT };
-CANData  AnalogNode13 = { &DeviceState.AnalogNode13, AnalogNode13_ID, 4, processANode13Data, NULL, NODETIMEOUT };
 CANData  AnalogNode14 = { &DeviceState.AnalogNode14, AnalogNode14_ID, 6, processANode14Data, NULL, NODETIMEOUT };
 CANData  AnalogNode15 = { &DeviceState.AnalogNode15, AnalogNode15_ID, 3, processANode15Data, NULL, NODETIMEOUT };
 CANData  AnalogNode16 = { &DeviceState.AnalogNode16, AnalogNode16_ID, 3, processANode16Data, NULL, NODETIMEOUT };
 CANData  AnalogNode17 = { &DeviceState.AnalogNode17, AnalogNode17_ID, 3, processANode17Data, NULL, NODETIMEOUT };
 CANData  AnalogNode18 = { &DeviceState.AnalogNode18, AnalogNode18_ID, 3, processANode18Data, NULL, NODETIMEOUT };
 
+#endif
 
 void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to safe defaults if not received.
 {
@@ -116,7 +124,7 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	return true;
 }
 
-
+#ifndef HPF2023
 bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	static bool first = false;
@@ -133,7 +141,7 @@ bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 
 	return true;
 }
-
+#endif
 
 bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
@@ -205,6 +213,7 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	return true;
 }
 
+#ifndef HPF2023
 // rest of sensors are currently logging data not currently used by ECU ( suspension position sensors, wheel temps, etc. )
 // only define so that driver can be informed if they are not online at startup.
 bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
@@ -222,7 +231,7 @@ bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	ADCStateSensors.WaterTemp6 = CANRxData[3];
 	return true;
 }
-
+#endif
 
 bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
@@ -240,6 +249,7 @@ bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	return true;
 }
 
+#ifndef HPF2023
 bool processANode14Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	static bool first = false;
@@ -325,7 +335,7 @@ bool processANode18Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 	return true;
 }
-
+#endif
 
 char ANodeCritStr[10] = "";
 char ANodeStr[15] = "";
@@ -527,16 +537,23 @@ int initAnalogNodes( void )
 	resetAnalogNodes();
 
 	RegisterCan2Message(&AnalogNode1);
+#ifndef HPF2023
 	RegisterCan1Message(&AnalogNode9);
+#endif
 	RegisterCan1Message(&AnalogNode10);
 	RegisterCan1Message(&AnalogNode11);
+
+#ifndef HPF2023
 	RegisterCan1Message(&AnalogNode12);
+#endif
 	RegisterCan1Message(&AnalogNode13);
+#ifndef HPF2023
 	RegisterCan1Message(&AnalogNode14);
 	RegisterCan1Message(&AnalogNode15);
 	RegisterCan1Message(&AnalogNode16);
 	RegisterCan1Message(&AnalogNode17);
 	RegisterCan1Message(&AnalogNode18);
+#endif
 
 	return 0;
 }

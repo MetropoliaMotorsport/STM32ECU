@@ -820,17 +820,22 @@ static void debugShutdown( const char *tkn2, const char *tkn3 )
 }
 
 extern CANData  AnalogNode1;
+#ifndef HPF2023
 extern CANData  AnalogNode9;
+#endif
 extern CANData  AnalogNode10;
 extern CANData  AnalogNode11;
+#ifndef HPF2023
 extern CANData  AnalogNode12;
+#endif
 extern CANData  AnalogNode13;
+#ifndef HPF2023
 extern CANData  AnalogNode14;
 extern CANData  AnalogNode15;
 extern CANData  AnalogNode16;
 extern CANData  AnalogNode17;
 extern CANData  AnalogNode18;
-
+#endif
 
 static void debugSensors( const char *tkn2 )
 {
@@ -844,7 +849,9 @@ static void debugSensors( const char *tkn2 )
 		uint32_t adctimes[19] = { 0 };
 
 		adctimes[1] = AnalogNode1.time;
+#ifndef HPF2023
 		adctimes[9] = AnalogNode9.time;
+#endif
 		adctimes[10] = AnalogNode10.time;
 		adctimes[11] = AnalogNode11.time;
 
@@ -872,7 +879,7 @@ static void debugSensors( const char *tkn2 )
 					ADCStateDebug.Regen,
 					adctimes[1]);
 		}
-
+#ifndef HPF2023
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode9Bit ) )
 		{
 			UARTprintf("Anode9: BrakeTemp1 %dc   OilTemp1 %dc   WaterTemp1 %dc   Last at (%lu)\r\n",
@@ -881,7 +888,7 @@ static void debugSensors( const char *tkn2 )
 					ADCStateSensors.WaterTemp1,
 					adctimes[9]);
 		}
-
+#endif
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode10Bit ) )
 		{
 			UARTprintf("Anode10: Susp1: %lu Susp2: %lu OilTemp2: %dc   WaterTempe2 %dc   Last at (%lu)\r\n",
@@ -904,6 +911,7 @@ static void debugSensors( const char *tkn2 )
 					adctimes[11]);
 		}
 
+#ifndef HPF2023
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode12Bit ) )
 		{
 			UARTprintf("Anode12: WaterTemps 3-6 %dc   %dc   %dc   %dc   Last at (%lu)\r\n",
@@ -913,7 +921,7 @@ static void debugSensors( const char *tkn2 )
 					ADCStateSensors.WaterTemp6,
 					AnalogNode12.time );
 		}
-
+#endif
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode13Bit ) )
 		{
 			UARTprintf("Anode13: Suspension 3-4 %lu   %lu   Last at (%lu)\r\n",
@@ -921,7 +929,7 @@ static void debugSensors( const char *tkn2 )
 					ADCStateSensors.susp4,
 					AnalogNode13.time);
 		}
-
+#ifndef HPF2023
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode14Bit ) )
 		{
 			UARTprintf("Anode14: Brake Temps 3-4 %dc   %dc   Oil Temps 3-4 %dc   %dc   Last at (%lu)\r\n",
@@ -968,6 +976,7 @@ static void debugSensors( const char *tkn2 )
 					ADCStateSensors.TireTemp12,
 					AnalogNode18.time);
 		}
+#endif
 	}
 }
 
