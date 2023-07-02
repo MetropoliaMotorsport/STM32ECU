@@ -23,13 +23,9 @@
 #include "analognode.h"
 #include "timerecu.h"
 
-#ifdef HPF2023
-#define ANALOGNODECOUNT	4
-#else
-#define ANALOGNODECOUNT	11
-#endif
-
 void ANodeCritTimeout( uint16_t id );
+
+#ifdef HPF2023
 
 bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
@@ -39,8 +35,6 @@ CANData  AnalogNode1 =  { &DeviceState.AnalogNode1, AnalogNode1_ID, 6, processAN
 CANData  AnalogNode10 = { &DeviceState.AnalogNode10, AnalogNode10_ID, 6, processANode10Data, NULL, NODETIMEOUT };
 CANData  AnalogNode11 = { &DeviceState.AnalogNode11, AnalogNode11_ID, 8, processANode11Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
 CANData  AnalogNode13 = { &DeviceState.AnalogNode13, AnalogNode13_ID, 4, processANode13Data, NULL, NODETIMEOUT };
-
-#ifdef HPF2023
 
 #else
 bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
@@ -74,7 +68,7 @@ void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to sa
 	ADCStateNew.BrakeF = 0;//APPSBrakeHard;
 	ADCStateNew.BrakeR = 0;//APPSBrakeHard;
 	xSemaphoreGive(ADCUpdate);
-    SetCriticalError();
+    SetCriticalError( CRITERRANODE );
 	DeviceState.timeout = true;
 }
 
