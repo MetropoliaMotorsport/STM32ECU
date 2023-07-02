@@ -18,20 +18,25 @@
 // byte 5, cell with min voltage - mv, use to trigger
 // 0x9   byte 6-7 last two.
 
+#ifdef HPF2023
+bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+#else
 bool processBMSVoltageData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processBMSOpMode( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+#endif
+
 void BMSTimeout( uint16_t id );
 
 #ifdef HPF2023
 CANData  BMSSOC = { &DeviceState.BMS, BMSSOC_ID, 8, processBMSSOC, BMSTimeout, 2500 };
-#endif
+#else
 CANData  BMSVoltage = { &DeviceState.BMS, BMSVOLT_ID, 8, processBMSVoltageData, BMSTimeout, 2500 };
 CANData  BMSOpMode = { &DeviceState.BMS, BMSBASE_ID, 8, processBMSOpMode, NULL, 0 };
 CANData  BMSError = { &DeviceState.BMS, BMSBASE_ID+1, 8, processBMSError, NULL, 0 };
+#endif
 
-
+#ifdef HPF2023
 bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	if ( DeviceState.BMSEnabled )
@@ -49,8 +54,35 @@ bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const
 				)
 		{
 			CarState.BMSSOC = CANRxData[0];
-			uint16_t voltage = CANRxData[2]*256+CANRxData[3];
-			CarState.HighestCellV = voltage;
+			CarState.VoltageBMS = CANRxData[4]*256+CANRxData[5];
+			CarState.HighestCellV = CANRxData[2]*256+CANRxData[3];
+
+        	if ( CANRxData[3] != 0 ) // In Safestate.
+        	{
+				setOutputNOW(BMSLED,On); // BMS is in an error state, ensure AMS error led is shown without delay.
+        		Shutdown.BMS = false;
+        		Shutdown.BMSReason = CANRxData[1];
+                /*
+                      0 : str := 'undefined';
+                      1 : str := 'overvoltage';
+                      2 : str := 'undervoltage';
+                      3 : str := 'overtemperature';
+                      4 : str := 'undertemperature';
+                      5 : str := 'overcurrent';
+                      6 : str := 'overpower';
+                      7 : str := 'external';
+                      8 : str := 'pec_error';
+                      9 : str := 'Accumulator Undervoltage';
+                      10 : str := 'IVT MOD timeout';
+				*/
+        	} else
+        	{
+         		Shutdown.BMS = true;
+         		Shutdown.BMSReason = 0;
+        	}
+
+			//CarState.LimpRequest = CANRxData[4]; // not yet implemented on new BMS.
+
 			return true;
 		} else // bad data.
 		{
@@ -59,6 +91,7 @@ bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const
 	} else return true;
 }
 
+#else
 bool processBMSVoltageData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	if ( DeviceState.BMSEnabled )
@@ -161,6 +194,7 @@ bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, con
         }
     } else return true;
 }
+#endif
 
 void BMSTimeout( uint16_t id )
 {
@@ -180,7 +214,11 @@ int receiveBMS( void )
 {
 	if ( DeviceState.BMSEnabled )
 	{
+#ifdef HPF2023
+		return receivedCANData(&BMSSOC);
+#else
 		return receivedCANData(&BMSVoltage);
+#endif
 	}
 	else // BMS reading disabled, set 'default' values to allow operation regardless.
 	{
