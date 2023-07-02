@@ -102,6 +102,7 @@ bool CheckHVLost( void );
 
 
 // power node control commands
+DevicePower getDevicePowerFromList( uint32_t i );
 bool getDevicePower( DevicePower device );
 bool setDevicePower( DevicePower device, bool enabled );
 bool resetDevicePower( DevicePower device );

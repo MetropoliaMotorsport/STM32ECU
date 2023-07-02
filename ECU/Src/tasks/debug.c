@@ -1001,13 +1001,15 @@ static void debugPower( const char *tkn2, const char *tkn3 )
 
 		uint8_t listsize = getDevicePowerListSize();
 
-		for ( int i=1;i<=listsize;i++)
+		for ( int i=1;i<=listsize;i++) // i is wrong.
 		{
+			DevicePower device=getDevicePowerFromList(i);
+
 			snprintf(str, 80, "%-12s %-4s%-4s%-4lu\r\n",
-						getDevicePowerNameLong(i),
-						getNodeDeviceExpectedPower(i)?"On":"Off",
-						getNodeDevicePower(i)?"On":"Off",
-						powerErrorOccurred(i)
+						getDevicePowerNameLong(device),
+						getNodeDeviceExpectedPower(device)?"On":"Off",
+						getNodeDevicePower(device)?"On":"Off",
+						powerErrorOccurred(device)
 					//    powerErrorOccurred(i)?"Yes":"No"
 			);
 			UARTwrite(str);

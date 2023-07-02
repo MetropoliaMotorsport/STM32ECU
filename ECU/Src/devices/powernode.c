@@ -46,8 +46,9 @@ typedef struct devicepowerreqstruct {
 } devicepowerreq;
 
 
-#ifdef HPF2023
+static uint32_t devicecount = 0;
 
+#ifdef HPF2023
 
 // TODO this list should be sanity checked for duplicates at tune time.
 devicepowerreq DevicePowerList[] =
@@ -1141,7 +1142,16 @@ uint8_t getDevicePowerListSize( void )
 {
 	int i = 0;
 	for (;DevicePowerList[i].device != None;i++);
+	devicecount = i;
 	return i;
+}
+
+DevicePower getDevicePowerFromList( uint32_t i )
+{
+	if ( i <= devicecount )
+		return DevicePowerList[i].device;
+	else
+		return None;
 }
 
 void resetPowerNodes( void )
