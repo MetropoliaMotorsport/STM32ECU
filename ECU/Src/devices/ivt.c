@@ -276,7 +276,7 @@ void IVTTimeout( uint16_t id )
 	CarState.Current=0;
 	CarState.VoltageINV=0;
 
-    SetCriticalError();
+    SetCriticalError(CRITERIVT);
 }
 
 int receiveIVT( void )

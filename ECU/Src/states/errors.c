@@ -243,10 +243,10 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 }
 
 
-void SetCriticalError(void)
+void SetCriticalError( uint32_t err )
 {
 	criticalerrorset = true;
-	DebugMsg("Logging critical error");
+	DebugPrintf("Logging critical error %lu", err);
 }
 
 bool CheckCriticalError(void)

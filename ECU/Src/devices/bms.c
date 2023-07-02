@@ -217,7 +217,7 @@ void BMSTimeout( uint16_t id )
 	if ( DeviceState.BMS != OFFLINE )
 	{
 		CarState.VoltageBMS=0;
-		SetCriticalError();
+		SetCriticalError(CRITERRBMSTIMEOUT);
 	}
 }
 

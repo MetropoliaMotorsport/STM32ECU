@@ -10,6 +10,13 @@
 
 #include "ecumain.h"
 
+#define CRITERRBMSTIMEOUT    1
+#define CRITERRANODE         2
+#define CRITERIVT            3  
+#define CRITERBL             4
+#define CRITERBMS            5
+#define CRITERIMD            6
+
 typedef struct {
 	uint16_t OperationalReceiveError;
 	uint16_t State;
@@ -55,7 +62,7 @@ int ResetErrors( void );
 void LogError( char *message );
 void SetErrorLogging( bool log );
 
-void SetCriticalError(void);
+void SetCriticalError( uint32_t err );
 bool CheckCriticalError(void);
 void ClearCriticalError(void);
 

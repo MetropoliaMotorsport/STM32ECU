@@ -202,7 +202,7 @@ void PNode34Timeout( uint16_t id )
 void PNode36Timeout( uint16_t id )
 {
 	DeviceState.BrakeLight = OFFLINE;
-    SetCriticalError();
+    SetCriticalError(CRITERBL);
 }
 #endif
 
@@ -217,7 +217,7 @@ void PNode37Timeout( uint16_t id )
 	Shutdown.TS_OFF = false;
 	Shutdown.IMD = true;
 #endif
-	SetCriticalError(); // brakelight is a critical signal.
+	SetCriticalError(CRITERBL); // brakelight is a critical signal.
 }
 
 #ifndef HPF2023
