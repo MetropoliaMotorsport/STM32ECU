@@ -39,6 +39,9 @@ CANData  BMSError = { &DeviceState.BMS, BMSBASE_ID+1, 8, processBMSError, NULL, 
 #ifdef HPF2023
 bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
+	static bool message = false;
+	static uint16_t lastcellv = 0;
+	static uint32_t count = 0;
 	if ( DeviceState.BMSEnabled )
 	{
 //		uint16_t voltage = CANRxData[2]*256+CANRxData[3];
@@ -80,6 +83,14 @@ bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const
          		Shutdown.BMS = true;
          		Shutdown.BMSReason = 0;
         	}
+
+        	if ( !message || lastcellv != CarState.HighestCellV  || count % 20 == 0 )
+        	{
+        		message = true;
+        		DebugPrintf("BMS msg SOC %lu high cell mV %lu stackV %lu error state %lu", CarState.BMSSOC, CarState.HighestCellV, CarState.VoltageBMS, CANRxData[3]);
+        	}
+
+        	count++;
 
 			//CarState.LimpRequest = CANRxData[4]; // not yet implemented on new BMS.
 
