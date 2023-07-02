@@ -80,6 +80,11 @@ uint32_t getOldestANodeCriticalData( void )
 	return time;
 }
 
+// 00000680         6  A6  2F  03  F9  00  97
+
+// AccelL = 03  F9  --   return (data[0]<<8)+data[1]; 03 * 256 + f9  = 1017    or 63747
+// regen = 00  97  --
+
 bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	static bool first = false;
@@ -90,6 +95,13 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	}
 	int AccelL = getBEint16(&CANRxData[2]);
 	int Regen = getBEint16(&CANRxData[4]);
+
+	static uint32_t count = 0;
+	if ( ( count % 20 ) == 0 )
+	{
+		DebugPrintf("A11 Acl %lu BrR %lu", AccelL, Regen);
+	}
+	count++;
 
 	if ( DataLength >> 16 == AnalogNode1.dlcsize
 		&& ( AccelL < 4096 )
@@ -157,6 +169,14 @@ bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 }
 
 
+//  1    00000694         8  FC  D6  FE  10  FE  11  00  5B   87958.622804 R
+
+// brakef = FE  10
+// braker = 00  5B
+// accelr =  FE  11
+
+//
+
 bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
 	static bool first = false;
@@ -171,6 +191,14 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	uint16_t BrakeR = getBEint16(&CANRxData[6]);
 
 	uint16_t AccelR = getBEint16(&CANRxData[4]);
+
+
+	static uint32_t count = 0;
+	if ( ( count % 20 ) == 0 )
+	{
+		DebugPrintf("A11 BrF %lu BrR %lu AcR %lu", BrakeF, BrakeR, AccelR);
+	}
+	count++;
 
 	// HPF 20 raw value R ~3300 for 0%
 
