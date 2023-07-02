@@ -13,7 +13,7 @@
 
 //#define WATCHDOG
 
-#define BENCH // benchtest compile, don't complain about missing car systems.
+//#define BENCH // benchtest compile, don't complain about missing car systems.
 
 #define TESTBOARD
 
