@@ -16,14 +16,25 @@
 #define PNode35Bit  2
 #define PNode36Bit  3
 #define PNode37Bit  4
+#ifdef HPF2023
+
+#define PNodeAllBit ((0x1 << PNode34Bit) \
+					+ (0x1 << PNode37Bit) \
+					) // + (0x1 << PNode36Bit) // 36 is currently not powered, don't check for.
+
+#define PNODECRITICALBITS	( (0x1 << PNode37Bit) )  // brake and buzzer are critical
+
+#else
+
 #define PNodeAllBit ( (0x1 << PNode33Bit) \
 					+ (0x1 << PNode34Bit) \
 					+ (0x1 << PNode35Bit) \
 					+ (0x1 << PNode37Bit) \
 					) // + (0x1 << PNode36Bit) // 36 is currently not powered, don't check for.
 
-
 #define PNODECRITICALBITS	( (0x1 << PNode34Bit) )  // brake and buzzer are critical
+
+#endif
 
 #define POWERNODE_FAN_BIT  (PNode35Bit)
 
