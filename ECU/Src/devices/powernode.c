@@ -72,7 +72,7 @@ devicepowerreq DevicePowerList[] =
 		{ Buzzer, 37, 1 },
 		{ Inverters, 37, 2 },
 		{ TSAL, 37, 3, true, 0, true }, // essential to be powered, else not compliant.
-		{ Back1, 37, 4 },
+		//{ Back1, 37, 4 },
 		{ None }
 };
 
@@ -154,7 +154,7 @@ CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNo
 CANData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, NULL, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
 CANData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
 CANData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, NULL, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
-CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 5, processPNode37Data, PNode37Timeout, NODETIMEOUT }; // [?], Current, TSAL.
+CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 4, processPNode37Data, PNode37Timeout, NODETIMEOUT }; // [?], Current, TSAL.
 
 
 int sendPowerNodeErrReset( uint8_t id, uint8_t channel );
