@@ -86,6 +86,7 @@ bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const
 
         	if ( !message || lastcellv != CarState.HighestCellV  || count % 20 == 0 )
         	{
+        		lastcellv = CarState.HighestCellV;
         		message = true;
         		DebugPrintf("BMS msg SOC %lu high cell mV %lu stackV %lu error state %lu", CarState.BMSSOC, CarState.HighestCellV, CarState.VoltageBMS, CANRxData[3]);
         	}
