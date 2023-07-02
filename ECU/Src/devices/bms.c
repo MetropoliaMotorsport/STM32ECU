@@ -57,8 +57,8 @@ bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const
 				)
 		{
 			CarState.BMSSOC = CANRxData[0];
-			CarState.VoltageBMS = CANRxData[4]*256+CANRxData[5];
-			CarState.HighestCellV = CANRxData[2]*256+CANRxData[3];
+			CarState.VoltageBMS = CANRxData[5]*256+CANRxData[4];
+			CarState.HighestCellV = CANRxData[2]*256+CANRxData[1];
 
         	if ( CANRxData[3] != 0 ) // In Safestate.
         	{
@@ -84,7 +84,7 @@ bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const
          		Shutdown.BMSReason = 0;
         	}
 
-        	if ( !message || lastcellv != CarState.HighestCellV  || count % 20 == 0 )
+        	if ( !message || lastcellv != CarState.HighestCellV  || ( count % 20 ) == 0 )
         	{
         		lastcellv = CarState.HighestCellV;
         		message = true;
