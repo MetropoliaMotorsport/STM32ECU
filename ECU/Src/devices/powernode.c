@@ -16,8 +16,6 @@
 #include <stdio.h>
 #include <time.h>
 
-#define POWERNODECOUNT		5
-
 #define MAXECUCURRENT 		20
 #define MAXFANCURRENT		20
 #define MAXPUMPCURRENT		20
@@ -54,8 +52,9 @@ typedef struct devicepowerreqstruct {
 // TODO this list should be sanity checked for duplicates at tune time.
 devicepowerreq DevicePowerList[] =
 {
-		{ Telemetry, 33, 4 },
-		{ Front1, 33, 5 },
+
+//		{ Telemetry, 33, 4 },
+//		{ Front1, 33, 5 },
 
 		{ ECU, 34, 4, true, 0, true }, // ECU has to have power or we aren't booted.. so just assume it.
 		{ Front2, 34, 5 },
@@ -65,8 +64,6 @@ devicepowerreq DevicePowerList[] =
 		{ LeftPump, 35, 4 },
 		{ RightPump, 35, 5 },
 
-//		{ Brake, 36, 1 },
-//		{ Buzzer, 36, 2 },
 		{ IVT, 36, 3 },
 		{ Accu, 36, 4 }, // TODO make sure this channel cannot be reset for latching rules.
 		{ AccuFan, 36, 5},
@@ -75,7 +72,6 @@ devicepowerreq DevicePowerList[] =
 		{ Buzzer, 37, 1 },
 		{ Inverters, 37, 2 },
 		{ TSAL, 37, 3, true, 0, true }, // essential to be powered, else not compliant.
-//		{ Current, 37, 1 },
 		{ Back1, 37, 4 },
 		{ None }
 };
@@ -116,7 +112,10 @@ devicepowerreq DevicePowerList[] =
 #endif
 
 nodepowerreq PowerRequests[] =
-{		{ 33, 0, 0, {0} },
+{
+#ifndef HPF2023
+		{ 33, 0, 0, {0} },
+#endif
 		{ 34, 0, 0, {0} },
 		{ 35, 0, 0, {0} },
 		{ 36, 0, 0, {0} },
@@ -138,12 +137,10 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 
 #ifndef HPF2023
 void PNode33Timeout( uint16_t id );
-#endif
 void PNode34Timeout( uint16_t id );
-#ifndef HPF2023
-void PNode36Timeout( uint16_t id ); // critical due to brakelight
+void PNode36Timeout( uint16_t id );
 #endif
-void PNode37Timeout( uint16_t id );
+void PNode37Timeout( uint16_t id ); // critical due to brakelight
 
 //bool processPNodeTimeout(uint8_t CANRxData[8], uint32_t DataLength );
 
@@ -1091,7 +1088,7 @@ int sendPowerNodeReq( void )
 	uint8_t candata[8] = { 0, 1, 0, 0 };
 	bool senderror = false;
 
-	for ( int i=0;i<POWERNODECOUNT;i++)
+	for ( int i=0;PowerRequests[i].nodeid;i++)
 	{
 		if ( PowerRequests[i].output != 0 )
 		{
