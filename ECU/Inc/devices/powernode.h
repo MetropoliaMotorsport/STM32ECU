@@ -18,7 +18,9 @@
 #define PNode37Bit  4
 #ifdef HPF2023
 
-#define PNodeAllBit ((0x1 << PNode34Bit) \
+#define PNodeAllBit ( (0x1 << PNode34Bit) \
+					+ (0x1 << PNode35Bit) \
+					+ (0x1 << PNode36Bit) \
 					+ (0x1 << PNode37Bit) \
 					) // + (0x1 << PNode36Bit) // 36 is currently not powered, don't check for.
 

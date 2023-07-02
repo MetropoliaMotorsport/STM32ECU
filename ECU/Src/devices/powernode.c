@@ -132,10 +132,8 @@ bool queuedfanpwmRight = false;
 bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 #endif
 bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-#ifndef HPF2023
 bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-#endif
 bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
 #ifndef HPF2023
@@ -156,11 +154,9 @@ bool processPNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength,
 #ifndef HPF2023
 CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, PNode33Timeout, NODETIMEOUT }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
 #endif
-CANData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, PNode34Timeout, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
-#ifndef HPF2023
+CANData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, NULL, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
 CANData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
-CANData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, PNode36Timeout, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
-#endif
+CANData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, NULL, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
 CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 5, processPNode37Data, PNode37Timeout, NODETIMEOUT }; // [?], Current, TSAL.
 
 
@@ -181,6 +177,7 @@ uint32_t getOldestPNodeData( void )
 	if ( PowerNode37.time <  time ) time = PowerNode37.time;
 	return time;
 }
+
 #ifndef HPF2023
 void PNode33Timeout( uint16_t id )
 {
@@ -189,7 +186,6 @@ void PNode33Timeout( uint16_t id )
 	Shutdown.BSPDAfter = 0;
 	Shutdown.BSPDBefore = 0;
 }
-#endif
 
 void PNode34Timeout( uint16_t id )
 {
@@ -198,7 +194,6 @@ void PNode34Timeout( uint16_t id )
 	Shutdown.RightButton = 0;
 }
 
-#ifndef HPF2023
 void PNode36Timeout( uint16_t id )
 {
 	DeviceState.BrakeLight = OFFLINE;
@@ -327,7 +322,6 @@ bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	}
 }
 
-#ifndef HPF2023
 bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle ) // Cooling
 {
 
@@ -412,7 +406,6 @@ bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		return false;
 	}
 }
-#endif
 
 bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
@@ -1187,10 +1180,8 @@ int initPowerNodes( void )
 	RegisterCan1Message(&PowerNode33);
 #endif
 	RegisterCan1Message(&PowerNode34);
-#ifndef HPF2023
 	RegisterCan1Message(&PowerNode35);
-	RegisterCan1Message(&PowerNode36);
-#endif
+	RegisterCan2Message(&PowerNode36);
 	RegisterCan1Message(&PowerNode37);
 
 	return 0;
