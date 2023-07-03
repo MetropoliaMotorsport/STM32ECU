@@ -185,13 +185,21 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 		DebugMsg("Analog node 11 First msg.");
 		first = true;
 	}
+#ifdef HPF2023
+	ADCStateSensors.BrakeTemp2 = 0;
+
+	int16_t BrakeF = (int16_t)getBEint16(&CANRxData[2]) / 10;
+	int16_t BrakeR = (int16_t)getBEint16(&CANRxData[6]) / 10;
+
+	uint16_t AccelR = getBEint16(&CANRxData[0]);
+#else
 	ADCStateSensors.BrakeTemp2 = getBEint16(&CANRxData[0]);
 
 	uint16_t BrakeF = getBEint16(&CANRxData[2]);
 	uint16_t BrakeR = getBEint16(&CANRxData[6]);
 
 	uint16_t AccelR = getBEint16(&CANRxData[4]);
-
+#endif
 
 	static uint32_t count = 0;
 	if ( ( count % 20 ) == 0 )
