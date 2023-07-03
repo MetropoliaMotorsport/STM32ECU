@@ -103,9 +103,9 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	}
 	count++;
 
-	if ( DataLength >> 16 == AnalogNode1.dlcsize
-		&& ( AccelL < 4096 )
-		&& ( Regen < 4096 )
+	if ( // DataLength >> 16 == AnalogNode1.dlcsize
+		AccelL < 4096
+		 && Regen < 4096
 	)
 	{
 		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
@@ -215,14 +215,18 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	uint32_t dlc =  DataLength >> 16;
 
 	if ( dlc == AnalogNode11.dlcsize
-	//	&&	CANRxData[2] < 240 // TODO UNCOMMENT WHEN BRAKE SENSORS PLUGGED IN?
-	//	&&  CANRxData[3] < 240
-		&& ( AccelR < 65000 ) // make sure not pegged fully down.
+		&& ( AccelR < 4096 ) // make sure not pegged fully down.
 		)
 	{
 		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
-        ADCStateNew.BrakeF = BrakeF;
-        ADCStateNew.BrakeR = BrakeR;
+		if ( BrakeF > 0)
+			ADCStateNew.BrakeF = BrakeF;
+		else
+			ADCStateNew.BrakeF = 0;
+		if ( BrakeR > 0 )
+        	ADCStateNew.BrakeR = BrakeR;
+		else
+			ADCStateNew.BrakeR = 0;
 #ifndef APPSFIXR
         ADCStateNew.Torque_Req_R_Percent = getTorqueReqPercR(AccelR);
 		ADCStateNew.APPSR = AccelR;
