@@ -409,8 +409,11 @@ int PreOperationState( uint32_t OperationLoops  )
 					    ADCState.Torque_Req_L_Percent/10,
 					    ADCState.Torque_Req_R_Percent/10,
 					    ADCState.Regen_Percent/10);
-
 			lcd_send_stringline(0,str, 254);
+
+			sprintf(str, "Ang %d",
+					    ADCState.SteeringAngle);
+			lcd_send_stringline(1,str, 254);
 #endif
 		}
 	} else
