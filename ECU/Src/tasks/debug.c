@@ -1216,7 +1216,7 @@ void debugConfig( void )
 	uint8_t state = 0;
 	uint16_t ch = 0;
 
-	UARTwrite("Running debug config menu.\r\n\r\n");
+	UARTwrite("Running debug interactive input.\r\n\r\n");
 	UARTwrite("q: quit\r\n");
 	UARTwrite("s: Start/Stop button\r\n");
 	UARTwrite("t: Tractive System on button\r\n");
