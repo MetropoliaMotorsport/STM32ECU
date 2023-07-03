@@ -97,13 +97,13 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	int Regen = getBEint16(&CANRxData[4]);
 
 	static uint32_t count = 0;
-	if ( ( count % 20 ) == 0 )
+	if ( ( count % 100 ) == 0 )
 	{
-		//DebugPrintf("A1  Acl %lu BrT %lu", AccelL, Regen);
+		DebugPrintf("A1  Acl %lu BrT %lu", AccelL, Regen);
 	}
 	count++;
 
-	if ( // DataLength >> 16 == AnalogNode1.dlcsize
+	if (
 		AccelL < 4096
 		 && Regen < 4096
 	)
@@ -186,8 +186,6 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 		first = true;
 	}
 #ifdef HPF2023
-	ADCStateSensors.BrakeTemp2 = 0;
-
 	uint16_t AccelR = getBEint16(&CANRxData[0]);
 	int16_t BrakeF = (int16_t)getBEint16(&CANRxData[2]);
 	int16_t BrakeR = (int16_t)getBEint16(&CANRxData[4]);
@@ -207,13 +205,7 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	}
 	count++;
 
-	// HPF 20 raw value R ~3300 for 0%
-
-    // 19000 for 100%
-
-	uint32_t dlc =  DataLength >> 16;
-
-	if ( //dlc == AnalogNode11.dlcsize
+	if (
 	 ( AccelR < 4096 ) // make sure not pegged fully down.
 		)
 	{
