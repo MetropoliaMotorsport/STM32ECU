@@ -78,12 +78,21 @@
 
 // Brake pressure values
 
+#ifdef HPF2023
 
+#define APPSBrakeLight			3
+#define APPSBrakeHard			30 // 70
+#define APPSBrakeRelease		2 // 30
+#define RTDMBRAKEPRESSURE		7 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
+
+#else
 #define APPSBrakeLight			65
 #define APPSBrakeHard			90 // 70
 #define APPSBrakeRelease		65 // 30
 //#define RTDMBRAKEPRESSURE		30
 #define RTDMBRAKEPRESSURE		10 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
+
+#endif
 
 #define LIMPNM					10 // limp mode torque
 
