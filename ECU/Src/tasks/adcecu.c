@@ -949,7 +949,7 @@ uint32_t CheckADCSanity( void )
 	}
 
 	// calculate brake balance, if theres some pressure.
-	if ( ADCState.BrakeF > 5 && ADCState.BrakeR > 5
+	if ( ADCState.BrakeF > 1 && ADCState.BrakeR > 1
 		 && ADCState.BrakeF < 255 && ADCState.BrakeR < 255
 	) {
 		CarState.brake_balance = getBrakeBalance(ADCState.BrakeF, ADCState.BrakeR);

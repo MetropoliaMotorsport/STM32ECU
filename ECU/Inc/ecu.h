@@ -373,6 +373,7 @@ typedef struct {
     bool AllowRegen;
     uint8_t DrivingMode;
     uint8_t PedalProfile;
+    bool RegenLight;
 
     uint8_t FanPowered;
 

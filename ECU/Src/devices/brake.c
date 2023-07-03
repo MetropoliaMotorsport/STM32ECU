@@ -12,8 +12,7 @@
 
 bool getBrakeLight( void )
 {
-	//	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && ADCState.Regen_Percent > 500 ) return true;
-	return ( ADCState.BrakeR >= APPSBrakeLight || ADCState.BrakeF >= APPSBrakeLight );
+	return ( CarState.RegenLight || ADCState.BrakeR >= APPSBrakeLight || ADCState.BrakeF >= APPSBrakeLight );
 }
 
 bool getBrakeLow( void )
