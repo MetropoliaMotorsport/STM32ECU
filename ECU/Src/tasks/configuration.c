@@ -548,7 +548,6 @@ bool doPedalCalibration( uint16_t input )
 		snprintf( str, 21, "Mx %5d %5d %5d", APPSL_max, APPSR_max, REG_max );
 		lcd_send_stringline(3,str, MENUPRIORITY-1);
 		if ( debugconfig && redraw ) DebugPrintf(str);
-
 	}
 
 	if ( input == KEY_ENTER)
@@ -954,6 +953,8 @@ bool DoMenu( uint16_t input )
 		}
 
 		if ( debugconfig && redraw ) DebugPrintf("------\n");
+
+		redraw = false; // updated, unflag till something changes.
 		return true;
 	}
 
@@ -973,7 +974,6 @@ bool DoMenu( uint16_t input )
 	}
 
 	redraw = false;
-
 	return false;
 
 }
