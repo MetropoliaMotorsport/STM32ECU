@@ -21,7 +21,7 @@
 
 #define LCDBUFFER
 
-#define NOBRAKELIGHTCONTROL
+//#define NOBRAKELIGHTCONTROL
 
 #define MAXERROROUTPUT       (40)
 
