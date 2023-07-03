@@ -21,6 +21,8 @@
 
 #define LCDBUFFER
 
+#define NOBRAKELIGHTCONTROL
+
 #define MAXERROROUTPUT       (40)
 
 #define HPF20

@@ -248,6 +248,7 @@ void ADCTask(void *argument)
 			analoguenodesOnlineSince = 0;
 		}
 
+#ifndef NOBRAKELIGHTCONTROL
 		if ( getBrakeLight() )
 		{
 			setDevicePower( Brake,  true);
@@ -255,6 +256,7 @@ void ADCTask(void *argument)
 		{
 			setDevicePower( Brake,  false);
 		};
+#endif
 
 		xSemaphoreGive(waitStr);
 
