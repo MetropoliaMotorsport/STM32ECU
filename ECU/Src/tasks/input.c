@@ -44,7 +44,7 @@ static volatile ButtonData Input[NO_INPUTS] = {
 #else
 		{ DI7_GPIO_Port, DI7_Pin},//{ DI7_GPIO_Port, DI7_Pin}, //5 pin 33 being used for PWM.
 #endif
-		{ DI8_GPIO_Port, DI8_Pin}, //6
+		{ DI8_GPIO_Port, DI8_Pin}, //6 // PWM signal.
 		{ DI10_GPIO_Port, DI10_Pin}, //7
 		{ DI11_GPIO_Port, DI11_Pin}, //8
 		{ DI13_GPIO_Port, DI13_Pin}, //9

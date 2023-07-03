@@ -65,10 +65,14 @@ uint16_t PrintBrakeBalance( void )
 		sprintf(str,"Bal: %.3dF %.3dR (%.2d%%)", ADCState.BrakeF, ADCState.BrakeR, CarState.brake_balance );
 	} else
 	{
+#ifdef STMADC
 		if ( DeviceState.ADC == OPERATIONAL )
+#endif
 			sprintf(str, "Bal: Press Brakes");
+#ifdef STMADC
 		else
 			sprintf(str, "Bal: No Data");
+#endif
 	}
 
 	lcd_send_stringline(0,str, 255);

@@ -234,8 +234,6 @@ int PreOperationState( uint32_t OperationLoops  )
 #endif
 
 #ifdef ANALOGNODES
-
-
 			if ( DeviceState.Sensors != OPERATIONAL )
 			{
 				nodewait = getADCWait();
