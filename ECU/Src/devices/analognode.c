@@ -33,7 +33,7 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 CANData  AnalogNode1 =  { &DeviceState.AnalogNode1, AnalogNode1_ID, 6, processANode1Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
 CANData  AnalogNode10 = { &DeviceState.AnalogNode10, AnalogNode10_ID, 6, processANode10Data, NULL, NODETIMEOUT };
-CANData  AnalogNode11 = { &DeviceState.AnalogNode11, AnalogNode11_ID, 8, processANode11Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
+CANData  AnalogNode11 = { &DeviceState.AnalogNode11, AnalogNode11_ID, 6, processANode11Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
 CANData  AnalogNode13 = { &DeviceState.AnalogNode13, AnalogNode13_ID, 4, processANode13Data, NULL, NODETIMEOUT };
 
 #else
@@ -188,10 +188,9 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 #ifdef HPF2023
 	ADCStateSensors.BrakeTemp2 = 0;
 
-	int16_t BrakeF = (int16_t)getBEint16(&CANRxData[2]);
-	int16_t BrakeR = (int16_t)getBEint16(&CANRxData[6]);
-
 	uint16_t AccelR = getBEint16(&CANRxData[0]);
+	int16_t BrakeF = (int16_t)getBEint16(&CANRxData[2]);
+	int16_t BrakeR = (int16_t)getBEint16(&CANRxData[4]);
 #else
 	ADCStateSensors.BrakeTemp2 = getBEint16(&CANRxData[0]);
 
@@ -214,8 +213,8 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 	uint32_t dlc =  DataLength >> 16;
 
-	if ( dlc == AnalogNode11.dlcsize
-		&& ( AccelR < 4096 ) // make sure not pegged fully down.
+	if ( //dlc == AnalogNode11.dlcsize
+	 ( AccelR < 4096 ) // make sure not pegged fully down.
 		)
 	{
 		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
@@ -223,6 +222,7 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 			ADCStateNew.BrakeF = BrakeF;
 		else
 			ADCStateNew.BrakeF = 0;
+
 		if ( BrakeR > 0 )
         	ADCStateNew.BrakeR = BrakeR;
 		else
