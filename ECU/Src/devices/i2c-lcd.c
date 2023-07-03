@@ -359,6 +359,7 @@ static bool interrupthigh( void )
 
 void wheel_read_input(void)
 {
+	static bool first=false;
 	if ( !I2Crcvdone )
 	{
 		I2Crcvdone = xSemaphoreCreateBinaryStatic( &I2CrcvdoneBuffer );
@@ -405,6 +406,11 @@ void wheel_read_input(void)
 		if ( transmitstatus != HAL_OK ) {
 			//wheelinerror = true;
 			DebugPrintf("I2C read %d failed %d\n", callcount, transmitstatus);
+			if ( !first )
+			{
+				first = true; // first interrupt read might be a false flag, ignore it if tails.
+				return;
+			}
 			interrupt = 1;
 			return;
 		}
