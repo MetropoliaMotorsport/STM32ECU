@@ -99,7 +99,7 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	static uint32_t count = 0;
 	if ( ( count % 20 ) == 0 )
 	{
-		DebugPrintf("A1  Acl %lu BrT %lu", AccelL, Regen);
+		//DebugPrintf("A1  Acl %lu BrT %lu", AccelL, Regen);
 	}
 	count++;
 
@@ -196,7 +196,7 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	static uint32_t count = 0;
 	if ( ( count % 20 ) == 0 )
 	{
-		DebugPrintf("A11 BrF %lu BrR %lu AcR %lu", BrakeF, BrakeR, AccelR);
+		//DebugPrintf("A11 BrF %lu BrR %lu AcR %lu", BrakeF, BrakeR, AccelR);
 	}
 	count++;
 
