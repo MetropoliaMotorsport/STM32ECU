@@ -96,13 +96,14 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	int AccelL = getBEint16(&CANRxData[2]);
 	int Regen = getBEint16(&CANRxData[4]);
 
+#ifdef ADCDEBUGINFO
 	static uint32_t count = 0;
 	if ( ( count % 100 ) == 0 )
 	{
 		DebugPrintf("A1  Acl %lu BrT %lu", AccelL, Regen);
 	}
 	count++;
-
+#endif
 	if (
 		AccelL < 4096
 		 && Regen < 4096
@@ -198,12 +199,14 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	uint16_t AccelR = getBEint16(&CANRxData[4]);
 #endif
 
+#ifdef ADCDEBUGINFO
 	static uint32_t count = 0;
 	if ( ( count % 100 ) == 0 )
 	{
 		DebugPrintf("A11 BrF %d BrR %d AcR %d", BrakeF, BrakeR, AccelR);
 	}
 	count++;
+#endif
 
 	if (
 	 ( AccelR < 4096 ) // make sure not pegged fully down.

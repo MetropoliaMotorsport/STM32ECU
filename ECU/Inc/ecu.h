@@ -23,6 +23,8 @@
 
 //#define NOBRAKELIGHTCONTROL
 
+//#define ADCDEBUGINFO
+
 #define MAXERROROUTPUT       (40)
 
 #define HPF20
