@@ -58,6 +58,8 @@ uint8_t DebugQueueStorageArea[ DebugQUEUE_LENGTH * DebugITEMSIZE ];
 
 QueueHandle_t DebugQueue;
 
+extern bool debugconfig;
+
 
 #define DEBUGPROMPT    "DebugCmd: "
 
@@ -1214,12 +1216,14 @@ void debugConfig( void )
 	uint8_t state = 0;
 	uint16_t ch = 0;
 
-	UARTwrite("Running config menu.\r\n\r\n");
+	UARTwrite("Running debug config menu.\r\n\r\n");
 	UARTwrite("q: quit\r\n");
 	UARTwrite("s: Start/Stop button\r\n");
 	UARTwrite("t: Tractive System on button\r\n");
 	UARTwrite("r: RTDM on button\r\n");
 	UARTwrite("Arrow keys & Enter, joystick. \r\n");
+
+	debugconfig = true;
 
 	while ( !quit )
 	{
@@ -1288,7 +1292,9 @@ void debugConfig( void )
 			UARTwritech(ch);
 	}
 
-	UARTwrite("Done.\r\n");
+	debugconfig = false;
+
+	UARTwrite("Config done.\r\n");
 }
 
 void debugESCCodeInput( void )

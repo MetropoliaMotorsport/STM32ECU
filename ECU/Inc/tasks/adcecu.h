@@ -81,8 +81,8 @@ typedef struct {
 	uint16_t SteeringAngleAct;
 	uint16_t SteeringDuty;
 	uint16_t SteeringFreq;
-	uint8_t BrakeF;
-	uint8_t BrakeR;
+	uint16_t BrakeF;
+	uint16_t BrakeR;
 	uint8_t CoolantTempL;
 	uint8_t CoolantTempR;
 	uint16_t CoolantTempRRaw;

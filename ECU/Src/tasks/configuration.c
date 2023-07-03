@@ -17,6 +17,7 @@
 #include "taskpriorities.h"
 #include "power.h"
 #include "inverter.h"
+#include "debug.h"
 
 // ADC conversion buffer, should be aligned in memory for faster DMA?
 typedef struct {
@@ -52,7 +53,8 @@ bool GetConfigCmd( const uint8_t CANRxData[8], const uint32_t DataLength, const 
 CANData ECUConfig = { NULL, 0x21, 8, GetConfigCmd, NULL, 0 };
 
 static bool configReset = false;
-
+static bool redraw = false;
+bool debugconfig;
 
 bool checkConfigReset( void )
 {
@@ -141,12 +143,13 @@ char * GetPedalProfile( uint8_t profile, bool shortform )
 void doMenu8BitEdit( char * display, char * menuitem, bool selected, bool * editing,
 		volatile uint8_t * value, const uint8_t * validvalues, uint16_t input, bool percentage )
 {
-	char str[LCDCOLUMNS+1] = "";
+	char strl[LCDCOLUMNS+1] = "";
+	char strr[LCDCOLUMNS+1] = "";
 
 	for ( int i=0;i<LCDCOLUMNS;i++) display[i] = ' ';
 
-	int len = sprintf(str, "%c%s:", (selected) ? '>' :' ', menuitem);
-	memcpy(display, str, len);
+	int len = sprintf(strl, "%c%s:", (selected) ? '>' :' ', menuitem);
+	memcpy(display, strl, len);
 
 	if ( selected  )
 	{
@@ -181,9 +184,11 @@ void doMenu8BitEdit( char * display, char * menuitem, bool selected, bool * edit
 			// work out new value change attempted.
 			if ( change < 0 && position > 0)
 			{
+				redraw = true;
 				*value = validvalues[position-1];
 			} else if ( change > 0 && validvalues[position+1] != 0)
 			{
+				redraw = true;
 				*value = validvalues[position+1];
 			}
 	//		if ( change + *value >= min && change + *value <= max ) *value+=change;
@@ -191,20 +196,21 @@ void doMenu8BitEdit( char * display, char * menuitem, bool selected, bool * edit
 	}
 
 	// print value
-	len = sprintf(str, "%3d%s", *value, percentage?"%":"");
-	memcpy(&display[LCDCOLUMNS-1-3-(percentage?1:0)], str, len);
+	len = sprintf(strr, "%3d%s", *value, percentage?"%":"");
+	memcpy(&display[LCDCOLUMNS-1-3-(percentage?1:0)], strr, len);
 }
 
 
 void doMenu16BitEdit( char * display, char * menuitem, bool selected, bool * editing,
 		volatile uint16_t * value, const uint16_t * validvalues, uint16_t input )
 {
-	char str[LCDCOLUMNS+1] = "";
+	char strl[LCDCOLUMNS+1] = "";
+	char strr[LCDCOLUMNS+1] = "";
 
 	for ( int i=0;i<LCDCOLUMNS;i++) display[i] = ' ';
 
-	int len = sprintf(str, "%c%s:", (selected) ? '>' :' ', menuitem);
-	memcpy(display, str, len);
+	int len = sprintf(strl, "%c%s:", (selected) ? '>' :' ', menuitem);
+	memcpy(display, strl, len);
 
 	if ( selected  )
 	{
@@ -239,9 +245,11 @@ void doMenu16BitEdit( char * display, char * menuitem, bool selected, bool * edi
 			// work out new value change attempted.
 			if ( change < 0 && position > 0)
 			{
+				redraw = true;
 				*value = validvalues[position-1];
 			} else if ( change > 0 && validvalues[position+1] != 0)
 			{
+				redraw = true;
 				*value = validvalues[position+1];
 			}
 	//		if ( change + *value >= min && change + *value <= max ) *value+=change;
@@ -249,8 +257,8 @@ void doMenu16BitEdit( char * display, char * menuitem, bool selected, bool * edi
 	}
 
 	// print value
-	len = sprintf(str, "%5d", *value);
-	memcpy(&display[LCDCOLUMNS-1-5], str, len);
+	len = sprintf(strr, "%5d", *value);
+	memcpy(&display[LCDCOLUMNS-1-5], strr, len);
 }
 
 
@@ -258,12 +266,13 @@ void doMenu16BitEdit( char * display, char * menuitem, bool selected, bool * edi
 void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * editing,
 		volatile uint8_t * value, uint16_t input )
 {
-	char str[LCDCOLUMNS+1] = "";
+	char strl[LCDCOLUMNS+1] = "";
+	char strr[LCDCOLUMNS+1] = "";
 
 	for ( int i=0;i<LCDCOLUMNS;i++) display[i] = ' ';
 
-	int len = sprintf(str, "%c%s", (selected) ? '>' :' ', menuitem);
-	memcpy(display, str, len);
+	int len = sprintf(strl, "%c%s", (selected) ? '>' :' ', menuitem);
+	memcpy(display, strl, len);
 
 
 	int max = 0;
@@ -292,14 +301,18 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 			if ( input == KEY_RIGHT )
 				change+=1;
 
-			if ( change + *value >= 0 && change + *value <= max-1 ) *value+=change;
+			if ( change + *value >= 0 && change + *value <= max-1 )
+			{
+				redraw = true;
+				*value+=change;
+			}
 		}
 	}
 
 	// print value
-	len = sprintf(str, "%9s", GetPedalProfile(*value, false));
+	len = sprintf(strr, "%9s", GetPedalProfile(*value, false));
 	if ( len > 9 ) len = 9;
-	memcpy(&display[LCDCOLUMNS-1-9], str, len);
+	memcpy(&display[LCDCOLUMNS-1-9], strr, len);
 }
 
 
@@ -308,12 +321,13 @@ char *RegSrc[3] = {"Off", "Orig", "Matlab"};
 void doMenuRegSrcEdit( char * display, char * menuitem, bool selected, bool * editing,
 		volatile uint8_t * value, uint16_t input )
 {
-	char str[LCDCOLUMNS+1] = "";
+	char strl[LCDCOLUMNS+1] = "";
+	char strr[LCDCOLUMNS+1] = "";
 
 	for ( int i=0;i<LCDCOLUMNS;i++) display[i] = ' ';
 
-	int len = sprintf(str, "%c%s", (selected) ? '>' :' ', menuitem);
-	memcpy(display, str, len);
+	int len = sprintf(strl, "%c%s", (selected) ? '>' :' ', menuitem);
+	memcpy(display, strl, len);
 
 	if ( *value > 2 ) *value = 0;
 
@@ -341,14 +355,18 @@ void doMenuRegSrcEdit( char * display, char * menuitem, bool selected, bool * ed
 
 			int max = 3;
 
-			if ( change + *value >= 0 && change + *value <= max-1 ) *value+=change;
+			if ( change + *value >= 0 && change + *value <= max-1 )
+			{
+				redraw = true;
+				*value+=change;
+			}
 		}
 	}
 
 	// print value
-	len = sprintf(str, "%9s", RegSrc[*value]);
+	len = sprintf(strr, "%9s", RegSrc[*value]);
 	if ( len > 9 ) len = 9;
-	memcpy(&display[LCDCOLUMNS-1-9], str, len);
+	memcpy(&display[LCDCOLUMNS-1-9], strr, len);
 }
 
 
@@ -356,12 +374,13 @@ void doMenuRegSrcEdit( char * display, char * menuitem, bool selected, bool * ed
 void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * editing,
 		volatile uint8_t * value, uint8_t bit, uint16_t input )
 {
-	char str[LCDCOLUMNS+1] = "";
+	char strl[LCDCOLUMNS+1] = "";
+	char strr[LCDCOLUMNS+1] = "";
 
 	for ( int i=0;i<LCDCOLUMNS;i++) display[i] = ' ';
 
-	int len = sprintf(str, "%c%s", (selected) ? '>' :' ', menuitem);
-	memcpy(display, str, len);
+	int len = sprintf(strl, "%c%s", (selected) ? '>' :' ', menuitem);
+	memcpy(display, strl, len);
 
 	if ( selected  )
 	{
@@ -384,13 +403,16 @@ void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * edit
 			}
 
 			if ( change != 0 )
+			{
+				redraw = true;
 				*value ^= (1 << bit);
+			}
 		}
 	}
 
 	// print value
-	len = sprintf(str, "%5s", (*value) & (1 << bit ) ? "True" : "False");
-	memcpy(&display[LCDCOLUMNS-1-5], str, len);
+	len = sprintf(strr, "%5s", (*value) & (1 << bit ) ? "True" : "False");
+	memcpy(&display[LCDCOLUMNS-1-5], strr, len);
 }
 
 uint16_t APPSL_min;
@@ -419,6 +441,13 @@ void setMax( uint16_t * max, uint16_t maxval)
 
 bool doPedalCalibration( uint16_t input )
 {
+	static uint32_t count = 0;
+
+	if ( count % 20 == 0)
+		redraw = true;
+
+	count++;
+
 	char str[21];
 
 	bool baddata = false;
@@ -458,7 +487,6 @@ bool doPedalCalibration( uint16_t input )
 	} else
 		lcd_send_stringline( 0, "APPS Calib <save>", MENUPRIORITY );
 
-
 	setMin(&APPSL_min, ADCState.APPSL);
 	setMin(&APPSR_min, ADCState.APPSR);
 	setMin(&REG_min, ADCState.Regen);
@@ -478,12 +506,26 @@ bool doPedalCalibration( uint16_t input )
 		lcd_send_stringline(1, "Press APPS & Regen", MENUPRIORITY-1);
 		lcd_send_stringline(2," No brake pressure!", MENUPRIORITY-1);
 		lcd_send_stringline(3, str, MENUPRIORITY-1);
+
+		if ( debugconfig && redraw )
+		{
+			DebugPrintf("Press APPS & Regen");
+			DebugPrintf(" No brake pressure!");
+			DebugPrintf(str);
+		}
 	} else
 	if ( REG_close )
 	{
 		lcd_send_stringline(1, "", MENUPRIORITY-1);
 		lcd_send_stringline(2, "Press Regen", MENUPRIORITY-1);
 		lcd_send_stringline(3, str, MENUPRIORITY-1);
+
+		if ( debugconfig && redraw )
+		{
+			DebugPrintf("");
+			DebugPrintf("Press Regen");
+			DebugPrintf(str);
+		}
 	} else
 	{
 		int APPSL = 100.0/(APPSL_max-APPSL_min) * (ADCState.APPSL-APPSL_min);
@@ -496,16 +538,17 @@ bool doPedalCalibration( uint16_t input )
 		if ( APPSR > 99 ) APPSR = 99;
 
 		snprintf( str, 21, "Cur L%2d%%  R%2d%%  B%2d%%", APPSL, APPSR, REGEN );
-
 		lcd_send_stringline(1,str, MENUPRIORITY-1);
+		if ( debugconfig && redraw ) DebugPrintf(str);
 
 		snprintf( str, 21, "Mn %5d %5d %5d", APPSL_min, APPSR_min, REG_min );
-
 		lcd_send_stringline(2,str, MENUPRIORITY-1);
+		if ( debugconfig && redraw ) DebugPrintf(str);
 
 		snprintf( str, 21, "Mx %5d %5d %5d", APPSL_max, APPSR_max, REG_max );
-
 		lcd_send_stringline(3,str, MENUPRIORITY-1);
+		if ( debugconfig && redraw ) DebugPrintf(str);
+
 	}
 
 	if ( input == KEY_ENTER)
@@ -588,12 +631,14 @@ void MenuInput( menustruct_t *menu, uint16_t *input )
 		{
 			menu->selection += 1;
 			*input = 0;
+			redraw = true;
 		}
 		if ( *input == KEY_UP )
 		{
 			if ( menu->selection > 0)
 				menu->selection -= 1;
 			*input = 0;
+			redraw = true;
 		}
 
 		if ( menu->selection <  0) menu->selection=0;
@@ -639,6 +684,7 @@ bool DoMenuTorque ( uint16_t input )
 
 	if ( menu.selection == 0 && input == KEY_ENTER ) // CheckButtonPressed(Config_Input) )
 	{
+		DebugPrintf("Leaving torque menu");
 		menu.inedit = false;
 		return false;
 	}
@@ -656,10 +702,12 @@ bool DoMenuTorque ( uint16_t input )
 	doMenuBoolEdit( MenuLines[1+TORQUEMENU_FEEDACT], "FeedbackAct", (menu.selection==TORQUEMENU_FEEDACT), &menu.inedit, &getEEPROMBlock(0)->TorqueVectoring, TORQUE_FEEDACTBIT, input);
 
 	lcd_send_stringline( 0, MenuLines[0], MENUPRIORITY );
+	if ( debugconfig && redraw ) DebugPrintf(MenuLines[0]);
 
 	for ( int i=0;i<3;i++)
 	{
-		 lcd_send_stringline( i+1, MenuLines[i+menu.top+1], MENUPRIORITY );
+		lcd_send_stringline( i+1, MenuLines[i+menu.top+1], MENUPRIORITY );
+		if ( debugconfig && redraw ) DebugPrintf(MenuLines[i+menu.top+1]);
 	}
 
 	return true; // done with menu
@@ -709,6 +757,8 @@ bool DoMenu( uint16_t input )
 			lcd_send_stringline( 2, "Saving settings.", MENUPRIORITY );
 			lcd_send_stringline( 3, "", MENUPRIORITY );
 
+			DebugPrintf("\nSaving settings\n");
+
 			if ( dofullsave )
 			{
 				writeFullConfigEEPROM();
@@ -724,6 +774,7 @@ bool DoMenu( uint16_t input )
 		{
 			if ( menu.selection == MENU_TORQUE && input == KEY_ENTER )
 			{
+				redraw = true;
 				submenu = MENU_TORQUE;
 				input = 0;
 			}
@@ -736,7 +787,10 @@ bool DoMenu( uint16_t input )
 			{
 				case MENU_TORQUE :
 						if ( !DoMenuTorque(input) )
+						{
+							redraw = true;
 							submenu = 0; // check if sub menu is done.
+						}
 						break;
 				default :
 						submenu = 0;
@@ -750,7 +804,7 @@ bool DoMenu( uint16_t input )
 		{
 			if ( DeviceState.CriticalSensors == OPERATIONAL )
 			{
-
+				redraw = true;
 				incalib = true;
 				input = 0;
 
@@ -762,6 +816,7 @@ bool DoMenu( uint16_t input )
 				REG_max = 0;
 			} else
 			{
+				DebugPrintf("Err: ADC Not ready.");
 				lcd_send_stringline( 3, "Err: ADC Not ready.", 3);
 				input = 0; // input has been seen, null it.
 			}
@@ -771,6 +826,7 @@ bool DoMenu( uint16_t input )
 		{
 			if ( !doPedalCalibration(input) )
 			{
+				redraw = true;
 				incalib = false;
 				dofullsave = true;
 				SetupADCInterpolationTables(getEEPROMBlock(0));
@@ -889,22 +945,34 @@ bool DoMenu( uint16_t input )
 
 		lcd_send_stringline( 0, MenuLines[0], MENUPRIORITY );
 
+		if ( debugconfig && redraw ) DebugPrintf(MenuLines[0]);
+
 		for ( int i=0;i<3;i++)
 		{
-			 lcd_send_stringline( i+1, MenuLines[i+menu.top+1], MENUPRIORITY );
+			lcd_send_stringline( i+1, MenuLines[i+menu.top+1], MENUPRIORITY );
+			if ( debugconfig && redraw ) DebugPrintf(MenuLines[i+menu.top+1]);
 		}
+
+		if ( debugconfig && redraw ) DebugPrintf("------\n");
 		return true;
 	}
 
 	if ( !inmenu )
 	{
-
 		inmenu = true;
 		submenu = 0;
 		dofullsave = false;
 
+		if ( debugconfig )
+		{
+			redraw = true; // starting menu, draw it.
+			DebugPrintf("------\n");
+		}
+
 		return true;
 	}
+
+	redraw = false;
 
 	return false;
 
