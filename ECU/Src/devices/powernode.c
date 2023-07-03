@@ -60,8 +60,8 @@ devicepowerreq DevicePowerList[] =
 		{ ECU, 34, 4, true, 0, true }, // ECU has to have power or we aren't booted.. so just assume it.
 		{ Front2, 34, 5 },
 
-		{ LeftFans, 35, 2 },
-		{ RightFans, 35, 3 },
+		{ LeftFans, 35, 0 },
+		{ RightFans, 35, 1 },
 		{ LeftPump, 35, 4 },
 		{ RightPump, 35, 5 },
 
