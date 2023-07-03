@@ -106,7 +106,7 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	if ( DataLength >> 16 == AnalogNode1.dlcsize
 		&& ( AccelL < 4096 )
 		&& ( Regen < 4096 )
-		)
+	)
 	{
 		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
 #ifndef APPSFIXL
@@ -188,8 +188,8 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 #ifdef HPF2023
 	ADCStateSensors.BrakeTemp2 = 0;
 
-	int16_t BrakeF = (int16_t)getBEint16(&CANRxData[2]) / 10;
-	int16_t BrakeR = (int16_t)getBEint16(&CANRxData[6]) / 10;
+	int16_t BrakeF = (int16_t)getBEint16(&CANRxData[2]);
+	int16_t BrakeR = (int16_t)getBEint16(&CANRxData[6]);
 
 	uint16_t AccelR = getBEint16(&CANRxData[0]);
 #else
@@ -202,9 +202,9 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 #endif
 
 	static uint32_t count = 0;
-	if ( ( count % 20 ) == 0 )
+	if ( ( count % 100 ) == 0 )
 	{
-		//DebugPrintf("A11 BrF %lu BrR %lu AcR %lu", BrakeF, BrakeR, AccelR);
+		DebugPrintf("A11 BrF %lu BrR %lu AcR %lu", BrakeF, BrakeR, AccelR);
 	}
 	count++;
 
