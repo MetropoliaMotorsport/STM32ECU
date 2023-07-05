@@ -156,8 +156,10 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	adj->RL += Regeneration_Y.regenRL - TractionControl_Y.TC_RL - TorqueVectoring_Y.TVRL;
 	adj->RR += Regeneration_Y.regenRR - TractionControl_Y.TC_RR + TorqueVectoring_Y.TVRR;
 #else
-
-
+	adj->FL = Torque_Req;
+	adj->FR = adj->FL;
+	adj->RL = adj->FL;
+	adj->RR = adj->FL;
 #endif
 
 	CAN_Send4vals( 0x7CE,
