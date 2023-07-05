@@ -56,8 +56,6 @@
 	#define MEMORATAR
 
 	#define retransmitIMU
-
-	#define MATLABREGEN
 #endif
 
 #ifdef HPF19
@@ -137,7 +135,7 @@
 #define PDMSECONDMESSAGE
 
 // Check shutdown switches as part of error state.
-#define SHUTDOWNSWITCHCHECK
+//#define SHUTDOWNSWITCHCHECK
 
 // Coolant overtemp limits.
 #define COOLANTLIMPTEMP 75
