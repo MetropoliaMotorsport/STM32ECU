@@ -29,7 +29,7 @@ bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, con
 void BMSTimeout( uint16_t id );
 
 #ifdef HPF2023
-CANData  BMSSOC = { &DeviceState.BMS, BMSSOC_ID, 8, processBMSSOC, BMSTimeout, 2500 };
+CANData  BMSSOC = { &DeviceState.BMS, BMSSOC_ID, 8, processBMSSOC, BMSTimeout, 6000 };
 #else
 CANData  BMSVoltage = { &DeviceState.BMS, BMSVOLT_ID, 8, processBMSVoltageData, BMSTimeout, 2500 };
 CANData  BMSOpMode = { &DeviceState.BMS, BMSBASE_ID, 8, processBMSOpMode, NULL, 0 };
