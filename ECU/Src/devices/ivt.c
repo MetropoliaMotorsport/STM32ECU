@@ -229,14 +229,25 @@ bool processIVTData( const uint8_t * CANRxData, const uint32_t DataLength, const
 					}
 					break;
 				case IVTU1_ID :
+#ifdef HPF2023
+					CarState.VoltageIVTAccu = value;
+#else
 					CarState.VoltageINV = value;
+#endif
+
 					for ( int i=0;i<6;i++)
 					{
 						LastIVTU1[i] = CANRxData[i];
 					}
 					break;
 				case IVTU2_ID :
+#ifdef HPF2023
+					CarState.VoltageINV = value;
+#else
 					CarState.VoltageIVTAccu = value;
+#endif
+
+
 					for ( int i=0;i<6;i++)
 					{
 						LastIVTU2[i] = CANRxData[i];
