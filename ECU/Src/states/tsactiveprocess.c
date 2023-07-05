@@ -58,7 +58,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 		CAN_SendStatus(1, TSActiveState, readystate );
 	}
 
-	if ( CarState.VoltageINV < 400 )
+	if ( CarState.VoltageINV < TSACTIVEV )
 		PrintRunning("TS:LoV");
 	else
 		PrintRunning("TS:On");
@@ -90,7 +90,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 #endif
 	} else
 	{
-		if (  CarState.VoltageINV > 400 && ( prechargetimer+MS1000*6 <= curtime ) ) // Shutdown.PRE ||
+		if (  CarState.VoltageINV > TSACTIVEV && ( prechargetimer+MS1000*6 <= curtime ) ) // Shutdown.PRE ||
 		{
 			setOutput(RTDMLED, On);
 			lcd_send_stringline(1,"Precharge Done.", 255);
@@ -111,7 +111,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	}
 
 
-	if ( prechargedone && CarState.VoltageINV <= 400)
+	if ( prechargedone && CarState.VoltageINV <= TSACTIVEV)
 	{
 		lcd_send_stringline(1,"TS Lost.", 255);
 		DebugPrintf("TS failure at %lu invV:%d Shutdown.Pre:%d, prechargetimer:%d", gettimer(), CarState.VoltageINV, Shutdown.PRE, prechargetimer);
