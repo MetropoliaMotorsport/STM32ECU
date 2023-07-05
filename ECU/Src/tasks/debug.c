@@ -1209,7 +1209,7 @@ uint16_t processUARTchar( const uint8_t ch, uint8_t * state )
 
 }
 
-void debugConfig( void )
+void debugConfig( bool menu )
 {
 	bool quit = false;
 
@@ -1223,7 +1223,7 @@ void debugConfig( void )
 	UARTwrite("r: RTDM on button\r\n");
 	UARTwrite("Arrow keys & Enter, joystick. \r\n");
 
-	debugconfig = true;
+	debugconfig = menu;
 
 	while ( !quit )
 	{
@@ -1524,11 +1524,11 @@ static void DebugTask(void *pvParameters)
 
 				if ( streql(tkn1, "config" ) )
 				{
-					debugConfig();
+					debugConfig(true);
 				} else
 				if ( streql(tkn1, "input" ) )
 				{
-					debugConfig();
+					debugConfig(false);
 				} else
 				if ( streql(tkn1, "inverter" ) )
 				{
