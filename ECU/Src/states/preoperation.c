@@ -756,6 +756,15 @@ int PreOperationState( uint32_t OperationLoops  )
 		}
 	}
 
+	if ( CheckActivationRequest() )
+		DebugPrintf("Start pressedr\n");
+
+	if ( CheckTSActivationRequest() )
+		DebugPrintf("TS pressedr\n");
+
+	if ( CheckRTDMActivationRequest() )
+		DebugPrintf("RTDM pressedr\n");
+
 	return PreOperationalState; // nothing caused entry to a different state, continue in current state.
 }
 
