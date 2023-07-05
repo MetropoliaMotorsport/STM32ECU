@@ -189,21 +189,23 @@ int TSActiveProcess( uint32_t OperationLoops )
 	 * One of these actions must include the actuation of the mechanical brakes while ready-to-drive mode is entered.
 	 */
 
+
 	if ( readystate == 0
-		&& CheckRTDMActivationRequest()
-	  	&& getBrakeRTDM()) // if inverters ready, rtdm pressed, and brake held down.
+		&& CheckRTDMActivationRequest() ) // if inverters ready, rtdm pressed, and brake held down.
 	{
 		if ( getBrakeRTDM() )
 			return RunningState;
 		else
 			DebugPrintf("RTDM activation attempt with no braking");
-	}
+	} else
+	{
 
 	if ( CheckActivationRequest() )
 	{
 		if ( !prechargedone )
 		{
 			lcd_send_stringline(1,"Wait for Precharge", 254);
+			DebugPrintf("Wait for Precharge\n");
 		} else
 		{
 			DebugPrintf("Returning to idle state at request.");
