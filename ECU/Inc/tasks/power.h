@@ -10,6 +10,8 @@
 
 #include "ecumain.h"
 
+#define TSACTIVEV (300)
+
 typedef enum DevicePowertype {
 	None, // ensure 0 is not an actual device.
 	Buzzer,

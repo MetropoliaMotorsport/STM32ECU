@@ -288,7 +288,7 @@ void PowerTask(void *argument)
 			powernodesOnlineSince = 0;
 		}
 
-		if ( CarState.VoltageINV > 400 )
+		if ( CarState.VoltageINV > TSACTIVEV )
 		{
 			lastseenHV = looptime;
 		}
