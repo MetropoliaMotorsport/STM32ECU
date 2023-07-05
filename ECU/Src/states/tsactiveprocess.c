@@ -193,7 +193,10 @@ int TSActiveProcess( uint32_t OperationLoops )
 		&& CheckRTDMActivationRequest()
 	  	&& getBrakeRTDM()) // if inverters ready, rtdm pressed, and brake held down.
 	{
-	    return RunningState;
+		if ( getBrakeRTDM() )
+			return RunningState;
+		else
+			DebugPrintf("RTDM activation attempt with no braking");
 	}
 
 	if ( CheckActivationRequest() )
