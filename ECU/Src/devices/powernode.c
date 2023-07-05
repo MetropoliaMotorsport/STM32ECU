@@ -1188,7 +1188,7 @@ int initPowerNodes( void )
 #endif
 	RegisterCan1Message(&PowerNode34);
 	RegisterCan1Message(&PowerNode35);
-	RegisterCan2Message(&PowerNode36);
+	RegisterCan1Message(&PowerNode36);
 	RegisterCan1Message(&PowerNode37);
 
 	return 0;
