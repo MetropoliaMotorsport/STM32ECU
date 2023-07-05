@@ -48,7 +48,7 @@
 	#define SCREEN
 	#define POWERNODES
 	#define ANALOGNODES
-	#define MATLAB
+	//#define MATLAB
 	#define USEIMU
 	#define PWMSTEERING
 	#define LENZE
@@ -80,10 +80,10 @@
 
 #ifdef HPF2023
 
-#define APPSBrakeLight			3
+#define APPSBrakeLight			2
 #define APPSBrakeHard			30 // 70
-#define APPSBrakeRelease		2 // 30
-#define RTDMBRAKEPRESSURE		5 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
+#define APPSBrakeRelease		1 // 30
+#define RTDMBRAKEPRESSURE		3 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
 
 #else
 #define APPSBrakeLight			65

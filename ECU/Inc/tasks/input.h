@@ -64,9 +64,9 @@ DI7 pin 25 PF12 ok    input 8
 
 typedef enum input {
 #ifdef HPF2023
-	TS_Input=6, // 1 now startstop
-	RTDM_Input=8, // now ts on
-	StartStop_Input=1, // now rtdm
+	TS_Input=8, // 1 now startstop
+	RTDM_Input=1, // now ts on
+	StartStop_Input=6, // now rtdm
 	Config_Input=5, // same as center button
 	Center_Input=5,
 	Left_Input=9,
