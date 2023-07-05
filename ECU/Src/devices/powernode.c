@@ -65,11 +65,11 @@ devicepowerreq DevicePowerList[] =
 		{ LeftPump, 35, 4 },
 		{ RightPump, 35, 5 },
 
-		{ IVT, 36, 3 },
-		{ Accu, 36, 4 }, // TODO make sure this channel cannot be reset for latching rules.
+		{ IVT, 36, 4 },
+		{ Accu, 36, 2 }, // TODO make sure this channel cannot be reset for latching rules.
 		{ AccuFan, 36, 5},
 
-		{ Brake, 37, 0 },
+		{ Brake, 37, 4 },
 		{ Buzzer, 37, 1 },
 		{ Inverters, 37, 2 },
 		{ TSAL, 37, 3, true, 0, true }, // essential to be powered, else not compliant.
