@@ -30,7 +30,7 @@ uint8_t getBrakeHigh( void )
 uint8_t getBrakeRTDM( void )
 {
 //	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && ADCState.Regen_Percent > 500 ) return true;
-	return ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPS;
+	return ADCState.BrakeR >= RTDMBRAKEPRESSURE || ADCState.BrakeF >= RTDMBRAKEPRESSURE;
 }
 
 uint8_t getBrake( void )
