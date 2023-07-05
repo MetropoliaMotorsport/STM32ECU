@@ -79,7 +79,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 			lcd_send_stringline(1,"Precharge Wait.", 255);
 		}
 		// check SDC now, should be powered.
-
+#if 0
 		strcat(str, "SDC(" );
 
 			strcat(str, ShutDownOpenStr());
@@ -87,7 +87,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 		strcat(str, ") " );
 
 		lcd_send_stringline(2, str, 255);
-
+#endif
 	} else
 	{
 		if (  CarState.VoltageINV > 400 && ( prechargetimer+MS1000*6 <= curtime ) ) // Shutdown.PRE ||
