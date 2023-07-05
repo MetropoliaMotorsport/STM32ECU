@@ -11,6 +11,7 @@
 bool getBrakeLight( void );
 bool getBrakeLow( void );
 uint8_t getBrakeHigh( void );
+uint8_t getBrakeRTDM( void );
 
 uint8_t getBrake( void );
 
