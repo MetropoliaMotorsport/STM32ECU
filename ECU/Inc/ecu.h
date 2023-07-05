@@ -83,7 +83,7 @@
 #define APPSBrakeLight			3
 #define APPSBrakeHard			30 // 70
 #define APPSBrakeRelease		2 // 30
-#define RTDMBRAKEPRESSURE		7 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
+#define RTDMBRAKEPRESSURE		5 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
 
 #else
 #define APPSBrakeLight			65
