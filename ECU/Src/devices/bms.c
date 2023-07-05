@@ -83,6 +83,7 @@ bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const
          		Shutdown.BMS = true;
          		Shutdown.BMSReason = 0;
         	}
+#ifdef BMSDEBUGINFO
 
         	if ( !message || lastcellv != CarState.HighestCellV  || ( count % 20 ) == 0 )
         	{
@@ -90,7 +91,7 @@ bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const
         		message = true;
         		DebugPrintf("BMS msg SOC %lu high cell mV %lu stackV %lu error state %lu", CarState.BMSSOC, CarState.HighestCellV, CarState.VoltageBMS, CANRxData[3]);
         	}
-
+#endif
         	count++;
 
 			//CarState.LimpRequest = CANRxData[4]; // not yet implemented on new BMS.
