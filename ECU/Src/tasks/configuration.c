@@ -136,7 +136,7 @@ char * GetPedalProfile( uint8_t profile, bool shortform )
 				return "Acc";
 			else return "Acceleration";
 	}
-	return NULL;
+	return "Bad Data";
 }
 
 
