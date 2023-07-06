@@ -589,7 +589,7 @@ int lcd_dosend( void )
 	} else // not in error, but weren't ready to send.
 	{
 #ifdef IGNOREI2CERR
-	vTaskDelay(20);
+		vTaskDelay(100);
 #else
 		vTaskDelay(10); // allow some time to finish a potential send in progress, then allow trying again.
 #endif
