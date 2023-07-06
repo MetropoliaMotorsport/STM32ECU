@@ -542,8 +542,10 @@ int lcd_dosend( void )
 			HAL_StatusTypeDef transmitstatus = HAL_I2C_Master_Transmit_IT(lcdi2c, SLAVE_ADDRESS_LCD<<1,(uint8_t *) sendbuffer, sendbufferpos);
 			if ( transmitstatus != HAL_OK ){
 				sendbufferpos=0;
+#ifdef IGNOREI2CERR
 				inerror = true;
 				readytosend = false;
+#endif
 				return 0;
 			}
 			inerror = false;
@@ -586,7 +588,11 @@ int lcd_dosend( void )
 		lcd_resetbuffer();
 	} else // not in error, but weren't ready to send.
 	{
+#ifdef IGNOREI2CERR
+	vTaskDelay(20);
+#else
 		vTaskDelay(10); // allow some time to finish a potential send in progress, then allow trying again.
+#endif
 		readytosend = true;
 		return 0;
 	}

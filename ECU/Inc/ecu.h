@@ -25,6 +25,8 @@
 
 //#define ADCDEBUGINFO
 
+#define IGNOREI2CERR
+
 #define MAXERROROUTPUT       (40)
 
 #define HPF20
