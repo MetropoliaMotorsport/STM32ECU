@@ -197,8 +197,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 			return RunningState;
 		else
 			DebugPrintf("RTDM activation attempt with no braking");
-	} else
-	{
+	}
 
 	if ( CheckActivationRequest() )
 	{

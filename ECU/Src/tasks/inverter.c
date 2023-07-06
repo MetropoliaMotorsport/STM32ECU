@@ -46,7 +46,7 @@ TaskHandle_t InvTaskHandle;
 #define InvQUEUE_LENGTH    20
 #define InvITEMSIZE		   sizeof( Inv_msg )
 
-#define InvCfgQUEUE_LENGTH    10   // should only have one pending send per inverter.
+#define InvCfgQUEUE_LENGTH    20   // should only have one pending send per inverter.
 #define InvCfgITEMSIZE		   sizeof( InvCfg_msg )
 
 /* The variable used to hold the queue's data structure. */

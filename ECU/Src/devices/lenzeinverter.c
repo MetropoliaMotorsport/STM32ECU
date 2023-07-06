@@ -662,8 +662,8 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 #endif
 				if ( Inverter->SetupState < 9)
 				{
-					InvSendSDO(Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1); // sets TPDO's to sync mode.
-					Inverter->SetupState++;
+					if ( InvSendSDO(Inverter->COBID, 0x1800+Inverter->SetupState-2, 2, 1) ); // sets TPDO's to sync mode.
+						Inverter->SetupState++;
 				}
 				else
 				{
@@ -671,8 +671,8 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 					snprintf(str, 60, "Lenze inverter %d set to sync, setting MC private at (%lu)", Inverter->Motor, gettimer());
 					DebugMsg(str);
 #endif
-					InvSendSDO(Inverter->COBID+31, 0x4004, 1, 1234); // sets private can.
-					Inverter->SetupState++;
+					if ( InvSendSDO(Inverter->COBID+31, 0x4004, 1, 1234) ) // sets private can.
+						Inverter->SetupState++;
 				}
 				break;
 			}
@@ -695,6 +695,7 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 #endif
 				CAN_SendStatus(9, Inverter->Motor, 5);
 				// TODO ack this last SDO.
+
 				InvSendSDO(Inverter->COBID,0x6048, 0, getEEPROMBlock(0)->AccelRpms*4);
 				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET, 0x6048+0x800, 0, getEEPROMBlock(0)->AccelRpms*4);
 				InvSendSDO(Inverter->COBID,0x6049, 0, getEEPROMBlock(0)->DecelRpms*4);
