@@ -1541,7 +1541,7 @@ int CheckCanError( void )
 #endif
 #endif
 
-	if ( CAN1Status.BusOff) // detect passive error instead and try to stay off bus till clears?
+	if ( CAN1Status.BusOff || CAN1Status.ErrorPassive ) // detect passive error instead and try to stay off bus till clears?
 	{
 	//	Errors.ErrorPlace = 0xAA;
 	//	  blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
@@ -1584,7 +1584,7 @@ int CheckCanError( void )
 #endif
 
 #ifndef ONECAN
-	if ( CAN2Status.BusOff) // detect passive error instead and try to stay off bus till clears?
+	if ( CAN2Status.BusOff || CAN2Status.ErrorPassive ) // detect passive error instead and try to stay off bus till clears?
 	{
 	//	Errors.ErrorPlace = 0xAA;
 		//blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
