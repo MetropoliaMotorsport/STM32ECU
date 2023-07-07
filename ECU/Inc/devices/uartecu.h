@@ -11,7 +11,8 @@
 typedef enum UARTType {
 	NOUART,
 	UART1,
-	UART2
+	UART2,
+	UART7_
 } UART;
 
 

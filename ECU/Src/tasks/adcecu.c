@@ -475,6 +475,11 @@ int16_t linearInterpolate(uint16_t Input[], int16_t Output[], uint16_t count, ui
     	return 0;
     }
 
+    if ( count < 2 )
+    {
+    	return 0;
+    }
+
     if(RawADCInput < Input[0])
     {  // if input less than first table value return first.
         return Output[0];

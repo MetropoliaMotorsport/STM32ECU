@@ -89,7 +89,7 @@ int UARTprintf(const char * format, ... )
 int UARTwritech( const char ch)
 {
 #ifdef RTTDEBUG
-
+	SEGGER_RTT_Write(0, &ch, 1);
 #endif
 	if(!UART_Transmit(DEBUGUART, (uint8_t *)&ch, 1)) {
 		return 0;
@@ -165,6 +165,16 @@ bool redraw;
 uint8_t uartWait( char *ch )
 {
 	if(!UART_Receive(DEBUGUART, (uint8_t *)ch, 1)) {
+		#if 0
+		int rttch = SEGGER_RTT_GetKey();
+
+		if ( rttch > 0  )
+		{
+			redraw = false;
+			*ch = rttch;
+			return 1;
+		}
+		#endif
 		return 0;
 	}
 
@@ -174,6 +184,16 @@ uint8_t uartWait( char *ch )
 
 	while ( 1 )
 	{
+		#if 0
+		int rttch = SEGGER_RTT_GetKey();
+
+		if ( rttch > 0  )
+		{
+			*ch = rttch;
+			return 1;
+		}
+		#endif
+
 		if ( UART_WaitRXDone( DEBUGUART, 0 ) )
 		{
 			return 1;
@@ -1221,7 +1241,7 @@ void debugConfig( bool menu )
 	UARTwrite("s: Start/Stop button\r\n");
 	UARTwrite("t: Tractive System on button\r\n");
 	UARTwrite("r: RTDM on button\r\n");
-	UARTwrite("Arrow keys & Enter, joystick. \r\n");
+	UARTwrite("Arrow keys & Enter, joystick. Or ijkl and p.\r\n");
 
 	debugconfig = menu;
 
@@ -1237,22 +1257,22 @@ void debugConfig( bool menu )
 
 		if ( read == 'q' )
 			quit = true;
-		else if ( read == KEY_LEFT )
+		else if ( read == KEY_LEFT || read == 'j' )
 		{
 			UARTprintf("Left\r\n");
 			setInput(Left_Input);
 		}
-		else if ( read == KEY_RIGHT )
+		else if ( read == KEY_RIGHT || read == 'l')
 		{
 			UARTprintf("Right\r\n");
 			setInput(Right_Input);
 		}
-		else if ( read == KEY_UP )
+		else if ( read == KEY_UP || read == 'i')
 		{
 			UARTprintf("Up\r\n");
 			setInput(Up_Input);
 		}
-		else if ( read == KEY_DOWN )
+		else if ( read == KEY_DOWN || read == 'k')
 		{
 			UARTprintf("Down\r\n");
 			setInput(Down_Input);
@@ -1282,12 +1302,14 @@ void debugConfig( bool menu )
 			UARTprintf("RTDM\r\n");
 			setInput(RTDM_Input);
 		}
+		#if 0
 		else if ( read == 'i' )
 		{
 			UARTprintf("Test save of I\r\n");
 			runtimedata_p->maxIVTI = 100;
 			runtimedata_p->time = getTime();
 		}
+		#endif
 		else
 			UARTwritech(ch);
 	}

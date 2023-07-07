@@ -136,7 +136,7 @@ char * GetPedalProfile( uint8_t profile, bool shortform )
 				return "Acc";
 			else return "Acceleration";
 	}
-	return "Bad Data";
+	return NULL;
 }
 
 
@@ -158,6 +158,7 @@ void doMenu8BitEdit( char * display, char * menuitem, bool selected, bool * edit
 		{
 			*editing = !*editing;
 			GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
+			redraw = true;
 		}
 
 		if ( *editing )
@@ -218,6 +219,7 @@ void doMenu16BitEdit( char * display, char * menuitem, bool selected, bool * edi
 	//	if ( CheckButtonPressed(Config_Input) )
 		{
 			*editing = !*editing;
+			redraw = true;
 			GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
 		}
 
@@ -284,6 +286,7 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 		if ( input == KEY_ENTER )
 	//	if ( CheckButtonPressed(Config_Input) )
 		{
+			redraw = true;
 			*editing = !*editing;
 	//		GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
 		}
@@ -296,21 +299,30 @@ void doMenuPedalEdit( char * display, char * menuitem, bool selected, bool * edi
 			int change = 0;
 
 			if ( input == KEY_LEFT )
+			{
 				change-=1;
+			}
 
 			if ( input == KEY_RIGHT )
 				change+=1;
 
 			if ( change + *value >= 0 && change + *value <= max-1 )
 			{
-				redraw = true;
 				*value+=change;
+			}
+
+			if ( change )
+			{
+				redraw = true;
 			}
 		}
 	}
 
 	// print value
-	len = sprintf(strr, "%9s", GetPedalProfile(*value, false));
+	if ( GetPedalProfile(*value, false) )
+		len = sprintf(strr, "%9s", GetPedalProfile(*value, false));
+	else
+		len = sprintf(strr, "Err %d",*value);
 	if ( len > 9 ) len = 9;
 	memcpy(&display[LCDCOLUMNS-1-9], strr, len);
 }
@@ -336,6 +348,7 @@ void doMenuRegSrcEdit( char * display, char * menuitem, bool selected, bool * ed
 		if ( input == KEY_ENTER )
 	//	if ( CheckButtonPressed(Config_Input) )
 		{
+			redraw = true;
 			*editing = !*editing;
 	//		GetLeftRightPressed(); // clear out any buffered presses when weren't editing.
 		}
@@ -386,6 +399,7 @@ void doMenuBoolEdit( char * display, char * menuitem, bool selected, bool * edit
 	{
 		if ( input == KEY_ENTER )
 		{
+			redraw = true;
 			*editing = !*editing;
 		}
 
@@ -683,6 +697,7 @@ bool DoMenuTorque ( uint16_t input )
 
 	if ( menu.selection == 0 && input == KEY_ENTER ) // CheckButtonPressed(Config_Input) )
 	{
+		redraw = true;
 		DebugPrintf("Leaving torque menu");
 		menu.inedit = false;
 		return false;
@@ -708,6 +723,7 @@ bool DoMenuTorque ( uint16_t input )
 		lcd_send_stringline( i+1, MenuLines[i+menu.top+1], MENUPRIORITY );
 		if ( debugconfig && redraw ) DebugPrintf(MenuLines[i+menu.top+1]);
 	}
+	redraw = false;
 
 	return true; // done with menu
 }
@@ -888,8 +904,14 @@ bool DoMenu( uint16_t input )
 		if ( menu.selection == MENU_STEERING && input == KEY_ENTER )
 		{
 			if ( ADCState.SteeringAngleAct != 0xFFFF )
+			{
 				getEEPROMBlock(0)->steerCalib = 180-ADCState.SteeringAngleAct;
 			// value should update on display. add a set message.
+				DebugPrintf("Steering angle calibrated to offset %d", 180-ADCState.SteeringAngleAct);
+			} else
+			{
+				DebugPrintf("Steering angle no data to calibrate");
+			}
 		}
 
 		doMenuBoolEdit( MenuLines[1+MENU_INVEN], "InvEnabled", (menu.selection==MENU_INVEN), &menu.inedit, (uint8_t*)&getEEPROMBlock(0)->InvEnabled, 0, input);
