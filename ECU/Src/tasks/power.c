@@ -638,6 +638,7 @@ xTimerHandle timerHndlBuzzer;
 
 bool soundBuzzer( void )
 {
+	DebugPrintf("Sounding buzzer\n");
 	resetDevicePower(Buzzer);
 	setDevicePower(Buzzer, true);
 	xTimerStart( timerHndlBuzzer, 0 );
@@ -646,6 +647,7 @@ bool soundBuzzer( void )
 
 
 static void stopBuzzer(xTimerHandle pxTimer) {
+	DebugPrintf("Stopping buzzer\n");
 	setDevicePower(Buzzer, false);
 }
 
