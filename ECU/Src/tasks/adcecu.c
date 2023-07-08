@@ -316,12 +316,14 @@ bool SetupADCInterpolationTables( eepromdata * data )
 		TorqueReqLInput[2] = (TravMax-TravMin)/100*TravMinOffset+TravMin;
 		TorqueReqLInput[3] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
 
+#ifdef TORQUEERRORCHECK
 		uint32_t absolutemax = TravMax*1.1;
 		if ( absolutemax > 0xFFFF )
 			absolutemax + 64000;
 
 		TorqueReqLInput[4] = absolutemax;
 		TorqueReqLInput[5] = TorqueReqLInput[4]+1;
+#endif
 
 		TravMin = data->ADCTorqueReqRInput[0];
 		TravMax = data->ADCTorqueReqRInput[1];
@@ -337,12 +339,14 @@ bool SetupADCInterpolationTables( eepromdata * data )
 		TorqueReqRInput[2] = (TravMax-TravMin)/100*TravMinOffset+TravMin;
 		TorqueReqRInput[3] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
 
+#ifdef TORQUEERRORCHECK
 		absolutemax = TravMax*1.1;
 		if ( absolutemax > 0xFFFF )
 			absolutemax + 64000;
 
 		TorqueReqRInput[4] = absolutemax;
 		TorqueReqRInput[5] = TorqueReqRInput[4]+1;
+#endif
 
 		TravMin = data->ADCBrakeTravelInput[0];
 		TravMax = data->ADCBrakeTravelInput[1];
@@ -359,12 +363,14 @@ bool SetupADCInterpolationTables( eepromdata * data )
 		BrakeTravelInput[2] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
 		BrakeTravelInput[3] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
 
+#ifdef TORQUEERRORCHECK
 		absolutemax = TravMax*1.1;
 		if ( absolutemax > 0xFFFF )
 			absolutemax + 64000;
 
 		BrakeTravelInput[4] = absolutemax;
 		BrakeTravelInput[5] = BrakeTravelInput[4]+1;
+#endif
 
 		if (data->pedalcurves[i].PedalCurveInput[1] != 0)
 		{

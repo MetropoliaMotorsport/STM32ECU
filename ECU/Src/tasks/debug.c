@@ -1544,6 +1544,28 @@ static void DebugTask(void *pvParameters)
 					debugESCCodeInput();
 				} else
 
+				if ( streql(tkn1, "calibinfo") )
+				{
+					eepromdata * data = getEEPROMBlock(0);
+					DebugPrintf("Apps Calib L: %5d - %5d ( %5d %5d )\r\n",
+							data->ADCTorqueReqLInput[0],
+							data->ADCTorqueReqLInput[1],
+							data->ADCTorqueReqLInput[2],
+							data->ADCTorqueReqLInput[3]);
+
+					DebugPrintf("Apps Calib R: %5d - %5d ( %5d %5d )\r\n",
+							data->ADCTorqueReqRInput[0],
+							data->ADCTorqueReqRInput[1],
+							data->ADCTorqueReqRInput[2],
+							data->ADCTorqueReqRInput[3]);
+
+					DebugPrintf("Regen Calib:  %5d - %5d ( %5d %5d )\r\n",
+							data->ADCBrakeTravelInput[0],
+							data->ADCBrakeTravelInput[1],
+							data->ADCBrakeTravelInput[2],
+							data->ADCBrakeTravelInput[3]);
+				} else
+
 				if ( streql(tkn1, "config" ) )
 				{
 					debugConfig(true);
@@ -1580,7 +1602,7 @@ static void DebugTask(void *pvParameters)
 				{
 					debugSensors(tkn2);
 				}
-				else if ( streql(tkn1, "cleareeprom") )
+				else if ( streql(tkn1, "eeprom") )
 				{
 					clearEEPROM();
 				}

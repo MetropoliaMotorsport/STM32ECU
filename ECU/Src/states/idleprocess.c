@@ -90,6 +90,8 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	static uint32_t HVEnableTimer;
 
+	static uint32_t nextmsg;
+
 	// request ready states from devices.
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
@@ -203,6 +205,14 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 // allow APPS checking before RTDM
 	vectoradjust adj;
 	speedadjust spd;
+
+	uint32_t curtick = gettimer();
+
+	if ( curtick > nextmsg )
+	{
+		nextmsg = curtick + 1000;
+		DebugPrintf("Current req %f pedals %lu %lu %lu brakes %lu %lu", CarState.Torque_Req, ADCState.Torque_Req_R_Percent, ADCState.Torque_Req_L_Percent, ADCState.Regen_Percent, ADCState.BrakeF, ADCState.BrakeR );
+	}
 
 	doVectoring( CarState.Torque_Req, &adj, &spd );
 

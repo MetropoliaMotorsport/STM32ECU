@@ -205,6 +205,7 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 
 	//The average value of the APPS // signals pedal travel equivalent to ≥25 % desired motor torque
 	int TorqueRequestPercent = getTorqueReqCurve(ADCState.Torque_Req_R_Percent) / 10;
+	//getTorqueReqCurve(ADCState.Torque_Req_R_Percent) / 10;
 
 	// The commanded motor torque must remain at 0 N m until the APPS signals less than 5 % pedal travel
 	// and 0 N m desired motor torque, regardless of whether the brakes are still actuated or not.
