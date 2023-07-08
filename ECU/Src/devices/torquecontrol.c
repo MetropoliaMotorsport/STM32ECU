@@ -155,12 +155,6 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	adj->FR += Regeneration_Y.regenFR - TractionControl_Y.TC_FR + TorqueVectoring_Y.TVFR;
 	adj->RL += Regeneration_Y.regenRL - TractionControl_Y.TC_RL - TorqueVectoring_Y.TVRL;
 	adj->RR += Regeneration_Y.regenRR - TractionControl_Y.TC_RR + TorqueVectoring_Y.TVRR;
-#else
-	adj->FL = Torque_Req;
-	adj->FR = adj->FL;
-	adj->RL = adj->FL;
-	adj->RR = adj->FL;
-#endif
 
 	CAN_Send4vals( 0x7CE,
 			VELUSED,
@@ -172,6 +166,12 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	CAN_Send4vals( 0x7D0, (int16_t)Regeneration_Y.regenFL*NMSCALING, (int16_t)Regeneration_Y.regenFR*NMSCALING, (int16_t)Regeneration_Y.regenRL*NMSCALING, (int16_t)Regeneration_Y.regenRR*NMSCALING );
 	CAN_Send4vals( 0x7D1, (int16_t)TorqueVectoring_Y.TVFL*NMSCALING, (int16_t)TorqueVectoring_Y.TVFR*NMSCALING, (int16_t)TorqueVectoring_Y.TVRL*NMSCALING, (int16_t)TorqueVectoring_Y.TVRR*NMSCALING );
 
+#else
+	adj->FL = Torque_Req;
+	adj->FR = adj->FL;
+	adj->RL = adj->FL;
+	adj->RR = adj->FL;
+#endif
 
 	float avg = 0;
 	avg += adj->FL;
