@@ -112,10 +112,10 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
 #ifndef APPSFIXL
 
-		int percentage = ((100000/(1831-423))*(AccelL-423))/100;
+		int percentage = ((100000/(1831-480))*(AccelL-480))/100; // adjust lower end margin higher so some movement needed to leave 0%
 		if ( percentage > 1000 )
 			percentage = 0;
-		if ( percentage < 0 )
+		if ( percentage < 50 )
 			percentage = 0;
 		ADCStateNew.Torque_Req_L_Percent = percentage;  //getTorqueReqPercL(AccelL);
 		ADCStateNew.APPSL = AccelL;
