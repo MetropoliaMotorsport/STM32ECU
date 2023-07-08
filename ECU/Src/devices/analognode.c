@@ -111,7 +111,13 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	{
 		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
 #ifndef APPSFIXL
-		ADCStateNew.Torque_Req_L_Percent = getTorqueReqPercL(AccelL);
+
+		int percentage = ((100000/(1831-423))*(AccelL-423))/100;
+		if ( percentage > 100 )
+			percentage = 0;
+		if ( percentage < 0 )
+			percentage = 0;
+		ADCStateNew.Torque_Req_L_Percent = percentage;  //getTorqueReqPercL(AccelL);
 		ADCStateNew.APPSL = AccelL;
 #endif
 #ifdef APPSFIXR
