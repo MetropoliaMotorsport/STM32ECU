@@ -90,6 +90,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	static uint32_t standstill;
 	static uint8_t allowstop;
     static uint32_t limpcounter;
+	static uint32_t nextmsg = 0;
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
@@ -116,6 +117,8 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	{
 		CAN_SendStatus(1, RunningState, readystate );
 	}
+
+	uint32_t curtick = gettimer();
 
 	PrintRunning("RTDM:TA");
 
@@ -242,7 +245,11 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         // if allowed, process torque request, else request 0.
 
-        CarState.Torque_Req = PedalTorqueRequest();  // calculate request from APPS
+        //CarState.Torque_Req = PedalTorqueRequest();  // calculate request from APPS
+
+		float torque_req = PedalTorqueRequest();
+		
+
 
 #ifdef TORQUEVECTOR
 
@@ -279,12 +286,19 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 				//	doRegen(ADCState.Regen_Percent, ADCState.SteeringAngle, &adj);
 				//else
 				{
-					CarState.Torque_Req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 ) ;
+					torque_req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 ) ;
 				}
     		}
         }
 
-		doVectoring( CarState.Torque_Req, &adj, &spd ); // process vectoring after getting positive or negative request.
+		if ( curtick > nextmsg && torque_req > 0 )
+		{
+			nextmsg = curtick + 1000;
+			DebugPrintf("Current req %f pedals %lu %lu %lu brakes %lu %lu", torque_req, ADCState.Torque_Req_R_Percent, ADCState.Torque_Req_L_Percent, ADCState.Regen_Percent, ADCState.BrakeF, ADCState.BrakeR );
+		}
+
+		// doVectoring sets the final torque request value for state.
+		doVectoring( torque_req, &adj, &spd ); // process vectoring after getting positive or negative request.
 
 		if ( CarState.APPSstatus )
 			setOutput(TSLED,On);
