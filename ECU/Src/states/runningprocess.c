@@ -308,10 +308,10 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	//uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
 
-	spd->FL =3000;//maxSpeed;
-	spd->FR =3000;//maxSpeed;
-	spd->RL =3000;//maxSpeed;
-	spd->RR =3000;//maxSpeed;
+	spd.FL =3000;//maxSpeed;
+	spd.FR =3000;//maxSpeed;
+	spd.RL =3000;//maxSpeed;
+	spd.RR =3000;//maxSpeed;
 
 		if ( CarState.APPSstatus )
 			setOutput(TSLED,On);

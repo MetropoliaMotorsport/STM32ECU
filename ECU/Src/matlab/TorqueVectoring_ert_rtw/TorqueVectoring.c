@@ -128,7 +128,7 @@ static void rt_InitInfAndNaN(size_t realSize)
   rtInf = rtGetInf();
   rtInfF = rtGetInfF();
   rtMinusInf = rtGetMinusInf();
-  rtMinusInfF = rtGetMinusInfF();
+  //rtMinusInfF = rtGetMinusInfF();
 }
 
 /* Test if value is infinite */
@@ -140,7 +140,7 @@ static boolean_T rtIsInf(real_T value)
 /* Test if single-precision value is infinite */
 static boolean_T rtIsInfF(real32_T value)
 {
-  return (boolean_T)(((value)==rtInfF || (value)==rtMinusInfF) ? 1U : 0U);
+  //return (boolean_T)(((value)==rtInfF || (value)==rtMinusInfF) ? 1U : 0U);
 }
 
 /* Test if value is not a number */

@@ -214,7 +214,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		DebugPrintf("Current req %f pedals %lu %lu %lu brakes %lu %lu", CarState.Torque_Req, ADCState.Torque_Req_R_Percent, ADCState.Torque_Req_L_Percent, ADCState.Regen_Percent, ADCState.BrakeF, ADCState.BrakeR );
 	}
 
-	//doVectoring( CarState.Torque_Req, &adj, &spd );
+	doVectoring( CarState.Torque_Req, &adj, &spd );
 
 	if ( CarState.APPSstatus ) setOutput(TSLED,On); else setOutput(TSLED,Off);
 
