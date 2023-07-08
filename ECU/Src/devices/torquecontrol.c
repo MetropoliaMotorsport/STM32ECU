@@ -73,9 +73,9 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 #else
 	adj->FL = Torque_Req;
-	adj->FR = Torque_Req;
-	adj->RL = Torque_Req;
-	adj->RR = Torque_Req;
+	adj->FR = adj->FL;
+	adj->RL = adj->FL;
+	adj->RR = adj->FL;
 #endif
 
 	uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
@@ -165,12 +165,6 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	CAN_Send4vals( 0x7CF, (int16_t)TractionControl_Y.TC_FL*NMSCALING, (int16_t)TractionControl_Y.TC_FR*NMSCALING, (int16_t)TractionControl_Y.TC_RL*NMSCALING, (int16_t)TractionControl_Y.TC_RR*NMSCALING);
 	CAN_Send4vals( 0x7D0, (int16_t)Regeneration_Y.regenFL*NMSCALING, (int16_t)Regeneration_Y.regenFR*NMSCALING, (int16_t)Regeneration_Y.regenRL*NMSCALING, (int16_t)Regeneration_Y.regenRR*NMSCALING );
 	CAN_Send4vals( 0x7D1, (int16_t)TorqueVectoring_Y.TVFL*NMSCALING, (int16_t)TorqueVectoring_Y.TVFR*NMSCALING, (int16_t)TorqueVectoring_Y.TVRL*NMSCALING, (int16_t)TorqueVectoring_Y.TVRR*NMSCALING );
-
-#else
-	adj->FL = Torque_Req;
-	adj->FR = adj->FL;
-	adj->RL = adj->FL;
-	adj->RR = adj->FL;
 #endif
 
 	float avg = 0;

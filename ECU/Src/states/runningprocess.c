@@ -291,7 +291,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
     		}
         }
 
-		if ( curtick > nextmsg && torque_req > 0 )
+		if ( curtick > nextmsg )
 		{
 			nextmsg = curtick + 1000;
 			DebugPrintf("Current req %f pedals %lu %lu %lu brakes %lu %lu", torque_req, ADCState.Torque_Req_R_Percent, ADCState.Torque_Req_L_Percent, ADCState.Regen_Percent, ADCState.BrakeF, ADCState.BrakeR );
