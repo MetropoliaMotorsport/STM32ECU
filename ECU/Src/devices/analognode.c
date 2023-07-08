@@ -113,7 +113,7 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 #ifndef APPSFIXL
 
 		int percentage = ((100000/(1831-423))*(AccelL-423))/100;
-		if ( percentage > 100 )
+		if ( percentage > 1000 )
 			percentage = 0;
 		if ( percentage < 0 )
 			percentage = 0;
