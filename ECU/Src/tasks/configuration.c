@@ -774,6 +774,8 @@ bool DoMenu( uint16_t input )
 
 			DebugPrintf("\nSaving settings\n");
 
+			writeFullConfigEEPROM();
+
 			if ( dofullsave )
 			{
 				writeFullConfigEEPROM();
