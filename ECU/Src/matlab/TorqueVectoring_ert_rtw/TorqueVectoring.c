@@ -47,7 +47,7 @@ extern real_T rtInf;
 extern real_T rtMinusInf;
 extern real_T rtNaN;
 extern real32_T rtInfF;
-extern real32_T rtMinusInfF;
+extern real32_T ;
 extern real32_T rtNaNF;
 static void rt_InitInfAndNaN(size_t realSize);
 static boolean_T rtIsInf(real_T value);

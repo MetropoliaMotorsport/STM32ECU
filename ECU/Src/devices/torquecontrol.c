@@ -78,12 +78,12 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	adj->RR = adj->FL;
 #endif
 
-	uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
+	//uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
 
-	spd->FL =maxSpeed;
-	spd->FR =maxSpeed;
-	spd->RL =maxSpeed;
-	spd->RR =maxSpeed;
+	spd->FL =3000;//maxSpeed;
+	spd->FR =3000;//maxSpeed;
+	spd->RL =3000;//maxSpeed;
+	spd->RR =3000;//maxSpeed;
 
 #ifdef MATLAB
 	// general config, not from dynamic state
@@ -177,7 +177,6 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	CarState.Torque_Req = avg;
 }
 
-
 /*
  * APPS Check, Should ignore regen sensor and only use physical brake.
  *
@@ -205,7 +204,7 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 
 	//The average value of the APPS // signals pedal travel equivalent to ≥25 % desired motor torque
 	int TorqueRequestPercent = getTorqueReqCurve(ADCState.Torque_Req_R_Percent) / 10;
-	//getTorqueReqCurve(ADCState.Torque_Req_R_Percent) / 10;
+	getTorqueReqCurve(ADCState.Torque_Req_R_Percent) / 10;
 
 	// The commanded motor torque must remain at 0 N m until the APPS signals less than 5 % pedal travel
 	// and 0 N m desired motor torque, regardless of whether the brakes are still actuated or not.

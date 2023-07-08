@@ -298,7 +298,20 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		}
 
 		// doVectoring sets the final torque request value for state.
-		doVectoring( torque_req, &adj, &spd ); // process vectoring after getting positive or negative request.
+		//doVectoring( torque_req, &adj, &spd ); // process vectoring after getting positive or negative request.
+
+	adj.FL = torque_req;
+	adj.FR = torque_req;
+	adj.RL = torque_req;
+	adj.RR = torque_req;
+	CarState.Torque_Req = torque_req;
+
+	//uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
+
+	spd->FL =3000;//maxSpeed;
+	spd->FR =3000;//maxSpeed;
+	spd->RL =3000;//maxSpeed;
+	spd->RR =3000;//maxSpeed;
 
 		if ( CarState.APPSstatus )
 			setOutput(TSLED,On);
