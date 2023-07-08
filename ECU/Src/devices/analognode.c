@@ -121,7 +121,7 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 		ADCStateNew.APPSL = AccelL;
 #endif
 #ifdef APPSFIXR
-		ADCStateNew.Torque_Req_R_Percent = getTorqueReqPercL(AccelL);
+		ADCStateNew.Torque_Req_R_Percent = percentage;//getTorqueReqPercL(AccelL);
 		ADCStateNew.APPSR = AccelL;
 #endif
 		ADCStateNew.Regen_Percent = getBrakeTravelPerc(Regen);
