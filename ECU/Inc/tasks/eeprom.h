@@ -16,7 +16,7 @@
 
 #define EEPROMVERSIONSTR		("MMECUV0.1")
 
-typedef enum EEPROM_cmd { EEPROMCurConf, EEPROMRunningData, writeEEPROM0, writeEEPROM1, writeEEPROMC, FullConfigEEPROM, FullEEPROM } EEPROM_cmd;
+typedef enum EEPROM_cmd { EEPROMCurConf, EEPROMRunningData, writeEEPROM0, writeEEPROM1, writeEEPROMC, FullConfigEEPROM, FullEEPROM, zeroEEPROM } EEPROM_cmd;
 
 typedef struct EEPROM_msg {
 	EEPROM_cmd cmd;

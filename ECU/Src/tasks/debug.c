@@ -1580,6 +1580,10 @@ static void DebugTask(void *pvParameters)
 				{
 					debugSensors(tkn2);
 				}
+				else if ( streql(tkn1, "cleareeprom") )
+				{
+					clearEEPROM();
+				}
 				else if ( streql(tkn1, "buzzer") )
 				{
 					UARTprintf("Sounding buzzer\r\n");

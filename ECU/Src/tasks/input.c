@@ -147,7 +147,7 @@ void InputTask(void *argument)
 					char str[40];
 					if ( curstate )
 					{
-						snprintf(str, 40, "Button %d pressed", i );
+						snprintf(str, 40, "Button %d pressed (%lu)", i, gettimer() );
 						DebugMsg(str);
 
 						Input[i].pressed = true;
@@ -157,7 +157,7 @@ void InputTask(void *argument)
 
 					} else
 					{
-						snprintf(str, 40, "Button %d released", i );
+						snprintf(str, 40, "Button %d released (%lu)", i, gettimer() );
 						DebugMsg(str);
 						Input[i].lastreleased=gettimer();
 					}

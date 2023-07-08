@@ -176,6 +176,11 @@ void EEPROMTask(void *argument)
 					Remaining_Bytes = sizeof(EEPROMdata);
 					Memory_Address = 0;
 					break;
+				case zeroEEPROM:
+					memset(EEPROMdata.buffer, 0, sizeof(EEPROMdata));
+					Remaining_Bytes = sizeof(EEPROMdata);
+					Memory_Address = 0;
+					break;
 				default:
 					break;
 				}
@@ -888,6 +893,11 @@ static void saveRunningData(xTimerHandle pxTimer) {
 	writeEEPROMRunningData();
 }
 
+bool clearEEPROM( void )
+{
+	EEPROM_msg msg = {zeroEEPROM};
+	return xQueueSend(EEPROMQueue,&msg,0);
+}
 
 bool initEEPROM( void )
 {

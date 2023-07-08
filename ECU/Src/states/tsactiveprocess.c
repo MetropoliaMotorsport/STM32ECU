@@ -29,6 +29,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	static uint16_t readystate;
 
 	static uint32_t prechargetimer = 0;
+	static uint32_t nextprechargemsg = 0;
 
 	char str[80] = "";
 
@@ -42,6 +43,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 		lcd_clear();
 		//lcd_settitle("TS Active");
 		prechargetimer = gettimer();
+		nextprechargemsg = 0;
 		InverterAllowTorqueAll(false);
 
 	    CarState.AllowRegen = false;
@@ -110,6 +112,14 @@ int TSActiveProcess( uint32_t OperationLoops )
 		}
 	}
 
+	if ( !prechargedone )
+	{
+		if ( nextprechargemsg < curtime )
+		{
+			nextprechargemsg = curtime + 200;
+			DebugPrintf("TS at %lu invV:%d", curtime, CarState.VoltageINV);
+		}
+	}
 
 	if ( prechargedone && CarState.VoltageINV <= TSACTIVEV)
 	{
