@@ -1606,6 +1606,46 @@ static void DebugTask(void *pvParameters)
 				{
 					clearEEPROM();
 				}
+				else if ( streql(tkn1, "profiles") )
+				{
+					UARTwrite("Setting pedal profiles.\r\n");
+					eepromdata * data = getEEPROMBlock(0);
+					
+					data->pedalcurves[0].PedalCurveInput[0] = 50;
+					data->pedalcurves[0].PedalCurveInput[1] = 950;
+					data->pedalcurves[0].PedalCurveInput[2] = 0;
+					data->pedalcurves[0].PedalCurveOutput[0] = 0;
+					data->pedalcurves[0].PedalCurveOutput[1] = 1000;
+					data->pedalcurves[0].PedalCurveOutput[2] = 0;
+
+					data->pedalcurves[1].PedalCurveInput[0] = 50;
+					data->pedalcurves[1].PedalCurveInput[1] = 500;
+					data->pedalcurves[1].PedalCurveInput[2] = 0;
+					data->pedalcurves[1].PedalCurveOutput[0] = 0;
+					data->pedalcurves[1].PedalCurveOutput[1] = 1000;
+					data->pedalcurves[1].PedalCurveOutput[2] = 0;
+
+					data->pedalcurves[2].PedalCurveInput[0] = 50;
+					data->pedalcurves[2].PedalCurveInput[1] = 600;
+					data->pedalcurves[2].PedalCurveInput[2] = 950;
+					data->pedalcurves[2].PedalCurveInput[3] = 0;
+					data->pedalcurves[2].PedalCurveOutput[0] = 0;
+					data->pedalcurves[2].PedalCurveOutput[1] = 400;
+					data->pedalcurves[2].PedalCurveOutput[2] = 1000;
+					data->pedalcurves[2].PedalCurveOutput[3] = 0;
+
+					if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+					{
+						vTaskDelay(20);
+						while ( EEPROMBusy() )
+						{
+							vTaskDelay(20);
+						}
+						UARTwrite("Saved.\r\n");
+					} else
+						UARTwrite("Error saving config.\r\n");
+
+				}
 				else if ( streql(tkn1, "buzzer") )
 				{
 					UARTprintf("Sounding buzzer\r\n");
@@ -1643,7 +1683,7 @@ static void DebugTask(void *pvParameters)
 
 				if ( streql(tkn1, "help" ) )
 				{
-					UARTwrite("\r\ECU Debug Help.\r\n\r\n");
+					UARTwrite("\r\nECU Debug Help.\r\n\r\n");
 
 					UARTwrite("List of available commands:\r\n");
 

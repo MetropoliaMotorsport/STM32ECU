@@ -21,6 +21,7 @@
 #define MAXPUMPCURRENT		20
 
 typedef struct nodepowerreqstruct {
+	uint8_t bus;
 	uint8_t nodeid; //
 	uint8_t output; // enable
 	uint8_t state; // request state
@@ -29,6 +30,7 @@ typedef struct nodepowerreqstruct {
 } nodepowerreq;
 
 typedef struct nodepowerpwmstruct {
+	uint8_t bus;
 	uint8_t nodeid; //
 	uint8_t output;
 	uint8_t dutycycle; // enable
@@ -115,12 +117,12 @@ devicepowerreq DevicePowerList[] =
 nodepowerreq PowerRequests[] =
 {
 #ifndef HPF2023
-		{ 33, 0, 0, {0} },
+		{ 1, 33, 0, 0, {0} },
 #endif
-		{ 34, 0, 0, {0} },
-		{ 35, 0, 0, {0} },
-		{ 36, 0, 0, {0} },
-		{ 37, 0, 0, {0} },
+		{ 1, 34, 0, 0, {0} },
+		{ 1, 35, 0, 0, {0} },
+		{ 1, 36, 0, 0, {0} },
+		{ 2, 37, 0, 0, {0} },
 		{ 0 }
 };
 
@@ -1019,16 +1021,37 @@ bool sendFanPWM( uint8_t leftduty, uint8_t rightduty )
 	if ( leftduty < 20 && leftduty > 0 ) leftduty = 20;
 	if ( rightduty < 20 && rightduty > 0) rightduty = 20;
 
-	uint8_t index = getPowerDeviceIndex(LeftFans);
+	if ( nodefanpwmreqs[0].nodeid == 0 ) // nodeid not yet set, find and assign it.
+	{
+		uint8_t index = getPowerDeviceIndex(LeftFans);
 
-	nodefanpwmreqs[0].nodeid = DevicePowerList[index].nodeid;
-	nodefanpwmreqs[0].output = DevicePowerList[index].output;
+		for ( int j=0;PowerRequests[j].nodeid != 0;j++)
+		{
+			if ( PowerRequests[j].nodeid == nodefanpwmreqs[0].nodeid  )
+			{
+				nodefanpwmreqs[0].bus = PowerRequests[j].bus ;
+			}
+		}
+
+		nodefanpwmreqs[0].nodeid = DevicePowerList[index].nodeid;
+		nodefanpwmreqs[0].output = DevicePowerList[index].output;
+		
+		index = getPowerDeviceIndex(RightFans);
+
+		for ( int j=0;PowerRequests[j].nodeid != 0;j++)
+		{
+			if ( PowerRequests[j].nodeid == nodefanpwmreqs[0].nodeid  )
+			{
+				nodefanpwmreqs[1].bus = PowerRequests[j].bus ;
+			}
+		}
+
+		nodefanpwmreqs[1].nodeid = DevicePowerList[index].nodeid;
+		nodefanpwmreqs[1].output = DevicePowerList[index].output;
+	}
 	nodefanpwmreqs[0].dutycycle = leftduty;
 
-	index = getPowerDeviceIndex(RightFans);
 
-	nodefanpwmreqs[1].nodeid = DevicePowerList[index].nodeid;
-	nodefanpwmreqs[1].output = DevicePowerList[index].output;
 	nodefanpwmreqs[1].dutycycle = rightduty;
 
 	queuedfanpwmLeft = true;
@@ -1039,7 +1062,17 @@ bool sendFanPWM( uint8_t leftduty, uint8_t rightduty )
 int sendPowerNodeErrReset( uint8_t id, uint8_t channel )
 {
 	uint8_t candata[8] = { id, 12, channel};
-	CAN1Send(NodeCmd_ID, 3, candata );
+	// look up bus, coul
+	for ( int j=0;PowerRequests[j].nodeid != 0;j++)
+	{
+		if ( PowerRequests[j].nodeid == id )
+		{
+			if ( PowerRequests[j].bus == 2 )
+				CAN2Send(NodeCmd_ID, 3, candata );
+			else 
+				CAN1Send(NodeCmd_ID, 3, candata );
+		}
+	}
 	return 0;
 }
 
@@ -1096,8 +1129,13 @@ int sendPowerNodeReq( void )
 			candata[0] = PowerRequests[i].nodeid;
 			candata[2] = PowerRequests[i].output;
 			candata[3] = PowerRequests[i].state;
-			if ( PowerRequests[i].nodeid != 36)
-				CAN1Send(NodeCmd_ID, 8, candata );
+			if ( PowerRequests[i].nodeid != 36) // no commands to node 36?
+			{
+				if ( PowerRequests[i].bus == 2 )
+					CAN2Send(NodeCmd_ID, 8, candata );
+				else 
+					CAN1Send(NodeCmd_ID, 8, candata );
+			}
 			// don't reset request until we've seen an ack -> use ack handler to clear request.
 			// give a small delay between can power request messages, to allow a tiny bit of leeway for some inrush maybe.
 			vTaskDelay(1);
@@ -1114,7 +1152,13 @@ int sendPowerNodeReq( void )
 			candata[2] = (0x1 << nodefanpwmreqs[0].output) + (0x1 << nodefanpwmreqs[1].output);
 			candata[3] = nodefanpwmreqs[0].dutycycle;
 			candata[4] = nodefanpwmreqs[1].dutycycle;
-			CAN1Send(NodeCmd_ID, 5, candata );
+
+			if ( nodefanpwmreqs[0].bus == 2 )
+					CAN2Send(NodeCmd_ID, 5, candata );
+				else 
+					CAN1Send(NodeCmd_ID, 5, candata );
+
+			//CAN1Send(NodeCmd_ID, 5, candata );
 		} else // fans on different nodes
 		{
 			if ( queuedfanpwmLeft )
@@ -1122,7 +1166,13 @@ int sendPowerNodeReq( void )
 				candata[0] = nodefanpwmreqs[0].nodeid;
 				candata[2] = (0x1 << nodefanpwmreqs[0].output);
 				candata[3] = nodefanpwmreqs[0].dutycycle;
-				CAN1Send(NodeCmd_ID, 4, candata );
+
+				if ( nodefanpwmreqs[0].bus == 2 )
+					CAN2Send(NodeCmd_ID, 4, candata );
+				else 
+					CAN1Send(NodeCmd_ID, 4, candata );
+
+				//CAN1Send(NodeCmd_ID, 4, candata );
 			}
 
 			if ( queuedfanpwmRight )
@@ -1130,7 +1180,13 @@ int sendPowerNodeReq( void )
 				candata[0] = nodefanpwmreqs[1].nodeid;
 				candata[2] = (0x1 << nodefanpwmreqs[1].output);
 				candata[3] = nodefanpwmreqs[1].dutycycle;
-				CAN1Send(NodeCmd_ID, 4, candata );
+
+				if ( nodefanpwmreqs[1].bus == 2 )
+					CAN2Send(NodeCmd_ID, 4, candata );
+				else 
+					CAN1Send(NodeCmd_ID, 4, candata );
+
+				//CAN1Send(NodeCmd_ID, 4, candata );
 			}
 		}
 	}
@@ -1189,7 +1245,12 @@ int initPowerNodes( void )
 	RegisterCan1Message(&PowerNode34);
 	RegisterCan1Message(&PowerNode35);
 	RegisterCan1Message(&PowerNode36);
+
+#ifdef BACKUPCAN
+	RegisterCan2Message(&PowerNode37);
+#else
 	RegisterCan1Message(&PowerNode37);
+#endif
 
 	return 0;
 }

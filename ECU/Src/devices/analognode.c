@@ -576,7 +576,11 @@ int initAnalogNodes( void )
 	RegisterCan1Message(&AnalogNode9);
 #endif
 	RegisterCan1Message(&AnalogNode10);
+#ifdef BACKUPCAN
+	RegisterCan2Message(&AnalogNode11);
+#else
 	RegisterCan1Message(&AnalogNode11);
+#endif
 
 #ifndef HPF2023
 	RegisterCan1Message(&AnalogNode12);
