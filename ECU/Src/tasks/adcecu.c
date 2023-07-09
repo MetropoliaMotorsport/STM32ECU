@@ -303,7 +303,11 @@ bool SetupADCInterpolationTables( eepromdata * data )
 
 		int TravMin = data->ADCTorqueReqLInput[0];
 		int TravMax = data->ADCTorqueReqLInput[1];
-
+		if ( TravMax == 0 ) // not calibrated, force 0 output
+		{
+			TravMin = 64000;
+			TravMax = 64000;
+		}
 		int TravMinOffset = 10;
 		int TravMaxOffset = 98;
 
@@ -327,6 +331,11 @@ bool SetupADCInterpolationTables( eepromdata * data )
 
 		TravMin = data->ADCTorqueReqRInput[0];
 		TravMax = data->ADCTorqueReqRInput[1];
+		if ( TravMax == 0 )
+		{
+			TravMin = 64000;
+			TravMax = 64000;
+		}
 		TravMinOffset = 10;
 		TravMaxOffset = 98;
 
@@ -350,6 +359,11 @@ bool SetupADCInterpolationTables( eepromdata * data )
 
 		TravMin = data->ADCBrakeTravelInput[0];
 		TravMax = data->ADCBrakeTravelInput[1];
+		if ( TravMax == 0 )
+		{
+			TravMin = 64000;
+			TravMax = 64000;
+		}
 		TravMinOffset = 10;
 		TravMaxOffset = 98;
 
