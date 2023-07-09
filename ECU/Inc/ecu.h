@@ -13,7 +13,9 @@
 
 //#define WATCHDOG
 
-#define BENCH // benchtest compile, don't complain about missing BMS or IMD messages.
+#define BACKUPCAN
+
+//#define BENCH // benchtest compile, don't complain about missing BMS or IMD messages. Doesn't check canbuserrors.
 
 #define TESTBOARD
 
@@ -24,6 +26,8 @@
 //#define NOBRAKELIGHTCONTROL
 
 //#define ADCDEBUGINFO
+
+//#define TORQUEERRORCHECK
 
 #define IGNOREI2CERR
 
