@@ -119,10 +119,17 @@ nodepowerreq PowerRequests[] =
 #ifndef HPF2023
 		{ 1, 33, 0, 0, {0} },
 #endif
+#ifdef BACKUPCAN
+		{ 1, 34, 0, 0, {0} },
+		{ 2, 35, 0, 0, {0} },
+		{ 1, 36, 0, 0, {0} },
+		{ 2, 37, 0, 0, {0} },
+#else
 		{ 1, 34, 0, 0, {0} },
 		{ 1, 35, 0, 0, {0} },
 		{ 1, 36, 0, 0, {0} },
-		{ 2, 37, 0, 0, {0} },
+		{ 1, 37, 0, 0, {0} },
+#endif
 		{ 0 }
 };
 
@@ -1243,12 +1250,14 @@ int initPowerNodes( void )
 	RegisterCan1Message(&PowerNode33);
 #endif
 	RegisterCan1Message(&PowerNode34);
-	RegisterCan1Message(&PowerNode35);
+
 	RegisterCan1Message(&PowerNode36);
 
 #ifdef BACKUPCAN
+	RegisterCan2Message(&PowerNode35);
 	RegisterCan2Message(&PowerNode37);
 #else
+	RegisterCan1Message(&PowerNode35);
 	RegisterCan1Message(&PowerNode37);
 #endif
 
