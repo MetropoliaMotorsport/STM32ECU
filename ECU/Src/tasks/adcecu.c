@@ -303,6 +303,7 @@ bool SetupADCInterpolationTables( eepromdata * data )
 
 		int TravMin = data->ADCTorqueReqLInput[0];
 		int TravMax = data->ADCTorqueReqLInput[1];
+
 		int TravMinOffset = 10;
 		int TravMaxOffset = 98;
 
@@ -310,7 +311,6 @@ bool SetupADCInterpolationTables( eepromdata * data )
 		{
 			TravMinOffset = data->ADCTorqueReqLInput[2];
 			TravMaxOffset = data->ADCTorqueReqLInput[3];
-
 		}
 
 		TorqueReqLInput[2] = (TravMax-TravMin)/100*TravMinOffset+TravMin;
@@ -360,7 +360,7 @@ bool SetupADCInterpolationTables( eepromdata * data )
 		}
 
 	// regen
-		BrakeTravelInput[2] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
+		BrakeTravelInput[2] = (TravMax-TravMin)/100*TravMinOffset+TravMin;
 		BrakeTravelInput[3] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
 
 #ifdef TORQUEERRORCHECK

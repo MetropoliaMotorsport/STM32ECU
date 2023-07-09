@@ -85,7 +85,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
   // used so that main is still generated to see all the init steps CubeMX generated
   //	so that they can be integrated into our main.
-	realmain();
+  realmain();
   /* USER CODE END 1 */
 
   /* Enable I-Cache---------------------------------------------------------*/
@@ -111,7 +111,7 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+  /* USER CODE END SysInit *
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();

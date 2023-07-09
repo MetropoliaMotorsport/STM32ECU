@@ -1174,6 +1174,35 @@ void debugCurrent( const char * tkn2 )
 		}
 }
 
+static void debugCurve( const int tokens, const char * tkn2, const int val3 )
+{
+	if ( tokens != 3 )
+	{
+		UARTwrite("Please give interpolation and test value\r\n");
+	} else
+	{
+		if ( val3 > 1024*64-1 || val3 < 0 )
+		{
+			UARTwrite("invalid RAW value given");
+		} else
+		{
+			if ( streql(tkn2, "left") || streql(tkn2, "l" ) )
+				snprintf(str, 80, "Pedal Left input %d -> %d\r\n", val3, getTorqueReqPercL(val3) / 10);
+			else if ( streql(tkn2, "right") || streql(tkn2, "r" ) )
+				snprintf(str, 80, "Pedal Right input %d -> %d\r\n", val3, getTorqueReqPercR(val3) / 10);
+			else if ( streql(tkn2, "regen") || streql(tkn2, "reg" ) )
+				snprintf(str, 80, "Pedal Regen input %d -> %d\r\n", val3, getBrakeTravelPerc(val3) / 10);
+			else if ( streql(tkn2, "curve") || streql(tkn2, "c" ) )
+				snprintf(str, 80, "Pedal torque req curve input %d -> %d\r\n", val3, getTorqueReqCurve(val3) / 10);
+			else
+				snprintf(str, 80, "Bad input %s %d\r\n", tkn2, val3);
+			
+			UARTwrite(str);
+		}
+	}
+}
+
+
 //run a small state machine on incoming uart charecters to seperate escape co
 uint16_t processUARTchar( const uint8_t ch, uint8_t * state )
 {
@@ -1604,12 +1633,25 @@ static void DebugTask(void *pvParameters)
 				}
 				else if ( streql(tkn1, "eeprom") )
 				{
+					resetEEPROM();
+				}
+				else if ( streql(tkn1, "zeroeeprom") )
+				{
 					clearEEPROM();
+					vTaskDelay(20);
+					while ( EEPROMBusy() )
+					{
+						vTaskDelay(20);
+					}
+					UARTwrite("Cleared.\r\n");
+
 				}
 				else if ( streql(tkn1, "profiles") )
 				{
 					UARTwrite("Setting pedal profiles.\r\n");
 					eepromdata * data = getEEPROMBlock(0);
+
+					snprintf(data->VersionString, "%s", EEPROMVERSIONSTR);
 					
 					data->pedalcurves[0].PedalCurveInput[0] = 50;
 					data->pedalcurves[0].PedalCurveInput[1] = 950;
@@ -1634,7 +1676,63 @@ static void DebugTask(void *pvParameters)
 					data->pedalcurves[2].PedalCurveOutput[2] = 1000;
 					data->pedalcurves[2].PedalCurveOutput[3] = 0;
 
-					if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+					if ( writeFullConfigEEPROM() ) // enqueue write the data to eeprom.
+					{
+						vTaskDelay(20);
+						while ( EEPROMBusy() )
+						{
+							vTaskDelay(20);
+						}
+						UARTwrite("Saved.\r\n");
+					} else
+						UARTwrite("Error saving config.\r\n");
+
+				}
+				else if ( streql(tkn1, "adcval") )
+				{
+					debugCurve( tokens, tkn2, val2 );
+				}
+				else if ( streql(tkn1, "eepromfix") )
+				{
+					UARTwrite("Fixing eeprom header.\r\n");
+					eepromdata * data = getEEPROMBlock(1);
+					snprintf(data->VersionString, "%s", EEPROMVERSIONSTR);
+					data = getEEPROMBlock(2);
+					snprintf(data->VersionString, "%s", EEPROMVERSIONSTR);
+
+					if ( writeFullEEPROM() ) // enqueue write the data to eeprom.
+					{
+						vTaskDelay(20);
+						while ( EEPROMBusy() )
+						{
+							vTaskDelay(20);
+						}
+						UARTwrite("Saved.\r\n");
+					} else
+						UARTwrite("Error saving config.\r\n");
+				}
+				else if ( streql(tkn1, "settestcal") )
+				{
+					UARTwrite("Setting pedal profiles.\r\n");
+					eepromdata * data = getEEPROMBlock(0);
+
+					snprintf(data->VersionString, "%s", EEPROMVERSIONSTR);
+				
+					data->ADCTorqueReqLInput[0] = 423;
+					data->ADCTorqueReqLInput[1] = 1831;
+					data->ADCTorqueReqLInput[2] = 0;
+					data->ADCTorqueReqLInput[3] = 0;
+
+					data->ADCTorqueReqRInput[0] = 386;
+					data->ADCTorqueReqRInput[1] = 1749;
+					data->ADCTorqueReqRInput[2] = 0;
+					data->ADCTorqueReqRInput[3] = 0;
+					data->ADCBrakeTravelInput[0] = 144;
+					data->ADCBrakeTravelInput[1] = 971;
+					data->ADCBrakeTravelInput[2] = 0;
+					data->ADCBrakeTravelInput[3] = 0;
+
+					if ( writeFullConfigEEPROM() ) // enqueue write the data to eeprom.
 					{
 						vTaskDelay(20);
 						while ( EEPROMBusy() )

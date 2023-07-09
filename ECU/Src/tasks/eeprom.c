@@ -179,7 +179,6 @@ void EEPROMTask(void *argument)
 					break;
 				case zeroEEPROM:
 					memset(EEPROMdata.buffer, 0, sizeof(EEPROMdata));
-					snprintf(EEPROMdata.version, "%s", EEPROMVERSIONSTR);
 					Remaining_Bytes = sizeof(EEPROMdata);
 					Memory_Address = 0;
 					break;
@@ -200,7 +199,6 @@ void EEPROMTask(void *argument)
 
 	vTaskDelete(NULL);
 }
-
 
 bool GetEEPROMCmd( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
@@ -671,7 +669,8 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *I2cHandle)
 
 int startupReadEEPROM( void )
 {
-	// block writing to eeprom, only reading at init to prevent potential corruptin.
+	int retval = 0;
+	// block writing to eeprom, only reading at init to prevent potential corruption.
 	HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 1);
 
 	vTaskDelay(100); // Allow some time for EEPROM chip to initialise itself before start trying to access.
@@ -705,12 +704,16 @@ int startupReadEEPROM( void )
 
 	if ( !checkversion((char *)EEPROMdata.buffer) )
 	{
-		DebugPrintf("EEprom version bad");
-		return 1;
+		DebugPrintf("EEprom version bad, resetting data\n\r");
+		resetEEPROM();
+
+		UARTwrite("Eeprom reset.\r\n");
+		retval = 1;
 	}
 
 	// only read active block in.
 	Memory_Address = &EEPROMdata.active-EEPROMdata.buffer;
+
 
 	result = readEEPROMAddr( &EEPROMdata.active-EEPROMdata.buffer, 1 );
 	if ( result != HAL_OK )
@@ -727,13 +730,15 @@ int startupReadEEPROM( void )
 		return result;
 	}
 
-	if ( !checkversion((char *)getEEPROMBlock( 0 )) )
+	if ( checkversion((char *)getEEPROMBlock( 0 )) )
 	{
-		DebugPrintf("EEprom using block 1");
-		return 1;
+		DebugPrintf("EEprom active block %d OK", EEPROMdata.active);
+		return retval;
 	}
-	DebugPrintf("EEprom using block 0");
-	return 0;
+	// right now, active block is never switched in practice.
+	DebugPrintf("EEprom active config data  not found, resetting and using 1\n\r");
+	resetEEPROM();
+	return retval;
 	// headers ok, continue.
 #endif
 }
@@ -900,6 +905,56 @@ static void saveRunningData(xTimerHandle pxTimer) {
 	writeEEPROMRunningData();
 }
 
+bool resetEEPROM( void )
+{
+	memset(EEPROMdata.buffer, 0, sizeof(EEPROMdata));
+
+	snprintf(EEPROMdata.version, "%s", EEPROMVERSIONSTR);
+
+	eepromdata * data = &EEPROMdata.block1;
+	EEPROMdata.active = 1;
+
+	data->EnabledMotors=-0b1111;
+	snprintf(data->VersionString, "%s", EEPROMVERSIONSTR);	
+	data->pedalcurves[0].PedalCurveInput[0] = 50;
+	data->pedalcurves[0].PedalCurveInput[1] = 950;
+	data->pedalcurves[0].PedalCurveInput[2] = 0;
+	data->pedalcurves[0].PedalCurveOutput[0] = 0;
+	data->pedalcurves[0].PedalCurveOutput[1] = 1000;
+	data->pedalcurves[0].PedalCurveOutput[2] = 0;
+
+	data->pedalcurves[1].PedalCurveInput[0] = 50;
+	data->pedalcurves[1].PedalCurveInput[1] = 500;
+	data->pedalcurves[1].PedalCurveInput[2] = 0;
+	data->pedalcurves[1].PedalCurveOutput[0] = 0;
+	data->pedalcurves[1].PedalCurveOutput[1] = 1000;
+	data->pedalcurves[1].PedalCurveOutput[2] = 0;
+
+	data->pedalcurves[2].PedalCurveInput[0] = 50;
+	data->pedalcurves[2].PedalCurveInput[1] = 600;
+	data->pedalcurves[2].PedalCurveInput[2] = 950;
+	data->pedalcurves[2].PedalCurveInput[3] = 0;
+	data->pedalcurves[2].PedalCurveOutput[0] = 0;
+	data->pedalcurves[2].PedalCurveOutput[1] = 400;
+	data->pedalcurves[2].PedalCurveOutput[2] = 1000;
+	data->pedalcurves[2].PedalCurveOutput[3] = 0;
+	Remaining_Bytes = sizeof(EEPROMdata);
+	Memory_Address = 0;
+	eepromwritinginprogress = true;
+	HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0); // enable write pin.
+	if ( HAL_TIM_Base_Start_IT(&htim16) != HAL_OK) // start write timer.
+		Error_Handler();
+
+
+// wait for write
+	vTaskDelay(20);
+	while ( EEPROMBusy() )
+	{
+		vTaskDelay(20);
+	}
+	DebugPrintf("EEPROM Reset");
+}
+
 bool clearEEPROM( void )
 {
 	EEPROM_msg msg = {zeroEEPROM};
@@ -922,10 +977,8 @@ bool initEEPROM( void )
 		DeviceState.EEPROM = ENABLED;
 		break;
 	case 1 :
-		lcd_send_stringscroll("EEPRom Bad Data");
-		lcd_send_stringscroll("  Load New Data");
-		DeviceState.EEPROM = ERROR;
-		HAL_Delay(3000); // ensure message can be seen.
+		lcd_send_stringscroll("EEPRom Reset");
+		DeviceState.EEPROM = ENABLED;
 		EEPROMInitok = false;
 		break;
 	default :

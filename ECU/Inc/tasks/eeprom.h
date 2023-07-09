@@ -126,6 +126,8 @@ extern runtimedata_t * runtimedata_p;
 // 503 - 16 blocks. allocate 50 blocks : 128 blocks total
 
 bool initEEPROM( void );
+bool resetEEPROM( void );
+bool clearEEPROM( void );
 
 bool checkversion(char * data);
 
