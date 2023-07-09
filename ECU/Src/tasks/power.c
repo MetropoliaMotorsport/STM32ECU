@@ -326,10 +326,11 @@ void PowerTask(void *argument)
 		if ( !CheckBMS() )
 		{
 #ifndef BENCH
-			SetCriticalError(CRITERBMS); // keep flagging BMS error whilst on.
+
 #endif
 			if ( !BMSset)
 			{
+				SetCriticalError(CRITERBMS); // keep flagging BMS error whilst on.
 				setOutputNOW(BMSLED, On);
 				BMSset = true;
 			}

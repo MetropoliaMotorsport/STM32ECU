@@ -1523,6 +1523,8 @@ void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t ErrorSt
 
 int CheckCanError( void )
 {
+	static bool msg1 = false;
+	static bool msg2 = false;
 	int result = 0;
 
 	FDCAN_ProtocolStatusTypeDef CAN1Status, CAN2Status;
@@ -1541,6 +1543,8 @@ int CheckCanError( void )
 #endif
 #endif
 
+	uint32_t curtick = gettimer();
+
 	if ( CAN1Status.BusOff || CAN1Status.ErrorPassive ) // detect passive error instead and try to stay off bus till clears?
 	{
 	//	Errors.ErrorPlace = 0xAA;
@@ -1551,21 +1555,24 @@ int CheckCanError( void )
 		  if ( offcan1 == 0 )
 		  {
 #ifdef RECOVERCAN
-			  offcan1time = gettimer();
+			  offcan1time = curtick;
 #endif
 			  offcan1 = 1;
 			  DeviceState.CAN1 = OFFLINE;
 //					  offcan1count++; // increment occurances of coming off bus. if reach threshhold, go to error state.
 		  }
 		  Errors.ErrorPlace = 0xF1;
-		  LogError("CANBUS1 Down");
+		  if ( !msg1 )
+		  {
+			msg1 = true;
+		  	LogError("CANBUS1 Down");
+		  }
 //		  result +=1;
 	}
 
 #ifdef RECOVERCAN
-	if ( CAN1Status.BusOff && offcan1time+1000 >  gettimer() )
+	if ( CAN1Status.BusOff && offcan1time+1000 > curtick && offcan1 < 2 )
 	{
-
 		if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
 		{
 		// Start Error
@@ -1574,13 +1581,20 @@ int CheckCanError( void )
 			 result +=2;
 		} else
 		{
-			offcan1 = 0;
+			offcan1 = 2;
 			Errors.ErrorPlace = 0xF1;
-			LogError("CANBUS1 Up");
-			DeviceState.CAN1 = OPERATIONAL;
+
 			CAN_SendErrorStatus(254,0,0);
 		}
 	}
+
+	if ( offcan1 == 2 && offcan1time+2000 > curtick && !CAN1Status.BusOff )
+	{
+		LogError("CANBUS1 Up");
+		DeviceState.CAN1 = OPERATIONAL;
+		offcan1 = 0;
+		msg1 = false;
+	} 
 #endif
 
 #ifndef ONECAN
@@ -1595,17 +1609,24 @@ int CheckCanError( void )
 		if ( offcan2 == 0 )
 		{
 #ifdef RECOVERCAN
-		  offcan2time = gettimer();
+		  offcan2time = curtick;
 #endif
 		  offcan2 = 1;
 		}
 		Errors.ErrorPlace = 0xF3;
-		LogError("CANBUS0 Down");
-		//		  result +=4;
+		if ( !msg2 )
+		{
+			msg2 = true;
+		  	LogError("CANBUS0 Down");
+		}
+//		  result +=1;
+	} else
+	{
+		msg2 = false;
 	}
 
 #ifdef RECOVERCAN
-	if ( CAN2Status.BusOff && offcan2time+5000 >  gettimer() )
+	if ( CAN2Status.BusOff && offcan2time+5000 > curtick )
 	{
 		if (HAL_FDCAN_Start(&hfdcan2) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
 		{
@@ -1615,12 +1636,19 @@ int CheckCanError( void )
 			result +=8;
 		} else
 		{
-			offcan2 = 0;
-			LogError("CANBUS0 Up");
+			offcan2 = 2;
 			DeviceState.CAN0 = OPERATIONAL;
 			CAN_SendErrorStatus(254,0,0);
 		}
 	}
+
+	if ( offcan2 == 2 && offcan2time+6000 > curtick && !CAN2Status.BusOff )
+	{
+		LogError("CANBUS0 Up");
+		DeviceState.CAN1 = OPERATIONAL;
+		offcan2 = 0;
+		msg2 = false;
+	} 
 #endif
 #endif
 
