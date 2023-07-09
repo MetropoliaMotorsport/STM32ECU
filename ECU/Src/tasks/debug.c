@@ -1687,6 +1687,7 @@ static void DebugTask(void *pvParameters)
 					} else
 						UARTwrite("Error saving config.\r\n");
 
+					SetupADCInterpolationTables(getEEPROMBlock(0));
 				}
 				else if ( streql(tkn1, "adcval") )
 				{
@@ -1742,6 +1743,8 @@ static void DebugTask(void *pvParameters)
 						UARTwrite("Saved.\r\n");
 					} else
 						UARTwrite("Error saving config.\r\n");
+
+					SetupADCInterpolationTables(getEEPROMBlock(0));
 
 				}
 				else if ( streql(tkn1, "buzzer") )
