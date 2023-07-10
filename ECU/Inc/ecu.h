@@ -58,7 +58,8 @@
 	#define USEIMU
 	#define PWMSTEERING
 	#define LENZE
-	#define MOTORCOUNT		(4)
+	//#define MOTORCOUNT		(4)
+	#define MOTORCOUNT		(2)
 	#define MEMORATAR
 
 	#define retransmitIMU
