@@ -13,7 +13,7 @@
 
 //#define WATCHDOG
 
-#define TWOWHEELS
+//#define TWOWHEELS
 
 #define BACKUPCAN
 

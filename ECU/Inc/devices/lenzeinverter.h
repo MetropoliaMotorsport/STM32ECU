@@ -40,7 +40,7 @@
     #define Inverter2_NodeID			(1)
 #else
     #ifdef HPF2023
-    #define Inverter1_NodeID			(1)
+    #define Inverter1_NodeID			(6)
     #else
     #define Inverter1_NodeID			(2)
     #endif
