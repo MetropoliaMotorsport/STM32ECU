@@ -335,7 +335,7 @@ void InvTask(void *argument)
 			CANSendSDO(bus0, cfgmsg.id, cfgmsg.idx, cfgmsg.sub, cfgmsg.data);
 		}
 
-		vTaskDelay(3); // wait a bit so not right at sync point.
+		vTaskDelay(6); // wait a bit so not right at sync point.
 
 		int online = 0;
 		DeviceStatus lowest = OPERATIONAL;
