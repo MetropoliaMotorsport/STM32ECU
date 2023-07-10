@@ -13,6 +13,8 @@
 
 //#define WATCHDOG
 
+#define TWOWHEELS
+
 #define BACKUPCAN
 
 //#define BENCH // benchtest compile, don't complain about missing BMS or IMD messages. Doesn't check canbuserrors.
@@ -58,10 +60,11 @@
 	#define USEIMU
 	#define PWMSTEERING
 	#define LENZE
-	//#define MOTORCOUNT		(4)
+#ifdef TWOWHEELS
 	#define MOTORCOUNT		(2)
-	#define MEMORATAR
-
+#else
+	#define MOTORCOUNT		(4)
+#endif
 	#define retransmitIMU
 #endif
 

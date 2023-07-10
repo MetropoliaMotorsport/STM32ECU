@@ -35,12 +35,17 @@
 #define LENZE_APPC_OFFSET			(31)
 #define LENZE_MOTORB_OFFSET			(63)
 
-#ifdef HPF2023
-#define Inverter1_NodeID			(1)
+#ifdef TWOWHEELS
+    #define Inverter1_NodeID            (0xE)
+    #define Inverter2_NodeID			(1)
 #else
-#define Inverter1_NodeID			(2)
+    #ifdef HPF2023
+    #define Inverter1_NodeID			(1)
+    #else
+    #define Inverter1_NodeID			(2)
+    #endif
+    #define Inverter2_NodeID			(0xE)
 #endif
-#define Inverter2_NodeID			(0xE)
 
 // define which wheel is which, allows to keep the order same within arrays without being concerned about order of connection.
 
@@ -63,10 +68,18 @@
 
 #ifdef HPF2023
 
+#ifdef TWOWHEELS
+#define invFL						(2)
+#define invFR						(3)
+#define invRL						(0)
+#define invRR						(1)
+#else
+
 #define invFL						(0)
 #define invFR						(1)
 #define invRL						(2)
 #define invRR						(3)
+#endif
 
 #else
 
