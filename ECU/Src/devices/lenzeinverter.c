@@ -839,13 +839,15 @@ bool registerInverterCAN( void )
 	}
 
 	RegisterCan2Message(&InverterCANNMT[0]);
-	RegisterCan2Message(&InverterCANNMT[1]);
-
 	RegisterCan2Message(&InverterCANAPPCRDO[0]);
-	RegisterCan2Message(&InverterCANAPPCRDO[1]);
-
 	RegisterCan2Message(&InverterCANAPPCStatus[0]);
+
+	#if MOTORCOUNT > 2
+	RegisterCan2Message(&InverterCANNMT[1]);
+	RegisterCan2Message(&InverterCANAPPCRDO[1]);
 	RegisterCan2Message(&InverterCANAPPCStatus[1]);
+	#endif
+
 	return true;
 }
 
