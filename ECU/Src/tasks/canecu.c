@@ -88,6 +88,12 @@ static uint8_t * CANTxBuffer;
 static uint8_t * CurCANTxBuffer;
 static uint32_t CANTxLastsend;
 
+uint32_t rxcount1 = 0;
+uint32_t rxcount2 = 0;
+
+uint8_t canload1;
+uint8_t canload2;
+
 bool processCan1Message( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
 bool processCan2Message( FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
 void processCanTimeouts( void );
@@ -232,11 +238,14 @@ void CANTxTask(void *argument)
 
 					if ( msg.bus == bus1 )
 					{
-						gotsem = xSemaphoreTake(bus1TXDone, 10); // a bit of timeout so can't get permanently stuck here.
+						// reset tx empty semaphore to wait on it.
+						bool clearedsem = xQueueReset(bus1TXDone); // clear fifo done semaphore to wait for it again.
+						gotsem = xSemaphoreTake(bus1TXDone, 5); // a bit of timeout so can't get permanently stuck here.
 					}
 					else
 					{
-						gotsem = xSemaphoreTake(bus0TXDone, 10);
+						bool clearedsem = xQueueReset(bus0TXDone);
+						gotsem = xSemaphoreTake(bus0TXDone, 5);
 					}
 
 					if ( !gotsem )
@@ -723,7 +732,8 @@ char CAN_SendStatus( char state, char substate, uint32_t errorcode )
 	 stateless = state;
 	} else stateless = state;
 
-	uint8_t CANTxData[8] = { stateless, substate, getByte(errorcode, 0), getByte(errorcode, 1), getByte(errorcode, 2), getByte(errorcode, 3),HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1), ( ShutdownCircuitState() << 7 )+ HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2)}; // HAL_FDCAN_GetxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)
+	uint8_t CANTxData[8] = { stateless, substate, getByte(errorcode, 0), getByte(errorcode, 1), getByte(errorcode, 2), getByte(errorcode, 3),
+	HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1), ( ShutdownCircuitState() << 7 )+ HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2)}; // HAL_FDCAN_GetxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)
 #ifdef CAN2ERRORSTATUS
 	CAN2Send( ECU_CAN_ID, 8, CANTxData );
 #endif
@@ -1329,9 +1339,11 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	if(hfdcan->Instance == FDCAN1){
 		blinkOutput(LED3, BlinkVeryFast, Once);
 		Errors.CANCount1++;
+		rxcount1++;
 	} else if(hfdcan->Instance == FDCAN2) {
 		blinkOutput(LED2, BlinkVeryFast, Once);
-		 Errors.CANCount2++;
+		Errors.CANCount2++;
+		rxcount2++;
 	}
 
 	if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET)
