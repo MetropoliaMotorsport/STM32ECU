@@ -39,7 +39,7 @@
 #define HPF2023
 
 //#define APPSFIXL // uncomment if APPSL not readng to temporarily copy APPSR, do not use longterm.
-#define APPSFIXR // uncomment if APPSR not readng to temporarily copy APPSL, do not use longterm.
+//#define APPSFIXR // uncomment if APPSR not readng to temporarily copy APPSL, do not use longterm.
 
 //#define CHECKTSALPOWER
 
