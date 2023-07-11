@@ -368,6 +368,24 @@ void PowerTask(void *argument)
 #ifdef TSALP
 		static uint32_t nexttsal = 0;
 		static bool tsalset;
+		static bool tsalgset = true;
+
+
+		if ( CarState.VoltageINV > 60 )
+		{
+			if ( tsalgset )
+			{
+				tsalgset = false;
+				setDevicePower(TSALG, false);
+			}
+		} else
+		{
+			if ( !tsalgset )
+			{
+				tsalgset = true;
+				setDevicePower(TSALG, true);
+			}
+		}
 
 		if ( CarState.VoltageINV > 50 )
 		{

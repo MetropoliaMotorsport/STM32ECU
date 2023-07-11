@@ -30,7 +30,8 @@ typedef enum DevicePowertype {
 	TSAL,
 	Brake,
 	Accu,
-	AccuFan
+	AccuFan,
+	TSALG,
 
 } DevicePower;
 
