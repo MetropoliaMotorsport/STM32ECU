@@ -375,7 +375,7 @@ void PowerTask(void *argument)
 			{
 				tsalset = !tsalset;
 				setDevicePower(LeftPump, tsalset);
-				nexttsal = curtime+333;
+				nexttsal = curtime+166;
 			}
 		} else
 		{
