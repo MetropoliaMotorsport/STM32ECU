@@ -17,6 +17,10 @@
 
 #define BACKUPCAN
 
+#define SETTORQUEMODE
+
+#define TSALP
+
 //#define BENCH // benchtest compile, don't complain about missing BMS or IMD messages. Doesn't check canbuserrors.
 
 #define TESTBOARD

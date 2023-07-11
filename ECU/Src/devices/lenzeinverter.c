@@ -696,15 +696,26 @@ bool InvStartupState( volatile InverterState_t *Inverter, const uint8_t CANRxDat
 				CAN_SendStatus(9, Inverter->Motor, 5);
 				// TODO ack this last SDO.
 
+#ifdef SETTORQUEMODE
+				// make sure in torque request mode not velocity
+				InvSendSDO(Inverter->COBID,0x6060, 0, 4);
+				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET, 0x6060+0x800, 0, 4);
+#endif
+
 				InvSendSDO(Inverter->COBID,0x6048, 0, getEEPROMBlock(0)->AccelRpms*4);
 				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET, 0x6048+0x800, 0, getEEPROMBlock(0)->AccelRpms*4);
 				InvSendSDO(Inverter->COBID,0x6049, 0, getEEPROMBlock(0)->DecelRpms*4);
 				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET, 0x6049+0x800, 0, getEEPROMBlock(0)->DecelRpms*4);
 				InvSendSDO(Inverter->COBID,0x6087, 0, getEEPROMBlock(0)->TorqueSlope*TORQUESLOPESCALING);
 				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET, 0x6087+0x800, 0, getEEPROMBlock(0)->TorqueSlope*TORQUESLOPESCALING);
-
+				InvSendSDO(Inverter->COBID,0x6087, 0, getEEPROMBlock(0)->TorqueSlope*TORQUESLOPESCALING);
+				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET, 0x6087+0x800, 0, getEEPROMBlock(0)->TorqueSlope*TORQUESLOPESCALING);
 				InvSendSDO(Inverter->COBID,0x1400, 5,100);
 				InvSendSDO(Inverter->COBID+LENZE_MOTORB_OFFSET, 0x1402, 5, 100);
+
+
+
+
 				Inverter->SetupState = 0xFF; // Done!
 				InverterState[Inverter->Motor+1].SetupState = 0xFF; // set the other inverter as configured too.
 			}

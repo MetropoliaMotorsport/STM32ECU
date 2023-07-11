@@ -365,6 +365,27 @@ void PowerTask(void *argument)
 	    	}
 	    }
 
+#ifdef TSALP
+		static uint32_t nexttsal = 0;
+		static bool tsalset;
+
+		if ( CarState.VoltageINV > 50 )
+		{
+			if ( curtime > nexttsal )
+			{
+				tsalset = !tsalset;
+				setDevicePower(LeftPump, tsalset);
+				nexttsal = curtime+333;
+			}
+		} else
+		{
+			if ( tsalset )
+				setDevicePower(LeftPump, false);
+			tsalset = false;
+			nexttsal = 0;
+		}
+#endif
+
 	    if ( CheckIMD() )
 	    {
 #ifndef BENCH
