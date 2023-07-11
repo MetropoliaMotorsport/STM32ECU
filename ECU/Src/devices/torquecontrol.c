@@ -78,12 +78,15 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	adj->RR = adj->FL;
 #endif
 
-	//uint16_t maxSpeed = getEEPROMBlock(0)->maxRpm;
-
-	spd->FL =3000;//maxSpeed;
-	spd->FR =3000;//maxSpeed;
-	spd->RL =3000;//maxSpeed;
-	spd->RR =3000;//maxSpeed;
+	uint16_t maxSpeed;
+	if ( Torque_Req > 0 )
+		maxSpeed = getEEPROMBlock(0)->maxRpm;
+	else
+		maxSpeed = 20; // allow a slight rotation to spot bad setup.
+	spd->FL = maxSpeed;
+	spd->FR = maxSpeed;
+	spd->RL = maxSpeed;
+	spd->RR = maxSpeed;
 
 #ifdef MATLAB
 	// general config, not from dynamic state
