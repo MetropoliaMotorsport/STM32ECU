@@ -59,6 +59,16 @@ typedef enum output {
 	STARTLED=4,
 	TSOFFLED=7, // 0
 	RTDMLED=3,
+#ifdef HPF2023
+	ERRORLED=17,
+	LED1=11,
+	LED2=12,
+	LED3=13,
+	LED4=14,
+	LED5=15,
+	LED6=16,
+	LED7=17,
+#else
 	ERRORLED=18,
 	LED1=12,
 	LED2=13,
@@ -67,6 +77,7 @@ typedef enum output {
 	LED5=16,
 	LED6=17,
 	LED7=18,
+#endif
 	Output0=0,
 	Output1=1,
 	Output2=2,

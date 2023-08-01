@@ -61,7 +61,9 @@ OutputType Output[OUTPUTCount] = {
 		 { DO12_GPIO_Port, DO12_Pin},
 		 { DO13_GPIO_Port, DO13_Pin},
 		 { DO14_GPIO_Port, DO14_Pin},
+#ifndef HPF2023
 		 { DO15_GPIO_Port, DO15_Pin},
+#endif
 		 { LD7_GPIO_Port, LD7_Pin},
 		 { LD8_GPIO_Port, LD8_Pin},
 		 { LD9_GPIO_Port, LD9_Pin},

@@ -556,6 +556,7 @@ char * ShutDownOpenStr( void )
 
 void ShutdownCircuitSet( bool state )
 {
+	HAL_GPIO_WritePin( DO15_GPIO_Port, DO15_Pin, state);
 	HAL_GPIO_WritePin( Shutdown_GPIO_Port, Shutdown_Pin, state);
 }
 
