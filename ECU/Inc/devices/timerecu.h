@@ -9,6 +9,7 @@
 #define TIMERECU_H_
 
 #include "ecumain.h"
+#include <time.h>
 
 uint32_t gettimer(void);
 
