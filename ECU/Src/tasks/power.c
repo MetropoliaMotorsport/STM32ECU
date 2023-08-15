@@ -19,6 +19,7 @@
 #include "timerecu.h"
 #include "semphr.h"
 #include "output.h"
+#include "input.h"
 
 TaskHandle_t PowerTaskHandle = NULL;
 
@@ -406,11 +407,11 @@ void PowerTask(void *argument)
 
 	    if ( CheckIMD() )
 	    {
-#ifndef BENCH
-			SetCriticalError(CRITERIMD); // keep flagging IMD error whilst on to not allow operation.
-#endif
 	    	if ( !IMDset )
 	    	{
+				#ifndef BENCH
+				SetCriticalError(CRITERIMD); // keep flagging IMD error whilst on to not allow operation.
+				#endif
 	    		setOutputNOW(IMDLED, On);
 	    		setOutputNOW(LED6, On);
 				IMDset = true;
@@ -494,6 +495,9 @@ void PowerTask(void *argument)
 
 bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is closed
 {
+#ifdef HPF2023
+	return true;
+#endif
 #ifdef HPF20
 //	if ( !Shutdown.BSPDBefore ) return false;
 //	if ( !Shutdown.BSPDAfter ) return false;
@@ -503,6 +507,7 @@ bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is
 //	if ( !Shutdown.CockpitButton ) return false;
 //	if ( !Shutdown.RightButton ) return false;
 //	if ( !Shutdown.LeftButton ) return false;
+#
 	if ( !Shutdown.BMS ) return false;
 //	if ( !Shutdown.IMD ) return false;
 #endif
@@ -511,7 +516,11 @@ bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is
 
 bool CheckBMS( void ) // returns true if shutdown circuit other than ECU is closed
 {
+#ifdef HPF2023
+	return ( !(HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin) || Shutdown.BMS ));
+#else
 	return Shutdown.BMS;
+#endif
 }
 
 
@@ -522,7 +531,11 @@ bool CheckTSOff( void ) // returns true if shutdown circuit other than ECU is cl
 
 bool CheckIMD( void ) // returns true if shutdown circuit other than ECU is closed
 {
+#ifdef HPF2023
+	return ( HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin) || Shutdown.BMS );
+#else
 	return Shutdown.IMD;
+#endif
 }
 
 #define MAXSHUTDOWNSTR	40

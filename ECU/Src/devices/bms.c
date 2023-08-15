@@ -60,10 +60,12 @@ bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const
 			CarState.VoltageBMS = CANRxData[5]*256+CANRxData[4];
 			CarState.HighestCellV = CANRxData[2]*256+CANRxData[1];
 
+			Shutdown.BMS = false;
+
         	if ( CANRxData[3] != 0 ) // In Safestate.
         	{
 				setOutputNOW(BMSLED,On); // BMS is in an error state, ensure AMS error led is shown without delay.
-        		Shutdown.BMS = false;
+        		//Shutdown.BMS = false;
         		Shutdown.BMSReason = CANRxData[1];
                 /*
                       0 : str := 'undefined';
@@ -80,7 +82,7 @@ bool processBMSSOC( const uint8_t CANRxData[8], const uint32_t DataLength, const
 				*/
         	} else
         	{
-         		Shutdown.BMS = true;
+         		//Shutdown.BMS = true;
          		Shutdown.BMSReason = 0;
         	}
 #ifdef BMSDEBUGINFO
@@ -212,7 +214,7 @@ bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, con
 void BMSTimeout( uint16_t id )
 {
 	setOutputNOW(BMSLED,On);
-	Shutdown.BMS = false;
+	Shutdown.BMS = true;
 	DebugMsg("BMS Timeout");
 	CAN_SendErrorStatus(199,0,0);
 	if ( DeviceState.BMS != OFFLINE )

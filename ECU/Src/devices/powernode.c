@@ -1228,7 +1228,9 @@ void resetPowerNodes( void )
 	Shutdown.LeftButton = false;
 	Shutdown.RightButton = false;
 
+#ifndef HPF2023
 	Shutdown.BMS = false;
+#endif
 	Shutdown.BMSReason = false;
 	Shutdown.IMD = false;
 	Shutdown.AIRm = false;
