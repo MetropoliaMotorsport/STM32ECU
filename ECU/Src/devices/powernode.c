@@ -74,9 +74,9 @@ devicepowerreq DevicePowerList[] =
 		{ Brake, 37, 4 },
 		{ Buzzer, 37, 1 },
 		{ Inverters, 37, 2 },
-		{ TSAL, 37, 3, true, 0, true }, // essential to be powered, else not compliant.
+		//{ TSAL, 37, 3, true, 0, true }, // essential to be powered, else not compliant.
 		//{ Back1, 37, 4 },
-		{ TSALG, 37, 5, true, 0, true },
+		{ TSALG, 37, 5, true, 0, true }, // TSAL getting constant power from this FSG2023
 		{ None }
 };
 

@@ -15,9 +15,9 @@
 
 //#define TWOWHEELS
 
-#define BACKUPCAN
+//#define BACKUPCAN
 
-#define SETTORQUEMODE
+//#define SETTORQUEMODE
 
 #define TSALP
 
@@ -41,6 +41,7 @@
 
 #define HPF20
 #define HPF2023
+#define FSG23 //to enable quick hacks for FSG2023
 
 //#define APPSFIXL // uncomment if APPSL not readng to temporarily copy APPSR, do not use longterm.
 //#define APPSFIXR // uncomment if APPSR not readng to temporarily copy APPSL, do not use longterm.
