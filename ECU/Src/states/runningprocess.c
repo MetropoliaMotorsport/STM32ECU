@@ -288,8 +288,12 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 				{
 					torque_req = - ( ( ( getEEPROMBlock(0)->regenMax * ADCState.Regen_Percent ) ) / 1000 ) ;
 				}
-    		}
-        }
+				if ( torque_req < 0)
+					CarState.RegenLight = true;
+    		} else
+				CarState.RegenLight = false;
+        } else
+			CarState.RegenLight = false;
 
 		if ( curtick > nextmsg )
 		{
