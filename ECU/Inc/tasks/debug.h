@@ -13,7 +13,7 @@
 
 #define MAXDEBUGOUTPUT (120)
 
-#define DEBUGUART    UART7_
+#define DEBUGUART    UART2
 
 // print a message to debug output.
 bool DebugMsg( const char * msg);
