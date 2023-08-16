@@ -517,7 +517,7 @@ bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is
 bool CheckBMS( void ) // returns true if shutdown circuit other than ECU is closed
 {
 #ifdef HPF2023
-	return ( !(HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin) || Shutdown.BMS ));
+	return ( !(HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin) || DeviceState.BMS != OPERATIONAL ));
 #else
 	return Shutdown.BMS;
 #endif
@@ -532,7 +532,7 @@ bool CheckTSOff( void ) // returns true if shutdown circuit other than ECU is cl
 bool CheckIMD( void ) // returns true if shutdown circuit other than ECU is closed
 {
 #ifdef HPF2023
-	return ( HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin) || Shutdown.BMS );
+	return ( HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin) || DeviceState.BMS != OPERATIONAL );
 #else
 	return Shutdown.IMD;
 #endif
