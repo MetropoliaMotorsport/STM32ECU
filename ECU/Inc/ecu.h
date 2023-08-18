@@ -39,7 +39,7 @@
 
 #define MAXERROROUTPUT       (40)
 
-#define TORQUE_DIFFERENCE (25)
+#define TORQUE_DIFFERENCE (30)
 #define TORQUE_LEFT_PRIMARY
 
 #define HPF20
@@ -96,8 +96,15 @@
 
 // Brake pressure values
 
-#ifdef HPF2023
+#ifdef FSG23
+//changed new BPsensors from 240bar 1v-5v to 140bar 0,5v-4,5v
+#define APPSBrakeLight			42
+#define APPSBrakeHard			58 //
+#define APPSBrakeRelease		42 //
+#define RTDMBRAKEPRESSURE		6 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
 
+#else
+#ifdef HPF2023
 #define APPSBrakeLight			3
 #define APPSBrakeHard			30 // 70
 #define APPSBrakeRelease		2 // 30
@@ -109,7 +116,7 @@
 #define APPSBrakeRelease		65 // 30
 //#define RTDMBRAKEPRESSURE		30
 #define RTDMBRAKEPRESSURE		10 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
-
+#endif
 #endif
 
 #define LIMPNM					10 // limp mode torque
