@@ -455,7 +455,7 @@ void InvTask(void *argument)
 
 			invertersonline = online;
 
-			if ( online == 4 )
+			if ( online == MOTORCOUNT )
 				DeviceState.Inverter = lowest; // set current lowest state as operational state
 			else
 				DeviceState.Inverter = OFFLINE;
