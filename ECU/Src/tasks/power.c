@@ -90,7 +90,7 @@ void ClearHVLost( void )
 bool CheckHVLost( void )
 {
 	// if ( Shutdown.AIRm == 0 || Shutdown.AIRp == 0 || Shutdown.TS_OFF || HVLost ||
-	if ( CarState.VoltageINV < 60 )
+	if ( CarState.VoltageINV < 60 || CheckIMD() || CheckBMS())
 	{
 		return true;
 	}
@@ -421,8 +421,8 @@ void PowerTask(void *argument)
 	    {
 	    	if ( IMDset )
 	    	{
-	    		setOutputNOW(IMDLED, Off);
-	    		setOutputNOW(LED6, Off);
+	    		//setOutputNOW(IMDLED, Off);
+	    		//setOutputNOW(LED6, Off);
 				IMDset = false;
 	    	}
 	    }
@@ -517,6 +517,12 @@ bool CheckShutdown( void ) // returns true if shutdown circuit other than ECU is
 bool CheckBMS( void ) // returns true if shutdown circuit other than ECU is closed
 {
 #ifdef HPF2023
+	if(HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin)){
+			DebugMsg("BMS input PIN");
+	}
+	if(DeviceState.BMS != OPERATIONAL){
+				DebugMsg("BMS NOT operational");
+	}
 	return ( !(HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin) || DeviceState.BMS != OPERATIONAL ));
 #else
 	return Shutdown.BMS;
@@ -532,6 +538,12 @@ bool CheckTSOff( void ) // returns true if shutdown circuit other than ECU is cl
 bool CheckIMD( void ) // returns true if shutdown circuit other than ECU is closed
 {
 #ifdef HPF2023
+	if(HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin)){
+		DebugMsg("IMD input PIN");
+	}
+	if(DeviceState.BMS != OPERATIONAL){
+					DebugMsg("BMS NOT operational in IMD check");
+	}
 	return ( HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin) || DeviceState.BMS != OPERATIONAL );
 #else
 	return Shutdown.IMD;
