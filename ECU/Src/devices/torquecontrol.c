@@ -98,7 +98,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	TorqueVectoring_U.FeedbackEnabled = 1;
 	TorqueVectoring_U.FeedForwardEnabled = 1;
 
-	Regeneration_U.select_operating_mode = 1;
+	Regeneration_U.select_operating_mode = getEEPROMBlock(0)->Regen == 2;
 	Regeneration_U.regen_optimizer_on = 1;
 
 
