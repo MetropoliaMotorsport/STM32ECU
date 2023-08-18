@@ -180,6 +180,8 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 	CarState.Torque_Req = avg;
 }
 
+
+
 /*
  * APPS Check, Should ignore regen sensor and only use physical brake.
  *
@@ -216,7 +218,7 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 	//   -Implausibility Test Failure : In case of more than 10 percent implausibility between the APPS,torque request is 0
 	//   -Implausibility allowed : more than 10 percent
 	//   -Torque-Brake Violation : Free
-	if( difference>10 )
+	if( difference>TORQUE_DIFFERENCE )
 	{
 	    Torque_drivers_request = 0;
 	    CarState.APPSstatus = 1;
@@ -239,7 +241,7 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 	    CarState.APPSstatus = 10;
 	}
 #endif
-	else if( difference<=10
+	else if( difference<=TORQUE_DIFFERENCE
 			&& getBrakeLow() // 30
 			&& No_Torque_Until_Pedal_Released == 0 )
 	{
@@ -252,7 +254,7 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 	//   -Brake Pressure allowed : more than 30
 	//   -Torque-Brake Violation : Occurred and marked
 #ifdef APPSALLOWBRAKE
-	else if( difference<=10
+	else if( difference<=TORQUE_DIFFERENCE
 			 && getBrakeHigh()
 			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && APPSTriggerTime == 0 )
 	{
@@ -261,7 +263,7 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 		CarState.APPSstatus=3;
 	}
 
-	else if( difference<=10
+	else if( difference<=TORQUE_DIFFERENCE
 			 && getBrakeHigh() // Hopefully fixed likely bug with 300ms
 			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 ) && gettimer()-APPSTriggerTime < APPSBRAKETIME ) // 300ms brake allowance
 	{
@@ -270,7 +272,7 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 	}
 #endif
 
-	else if( difference<=10
+	else if( difference<=TORQUE_DIFFERENCE
 			 && getBrakeHigh()
 			 && ( TorqueRequestPercent>=25 || CarState.Power >= 5000 )
 #ifdef APPSALLOW450MSBRAKE
@@ -287,7 +289,7 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 	//   -Accelerator Pedal Travel : More than 5 percent
 	//   -Brake Pressure allowed : less than 30
 	//   -Torque-Brake Violation : Still exists and won't be freed
-	else if( difference<=10
+	else if( difference<=TORQUE_DIFFERENCE
 			 && ( getBrakeLow()  ) // 30
 			 && No_Torque_Until_Pedal_Released==1
 			 && TorqueRequestPercent >=5 )
@@ -301,7 +303,7 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 	//   -Brake Pressure allowed : less than 30
 	//   -Torque-Brake Violation : Occurred and will be freed
 
-	else if ( difference<=10
+	else if ( difference<=TORQUE_DIFFERENCE
 			  && getBrakeLow() // 30
 #ifdef REGEN
 
@@ -314,7 +316,7 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 	    APPSTriggerTime = 0;
 	    CarState.APPSstatus=0; // torque ok. // 5
 	}
-	else if ( difference<=10
+	else if ( difference<=TORQUE_DIFFERENCE
 			  && getBrakeHigh() // 30
 			  && No_Torque_Until_Pedal_Released==0
 			  && TorqueRequestTravelPercent < 5 )

@@ -39,6 +39,8 @@
 
 #define MAXERROROUTPUT       (40)
 
+#define TORQUE_DIFFERENCE (25)
+
 #define HPF20
 #define HPF2023
 #define FSG23 //to enable quick hacks for FSG2023
