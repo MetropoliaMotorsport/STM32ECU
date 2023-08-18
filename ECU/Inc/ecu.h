@@ -40,6 +40,7 @@
 #define MAXERROROUTPUT       (40)
 
 #define TORQUE_DIFFERENCE (25)
+#define TORQUE_LEFT_PRIMARY
 
 #define HPF20
 #define HPF2023

@@ -207,13 +207,19 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 
 	int difference = abs(ADCState.Torque_Req_L_Percent - ADCState.Torque_Req_R_Percent)/10;
 
+	#ifdef TORQUE_LEFT_PRIMARY
+	int torqueperc = ADCState.Torque_Req_L_Percent;
+	#else
+	int torqueperc = ADCState.Torque_Req_R_Percent;
+	#endif
+
 	//The average value of the APPS // signals pedal travel equivalent to ≥25 % desired motor torque
-	int TorqueRequestPercent = getTorqueReqCurve(ADCState.Torque_Req_R_Percent) / 10;
+	int TorqueRequestPercent = getTorqueReqCurve(torqueperc) / 10;
 
 	// The commanded motor torque must remain at 0 N m until the APPS signals less than 5 % pedal travel
 	// and 0 N m desired motor torque, regardless of whether the brakes are still actuated or not.
 
-	int TorqueRequestTravelPercent = ADCState.Torque_Req_R_Percent / 10;
+	int TorqueRequestTravelPercent = torqueperc / 10;
 
 	//   -Implausibility Test Failure : In case of more than 10 percent implausibility between the APPS,torque request is 0
 	//   -Implausibility allowed : more than 10 percent
@@ -333,7 +339,7 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 	// calculate actual torque request
 	if ( Torque_drivers_request != 0)
 	{
-		return (getTorqueReqCurve(ADCState.Torque_Req_R_Percent)*CarState.Torque_Req_CurrentMax)/1000.0; //*NMSCALING)/1000;
+		return (getTorqueReqCurve(torqueperc)*CarState.Torque_Req_CurrentMax)/1000.0; //*NMSCALING)/1000;
 	}
 	else
 	{
