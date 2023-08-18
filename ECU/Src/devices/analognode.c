@@ -30,15 +30,15 @@ void ANodeCritTimeout( uint16_t id );
 bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+
 CANData  AnalogNode1 =  { &DeviceState.AnalogNode1, AnalogNode1_ID, 6, processANode1Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
 CANData  AnalogNode10 = { &DeviceState.AnalogNode10, AnalogNode10_ID, 6, processANode10Data, NULL, NODETIMEOUT };
 CANData  AnalogNode11 = { &DeviceState.AnalogNode11, AnalogNode11_ID, 6, processANode11Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
-CANData  AnalogNode13 = { &DeviceState.AnalogNode13, AnalogNode13_ID, 4, processANode13Data, NULL, NODETIMEOUT };
 
 #else
 bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode14Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode15Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processANode16Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
@@ -47,6 +47,7 @@ bool processANode18Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 CANData  AnalogNode9 =  { &DeviceState.AnalogNode9, AnalogNode9_ID, 4, processANode9Data, NULL, NODETIMEOUT };
 CANData  AnalogNode12 = { &DeviceState.AnalogNode12, AnalogNode12_ID, 4, processANode12Data, NULL, NODETIMEOUT };
+CANData  AnalogNode13 = { &DeviceState.AnalogNode13, AnalogNode13_ID, 4, processANode13Data, NULL, NODETIMEOUT };
 CANData  AnalogNode14 = { &DeviceState.AnalogNode14, AnalogNode14_ID, 6, processANode14Data, NULL, NODETIMEOUT };
 CANData  AnalogNode15 = { &DeviceState.AnalogNode15, AnalogNode15_ID, 3, processANode15Data, NULL, NODETIMEOUT };
 CANData  AnalogNode16 = { &DeviceState.AnalogNode16, AnalogNode16_ID, 3, processANode16Data, NULL, NODETIMEOUT };
@@ -198,9 +199,9 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 		first = true;
 	}
 #ifdef HPF2023
-	uint16_t AccelR = getBEint16(&CANRxData[0]);
-	int16_t BrakeF = (int16_t)getBEint16(&CANRxData[2]);
-	int16_t BrakeR = (int16_t)getBEint16(&CANRxData[4]);
+	uint16_t AccelR = getBEint16(&CANRxData[4]);
+	int16_t BrakeF = (int16_t)getBEint16(&CANRxData[0]);
+	int16_t BrakeR = (int16_t)getBEint16(&CANRxData[2]);
 #else
 	ADCStateSensors.BrakeTemp2 = getBEint16(&CANRxData[0]);
 
@@ -271,7 +272,6 @@ bool processANode12Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	ADCStateSensors.WaterTemp6 = CANRxData[3];
 	return true;
 }
-#endif
 
 bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
 {
@@ -288,6 +288,7 @@ bool processANode13Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 	return true;
 }
+#endif
 
 #ifndef HPF2023
 bool processANode14Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
@@ -589,8 +590,9 @@ int initAnalogNodes( void )
 
 #ifndef HPF2023
 	RegisterCan1Message(&AnalogNode12);
-#endif
 	RegisterCan1Message(&AnalogNode13);
+#endif
+
 #ifndef HPF2023
 	RegisterCan1Message(&AnalogNode14);
 	RegisterCan1Message(&AnalogNode15);

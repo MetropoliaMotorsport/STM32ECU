@@ -851,8 +851,8 @@ extern CANData  AnalogNode10;
 extern CANData  AnalogNode11;
 #ifndef HPF2023
 extern CANData  AnalogNode12;
-#endif
 extern CANData  AnalogNode13;
+#endif
 #ifndef HPF2023
 extern CANData  AnalogNode14;
 extern CANData  AnalogNode15;
@@ -945,7 +945,7 @@ static void debugSensors( const char *tkn2 )
 					ADCStateSensors.WaterTemp6,
 					AnalogNode12.time );
 		}
-#endif
+
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode13Bit ) )
 		{
 			UARTprintf("Anode13: Suspension 3-4 %lu   %lu   Last at (%lu)\r\n",
@@ -953,6 +953,8 @@ static void debugSensors( const char *tkn2 )
 					ADCStateSensors.susp4,
 					AnalogNode13.time);
 		}
+#endif
+
 #ifndef HPF2023
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode14Bit ) )
 		{
