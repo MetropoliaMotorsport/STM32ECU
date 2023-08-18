@@ -90,7 +90,7 @@ void ClearHVLost( void )
 bool CheckHVLost( void )
 {
 	// if ( Shutdown.AIRm == 0 || Shutdown.AIRp == 0 || Shutdown.TS_OFF || HVLost ||
-	if ( CarState.VoltageINV < 60 || CheckIMD() || CheckBMS())
+	if ( CarState.VoltageINV < 60)
 	{
 		return true;
 	}
@@ -324,7 +324,7 @@ void PowerTask(void *argument)
 
 	    xSemaphoreGive(waitStr);
 #if 1
-		if ( !CheckBMS() )
+		if ( !CheckBMS())
 		{
 #ifndef BENCH
 
@@ -405,7 +405,7 @@ void PowerTask(void *argument)
 		}
 #endif
 
-	    if ( CheckIMD() )
+	    if ( CheckIMD())
 	    {
 	    	if ( !IMDset )
 	    	{
