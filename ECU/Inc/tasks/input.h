@@ -36,8 +36,8 @@ DI7 pin 25 PF12 ok    input 8
 #define BMS_Input_Pin DI14_Pin
 #define BMS_Input_Port DI14_GPIO_Port
 
-#define IMD_Input_Pin DI14_Pin
-#define IMD_Input_Port DI14_GPIO_Port
+#define IMD_Input_Pin DI15_Pin
+#define IMD_Input_Port DI15_GPIO_Port
 
 #ifdef HPF2023
 #define WHLINT_Pin DI7_Pin
