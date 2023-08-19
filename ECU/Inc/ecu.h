@@ -35,6 +35,8 @@
 
 //#define TORQUEERRORCHECK
 
+#define TIMEINVSTATECHANGE
+
 #define IGNOREI2CERR
 
 #define MAXERROROUTPUT       (40)

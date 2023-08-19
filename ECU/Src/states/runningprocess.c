@@ -95,6 +95,10 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
 		DebugMsg("Entering RTDM State");
+/* EV 4.12.1
+	* The vehicle must make a characteristic sound, continuously for at least one second and a maximum of three seconds when it enters ready-to-drive mode.
+*/
+		// send buzzer as entering RTDM
 		soundBuzzer();
 		lcd_clear();
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
@@ -109,7 +113,6 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
     	if ( CarState.LimpRequest )
     		 CarState.Torque_Req_CurrentMax = LIMPNM;
 
-		// send buzzer as entering RTDM
 	}
 #ifndef everyloop
 	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
@@ -121,10 +124,6 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 	uint32_t curtick = gettimer();
 
 	PrintRunning("RTDM:TA");
-
-	/* EV 4.12.1
-	 * The vehicle must make a characteristic sound, continuously for at least one second and a maximum of three seconds when it enters ready-to-drive mode.
-	 */
 
 	invRequestState( OPERATIONAL );
 

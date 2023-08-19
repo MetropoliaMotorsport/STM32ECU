@@ -186,6 +186,13 @@ void HandleInverter( InverterState_t * Inverter )
 			}
 		}
 	}
+
+	if ( Inverter->InvState == Inverter->InvRequested && Inverter->Changetime )
+	{
+		snprintf(str, 80, "Inverter [%d] reached requested state %d (%lu)", Inverter->Motor, Inverter->InvState, gettimer());
+		DebugMsg(str);
+		Inverter->Changetime = 0;
+	}
 #define INVDEBUG
 	// initial testing, use maximum possible error reset period regardless of error.
 	if ( Inverter->InvState == INERROR )
@@ -325,7 +332,12 @@ void InvTask(void *argument)
 					InverterState[i].Changetime = gettimer()+i*500; // delay each change to operational by half a second.
 				}
 				else
-					InverterState[i].Changetime = 0;
+				{
+					if ( InverterState[i].InvState != msg.state )
+						InverterState[i].Changetime = 1;
+					else
+						InverterState[i].Changetime = 0;
+				}
 			}
 		}
 
