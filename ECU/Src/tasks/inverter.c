@@ -332,7 +332,7 @@ void InvTask(void *argument)
 					if ( InverterState[i].Changetime == 0 )
 					{
 						InverterState[i].Changetime = gettimer()+i*500+1; // delay each change to operational by half a second.
-						snprintf(str, 40, "Inverter %d requesting operational after tick %lu at (%lu)", i, InverterState[i].Changetime, gettimer());
+						snprintf(str, 40, "Inverter %d req OPER after %lu at (%lu)", i, InverterState[i].Changetime, gettimer());
 						DebugMsg(str);
 					}
 				}
