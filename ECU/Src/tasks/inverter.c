@@ -182,17 +182,22 @@ void HandleInverter( InverterState_t * Inverter )
 #endif
 			)
 			{
+#ifdef TIMEINVSTATECHANGE
+				snprintf(str, 80, "Inverter [%d] setting state %d (%lu)", Inverter->Motor, Inverter->InvRequested, gettimer());
+				DebugMsg(str);
+#endif
 				Inverter->InvCommand = command;
 			}
 		}
 	}
-
+#ifdef TIMEINVSTATECHANGE
 	if ( Inverter->InvState == Inverter->InvRequested && Inverter->Changetime )
 	{
 		snprintf(str, 80, "Inverter [%d] reached requested state %d (%lu)", Inverter->Motor, Inverter->InvState, gettimer());
 		DebugMsg(str);
 		Inverter->Changetime = 0;
 	}
+#endif
 #define INVDEBUG
 	// initial testing, use maximum possible error reset period regardless of error.
 	if ( Inverter->InvState == INERROR )
