@@ -329,7 +329,8 @@ void InvTask(void *argument)
 				InverterState[i].InvRequested = msg.state;
 				if ( msg.state == OPERATIONAL && InverterState[i].InvState != msg.state )
 				{
-					InverterState[i].Changetime = gettimer()+i*500+1; // delay each change to operational by half a second.
+					if ( InverterState[i].Changetime == 0 )
+						InverterState[i].Changetime = gettimer()+i*500+1; // delay each change to operational by half a second.
 				}
 				else
 				{
