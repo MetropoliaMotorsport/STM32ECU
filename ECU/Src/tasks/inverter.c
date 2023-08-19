@@ -327,11 +327,12 @@ void InvTask(void *argument)
 			for ( int i=0;i<MOTORCOUNT;i++)
 			{
 				InverterState[i].InvRequested = msg.state;
+#ifdef TIMEINVSTATECHANGE
 				if ( msg.state == OPERATIONAL && InverterState[i].InvState != msg.state )
 				{
 					if ( InverterState[i].Changetime == 0 )
 					{
-						InverterState[i].Changetime = gettimer()+i*500+1; // delay each change to operational by half a second.
+						InverterState[i].Changetime = gettimer()+i*TIMEINVSTATECHANGE+1; // delay each change to operational by half a second.
 						snprintf(str, 80, "Inverter %d req OPER after %lu at (%lu)", i, InverterState[i].Changetime, gettimer());
 						DebugMsg(str);
 					}
@@ -343,6 +344,7 @@ void InvTask(void *argument)
 					else
 						InverterState[i].Changetime = 0;
 				}
+#endif
 			}
 		}
 

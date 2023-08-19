@@ -35,7 +35,7 @@
 
 //#define TORQUEERRORCHECK
 
-#define TIMEINVSTATECHANGE
+#define TIMEINVSTATECHANGE 1000
 
 #define IGNOREI2CERR
 
@@ -43,6 +43,7 @@
 
 #define TORQUE_DIFFERENCE (30)
 #define TORQUE_LEFT_PRIMARY
+
 
 #define HPF20
 #define HPF2023
