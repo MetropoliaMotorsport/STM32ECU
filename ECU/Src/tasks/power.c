@@ -342,7 +342,7 @@ void PowerTask(void *argument)
 		{
 			if ( BMSset)
 			{
-				setOutputNOW(BMSLED, Off);
+				//setOutputNOW(BMSLED, Off);
 				BMSset = false;
 			}
 		}
