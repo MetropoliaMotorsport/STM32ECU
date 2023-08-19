@@ -87,6 +87,7 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 		lcd_setscrolltitle("ERROR State");
 
 		sprintf(str,"Loc:%.2X Code:%.4X", Errors.ErrorPlace, Errors.ErrorReason);
+		DebugMsg(str);
 		lcd_send_stringscroll(str);
 
 		InverterAllowTorqueAll( false );  // immedietly stop allowing torque request.
