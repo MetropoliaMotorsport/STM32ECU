@@ -178,7 +178,7 @@ void HandleInverter( InverterState_t * Inverter )
 			if ( Inverter->HighVoltageAvailable
 				 &&  ( ( 1 << Inverter->Motor ) & getEEPROMBlock(0)->EnabledMotors ) 
 #ifdef TIMEINVSTATECHANGE
-					&& Inverter->Changetime > gettimer()
+					&& ( Inverter->Changetime == 0 || Inverter->Changetime > gettimer() )
 #endif
 			)
 			{
@@ -327,7 +327,7 @@ void InvTask(void *argument)
 			for ( int i=0;i<MOTORCOUNT;i++)
 			{
 				InverterState[i].InvRequested = msg.state;
-				if ( msg.state == OPERATIONAL )
+				if ( msg.state == OPERATIONAL && InverterState[i].InvState != msg.state )
 				{
 					InverterState[i].Changetime = gettimer()+i*500+1; // delay each change to operational by half a second.
 				}
