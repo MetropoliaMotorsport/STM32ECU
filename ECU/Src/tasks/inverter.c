@@ -178,7 +178,7 @@ void HandleInverter( InverterState_t * Inverter )
 			if ( Inverter->HighVoltageAvailable
 				 &&  ( ( 1 << Inverter->Motor ) & getEEPROMBlock(0)->EnabledMotors ) 
 #ifdef TIMEINVSTATECHANGE
-					&& ( Inverter->Changetime == 0 || Inverter->Changetime > gettimer() )
+					&& ( Inverter->Changetime == 0 || ( Inverter->Changetime && gettimer() > Inverter->Changetime ) )
 #endif
 			)
 			{
