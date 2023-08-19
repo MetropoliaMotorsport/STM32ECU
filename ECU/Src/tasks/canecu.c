@@ -268,7 +268,7 @@ void CANTxTask(void *argument)
 					static bool busnotact = false;
 					if ( !busnotact )
 					{
-						DebugPrintf("CAN Tx Bus1 Not actively transmitting.");
+						DebugPrintf("CAN Tx Bus1 Down at (%lu)", gettimer());
 						busnotact = true;
 					}
 				}
@@ -277,7 +277,7 @@ void CANTxTask(void *argument)
 					static bool busnotact = false;
 					if ( !busnotact )
 					{
-						DebugPrintf("CAN Tx Bus0 Not actively transmitting.");
+						DebugPrintf("CAN Tx Bus0 Down at (%lu)", gettimer());
 						busnotact = true;
 					}
 				}
