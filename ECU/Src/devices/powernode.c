@@ -62,10 +62,10 @@ devicepowerreq DevicePowerList[] =
 		{ ECU, 34, 4, true, 0, true }, // ECU has to have power or we aren't booted.. so just assume it.
 		{ Front2, 34, 5 },
 
-		{ LeftFans, 35, 0 },
-		{ RightFans, 35, 1 },
-		{ LeftPump, 35, 4 },
-		{ RightPump, 35, 5 },
+//		{ LeftFans, 35, 0 },
+//		{ RightFans, 35, 1 },
+//		{ LeftPump, 35, 4 },
+//		{ RightPump, 35, 5 },
 
 		{ IVT, 36, 4 },
 		{ Accu, 36, 2 }, // TODO make sure this channel cannot be reset for latching rules.
@@ -119,6 +119,7 @@ nodepowerreq PowerRequests[] =
 {
 #ifndef HPF2023
 		{ 1, 33, 0, 0, {0} },
+		{ 1, 35, 0, 0, {0} },
 #endif
 #ifdef BACKUPCAN
 		{ 1, 34, 0, 0, {0} },
@@ -127,7 +128,6 @@ nodepowerreq PowerRequests[] =
 		{ 2, 37, 0, 0, {0} },
 #else
 		{ 1, 34, 0, 0, {0} },
-		{ 1, 35, 0, 0, {0} },
 		{ 1, 36, 0, 0, {0} },
 		{ 1, 37, 0, 0, {0} },
 #endif
@@ -140,9 +140,9 @@ bool queuedfanpwmRight = false;
 
 #ifndef HPF2023
 bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 #endif
 bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 
@@ -161,9 +161,9 @@ bool processPNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength,
 
 #ifndef HPF2023
 CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, PNode33Timeout, NODETIMEOUT }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
+CANData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
 #endif
 CANData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, NULL, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
-CANData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
 CANData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, NULL, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
 CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 4, processPNode37Data, PNode37Timeout, NODETIMEOUT }; // [?], Current, TSAL.
 
@@ -179,7 +179,7 @@ uint32_t getOldestPNodeData( void )
 #endif
 	if ( PowerNode34.time <  time ) time = PowerNode34.time;
 #ifndef HPF2023
-	if ( PowerNode35.time <  time ) time = PowerNode35.time;
+//	if ( PowerNode35.time <  time ) time = PowerNode35.time;
 //	if ( PowerNode36.time <  time ) time = PowerNode36.time; // not currently operational
 #endif
 	if ( PowerNode37.time <  time ) time = PowerNode37.time;
@@ -278,6 +278,36 @@ bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		return false;
 	}
 }
+
+bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle ) // Cooling
+{
+
+	static bool first = false;
+	if ( !first )
+	{
+		DebugMsg("PNode 35 First msg.");
+		first = true;
+	}
+
+	if ( DataLength >> 16 == PowerNode35.dlcsize
+//		&& ( CANRxData[0] >= 0 && CANRxData[0] <= MAXFANCURRENT )
+//		&& ( CANRxData[1] >= 0 && CANRxData[1] <= MAXFANCURRENT )
+//		&& ( CANRxData[2] >= 0 && CANRxData[2] <= MAXPUMPCURRENT )
+//		&& ( CANRxData[3] >= 0 && CANRxData[3] <= MAXPUMPCURRENT )
+		)
+	{
+		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode35Bit ), eSetBits);
+		CarState.I_LeftFans = CANRxData[0];
+		CarState.I_RightFans = CANRxData[1];
+		CarState.I_LeftPump = CANRxData[2];
+		CarState.I_RightPump = CANRxData[3];
+		return true;
+
+	} else // bad data.
+	{
+		return false;
+	}
+}
 #endif
 
 bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
@@ -322,36 +352,6 @@ bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 //		CarState.I_Inverters =  CANRxData[1];
 //		CarState.I_ECU =  CANRxData[2];
 //		CarState.I_Front2 =  CANRxData[3];
-		return true;
-
-	} else // bad data.
-	{
-		return false;
-	}
-}
-
-bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle ) // Cooling
-{
-
-	static bool first = false;
-	if ( !first )
-	{
-		DebugMsg("PNode 35 First msg.");
-		first = true;
-	}
-
-	if ( DataLength >> 16 == PowerNode35.dlcsize
-//		&& ( CANRxData[0] >= 0 && CANRxData[0] <= MAXFANCURRENT )
-//		&& ( CANRxData[1] >= 0 && CANRxData[1] <= MAXFANCURRENT )
-//		&& ( CANRxData[2] >= 0 && CANRxData[2] <= MAXPUMPCURRENT )
-//		&& ( CANRxData[3] >= 0 && CANRxData[3] <= MAXPUMPCURRENT )
-		)
-	{
-		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode35Bit ), eSetBits);
-		CarState.I_LeftFans = CANRxData[0];
-		CarState.I_RightFans = CANRxData[1];
-		CarState.I_LeftPump = CANRxData[2];
-		CarState.I_RightPump = CANRxData[3];
 		return true;
 
 	} else // bad data.
@@ -1251,6 +1251,7 @@ int initPowerNodes( void )
 	resetPowerNodes();
 #ifndef HPF2023
 	RegisterCan1Message(&PowerNode33);
+	RegisterCan1Message(&PowerNode35);
 #endif
 	RegisterCan1Message(&PowerNode34);
 
@@ -1260,7 +1261,6 @@ int initPowerNodes( void )
 	RegisterCan2Message(&PowerNode35);
 	RegisterCan2Message(&PowerNode37);
 #else
-	RegisterCan1Message(&PowerNode35);
 	RegisterCan1Message(&PowerNode37);
 #endif
 
