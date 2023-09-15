@@ -5,15 +5,17 @@
  *
  * File: rtwtypes.h
  *
- * Code generated for Simulink model 'TorqueVectoring'.
+ * Code generated for Simulink model 'SubsystemModelReference'.
  *
- * Model version                  : 3.2
- * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Sat Jul  1 15:08:39 2023
+ * Model version                  : 1.26
+ * Simulink Coder version         : 9.3 (R2020a) 18-Nov-2019
+ * C/C++ source code generated on : Thu May 13 20:27:51 2021
  *
  * Target selection: ert.tlc
- * Embedded hardware selection: ARM Compatible->ARM Cortex-M
- * Code generation objective: Traceability
+ * Embedded hardware selection: ARM Compatible->ARM Cortex
+ * Code generation objectives:
+ *    1. Execution efficiency
+ *    2. RAM efficiency
  * Validation result: Not run
  */
 
@@ -22,18 +24,18 @@
 
 /* Logical type definitions */
 #if (!defined(__cplusplus))
-#ifndef false
-#define false                          (0U)
-#endif
+#  ifndef false
+#   define false                       (0U)
+#  endif
 
-#ifndef true
-#define true                           (1U)
-#endif
+#  ifndef true
+#   define true                        (1U)
+#  endif
 #endif
 
 /*=======================================================================*
  * Target hardware information
- *   Device type: ARM Compatible->ARM Cortex-M
+ *   Device type: ARM Compatible->ARM Cortex
  *   Number of bits:     char:   8    short:   16    int:  32
  *                       long:  32    long long:  64
  *                       native word size:  32

@@ -5,15 +5,17 @@
  *
  * File: rtwtypes.h
  *
- * Code generated for Simulink model 'TractionControl'.
+ * Code generated for Simulink model 'RegenCS'.
  *
- * Model version                  : 3.6
- * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Sat Jul  1 15:09:13 2023
+ * Model version                  : 1.57
+ * Simulink Coder version         : 9.6 (R2021b) 14-May-2021
+ * C/C++ source code generated on : Sun Jun 19 15:29:07 2022
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: ARM Compatible->ARM Cortex-M
- * Code generation objective: Traceability
+ * Code generation objectives:
+ *    1. Execution efficiency
+ *    2. RAM efficiency
  * Validation result: Not run
  */
 
