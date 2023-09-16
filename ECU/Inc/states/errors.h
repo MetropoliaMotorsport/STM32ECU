@@ -63,7 +63,7 @@ void LogError( char *message );
 void SetErrorLogging( bool log );
 
 void SetCriticalError( uint32_t err );
-bool CheckCriticalError(void);
+uint8_t CheckCriticalError(void);
 void ClearCriticalError(void);
 
 int OperationalErrorHandler( uint32_t OperationLoops );

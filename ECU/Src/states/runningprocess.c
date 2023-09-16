@@ -130,7 +130,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	if ( CheckCriticalError() )
 	{
-		Errors.ErrorReason = ReceivedCriticalError;
+		Errors.ErrorReason = ReceivedCriticalError | ( CheckCriticalError() << 8 );
 		Errors.ErrorPlace = 0xE0;
 		return OperationalErrorState;
 	}
