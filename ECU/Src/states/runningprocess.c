@@ -309,6 +309,18 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		else
 			setOutput(TSLED,Off);
 
+		int8_t inttorque = torque_req;
+		int8_t adjtorque = adj.RL;
+
+		uint8_t CANTxData[8] = {
+				ADCState.Torque_Req_L_Percent / 10, ADCState.Regen_Percent / 10,
+				CarState.LimpActive << 1 | CarState.AllowRegen, getEEPROMBlock(0)->Regen,
+				ADCState.BrakeF, ADCState.BrakeR,
+				inttorque, adjtorque
+		};
+
+		CAN1Send( 0x7D2, 8, CANTxData );
+
 		InverterSetTorque(&adj, &spd);
 	}
 
