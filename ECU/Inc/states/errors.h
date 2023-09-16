@@ -62,7 +62,7 @@ int ResetErrors( void );
 void LogError( char *message );
 void SetErrorLogging( bool log );
 
-void SetCriticalError( uint32_t err );
+void SetCriticalError( uint8_t err );
 uint8_t CheckCriticalError(void);
 void ClearCriticalError(void);
 
