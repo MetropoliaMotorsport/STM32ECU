@@ -222,6 +222,7 @@
 
 #define APPSBRAKETIME	300 //300ms brake allowance for apps before trigger cut power.
 
+#define REGENMINIMUM 	10 // %
 // Allow limp mode to be exited on request.
 #define ALLOWLIMPCANCEL
 
