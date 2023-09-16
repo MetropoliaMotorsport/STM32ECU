@@ -187,7 +187,7 @@ int OperationReadyness( uint32_t OperationLoops ) // process function for operat
 	//	CAN_SendErrorStatus(5, OperationalReadyState, received);
 	//	Errors.State = OperationalReadyState;
 		DebugMsg("Errorplace 0xBB critical error.");
-		Errors.ErrorReason = ReceivedCriticalError;
+		Errors.ErrorReason = ReceivedCriticalError | ( CheckCriticalError() << 8 );
 		Errors.ErrorPlace = 0xBB;
 		return OperationalErrorState; // something has triggered an unacceptable error ( inverter error state etc ), drop to error state to deal with it.
 

@@ -177,7 +177,7 @@ int TSActiveProcess( uint32_t OperationLoops )
 	if ( CheckCriticalError() )
 	{
 		Errors.ErrorPlace = 0xDB;
-		Errors.ErrorReason = ReceivedCriticalError;
+		Errors.ErrorReason = ReceivedCriticalError | ( CheckCriticalError() << 8 );
 		return OperationalErrorState; // something has triggered an error, drop to error state to deal with it.
 	}
 

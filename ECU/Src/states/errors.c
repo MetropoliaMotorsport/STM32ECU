@@ -20,7 +20,7 @@
 
 #define MAXERRORMSGLENGTH  MAXERROROUTPUT
 
-static bool criticalerrorset = false;
+static uint8_t criticalerrorset = 0;
 
 struct error_msg {
   char msg[MAXERRORMSGLENGTH+1];
@@ -37,6 +37,8 @@ QueueHandle_t ERRORQueue;
 volatile ErrorsType Errors;
 
 uint16_t ErrorCode;
+
+uint8_t critcalerrorcode;
 
 bool logerrors = false;
 
@@ -244,20 +246,20 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 }
 
 
-void SetCriticalError( uint32_t err )
+void SetCriticalError( uint8_t err )
 {
-	criticalerrorset = true;
+	criticalerrorset |= ( 1<<err);
 	DebugPrintf("Logging critical error %lu", err);
 }
 
-bool CheckCriticalError(void)
+uint8_t CheckCriticalError(void)
 {
 	return criticalerrorset;
 }
 
 void ClearCriticalError(void)
 {
-	criticalerrorset = false;
+	criticalerrorset = 0;
 }
 
 
