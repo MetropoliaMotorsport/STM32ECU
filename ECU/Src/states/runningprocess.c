@@ -94,6 +94,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 	if ( OperationLoops == 0) // reset state on entering/rentering.
 	{
+		CarState.AllowRegen = getEEPROMBlock(0)->Regen > 0;
 		DebugMsg("Entering RTDM State");
 /* EV 4.12.1
 	* The vehicle must make a characteristic sound, continuously for at least one second and a maximum of three seconds when it enters ready-to-drive mode.
@@ -177,12 +178,12 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
 
 
-	if ( ADCState.Regen_Percent < 500 && CheckRTDMActivationRequest() )
+	if ( ADCState.Regen_Percent < (REGENMINIMUM * 10) && CheckRTDMActivationRequest() )
 	{
 		blinkOutput(RTDMLED,BlinkFast,1000);
-		lcd_send_stringline( 3, "Allowing regen", 3);
-		DebugMsg("Allowing regen");
-		CarState.AllowRegen = true;
+		lcd_send_stringline( 3, "Disalowing regen", 3);
+		DebugMsg("Disalowing regen");
+		CarState.AllowRegen = false;
 	}
 
 
@@ -279,7 +280,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         if ( CarState.AllowRegen && CarState.LimpActive == 0 ) // only check for regen if alowed and not in limp.
         {
-    		if ( ADCState.Regen_Percent > 100 && getEEPROMBlock(0)->Regen>0 ) // no torque request, but we do have a regen request, return that.
+    		if ( ADCState.Regen_Percent > (REGENMINIMUM*10) && getEEPROMBlock(0)->Regen>0 ) // no torque request, but we do have a regen request, return that.
     		{
 				//if ( getEEPROMBlock(0)->Regen == 2 )
 				//	doRegen(ADCState.Regen_Percent, ADCState.SteeringAngle, &adj);
