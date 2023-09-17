@@ -97,10 +97,10 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 		}
 	} else
 	{
-		adj->FL = 0;
-		adj->FR = 0;
-		adj->RL = 0;
-		adj->RR = 0;
+		adj->FL = Torque_Req; // allow regen to be passed back, not zeroed out.
+		adj->FR = Torque_Req;
+		adj->RL = Torque_Req;
+		adj->RR = Torque_Req;
 	}
 
 	rtU.bus_Vehicle_yaw_rate = IMUReceived.GyroZ*0.001;
@@ -196,7 +196,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 
 	if ( (getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TCSENABLEDBIT))?true:false )
 	{
-		if ( Torque_Req )
+		if ( Torque_Req > 0 )
 		{
 			adj->FL += - rtY.TCS_TCS_FL;
 			adj->FR += - rtY.TCS_TCS_FR;
