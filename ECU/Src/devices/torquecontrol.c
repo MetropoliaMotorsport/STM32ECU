@@ -64,13 +64,11 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 		}
 	} else
 	{
-		adj->FL = 0;
-		adj->FR = 0;
-		adj->RL = 0;
-		adj->RR = 0;
+		adj->FL = Torque_Req;
+		adj->FR = adj->FL;
+		adj->RL = adj->FL;
+		adj->RR = adj->FL;
 	}
-
-
 #else
 	adj->FL = Torque_Req;
 	adj->FR = adj->FL;
