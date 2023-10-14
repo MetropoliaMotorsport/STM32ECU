@@ -122,6 +122,9 @@ TorqueVectoring_P_e TorqueVectoring_P = {
    */
   2.4,
 
+  // TODO fix to matlab, currently manually entered value for for CompareToConstant_torquepedal so variable reference positions do not break.
+  5,
+
   /* Expression: 0
    * Referenced by: '<S36>/Constant1'
    */

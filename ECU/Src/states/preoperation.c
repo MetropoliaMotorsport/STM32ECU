@@ -479,12 +479,13 @@ int PreOperationState( uint32_t OperationLoops  )
 	setCurConfig();
 
 	// allow APPS checking before RTDM
-	float Torque_Req = PedalTorqueRequest();
+	int16_t pedalreq;
+	float Torque_Req = PedalTorqueRequest(&pedalreq);
 
 	vectoradjust adj;
 	speedadjust spd;
 
-	doVectoring( Torque_Req, &adj, &spd );
+	doVectoring( Torque_Req, &adj, &spd, pedalreq );
 
 //	if ( testmotorslast ) InverterSetTorque(&adj, 1000);
 

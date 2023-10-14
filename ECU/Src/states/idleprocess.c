@@ -195,7 +195,8 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 
 	float lastreq = CarState.Torque_Req;
 
-    CarState.Torque_Req = PedalTorqueRequest();  // calculate request from APPS
+	int16_t pedalreq;
+    CarState.Torque_Req = PedalTorqueRequest(&pedalreq);  // calculate request from APPS
 
     if ( abs(lastreq-CarState.Torque_Req) > 10 )
     {
@@ -214,7 +215,7 @@ int IdleProcess( uint32_t OperationLoops ) // idle, inverters on.
 		DebugPrintf("Current req %f pedals %lu %lu %lu brakes %lu %lu", CarState.Torque_Req, ADCState.Torque_Req_R_Percent, ADCState.Torque_Req_L_Percent, ADCState.Regen_Percent, ADCState.BrakeF, ADCState.BrakeR );
 	}
 
-	doVectoring( CarState.Torque_Req, &adj, &spd );
+	doVectoring( CarState.Torque_Req, &adj, &spd, pedalreq );
 
 	if ( CarState.APPSstatus ) setOutput(TSLED,On); else setOutput(TSLED,Off);
 

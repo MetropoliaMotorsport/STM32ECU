@@ -431,7 +431,8 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 
 		UARTwrite("Setting inverters operational.\r\n");
 
-		int16_t curreq = PedalTorqueRequest();
+		int16_t pedalreq;
+		float curreq = PedalTorqueRequest(&pedalreq);
 		if ( curreq == 0 )
 		{
 			vTaskDelay(100);

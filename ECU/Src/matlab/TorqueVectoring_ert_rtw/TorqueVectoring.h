@@ -47,6 +47,7 @@ typedef struct {
   real_T VehicleSpeed;                 /* '<Root>/VehicleSpeed' */
   real_T TorqueVectoringEnabled;       /* '<Root>/TorqueVectoringEnabled' */
   real_T VehicleYawRate;               /* '<Root>/VehicleYawRate' */
+  real_T TorquePedal;               /* '<Root>/TorquePedal' */
   boolean_T FeedbackEnabled;           /* '<Root>/FeedbackEnabled' */
   boolean_T FeedForwardEnabled;        /* '<Root>/FeedForwardEnabled' */
 } TorqueVectoring_ExtU;
@@ -129,6 +130,9 @@ struct TorqueVectoring_P_e_ {
   real_T CompareToConstant_const;     /* Mask Parameter: CompareToConstant_const
                                        * Referenced by: '<S2>/Constant'
                                        */
+  real_T CompareToConstant_torquepedal;     /* Mask Parameter: CompareToConstant_torquepedal
+                                     * Referenced by: '<S2>/Constant'
+                                     */
   real_T Constant1_Value;              /* Expression: 0
                                         * Referenced by: '<S36>/Constant1'
                                         */

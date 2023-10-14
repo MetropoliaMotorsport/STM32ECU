@@ -33,7 +33,7 @@ int initVectoring( void )
 	return 0;
 }
 
-void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
+void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd, int16_t pedalreq )
 {
 #ifdef TORQUEBALANCE
 	uint8_t torquebalInt = getEEPROMBlock(0)->TorqueBal;
@@ -92,12 +92,11 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
 #ifdef MATLAB
 	// general config, not from dynamic state
 
-
-
 	TractionControl_U.TC_enabled = getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TCSENABLEDBIT)?1:0;
 	TorqueVectoring_U.TorqueVectoringEnabled = getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT)?1:0;;
 	TorqueVectoring_U.FeedbackEnabled = 1;
 	TorqueVectoring_U.FeedForwardEnabled = 1;
+	TorqueVectoring_U.TorquePedal = pedalreq;
 
 	Regeneration_U.select_operating_mode = getEEPROMBlock(0)->Regen == 2;
 	Regeneration_U.regen_optimizer_on = 1;
@@ -187,7 +186,7 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd )
  * APPS Check, Should ignore regen sensor and only use physical brake.
  *
  */
-float PedalTorqueRequest( void ) // returns current Nm request amount.
+float PedalTorqueRequest( int16_t *used_pedal_percent ) // returns current Nm request amount.
 {
 	//T 11.8.8:  If an implausibility occurs between the values of the APPSs and persists for more than 100 ms
 
@@ -216,6 +215,7 @@ float PedalTorqueRequest( void ) // returns current Nm request amount.
 
 	//The average value of the APPS // signals pedal travel equivalent to ≥25 % desired motor torque
 	int TorqueRequestPercent = getTorqueReqCurve(torqueperc) / 10;
+	*used_pedal_percent = TorqueRequestPercent;
 
 	// The commanded motor torque must remain at 0 N m until the APPS signals less than 5 % pedal travel
 	// and 0 N m desired motor torque, regardless of whether the brakes are still actuated or not.

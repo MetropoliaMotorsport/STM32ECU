@@ -67,7 +67,7 @@
 	#define SCREEN
 	#define POWERNODES
 	#define ANALOGNODES
-//	#define MATLAB
+	#define MATLAB
 	#define USEIMU
 	#define PWMSTEERING
 	#define LENZE

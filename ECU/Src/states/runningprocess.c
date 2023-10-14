@@ -247,9 +247,8 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 
         //CarState.Torque_Req = PedalTorqueRequest();  // calculate request from APPS
 
-		float torque_req = PedalTorqueRequest();
-		
-
+		int16_t pedalreq;
+		float torque_req = PedalTorqueRequest(&pedalreq);
 
 #ifdef TORQUEVECTOR
 
@@ -302,7 +301,7 @@ int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 		}
 
 		// doVectoring sets the final torque request value for state.
-		doVectoring( torque_req, &adj, &spd ); // process vectoring after getting positive or negative request.
+		doVectoring( torque_req, &adj, &spd, pedalreq ); // process vectoring after getting positive or negative request.
 
 		if ( CarState.APPSstatus )
 			setOutput(TSLED,On);
