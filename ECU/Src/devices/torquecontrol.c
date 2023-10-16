@@ -92,10 +92,12 @@ void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd, int16_
 #ifdef MATLAB
 	// general config, not from dynamic state
 
-	TractionControl_U.TC_enabled = getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_TCSENABLEDBIT)?1:0;
-	TorqueVectoring_U.TorqueVectoringEnabled = getEEPROMBlock(0)->TorqueVectoring & (1<<TORQUE_VECTORINGENABLEDBIT)?1:0;;
-	TorqueVectoring_U.FeedbackEnabled = 1;
-	TorqueVectoring_U.FeedForwardEnabled = 1;
+	uint8_t torqueoptions = getEEPROMBlock(0)->TorqueVectoring;
+
+	TractionControl_U.TC_enabled = torqueoptions & (1<<TORQUE_TCSENABLEDBIT)?1:0;
+	TorqueVectoring_U.TorqueVectoringEnabled = torqueoptions & (1<<TORQUE_VECTORINGENABLEDBIT)?1:0;
+	TorqueVectoring_U.FeedbackEnabled =  torqueoptions & (1<<TORQUE_FEEDBACKBIT)?1:0;
+	TorqueVectoring_U.FeedForwardEnabled = torqueoptions & (1<<TORQUE_FEEDFWDBIT)?1:0;
 	TorqueVectoring_U.TorquePedal = pedalreq;
 
 	Regeneration_U.select_operating_mode = getEEPROMBlock(0)->Regen == 2;
