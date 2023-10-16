@@ -361,7 +361,7 @@ void TorqueVectoring_step(void)
   rtb_AND_d = ((rtb_Desiredyawratereferencedegs != 0.0) &&
                (TorqueVectoring_U.VehicleSpeed >=
                 TorqueVectoring_P.CompareToConstant_const) &&
-               (TorqueVectoring_U.TorqueVectoringEnabled != 0.0) && (TorqueVectoring_U.TorquePedal <=
+               (TorqueVectoring_U.TorqueVectoringEnabled != 0.0) && (TorqueVectoring_U.TorquePedal >=
                    TorqueVectoring_P.CompareToConstant_torquepedal));
 
   /* Fcn: '<S6>/Fcn2' incorporates:
