@@ -1,0 +1,40 @@
+from int PreOperation( void )
+	/*for (uint8_t i = 0; i < 16; i++)
+	{
+		switch (i) // run switch for each error bit present.
+		{
+			case FLeftSpeedOnlineBit : // can react in some way to specific elements not being online here. re-sent nmt?
+				if ( DeviceState.FrontSpeedSensors == ENABLED)
+				{
+					DeviceState.FLeftSpeed = preoperationstate & (1 << i);
+				} else
+				{
+					DeviceState.FLeftSpeed = 0;
+				}
+				break;
+			case FRightSpeedOnlineBit :
+				if ( DeviceState.FrontSpeedSensors == ENABLED)
+				{
+					DeviceState.FRightSpeed = preoperationstate & (1 << i);
+				} else
+				{
+					DeviceState.FRightSpeed = 0;
+				}
+				break;
+			case InverterOnlineBit :
+				DeviceState.Inverter = preoperationstate & (1 << i);
+				break;
+			case BMSOnlineBit :
+				DeviceState.BMS = preoperationstate & (1 << i);
+				break;
+			case PDMOnlineBit :
+				DeviceState.PDM = preoperationstate & (1 << i);
+				break;
+			case PedalADCOnlineBit :
+				DeviceState.ADC = preoperationstate & (1 << i);
+				break;
+			default:
+				break;
+		}
+	}
+*/
