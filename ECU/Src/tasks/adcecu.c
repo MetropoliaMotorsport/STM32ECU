@@ -11,7 +11,6 @@
 #include "errors.h"
 #include "input.h"
 #include "adcecu.h"
-//#include "i2c-lcd.h"
 #include "semphr.h"
 #include "analognode.h"
 #include <limits.h>

@@ -17,7 +17,6 @@
 #include "power.h"
 #include "queue.h"
 #include "watchdog.h"
-#include "ecumain.h"
 #include "fdcan.h"
 #include "semphr.h"
 #include "taskpriorities.h"

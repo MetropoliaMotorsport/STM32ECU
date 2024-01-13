@@ -17,7 +17,6 @@
 #include "../matlab/Regeneration_ert_rtw/Regeneration.h"
 #include "../matlab/TorqueVectoring_ert_rtw/TorqueVectoring.h"
 #include "../matlab/TractionControl_ert_rtw/TractionControl.h"
-#include "rtwtypes.h"
 #endif
 
 #include <stdio.h>

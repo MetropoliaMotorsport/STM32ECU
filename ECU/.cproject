@@ -103,7 +103,7 @@
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Inc"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Middlewares/Third_Party/FreeRTOS/Source"/>
-						<entry excluding="devices/i2c-lcd.c|tasks/lcd.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Src"/>
+						<entry excluding="SOC|devices/SOC.c|devices/siemensinverter.c|devices/i2c-lcd.c|tasks/lcd.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="startup"/>
 					</sourceEntries>
 				</configuration>

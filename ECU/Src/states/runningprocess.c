@@ -17,7 +17,6 @@
 #include "adcecu.h"
 #include "input.h"
 #include "output.h"
-//#include "lcd.h"
 #include "inverter.h"
 #include "debug.h"
 

@@ -13,7 +13,6 @@
 #include "inverter.h"
 #include "input.h"
 #include "output.h"
-//#include "lcd.h"
 #include "timerecu.h"
 #include "power.h"
 #include "errors.h"

@@ -15,7 +15,6 @@
 #include "input.h"
 #include "inverter.h"
 #include "timerecu.h"
-//#include "lcd.h"
 #include "output.h"
 #include "power.h"
 #include "debug.h"

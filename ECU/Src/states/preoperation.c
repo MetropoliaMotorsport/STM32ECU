@@ -15,7 +15,6 @@
 #include "power.h"
 #include "adcecu.h"
 #include "bms.h"
-//#include "lcd.h"
 #include "input.h"
 #include "output.h"
 #include "inverter.h"

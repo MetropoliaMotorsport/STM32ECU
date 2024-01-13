@@ -11,8 +11,6 @@
 #include "memorator.h"
 #include "interrupts.h"
 //#include "stm32h7xx_hal_gpio.h"
-//#include "i2c-lcd.h"
-//#include "lcd.h"
 #include <time.h>
 #include "tim.h"
 

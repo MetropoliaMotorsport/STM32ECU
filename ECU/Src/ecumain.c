@@ -21,7 +21,6 @@
 #include "dwt_delay.h"
 #include "watchdog.h"
 #include "errors.h"
-//#include "lcd.h"
 #include "eeprom.h"
 #include "powernode.h"
 #include "analognode.h"

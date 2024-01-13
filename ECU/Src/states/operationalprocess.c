@@ -15,7 +15,6 @@
 #include "preoperation.h"
 #include "operationalreadyness.h"
 #include "errors.h"
-//#include "lcd.h"
 #include "input.h"
 #include "output.h"
 #include "timerecu.h"

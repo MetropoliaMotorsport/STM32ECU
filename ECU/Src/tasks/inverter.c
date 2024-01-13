@@ -23,9 +23,6 @@
 #include "taskpriorities.h"
 #include "timerecu.h"
 
-#ifdef SIEMENS
-	#include "siemensinverter.h"
-#endif
 #ifdef LENZE
 	#include "lenzeinverter.h"
 #endif
