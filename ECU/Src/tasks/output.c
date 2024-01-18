@@ -74,24 +74,6 @@ OutputType Output[OUTPUTCount] = {
 };
 #endif
 
-#ifdef HPF19
-
-OutputType Output[OUTPUTCount] = {
-		 { Output1_GPIO_Port, Output1_Pin},
-		 { Output2_GPIO_Port, Output2_Pin},
-		 { Output3_GPIO_Port, Output3_Pin},
-		 { Output4_GPIO_Port, Output4_Pin},
-		 { Output5_GPIO_Port, Output5_Pin},
-		 { Output6_GPIO_Port, Output6_Pin},
-		 { Output7_GPIO_Port, Output7_Pin},
-		 { Output8_GPIO_Port, Output8_Pin},
-		 { LD1_GPIO_Port, LD1_Pin},
-		 { LD2_GPIO_Port, LD2_Pin},
-		 { LD3_GPIO_Port, LD3_Pin}
-
-};
-#endif
-
 #define BLINKSTACK_SIZE 64
 
 StaticTask_t xBlinkTaskBuffer[OUTPUTCount];

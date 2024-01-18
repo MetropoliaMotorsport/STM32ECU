@@ -53,21 +53,6 @@ static volatile ButtonData Input[NO_INPUTS] = {
 };
 #endif
 
-#ifdef HPF19
-volatile ButtonData Input[NO_INPUTS] = {
-	{ USER_Btn_GPIO_Port, USER_Btn_Pin},
-	{ Input1_GPIO_Port, Input1_Pin},
-	{ Input2_GPIO_Port, Input2_Pin},
-	{ Input3_GPIO_Port, Input3_Pin},
-	{ Input4_GPIO_Port, Input4_Pin},
-	{ Input5_GPIO_Port, Input5_Pin},
-	{ Input6_GPIO_Port, Input6_Pin},
-	{ Input7_GPIO_Port, Input7_Pin},
-	{ Input8_GPIO_Port, Input8_Pin}
-};
-#endif
-
-
 #define InputQUEUE_LENGTH    20
 #define InputITEMSIZE		sizeof( struct input_msg )
 
@@ -266,12 +251,6 @@ int getPWMFreq( void ) // returns duty cycle as %*100
 
 int checkReset( void )
 {
-#ifdef HPF19 // only got a UserBtn on Nucleo board.
-	if(Input[UserBtn].pressed){
-			Input[UserBtn].pressed = 0;
-			return 1;
-	}
-#endif
 	if ( checkConfigReset() )
 	{
 		return 1;
@@ -555,36 +534,6 @@ void InputTimerCallback( void )
 	  // timer7, being used for button input debouncing
 		switch ( ButtonpressPin )
 		{  // process the button that was pressed to start the debounce timer.
-#ifdef HPF19
-			case USER_Btn_Pin :
-				debouncebutton(&Input[0]);
-				break;
-			case Input1_Pin:
-				debouncebutton(&Input[1]);
-				break;
-			case Input2_Pin:
-				debouncebutton(&Input[2]);
-				break;
-			case Input3_Pin:
-				debouncebutton(&Input[3]);
-				break;
-			case Input4_Pin:
-				debouncebutton(&Input[4]);
-				break;
-			case Input5_Pin:
-				debouncebutton(&Input[5]);
-				break;
-			case Input6_Pin:
-				debouncebutton(&Input[6]);
-				break;
-			case Input7_Pin:
-				debouncebutton(&Input[7]);
-				break;
-			case Input8_Pin:
-				debouncebutton(&Input[8]);
-				break;
-#endif
-
 #ifdef HPF20
 			case DI2_Pin:
 				debouncebutton(&Input[DI2]);

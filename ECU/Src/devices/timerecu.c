@@ -144,8 +144,6 @@ int initTimer( void )
 
 	MX_TIM16_Init();
 
-//	if ( DeviceState.LCD == OPERATIONAL )
-//		lcd_send_stringscroll("Enable Interrupts");
 	initInterrupts(); // start timers etc // move earlier to make display updating easier?
 	return 0;
 }

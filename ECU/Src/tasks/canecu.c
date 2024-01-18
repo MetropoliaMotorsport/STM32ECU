@@ -876,20 +876,6 @@ char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error )
 	} else id = ECU_CAN_ID+0x13;
 
 //	int16_t steering12bit = ADC_Data[SteeringADC] >> 4;
-#ifdef HPF19
-	uint8_t CANTxData2[8] = {
-		//	getByte(ADC_Data[SteeringADC], 0), getByte(ADC_Data[SteeringADC], 1),
-			getByte(ADC_Data[SteeringADC], 0), getByte(ADC_Data[SteeringADC], 1),
-			getByte(ADC_Data[DrivingModeADC], 0), getByte(ADC_Data[DrivingModeADC], 1),
-			getByte(ADC_Data[CoolantTempLADC], 0), getByte(ADC_Data[CoolantTempLADC], 1),
-			getByte(ADCState.CoolantTempRRaw, 0), getByte(ADCState.CoolantTempRRaw, 1),
-//			getByte(ADC_Data[CoolantTempRADC], 0), getByte(ADC_Data[CoolantTempRADC], 1),
-	};
-
-	return CAN1Send( id, 8, CANTxData2 );
-
-#endif
-
 #ifdef HPF20
 	uint8_t CANTxData2[8] = { // TODO Update for HPF20
 			0, 0,
@@ -903,33 +889,6 @@ char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error )
 
 char CAN_SendADCminmax( void )
 {
-#ifdef STMADC
-	if ( minmaxADC )
-	{
-		CAN_SendADCValue(ADC_DataMin[ThrottleLADC],11);
-		CAN_SendADCValue(ADC_DataMin[ThrottleRADC],12);
-		CAN_SendADCValue(ADC_DataMin[BrakeFADC],13);
-		CAN_SendADCValue(ADC_DataMin[BrakeRADC],14);
-#ifdef HPF19
-		CAN_SendADCValue(ADC_DataMin[SteeringADC],15);
-		CAN_SendADCValue(ADC_DataMin[DrivingModeADC],16);
-		CAN_SendADCValue(ADC_DataMin[CoolantTempLADC],17);
-		CAN_SendADCValue(ADC_DataMin[CoolantTempRADC],18);
-#endif
-		CAN_SendADCValue(ADC_DataMax[ThrottleLADC],21);
-		CAN_SendADCValue(ADC_DataMax[ThrottleRADC],22);
-
-		CAN_SendADCValue(ADC_DataMax[BrakeFADC],23);
-		CAN_SendADCValue(ADC_DataMax[BrakeRADC],24);
-
-#ifdef HPF19
-		CAN_SendADCValue(ADC_DataMax[SteeringADC],25);
-		CAN_SendADCValue(ADC_DataMax[DrivingModeADC],26);
-		CAN_SendADCValue(ADC_DataMax[CoolantTempLADC],27);
-		CAN_SendADCValue(ADC_DataMax[CoolantTempRADC],28);
-#endif
-	}
-#endif
 	return 0;
 }
 
@@ -974,23 +933,13 @@ char CAN_SendErrors( void )
 			// TODO get inverer state.
 			//CarState.Inverters[RearLeftInverter].InvState,
 			//CarState.Inverters[RearRightInverter].InvState,
-	#ifdef SIEMENS
-			CarState.Inverters[RearLeftInverter].InvStateCheck,
-			CarState.Inverters[RearRightInverter].InvStateCheck,
-	#else
 			0,0,
-	#endif
 #ifndef HPF20
 			0,0,0,0
 #else
 			0,
 			//CarState.Inverters[FrontRightInverter].InvState,
-	#ifdef SIEMENS
-			CarState.Inverters[FrontLeftInverter].InvStateCheck,
-			CarState.Inverters[FrontRightInverter].InvStateCheck
-	#else
 			0,0
-	#endif
 #endif
     };
 //  old message
@@ -1100,10 +1049,6 @@ char CANLogDataFast( void )
 	storeBEint16(getInvState(2)->InvVolt, &CANTxData[4]);
 
 	storeBEint16(CarState.VoltageBMS, &CANTxData[6]);
-
-#ifdef STMADC
-	ADCloops=0;
-#endif
 	CAN1Send( 0x7CB, 8, CANTxData );
 
 	resetCanTx(CANTxData);

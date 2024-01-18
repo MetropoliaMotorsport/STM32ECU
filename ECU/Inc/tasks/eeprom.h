@@ -16,13 +16,23 @@
 
 #define EEPROMVERSIONSTR		("MMECUV0.1")
 
-typedef enum EEPROM_cmd { EEPROMCurConf, EEPROMRunningData, writeEEPROM0, writeEEPROM1, writeEEPROMC, FullConfigEEPROM, FullEEPROM, zeroEEPROM } EEPROM_cmd;
+typedef enum EEPROM_cmd {
+	EEPROMCurConf,
+	EEPROMRunningData,
+	writeEEPROM0,
+	writeEEPROM1,
+	writeEEPROMC,
+	FullConfigEEPROM,
+	FullEEPROM,
+	zeroEEPROM
+} EEPROM_cmd;
 
 typedef struct EEPROM_msg {
 	EEPROM_cmd cmd;
 } EEPROM_msg;
 
-bool GetEEPROMCmd( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool GetEEPROMCmd(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle);
 
 /*
  *
@@ -33,41 +43,41 @@ bool GetEEPROMCmd( const uint8_t CANRxData[8], const uint32_t DataLength, const 
  block 60-109: config 2
  block 110-124: reserved
  block 125-128: emergency message. 4 blocks.
-*/
+ */
 
 /*
-Config block: 16 blocks for current state { operating mode, any disabled devices?, torque steering max etc., 64 bytes.}
-adc config block: 16-32blocks.
-other config info: 2 blocks.
+ Config block: 16 blocks for current state { operating mode, any disabled devices?, torque steering max etc., 64 bytes.}
+ adc config block: 16-32blocks.
+ other config info: 2 blocks.
 
  // writeblock(0/1);
 
-accelerator travel, linear L & R
+ accelerator travel, linear L & R
 
-: pedal profiles for modes->at least 5
+ : pedal profiles for modes->at least 5
 
-*/
+ */
 
 typedef struct pedalcurvestruct {
 	//  uint8_t PedalCurveSize
 	uint16_t PedalCurveInput[16];
-	uint16_t PedalCurveOutput[16];//   64 bytes. * 5
+	uint16_t PedalCurveOutput[16]; //   64 bytes. * 5
 } pedalcurve;
 
 // uint8_t ADCSteeringSize; // don't need size, can use 0 to terminate.
 typedef struct eepromdatastruct {
 	union {
-	char VersionString[10];
-	uint8_t BlockStart;
+		char VersionString[10];
+		uint8_t BlockStart;
 	};
 
 	uint16_t ADCSteeringInput[10]; // HPF19 compatibility, potential future use
 	int16_t ADCSteeringOutput[10]; // min/max possible, further reaches, mid point. 40 bytes
 
-	uint16_t ADCBrakeRPresInput[2];   // hpf19 compatibility, potential future use.
+	uint16_t ADCBrakeRPresInput[2]; // hpf19 compatibility, potential future use.
 	uint16_t ADCBrakeRPresOutput[2]; // 8 bytes
 
-	uint16_t ADCBrakeFPresInput[2];   // hpf19 compatibility, potential future use. linear scale Need more if non linear.
+	uint16_t ADCBrakeFPresInput[2]; // hpf19 compatibility, potential future use. linear scale Need more if non linear.
 	uint16_t ADCBrakeFPresOutput[2]; // 8 bytes // 57 bytes.
 
 	uint16_t ADCBrakeTravelInput[4]; // will always map to 0-100%.. min valid, zero value, 100% val, max val. // 8 bytes.
@@ -88,8 +98,8 @@ typedef struct eepromdatastruct {
 
 	// config data start at 512 for alignment and easy writing.
 	union {
-	uint8_t MaxTorque;
-	uint8_t ConfigStart;
+		uint8_t MaxTorque;
+		uint8_t ConfigStart;
 	};
 	uint8_t PedalProfile;
 	bool LimpMode;
@@ -110,8 +120,8 @@ typedef struct eepromdatastruct {
 	uint8_t AvailableByte;
 	bool Telemetry;
 	union {
-	uint8_t TorqueBal;
-	uint8_t Blockend;
+		uint8_t TorqueBal;
+		uint8_t Blockend;
 	};
 } eepromdata; // max 1600bytes=50*32byte blocks.
 
@@ -121,38 +131,38 @@ typedef struct {
 	uint16_t maxMotorI[4];
 } runtimedata_t;
 
-extern runtimedata_t * runtimedata_p;
+extern runtimedata_t *runtimedata_p;
 
 // 503 - 16 blocks. allocate 50 blocks : 128 blocks total
 
-bool initEEPROM( void );
-bool resetEEPROM( void );
-bool clearEEPROM( void );
+bool initEEPROM(void);
+bool resetEEPROM(void);
+bool clearEEPROM(void);
 
-bool checkversion(char * data);
+bool checkversion(char *data);
 
-uint8_t * getEEPROMBuffer( void );
+uint8_t* getEEPROMBuffer(void);
 
-eepromdata * getEEPROMBlock(int block );
+eepromdata* getEEPROMBlock(int block);
 
-int readEEPROMAddr( uint16_t address, uint16_t size );
+int readEEPROMAddr(uint16_t address, uint16_t size);
 
-void commitEEPROM( void ); // function for timer callback to handle writing, not meant for public calling.
+void commitEEPROM(void); // function for timer callback to handle writing, not meant for public calling.
 
-int writeFullEEPROM( void );
-int writeFullConfigEEPROM( void );
-int writeEEPROMCurConf( void );
+int writeFullEEPROM(void);
+int writeFullConfigEEPROM(void);
+int writeEEPROMCurConf(void);
 
-bool writeEEPROMDone( void );
+bool writeEEPROMDone(void);
 
-void clearRunningData( void );
+void clearRunningData(void);
 
-int EEPROMSend( void );
+int EEPROMSend(void);
 
-bool stopEEPROM( void );
-bool EEPROMBusy( void );
+bool stopEEPROM(void);
+bool EEPROMBusy(void);
 
-int DoEEPROM( void );
+int DoEEPROM(void);
 
 #endif /* EEPROM_H_ */
 

@@ -58,8 +58,6 @@
 #error Only one apps fix.
 #endif
 
-//#define HPF19
-
 // HPF 20 doesn't use any local ADC, all via analogue nodes, and PWM.
 #ifdef HPF20
     #define RTOS
@@ -77,13 +75,6 @@
 	#define MOTORCOUNT		(4)
 #endif
 	#define retransmitIMU
-#endif
-
-#ifdef HPF19
-	// Use onboard ADC, else expect ADC values by CAN.
-	#define STMADC
-// Retransmit IVT messages for BMS
-// #define retransmitIVT
 #endif
 
 // Calibration settings for pedals.
@@ -343,17 +334,6 @@
 #define SteeringAngleReceivedBit	31
 #define AccelLReceivedBit			ANode1Bit
 #define AccelRReceivedBit			ANode11Bit
-#endif
-
-#ifdef HPF19
-#define BrakeFReceivedBit			0
-#define BrakeRReceivedBit			1
-#define CoolantLReceivedBit			2
-#define CoolantRReceivedBit			3
-#define SteeringAngleReceivedBit	31
-#define AccelLReceivedBit			ANode1Bit
-#define AccelRReceivedBit			ANode11Bit
-#define DrivingModeReceivedBit	    7
 #endif
 
 #define Inverter1ErrorBit		9

@@ -585,16 +585,6 @@ void ShutdownCircuitSet( bool state )
 	HAL_GPIO_WritePin( Shutdown_GPIO_Port, Shutdown_Pin, state);
 }
 
-int ShutdownCircuitCurrent( void )
-{
-	// check if ADC ok
-#ifdef STMADC
-	return ADC_Data[2] * 1.22; // ~780 count ~= 0.95A ~820=1A   1.22 multiplication factor for approx mA calibrated.
-#else
-	return 0;
-#endif
-}
-
 int ShutdownCircuitState( void )
 {
 	return HAL_GPIO_ReadPin(Shutdown_GPIO_Port, Shutdown_Pin);

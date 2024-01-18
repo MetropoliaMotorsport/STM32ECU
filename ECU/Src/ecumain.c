@@ -7,13 +7,13 @@
  */
 
 /**
-  ******************************************************************************
-  * @file           : ecumain.c
-  * @brief          : Actual Main program body
-  ******************************************************************************
+ ******************************************************************************
+ * @file           : ecumain.c
+ * @brief          : Actual Main program body
+ ******************************************************************************
 
-  ******************************************************************************
-  */
+ ******************************************************************************
+ */
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -44,49 +44,45 @@
 #include "rng.h"
 
 HAL_StatusTypeDef SystemClock_Config(void);
-static int HardwareInit( void );
+static int HardwareInit(void);
 
-
-int __io_putchar(int ch)
-{
+int __io_putchar(int ch) {
 	ITM_SendChar(ch);
 	return ch;
 }
 
+void SWD_Init(void) {
+	*(__IO uint32_t*) (0x5C001004) |= 0x00700000; // DBGMCU_CR D3DBGCKEN D1DBGCKEN TRACECLKEN
 
-void SWD_Init(void)
-{
-  *(__IO uint32_t*)(0x5C001004) |= 0x00700000; // DBGMCU_CR D3DBGCKEN D1DBGCKEN TRACECLKEN
+	//UNLOCK FUNNEL
+	*(__IO uint32_t*) (0x5C004FB0) = 0xC5ACCE55; // SWTF_LAR
+	*(__IO uint32_t*) (0x5C003FB0) = 0xC5ACCE55; // SWO_LAR
 
-  //UNLOCK FUNNEL
-  *(__IO uint32_t*)(0x5C004FB0) = 0xC5ACCE55; // SWTF_LAR
-  *(__IO uint32_t*)(0x5C003FB0) = 0xC5ACCE55; // SWO_LAR
+	//SWO current output divisor register
+	//This divisor value (0x000000C7) corresponds to 400Mhz
+	//To change it, you can use the following rule
+	// value = (CPU Freq/sw speed )-1
+	*(__IO uint32_t*) (0x5C003010) = ((SystemCoreClock / 2000000) - 1); // SWO_CODR
 
-  //SWO current output divisor register
-  //This divisor value (0x000000C7) corresponds to 400Mhz
-  //To change it, you can use the following rule
-  // value = (CPU Freq/sw speed )-1
-   *(__IO uint32_t*)(0x5C003010) = ((SystemCoreClock / 2000000) - 1); // SWO_CODR
+	//SWO selected pin protocol register
+	*(__IO uint32_t*) (0x5C0030F0) = 0x00000002; // SWO_SPPR
 
-  //SWO selected pin protocol register
-   *(__IO uint32_t*)(0x5C0030F0) = 0x00000002; // SWO_SPPR
+	//Enable ITM input of SWO trace funnel
+	*(__IO uint32_t*) (0x5C004000) |= 0x00000001; // SWFT_CTRL
 
-  //Enable ITM input of SWO trace funnel
-   *(__IO uint32_t*)(0x5C004000) |= 0x00000001; // SWFT_CTRL
+	//RCC_AHB4ENR enable GPIOB clock
+	*(__IO uint32_t*) (0x580244E0) |= 0x00000002;
 
-  //RCC_AHB4ENR enable GPIOB clock
-   *(__IO uint32_t*)(0x580244E0) |= 0x00000002;
+	// Configure GPIOB pin 3 as AF
+	*(__IO uint32_t*) (0x58020400) = (*(__IO uint32_t*) (0x58020400)
+			& 0xffffff3f) | 0x00000080;
 
-  // Configure GPIOB pin 3 as AF
-   *(__IO uint32_t*)(0x58020400) = (*(__IO uint32_t*)(0x58020400) & 0xffffff3f) | 0x00000080;
+	// Configure GPIOB pin 3 Speed
+	*(__IO uint32_t*) (0x58020408) |= 0x00000080;
 
-  // Configure GPIOB pin 3 Speed
-   *(__IO uint32_t*)(0x58020408) |= 0x00000080;
-
-  // Force AF0 for GPIOB pin 3
-   *(__IO uint32_t*)(0x58020420) &= 0xFFFF0FFF;
+	// Force AF0 for GPIOB pin 3
+	*(__IO uint32_t*) (0x58020420) &= 0xFFFF0FFF;
 }
-
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -103,7 +99,7 @@ volatile DeviceStateType DeviceState;
 #define MAINTASKSTACK_SIZE 128*24
 #define MAINTASKTASKNAME  "MainTaskTask"
 StaticTask_t xMAINTASKTaskBuffer;
-StackType_t xMAINTASKStack[ MAINTASKSTACK_SIZE ];
+StackType_t xMAINTASKStack[MAINTASKSTACK_SIZE];
 
 TaskHandle_t MainTaskTaskHandle = NULL;
 
@@ -113,31 +109,26 @@ EventGroupHandle_t xCycleSync;
 
 /* USER CODE BEGIN 1 */
 /* Functions needed when configGENERATE_RUN_TIME_STATS is on */
-void configureTimerForRunTimeStats(void)
-{
+void configureTimerForRunTimeStats(void) {
 
 }
 
-unsigned long getRunTimeCounterValue(void)
-{
+unsigned long getRunTimeCounterValue(void) {
 	return DWT->CYCCNT;
 }
 
-void MainTask(void *argument)
-{
+void MainTask(void *argument) {
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	HardwareInit();
 
 	initERRORState();
 
-    ResetStateData();
+	ResetStateData();
 
 	TickType_t xLastWakeTime;
 
 	// Initialise the xLastWakeTime variable with the current time.
 	xLastWakeTime = xTaskGetTickCount();
-
-//	lcd_settitle("Starting Main Loop");
 
 	OperationalState = StartupState;
 
@@ -156,39 +147,35 @@ void MainTask(void *argument)
 	blinkOutput(LED7, BlinkFast, 1500);
 #endif
 
-	xEventGroupSync( xStartupSync, 1, 1, 100 );
+	xEventGroupSync(xStartupSync, 1, 1, 100);
 
 	CarState.allowtsactivation = true;
 
-	while(1)
-	{
+	while (1) {
 		TickType_t startloop = xLastWakeTime;
 		OperationalProcess();
-		vTaskDelayUntil( &xLastWakeTime, CYCLETIME );
+		vTaskDelayUntil(&xLastWakeTime, CYCLETIME);
 		setWatchdogBit(watchdogBit);
-		xEventGroupSync( xCycleSync, 1, 1, 0 );
+		xEventGroupSync(xCycleSync, 1, 1, 0);
 		// send sync at end of loop. set up a syncronisation group.
 		CAN_NMTSyncRequest();
 
-		if (xLastWakeTime - startloop > CYCLETIME )
+		if (xLastWakeTime - startloop > CYCLETIME)
 			DebugMsg("Long process loop!");
 	}
 	// shouldn't get here, but terminate thread gracefully if do somehow.
 	vTaskDelete(NULL);
 }
 
-
-void HAL_Delay(  volatile uint32_t millis )
-{
-/* replace HAL library blocking delay function
-* with FreeRTOS thread aware equivalent */
+void HAL_Delay(volatile uint32_t millis) {
+	/* replace HAL library blocking delay function
+	 * with FreeRTOS thread aware equivalent */
 	vTaskDelay(millis);
 }
 
 //In addition, call the HAL_IncTick() function from the FreeRTOS TickHook:
 
-void vApplicationTickHook( void )
-{
+void vApplicationTickHook(void) {
 	HAL_IncTick();
 }
 
@@ -201,10 +188,8 @@ void StartDefaultTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
-
 // Initialise the ECU's internal features.
-static int HardwareInit( void )
-{
+static int HardwareInit(void) {
 //	SWD_Init();
 
 	/* Enable I-Cache---------------------------------------------------------*/
@@ -242,21 +227,13 @@ static int HardwareInit( void )
 
 	// startup LCD first
 #ifdef HPF20
-	ShutdownCircuitSet( false ); // ensure shutdown circuit is closed at start
+	ShutdownCircuitSet( false); // ensure shutdown circuit is closed at start
 
-    initOutput(); // set default led states and start life indicator LED blinking. needed for LCD powering.
+	initOutput(); // set default led states and start life indicator LED blinking. needed for LCD powering.
 
-//	initLCD();
-
-	if ( watchdogRebooted() )
-	{
-//		lcd_send_stringline(0, "Watchdog Rebooted...", 0);
+	if (watchdogRebooted()) {
 		DebugMsg("Watchdog Rebooted!");
 	}
-
-//	lcd_startscroll();
-//	lcd_setscrolltitle("Startup...");
-
 
 	initTimer();
 
@@ -267,7 +244,6 @@ static int HardwareInit( void )
 #elif
 	DeviceState.LCD = DISABLED;
 #endif
-//	lcd_send_stringscroll("Start CANBUS");
 
 	initCAN();
 	initRTC();
@@ -283,10 +259,6 @@ static int HardwareInit( void )
 	initInput();
 	initECU();
 
-#ifdef HPF19
-	initCANADC();
-#endif
-
 #ifdef POWERNODES
 	initNodes();
 	initPowerNodes();
@@ -300,52 +272,42 @@ static int HardwareInit( void )
 	initADC();
 
 #ifdef EEPROMSTORAGE
-    initEEPROM();
+	initEEPROM();
 #endif
 
 	initConfig(); // config relies on eeprom data, was too early in process!
 
-	eepromdata * data = getEEPROMBlock(0);
+	eepromdata *data = getEEPROMBlock(0);
 
 	DebugPrintf("Apps Calib L: %5d - %5d ( %5d %5d )\r\n",
-			data->ADCTorqueReqLInput[0],
-			data->ADCTorqueReqLInput[1],
-			data->ADCTorqueReqLInput[2],
-			data->ADCTorqueReqLInput[3]);
+			data->ADCTorqueReqLInput[0], data->ADCTorqueReqLInput[1],
+			data->ADCTorqueReqLInput[2], data->ADCTorqueReqLInput[3]);
 
 	DebugPrintf("Apps Calib R: %5d - %5d ( %5d %5d )\r\n",
-			data->ADCTorqueReqRInput[0],
-			data->ADCTorqueReqRInput[1],
-			data->ADCTorqueReqRInput[2],
-			data->ADCTorqueReqRInput[3]);
+			data->ADCTorqueReqRInput[0], data->ADCTorqueReqRInput[1],
+			data->ADCTorqueReqRInput[2], data->ADCTorqueReqRInput[3]);
 
 	DebugPrintf("Regen Calib:  %5d - %5d ( %5d %5d )\r\n",
-			data->ADCBrakeTravelInput[0],
-			data->ADCBrakeTravelInput[1],
-			data->ADCBrakeTravelInput[2],
-			data->ADCBrakeTravelInput[3]);
+			data->ADCBrakeTravelInput[0], data->ADCBrakeTravelInput[1],
+			data->ADCBrakeTravelInput[2], data->ADCBrakeTravelInput[3]);
 
+	for (int i = 0; i < 100; i += 10) {
 
-	for ( int i=0;i<100;i+=10)
-	{
+		//	int range =
 
-	//	int range =
+		//	100/(data->ADCTorqueReqLInput[1] - data->ADCTorqueReqLInput[0]) * ;
 
-	//	100/(data->ADCTorqueReqLInput[1] - data->ADCTorqueReqLInput[0]) * ;
-
-	//	DebugPrintf(getTorqueReqPercR();
+		//	DebugPrintf(getTorqueReqPercR();
 	}
 
-    // Moved inverters after eeprom so that config value can be used.
+	// Moved inverters after eeprom so that config value can be used.
 
 	initInv();
 
-	if ( getEEPROMBlock(0)->alwaysHV )
-	{
+	if (getEEPROMBlock(0)->alwaysHV) {
 		DebugMsg("Shutdowncircuit Closed");
 		ShutdownCircuitSet(true);
-	} else
-	{
+	} else {
 		DebugMsg("Shutdowncircuit Open");
 		ShutdownCircuitSet(false);
 	}
@@ -362,37 +324,28 @@ static int HardwareInit( void )
 	for ( i=0;i<10;i++ ){
 		vTaskDelay(100);
 		sprintf(str,"%.8d", i);
-		lcd_send_stringscroll(str);
 	}
 
 	while ( 1 )
 	{
-		lcd_processscroll(GetUpDownPressed());
 		vTaskDelay(50);
 	}
 #endif
 
-//	lcd_send_stringscroll("Hardware init done.");
-
 	vTaskDelay(200);
-
-//	lcd_endscroll();
 
 	return returnval;
 }
-
-
 
 /*
  * Primary operating function entered into after initialisation.
  */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int realmain(void)
-{
+ * @brief  The application entry point.
+ * @retval int
+ */
+int realmain(void) {
 	/* MCU Configuration--------------------------------------------------------*/
 
 	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -406,25 +359,20 @@ int realmain(void)
 	DWT_Init();
 	initWatchdog();
 
-    xStartupSync = xEventGroupCreate();
-    xCycleSync = xEventGroupCreate();
+	xStartupSync = xEventGroupCreate();
+	xCycleSync = xEventGroupCreate();
 
-	MainTaskTaskHandle = xTaskCreateStatic(
-						  MainTask,
-						  MAINTASKTASKNAME,
-						  MAINTASKSTACK_SIZE,
-						  ( void * ) 1,
-						  MAINTASKTASKPRIORITY,
-						  xMAINTASKStack,
-						  &xMAINTASKTaskBuffer );
-
+	MainTaskTaskHandle = xTaskCreateStatic(MainTask,
+	MAINTASKTASKNAME,
+	MAINTASKSTACK_SIZE, (void*) 1,
+	MAINTASKTASKPRIORITY, xMAINTASKStack, &xMAINTASKTaskBuffer);
 
 	vTaskStartScheduler();
 
-	while ( 1 )
-	{};
+	while (1) {
+	};
 
- // should never get here.
+	// should never get here.
 }
 
 #ifdef  USE_FULL_ASSERT

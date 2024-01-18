@@ -14,7 +14,6 @@
 #include "output.h"
 #include "power.h"
 #include "timerecu.h"
-#include "lcd.h"
 #include "semphr.h"
 #include "queue.h"
 
@@ -23,14 +22,14 @@
 static uint8_t criticalerrorset = 0;
 
 struct error_msg {
-  char msg[MAXERRORMSGLENGTH+1];
-  time_t time;
+	char msg[MAXERRORMSGLENGTH + 1];
+	time_t time;
 };
 
 #define ERRORQUEUE_LENGTH    40
-#define ERRORITEMSIZE		sizeof( struct lcd_msg )
+#define ERRORITEMSIZE		sizeof( struct error_msg ) // Nam: Temporarily replacing size of lcd_msg with size of error_msg to remove lcd.h TODO: Figure out what ERRORITEMSIZE actually needs to be
 static StaticQueue_t ERRORStaticQueue;
-uint8_t ERRORQueueStorageArea[ ERRORQUEUE_LENGTH * ERRORITEMSIZE ];
+uint8_t ERRORQueueStorageArea[ERRORQUEUE_LENGTH * ERRORITEMSIZE];
 
 QueueHandle_t ERRORQueue;
 
@@ -42,27 +41,21 @@ uint8_t critcalerrorcode;
 
 bool logerrors = false;
 
-void LogError( char *message )
-{
-	if ( logerrors )
-	{
+void LogError(char *message) {
+	if (logerrors) {
 		struct error_msg error;
 		error.time = getTime();
-		strncpy( error.msg, message, MAXERRORMSGLENGTH);
-		xQueueSendToBack(ERRORQueue,&error,0); // send it to error state handler queue for display to user.
-
-//		lcd_send_stringline( 3, message, 2);
+		strncpy(error.msg, message, MAXERRORMSGLENGTH);
+		xQueueSendToBack(ERRORQueue, &error, 0); // send it to error state handler queue for display to user.
 	}
-	DebugMsg( message ); // also send it to UART output immediately.
+	DebugMsg(message); // also send it to UART output immediately.
 }
 
-void SetErrorLogging( bool log )
-{
+void SetErrorLogging( bool log) {
 	logerrors = log;
 }
 
-int OperationalErrorHandler( uint32_t OperationLoops )
-{
+int OperationalErrorHandler(uint32_t OperationLoops) {
 	// determine whether occurred error is totally or partially recoverable, and what to do. Try to reset device in question.
 	// If still not co-operating either disable, suggest limp mode, or if absolutely critical, total failure.
 
@@ -78,23 +71,22 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 #endif
 	{
 		// TODO get a better way to indicate error state.
-		  CAN_SendStatus(1, OperationalErrorState, Errors.OperationalReceiveError+(0<<16));
+		CAN_SendStatus(1, OperationalErrorState,
+				Errors.OperationalReceiveError + (0 << 16));
 	}
 
-	if ( OperationLoops == 0) // reset state on entering/rentering.
-	{
+	if (OperationLoops == 0) // reset state on entering/rentering.
+			{
 		DebugMsg("Entering Error State");
-		char str[LCDCOLUMNS+1];
-//		lcd_startscroll();
-//		lcd_setscrolltitle("ERROR State");
+		char str[MAXERRORMSGLENGTH + 1]; // Nam: Replacing LCDCOLUMNS with MAXERRORMSGLENGTH to remove lcd.h TODO: Figure out a proper value to use
 
-		sprintf(str,"Loc:%.2X Code:%.4X", Errors.ErrorPlace, Errors.ErrorReason);
+		sprintf(str, "Loc:%.2X Code:%.4X", Errors.ErrorPlace,
+				Errors.ErrorReason);
 		DebugMsg(str);
-//		lcd_send_stringscroll(str);
 
-		InverterAllowTorqueAll( false );  // immedietly stop allowing torque request.
+		InverterAllowTorqueAll( false); // immedietly stop allowing torque request.
 
-		ShutdownCircuitSet( false );
+		ShutdownCircuitSet( false);
 
 		ClearHVLost();
 
@@ -104,65 +96,50 @@ int OperationalErrorHandler( uint32_t OperationLoops )
         sendPDM( 0 ); //disable high voltage on error state;
 #endif
 
-        CAN_SendTimeBase();
+		CAN_SendTimeBase();
 
-		sprintf(str,"Errorstate: %.4X", 0);
-//		lcd_send_stringscroll(str);
+		sprintf(str, "Errorstate: %.4X", 0);
 		// send cause of error state.
 
 		ConfigReset();
 
-//		lcd_send_stringscroll(str);
-
-		if ( !CheckShutdown() ) // indicate shutdown switch status with blinking rate.
-		{
-//			lcd_send_stringscroll("Shutdown switches");
-		}
-
 //		CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
-		blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
-		blinkOutput(RTDMLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+		blinkOutput(TSLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
+		blinkOutput(RTDMLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
 		errorstatetime = gettimer();
 	}
 
 	struct error_msg error;
 
-	while ( uxQueueMessagesWaiting( ERRORQueue ) )
-	{
-	//	char str[LCDCOLUMNS+1];
-		xQueueReceive(ERRORQueue,&error,0);
+	while (uxQueueMessagesWaiting(ERRORQueue)) {
+		xQueueReceive(ERRORQueue, &error, 0);
 
-//		lcd_send_stringscroll(error.msg);
 	}
 
-	if ( Errors.InverterError ){
+	if (Errors.InverterError) {
 		CAN_SENDINVERTERERRORS();
-//		lcd_send_stringscroll("Inverter error");
 	}
 
-	if ( Errors.ErrorPlace ){
+	if (Errors.ErrorPlace) {
 		CAN_SendErrors();
 	}
 
-	if (  Shutdown.BMSReason != 0 )
-	{
+	if (Shutdown.BMSReason != 0) {
 		char statusstr[32];
-		sprintf(statusstr, "ERROR State BMS %d", Shutdown.BMSReason );
-//		lcd_setscrolltitle(statusstr);
+		sprintf(statusstr, "ERROR State BMS %d", Shutdown.BMSReason);
 	}
 
 #ifdef PDM
 	receivePDM();
 #endif
 
-	if ( !CheckShutdown() ) // indicate shutdown switch status with blinking rate.
+	if (!CheckShutdown()) // indicate shutdown switch status with blinking rate.
 	{
-		blinkOutput(TSLED,LEDBLINK_ONE,LEDBLINKNONSTOP);
-		blinkOutput(RTDMLED,LEDBLINK_ONE,LEDBLINKNONSTOP);
-	} else
-	{
-		blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
-		blinkOutput(RTDMLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
+		blinkOutput(TSLED, LEDBLINK_ONE, LEDBLINKNONSTOP);
+		blinkOutput(RTDMLED, LEDBLINK_ONE, LEDBLINKNONSTOP);
+	} else {
+		blinkOutput(TSLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
+		blinkOutput(RTDMLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
 	}
 
 #ifdef AUTORESET
@@ -181,27 +158,25 @@ int OperationalErrorHandler( uint32_t OperationLoops )
 
 	char str[80] = "ERROR: ";
 
-	if ( errorstatetime + MS1000*2 > gettimer() ) // ensure error state is seen for at least 2 seconds.
-	{
+	if (errorstatetime + MS1000 * 2 > gettimer()) // ensure error state is seen for at least 2 seconds.
+			{
 		allowreset += 1;
-		strcat(str, "" );
+		strcat(str, "");
 	}
 
-	if ( 0 ) // getPowerErrors() ) // inverter error checked in next step.
+	if (0) // getPowerErrors() ) // inverter error checked in next step.
 	{
 //		allowreset += 2;
-		strcat(str, "PDM " );
+		strcat(str, "PDM ");
 	}
 
-	if ( DeviceState.timeout )
-	{
-		strcat(str, "NTO " );	
+	if (DeviceState.timeout) {
+		strcat(str, "NTO ");
 	}
 
-	if ( ! ( DeviceState.ADCSanity == 0 ))
-	{
-		allowreset +=4;
-		strcat(str, "PDL " );
+	if (!(DeviceState.ADCSanity == 0)) {
+		allowreset += 4;
+		strcat(str, "PDL ");
 
 	}
 
@@ -213,66 +188,43 @@ int OperationalErrorHandler( uint32_t OperationLoops )
     }
 #endif
 
-//    strpad(str,20, true);
-
-    if ( allowreset == 0 )
-    {
-//    	lcd_setscrolltitle("ERROR (Reset OK) ");
-    } else
-    {
-//    	lcd_setscrolltitle(str);
-    }
-
 	// wait for restart request if allowed by error state.
-	if ( allowreset == 0 && ( checkReset() == 1 // manual reset
+	if (allowreset == 0 && (checkReset() == 1 // manual reset
 #ifdef AUTORESET
         		|| ( invertererror  && allowautoreset ) // or automatic reset if allowed inverter error.
 #endif
-           )
-		)
-	{
-//		setupButtons();
-//		setupLEDs();
+	)) {
 		//loopcount = 0;
-//		lcd_endscroll();
 		return StartupState;
 		// try to perform a full reset back to startup state here on user request.
 	}
 
-		// check for restart request. -> pre operation.
-  return OperationalErrorState;
+	// check for restart request. -> pre operation.
+	return OperationalErrorState;
 
-  //return FatalErrorState; // only go to fatal error if error deemed unrecoverable.
+	//return FatalErrorState; // only go to fatal error if error deemed unrecoverable.
 }
 
-
-void SetCriticalError( uint8_t err )
-{
-	criticalerrorset |= ( 1<<err);
+void SetCriticalError(uint8_t err) {
+	criticalerrorset |= (1 << err);
 	DebugPrintf("Logging critical error %lu", err);
 }
 
-uint8_t CheckCriticalError(void)
-{
+uint8_t CheckCriticalError(void) {
 	return criticalerrorset;
 }
 
-void ClearCriticalError(void)
-{
+void ClearCriticalError(void) {
 	criticalerrorset = 0;
 }
 
+int initERRORState(void) {
+	ERRORQueue = xQueueCreateStatic(ERRORQUEUE_LENGTH, ERRORITEMSIZE,
+			ERRORQueueStorageArea, &ERRORStaticQueue);
 
-int initERRORState( void )
-{
-	ERRORQueue = xQueueCreateStatic( ERRORQUEUE_LENGTH,
-							  ERRORITEMSIZE,
-							  ERRORQueueStorageArea,
-							  &ERRORStaticQueue );
+	vQueueAddToRegistry(ERRORQueue, "ERRORQueue");
 
-	vQueueAddToRegistry(ERRORQueue, "ERRORQueue" );
-
-	SetErrorLogging( true );
+	SetErrorLogging( true);
 
 	return 0;
 }

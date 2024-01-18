@@ -113,7 +113,6 @@ int Startup( uint32_t OperationLoops  )
 		CAN_SendStatus(1, StartupState, 0);
 	}
 
-//	lcd_settitle("Startup init");
 
 	// send startup state message here.
 	// reset all state information.
@@ -149,14 +148,12 @@ int Startup( uint32_t OperationLoops  )
 
 int LimpProcess( uint32_t OperationLoops  )
 {
-//	lcd_settitle("LimpProcess(NA)");
 	CAN_SendStatus(1, LimpState, 0 );
 	return LimpState;
 }
 
 int TestingProcess( uint32_t OperationLoops  )
 {
-//	lcd_settitle("TestingProcess(NA)");
 	CAN_SendStatus(1, TestingState, 0 );
 	return TestingState;
 }

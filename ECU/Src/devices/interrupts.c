@@ -8,8 +8,7 @@
 #include "ecumain.h"
 #include "interrupts.h"
 
-void initInterrupts( void )
-{
+void initInterrupts(void) {
 #ifndef RTOS
 	InButtonpress = 1; // stops random button events triggering till interrupts are properly enabled.
 
@@ -22,21 +21,6 @@ void initInterrupts( void )
 #ifdef HPF2023
 	HAL_NVIC_SetPriority(WHLINT_EXTI_IRQn, 15, 0);
 	HAL_NVIC_EnableIRQ(WHLINT_EXTI_IRQn);
-#endif
-
-#ifdef HPF19
-	// enable button interrupts -- handled in GPIO setup, set to low priority, human scale input, not priority.
-	HAL_NVIC_SetPriority(USER_Btn_EXTI_IRQn, 15, 0);
-	HAL_NVIC_EnableIRQ(USER_Btn_EXTI_IRQn);
-
-	HAL_NVIC_SetPriority(Input1_EXTI_IRQn, 15, 0);
-	HAL_NVIC_EnableIRQ(Input1_EXTI_IRQn);
-
-	HAL_NVIC_SetPriority(Input2_EXTI_IRQn, 15, 0);
-	HAL_NVIC_EnableIRQ(Input2_EXTI_IRQn);
-
-	HAL_NVIC_SetPriority(Input3_EXTI_IRQn, 15, 0);
-	HAL_NVIC_EnableIRQ(Input3_EXTI_IRQn);
 #endif
 
 #ifndef RTOS

@@ -11,25 +11,6 @@
 #include "ecu.h"
 #include "semphr.h"
 
-#ifdef HPF19
-	#define SteeringADC			5 // ai2
-	#define ThrottleLADC		1 // ai7
-	#define ThrottleRADC		8 // ai6
-	//#define ThrottleRADC		1 // ai6olld
-	#define BrakeFADC			0 // ai1  pa3 PIN CN9-1
-	#define BrakeRADC			7 // ai0  pa0 PIN CN10-29
-	#define DrivingModeADC		2 // ai3
-	#define CoolantTempLADC     3 // ai5 tmp_l // L is not connected.
-	#define CoolantTempRADC     3 // ai4 tmp_r should be 3, but disconnected.
-
-	#define NumADCChan		   	8
-	#define NumADCChanADC3 		2
-	#define SampleSize			4 // how many samples to average
-	#define ADC_CONVERTED_DATA_BUFFER_SIZE   ((uint32_t) NumADCChan*SampleSize)   /* Size of array aADCxConvertedData[] */
-	#define ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3   ((uint32_t) NumADCChanADC3*SampleSize)
-#endif
-
-
 #ifdef HPF20
 	#define ThrottleLADC		(0) //
 	#define ThrottleRADC		(1) //
@@ -41,36 +22,10 @@
 	#define NumADCChan		   	(3)
 	#define NumADCChanADC3 		(3)
 	#define SampleSize			(4)
-#ifdef STMADC
-	#define ADC_CONVERTED_DATA_BUFFER_SIZE   ((uint32_t) NumADCChan*SampleSize*2)
-	/* Size of array aADCxConvertedData[] */
-	#define ADC_CONVERTED_DATA_BUFFER_SIZE_ADC3   ((uint32_t) NumADCChanADC3*SampleSize*2)
-#endif
-#endif
-
-#ifdef HPF19
-// using local or remote ADC.
-volatile char usecanADC;
 #endif
 
 //extern volatile char minmaxADC;
 // ADC
-
-#ifdef STMADC
-typedef enum ADC_cmd{ adc1, adc3 } ADC_cmd;
-
-typedef struct ADC_msg {
-	uint32_t cmd;
-} ADC_msg;
-
-
-// averaged ADC data
-volatile uint32_t ADC_Data[NumADCChan+NumADCChanADC3];
-volatile uint32_t ADC_DataError[NumADCChan+NumADCChanADC3];
-volatile uint32_t ADC_DataMin[NumADCChan+NumADCChanADC3];
-volatile uint32_t ADC_DataMax[NumADCChan+NumADCChanADC3];
-#endif
-
 
 extern SemaphoreHandle_t ADCUpdate;
 
@@ -141,20 +96,6 @@ typedef struct {
 
 extern volatile ADCStateSensors_t ADCStateSensors;
 
-#ifdef HPF19
-struct  {
-	volatile char newdata;
-	int16_t SteeringAngle;
-	uint8_t BrakeF;
-	uint8_t BrakeR;
-	uint8_t CoolantTempL;
-	uint8_t CoolantTempR;
-	uint8_t Torque_Req_L_Percent;
-	uint8_t Torque_Req_R_Percent;
-	uint8_t DrivingMode;
-} CANADC;
-#endif
-
 struct ADCTable {
 	uint16_t *Input;
 	int16_t *Output;
@@ -206,25 +147,10 @@ int getTorqueVector(uint16_t RawADCInput);
 // car state
 
 bool SetupADCInterpolationTables( eepromdata * data );
-#ifdef HPF19
-void SetupNormalTorque( void );
-void SetupLargeLowRangeTorque( void );
-void SetupLowTravelTorque( void );
-#endif
 void SetupTorque( int request );
-
-#ifdef STMADC
-HAL_StatusTypeDef startADC(void);
-#endif
 
 
 void minmaxADCReset(void);
-
-#ifdef HPF19
-void receiveCANInput( uint8_t * CANRxData );
-
-int initCANADC( void );
-#endif
 
 uint32_t CheckADCSanity( void );
 
