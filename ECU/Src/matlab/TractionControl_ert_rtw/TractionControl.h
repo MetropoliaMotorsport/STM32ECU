@@ -38,98 +38,98 @@ typedef struct TractionControl_tag_RTM TractionControl_RT_MODEL;
 
 /* Block signals and states (default storage) for system '<Root>' */
 typedef struct {
-  real_T Integrator_DSTATE[4];         /* '<S38>/Integrator' */
-  real_T Filter_DSTATE[4];             /* '<S33>/Filter' */
-  int8_T Integrator_PrevResetState[4]; /* '<S38>/Integrator' */
-  int8_T Filter_PrevResetState[4];     /* '<S33>/Filter' */
+	real_T Integrator_DSTATE[4]; /* '<S38>/Integrator' */
+	real_T Filter_DSTATE[4]; /* '<S33>/Filter' */
+	int8_T Integrator_PrevResetState[4]; /* '<S38>/Integrator' */
+	int8_T Filter_PrevResetState[4]; /* '<S33>/Filter' */
 } TractionControl_DW;
 
 /* External inputs (root inport signals with default storage) */
 typedef struct {
-  real_T VehicleSpeed;                 /* '<Root>/VehicleSpeed' */
-  real_T WheelRotVelocityFL;           /* '<Root>/WheelRotVelocityFL' */
-  real_T WheelRotVelocityFR;           /* '<Root>/WheelRotVelocityFR' */
-  real_T WheelRotVelocityRL;           /* '<Root>/WheelRotVelocityRL' */
-  real_T WheelRotVelocityRR;           /* '<Root>/WheelRotVelocityRR' */
-  real_T Desiredwheelslip;             /* '<Root>/UpperSlipThreshold' */
-  real_T LowerSlipThreshold;           /* '<Root>/LowerSlipThreshold' */
-  real_T Proportionalgain;             /* '<Root>/Kp' */
-  real_T Integralgain;                 /* '<Root>/Ki' */
-  real_T Derivativegain;               /* '<Root>/Kd' */
-  real_T BrakePressure;                /* '<Root>/BrakePressure' */
-  real_T TC_enabled;                   /* '<Root>/TC_enabled' */
+	real_T VehicleSpeed; /* '<Root>/VehicleSpeed' */
+	real_T WheelRotVelocityFL; /* '<Root>/WheelRotVelocityFL' */
+	real_T WheelRotVelocityFR; /* '<Root>/WheelRotVelocityFR' */
+	real_T WheelRotVelocityRL; /* '<Root>/WheelRotVelocityRL' */
+	real_T WheelRotVelocityRR; /* '<Root>/WheelRotVelocityRR' */
+	real_T Desiredwheelslip; /* '<Root>/UpperSlipThreshold' */
+	real_T LowerSlipThreshold; /* '<Root>/LowerSlipThreshold' */
+	real_T Proportionalgain; /* '<Root>/Kp' */
+	real_T Integralgain; /* '<Root>/Ki' */
+	real_T Derivativegain; /* '<Root>/Kd' */
+	real_T BrakePressure; /* '<Root>/BrakePressure' */
+	real_T TC_enabled; /* '<Root>/TC_enabled' */
 } TractionControl_ExtU;
 
 /* External outputs (root outports fed by signals with default storage) */
 typedef struct {
-  real_T TC_FL;                        /* '<Root>/TC_FL' */
-  real_T TC_FR;                        /* '<Root>/TC_FR' */
-  real_T TC_RR;                        /* '<Root>/TC_RR' */
-  real_T TC_RL;                        /* '<Root>/TC_RL' */
-  real_T slipFL;                       /* '<Root>/slipFL' */
-  real_T slipFR;                       /* '<Root>/slipFR' */
-  real_T slipRL;                       /* '<Root>/slipRL' */
-  real_T slipRR;                       /* '<Root>/slipRR' */
+	real_T TC_FL; /* '<Root>/TC_FL' */
+	real_T TC_FR; /* '<Root>/TC_FR' */
+	real_T TC_RR; /* '<Root>/TC_RR' */
+	real_T TC_RL; /* '<Root>/TC_RL' */
+	real_T slipFL; /* '<Root>/slipFL' */
+	real_T slipFR; /* '<Root>/slipFR' */
+	real_T slipRL; /* '<Root>/slipRL' */
+	real_T slipRR; /* '<Root>/slipRR' */
 } TractionControl_ExtY;
 
 /* Parameters (default storage) */
 struct TractionControl_P_e_ {
-  real_T TireRadius;                   /* Variable: TireRadius
-                                        * Referenced by: '<S1>/WheelSlipCalculation'
-                                        */
-  real_T TCcontroller_InitialConditionForFilter;
-                       /* Mask Parameter: TCcontroller_InitialConditionForFilter
-                        * Referenced by: '<S33>/Filter'
-                        */
-  real_T TCcontroller_InitialConditionForIntegra;
-                      /* Mask Parameter: TCcontroller_InitialConditionForIntegra
-                       * Referenced by: '<S38>/Integrator'
-                       */
-  real_T TCcontroller_LowerSaturationLimit;
-                            /* Mask Parameter: TCcontroller_LowerSaturationLimit
-                             * Referenced by:
-                             *   '<S45>/Saturation'
-                             *   '<S31>/DeadZone'
-                             */
-  real_T TCcontroller_UpperSaturationLimit;
-                            /* Mask Parameter: TCcontroller_UpperSaturationLimit
-                             * Referenced by:
-                             *   '<S45>/Saturation'
-                             *   '<S31>/DeadZone'
-                             */
-  real_T Constant1_Value;              /* Expression: 0
-                                        * Referenced by: '<S29>/Constant1'
-                                        */
-  real_T Limittopositive_UpperSat;     /* Expression: inf
-                                        * Referenced by: '<S1>/Limit to positive'
-                                        */
-  real_T Limittopositive_LowerSat;     /* Expression: 0
-                                        * Referenced by: '<S1>/Limit to positive'
-                                        */
-  real_T Integrator_gainval;           /* Computed Parameter: Integrator_gainval
-                                        * Referenced by: '<S38>/Integrator'
-                                        */
-  real_T N_Value;                      /* Expression: 100
-                                        * Referenced by: '<S1>/N'
-                                        */
-  real_T Filter_gainval;               /* Computed Parameter: Filter_gainval
-                                        * Referenced by: '<S33>/Filter'
-                                        */
-  real_T Clamping_zero_Value;          /* Expression: 0
-                                        * Referenced by: '<S29>/Clamping_zero'
-                                        */
-  int8_T Constant_Value;               /* Computed Parameter: Constant_Value
-                                        * Referenced by: '<S29>/Constant'
-                                        */
-  int8_T Constant2_Value;              /* Computed Parameter: Constant2_Value
-                                        * Referenced by: '<S29>/Constant2'
-                                        */
-  int8_T Constant3_Value;              /* Computed Parameter: Constant3_Value
-                                        * Referenced by: '<S29>/Constant3'
-                                        */
-  int8_T Constant4_Value;              /* Computed Parameter: Constant4_Value
-                                        * Referenced by: '<S29>/Constant4'
-                                        */
+	real_T TireRadius; /* Variable: TireRadius
+	 * Referenced by: '<S1>/WheelSlipCalculation'
+	 */
+	real_T TCcontroller_InitialConditionForFilter;
+	/* Mask Parameter: TCcontroller_InitialConditionForFilter
+	 * Referenced by: '<S33>/Filter'
+	 */
+	real_T TCcontroller_InitialConditionForIntegra;
+	/* Mask Parameter: TCcontroller_InitialConditionForIntegra
+	 * Referenced by: '<S38>/Integrator'
+	 */
+	real_T TCcontroller_LowerSaturationLimit;
+	/* Mask Parameter: TCcontroller_LowerSaturationLimit
+	 * Referenced by:
+	 *   '<S45>/Saturation'
+	 *   '<S31>/DeadZone'
+	 */
+	real_T TCcontroller_UpperSaturationLimit;
+	/* Mask Parameter: TCcontroller_UpperSaturationLimit
+	 * Referenced by:
+	 *   '<S45>/Saturation'
+	 *   '<S31>/DeadZone'
+	 */
+	real_T Constant1_Value; /* Expression: 0
+	 * Referenced by: '<S29>/Constant1'
+	 */
+	real_T Limittopositive_UpperSat; /* Expression: inf
+	 * Referenced by: '<S1>/Limit to positive'
+	 */
+	real_T Limittopositive_LowerSat; /* Expression: 0
+	 * Referenced by: '<S1>/Limit to positive'
+	 */
+	real_T Integrator_gainval; /* Computed Parameter: Integrator_gainval
+	 * Referenced by: '<S38>/Integrator'
+	 */
+	real_T N_Value; /* Expression: 100
+	 * Referenced by: '<S1>/N'
+	 */
+	real_T Filter_gainval; /* Computed Parameter: Filter_gainval
+	 * Referenced by: '<S33>/Filter'
+	 */
+	real_T Clamping_zero_Value; /* Expression: 0
+	 * Referenced by: '<S29>/Clamping_zero'
+	 */
+	int8_T Constant_Value; /* Computed Parameter: Constant_Value
+	 * Referenced by: '<S29>/Constant'
+	 */
+	int8_T Constant2_Value; /* Computed Parameter: Constant2_Value
+	 * Referenced by: '<S29>/Constant2'
+	 */
+	int8_T Constant3_Value; /* Computed Parameter: Constant3_Value
+	 * Referenced by: '<S29>/Constant3'
+	 */
+	int8_T Constant4_Value; /* Computed Parameter: Constant4_Value
+	 * Referenced by: '<S29>/Constant4'
+	 */
 };
 
 /* Parameters (default storage) */
@@ -137,7 +137,7 @@ typedef struct TractionControl_P_e_ TractionControl_P_e;
 
 /* Real-time Model Data Structure */
 struct TractionControl_tag_RTM {
-  const char_T * volatile errorStatus;
+	const char_T *volatile errorStatus;
 };
 
 /* Block parameters (default storage) */

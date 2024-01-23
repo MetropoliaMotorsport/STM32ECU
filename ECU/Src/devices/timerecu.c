@@ -21,123 +21,101 @@ time_t rtctime;
 /**
  * returns total 0.1ms since turnon to use as comparison timestamp
  */
-uint32_t gettimer(void)
-{
+uint32_t gettimer(void) {
 	return stTick;
 }
 
-int setRTC( time_t time )
-{
+int setRTC(time_t time) {
 	rtctime = time;
 	return 1;
 }
 
-bool isRTCSet( void )
-{
-	if ( rtctime == 0 )
+bool isRTCSet(void) {
+	if (rtctime == 0)
 		return true;
 	else
 		return false;
 }
 
-void HAL_IncTick(void)
-{
+void HAL_IncTick(void) {
 //  timerticks++; // 10khz timer base.
 //  if ( timerticks % 10 == 0)
-  {
-	  stTick++;
-	  if ( stTick % 1000 == 0 && rtctime != 0 ) rtctime++;
-  }
+	{
+		stTick++;
+		if (stTick % 1000 == 0 && rtctime != 0)
+			rtctime++;
+	}
 }
 
-uint32_t HAL_GetTick(void)
-{
-  return stTick;
+uint32_t HAL_GetTick(void) {
+	return stTick;
 }
-
 
 /**
  * @brief IRQ handler for timer3 used to keep timebase.
  */
-void TIM3_IRQHandler()
-{
-    HAL_TIM_IRQHandler(&htim3);
+void TIM3_IRQHandler() {
+	HAL_TIM_IRQHandler(&htim3);
 }
 
-void TIM6_IRQHandler()
-{
-    HAL_TIM_IRQHandler(&htim6);
+void TIM6_IRQHandler() {
+	HAL_TIM_IRQHandler(&htim6);
 }
-
 
 /**
  * @brief timer interrupt to keep a timebase and process button debouncing.
  */
-void TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
+void TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM17) {
 		HAL_IncTick();
-	} else if ( htim->Instance == TIM6 )
-	{
+	} else if (htim->Instance == TIM6) {
 
-	} else if ( htim->Instance == TIM16) // used for eeprom write in background.
+	} else if (htim->Instance == TIM16) // used for eeprom write in background.
 	{
 		commitEEPROM();
 	}
 }
 
-
-char * getCurTimeStr( void )
-{
+char* getCurTimeStr(void) {
 //	static char timestr[9] = "00:00:00";
 //	static time_t lasttime = 0;
-	if ( rtctime != 0 )
-	{
+	if (rtctime != 0) {
 //		if (lasttime != rtctime )
 		{
-			return getTimeStr( rtctime );
+			return getTimeStr(rtctime);
 		}
-	} else
-	{
-		return getTimeStr( gettimer()/1000 );
+	} else {
+		return getTimeStr(gettimer() / 1000);
 		//sprintf(timestr,"%.7lis", gettimer()/1000);
 	}
 }
 
-char * getTimeStr( time_t time )
-{
+char* getTimeStr(time_t time) {
 	static char timestr[9] = "00:00:00";
 
-	if ( rtctime != 0 )
-	{
+	if (rtctime != 0) {
 		struct tm curtime;
 		curtime = *localtime(&time);
 		strftime(timestr, sizeof(timestr), "%H:%M:%S", &curtime);
-	} else
-	{
-		sprintf(timestr,"%.7lis", (uint32_t)time);
+	} else {
+		sprintf(timestr, "%.7lis", (uint32_t) time);
 	}
 	return timestr;
 }
 
-time_t getTime( void )
-{
-	if ( rtctime != 0 )
-	{
+time_t getTime(void) {
+	if (rtctime != 0) {
 		return rtctime;
 	} else
-		return gettimer()/1000;
+		return gettimer() / 1000;
 }
 
-int initRTC( void )
-{
+int initRTC(void) {
 	rtctime = 0;
 	return initMemorator();
 }
 
-
-int initTimer( void )
-{
+int initTimer(void) {
 	MX_TIM7_Init();
 
 	MX_TIM6_Init();

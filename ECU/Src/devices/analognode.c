@@ -23,17 +23,23 @@
 #include "analognode.h"
 #include "timerecu.h"
 
-void ANodeCritTimeout( uint16_t id );
+void ANodeCritTimeout(uint16_t id);
 
 #ifdef HPF2023
 
-bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle);
+bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle);
+bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle);
 
-CANData  AnalogNode1 =  { &DeviceState.AnalogNode1, AnalogNode1_ID, 6, processANode1Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
-CANData  AnalogNode10 = { &DeviceState.AnalogNode10, AnalogNode10_ID, 6, processANode10Data, NULL, NODETIMEOUT };
-CANData  AnalogNode11 = { &DeviceState.AnalogNode11, AnalogNode11_ID, 6, processANode11Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
+CANData AnalogNode1 = { &DeviceState.AnalogNode1, AnalogNode1_ID, 6,
+		processANode1Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
+CANData AnalogNode10 = { &DeviceState.AnalogNode10, AnalogNode10_ID, 6,
+		processANode10Data, NULL, NODETIMEOUT };
+CANData AnalogNode11 = { &DeviceState.AnalogNode11, AnalogNode11_ID, 6,
+		processANode11Data, ANodeCritTimeout, NODECRITICALTIMEOUT };
 
 #else
 bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
@@ -56,28 +62,29 @@ CANData  AnalogNode18 = { &DeviceState.AnalogNode18, AnalogNode18_ID, 3, process
 
 #endif
 
-void ANodeCritTimeout( uint16_t id ) // ensure critical ADC values are set to safe defaults if not received.
+void ANodeCritTimeout(uint16_t id) // ensure critical ADC values are set to safe defaults if not received.
 {
 	DebugMsg("ANode timeout.");
 	xSemaphoreTake(ADCUpdate, portMAX_DELAY);
-	ADCStateNew.Torque_Req_L_Percent=0;
-	ADCStateNew.Torque_Req_R_Percent=0;
-	ADCStateNew.Regen_Percent=0;
-	ADCStateNew.APPSL=0;
-	ADCStateNew.APPSR=0;
-	ADCStateNew.Regen=0;
-	ADCStateNew.BrakeF = 0;//APPSBrakeHard;
-	ADCStateNew.BrakeR = 0;//APPSBrakeHard;
+	ADCStateNew.Torque_Req_L_Percent = 0;
+	ADCStateNew.Torque_Req_R_Percent = 0;
+	ADCStateNew.Regen_Percent = 0;
+	ADCStateNew.APPSL = 0;
+	ADCStateNew.APPSR = 0;
+	ADCStateNew.Regen = 0;
+	ADCStateNew.BrakeF = 0; //APPSBrakeHard;
+	ADCStateNew.BrakeR = 0; //APPSBrakeHard;
 	xSemaphoreGive(ADCUpdate);
-    SetCriticalError( CRITERRANODE );
+	SetCriticalError( CRITERRANODE);
 	DeviceState.timeout = true;
 }
 
-uint32_t getOldestANodeCriticalData( void )
-{
+uint32_t getOldestANodeCriticalData(void) {
 	uint32_t time = gettimer();
-	if ( AnalogNode1.time <  time ) time = AnalogNode1.time;
-	if ( AnalogNode11.time <  time ) time = AnalogNode11.time;
+	if (AnalogNode1.time < time)
+		time = AnalogNode1.time;
+	if (AnalogNode11.time < time)
+		time = AnalogNode11.time;
 	return time;
 }
 
@@ -86,11 +93,10 @@ uint32_t getOldestANodeCriticalData( void )
 // AccelL = 03  F9  --   return (data[0]<<8)+data[1]; 03 * 256 + f9  = 1017    or 63747
 // regen = 00  97  --
 
-bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
-{
+bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle) {
 	static bool first = false;
-	if ( !first )
-	{
+	if (!first) {
 		DebugMsg("Analog node 1 First msg.");
 		first = true;
 	}
@@ -105,11 +111,7 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 	}
 	count++;
 #endif
-	if (
-		AccelL < 4096
-		 && Regen < 4096
-	)
-	{
+	if (AccelL < 4096 && Regen < 4096) {
 		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
 #ifdef MANUALADC
 		int percentage = ((100000/(1831-480))*(AccelL-480))/100; // adjust lower end margin higher so some movement needed to leave 0%
@@ -133,11 +135,11 @@ bool processANode1Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 		ADCStateNew.Regen_Percent = getBrakeTravelPerc(Regen);
 		ADCStateNew.Regen = Regen;
 		xSemaphoreGive(ADCUpdate);
-		xTaskNotify( ADCTaskHandle, ( 0x1 << ANode1Bit ), eSetBits);
+		xTaskNotify(ADCTaskHandle, ( 0x1 << ANode1Bit ), eSetBits);
 		return true;
 	} else // bad data.
 	{
-		xTaskNotify( ADCTaskHandle, ( ( 0x1 << 16 ) << ANode1Bit ), eSetBits); // mark some bad data received.
+		xTaskNotify(ADCTaskHandle, ( ( 0x1 << 16 ) << ANode1Bit ), eSetBits); // mark some bad data received.
 		return false;
 	}
 	return true;
@@ -162,15 +164,14 @@ bool processANode9Data(const uint8_t CANRxData[8], const uint32_t DataLength, co
 }
 #endif
 
-bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
-{
+bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle) {
 	static bool first = false;
-	if ( !first )
-	{
+	if (!first) {
 		DebugMsg("Analog node 10 First msg.");
 		first = true;
 	}
-	xTaskNotify( ADCTaskHandle, ( 0x1 << ANode10Bit ), eSetBits);
+	xTaskNotify(ADCTaskHandle, ( 0x1 << ANode10Bit ), eSetBits);
 
 	ADCStateSensors.Susp1 = getBEint16(&CANRxData[0]);
 	ADCStateSensors.susp2 = getBEint16(&CANRxData[4]);
@@ -181,7 +182,6 @@ bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	return true;
 }
 
-
 //  1    00000694         8  FC  D6  FE  10  FE  11  00  5B   87958.622804 R
 
 // brakef = FE  10
@@ -190,18 +190,17 @@ bool processANode10Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 
 //
 
-bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
-{
+bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle) {
 	static bool first = false;
-	if ( !first )
-	{
+	if (!first) {
 		DebugMsg("Analog node 11 First msg.");
 		first = true;
 	}
 #ifdef HPF2023
 	uint16_t AccelR = getBEint16(&CANRxData[4]);
-	int16_t BrakeF = (int16_t)getBEint16(&CANRxData[0]);
-	int16_t BrakeR = (int16_t)getBEint16(&CANRxData[2]);
+	int16_t BrakeF = (int16_t) getBEint16(&CANRxData[0]);
+	int16_t BrakeR = (int16_t) getBEint16(&CANRxData[2]);
 #else
 	ADCStateSensors.BrakeTemp2 = getBEint16(&CANRxData[0]);
 
@@ -220,22 +219,20 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 	count++;
 #endif
 
-	if (
-	 ( AccelR < 4096 ) // make sure not pegged fully down.
-		)
-	{
+	if ((AccelR < 4096) // make sure not pegged fully down.
+	) {
 		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
-		if ( BrakeF > 0)
+		if (BrakeF > 0)
 			ADCStateNew.BrakeF = BrakeF;
 		else
 			ADCStateNew.BrakeF = 0;
 
-		if ( BrakeR > 0 )
-        	ADCStateNew.BrakeR = BrakeR;
+		if (BrakeR > 0)
+			ADCStateNew.BrakeR = BrakeR;
 		else
 			ADCStateNew.BrakeR = 0;
 #ifndef APPSFIXR
-        ADCStateNew.Torque_Req_R_Percent = getTorqueReqPercR(AccelR);
+		ADCStateNew.Torque_Req_R_Percent = getTorqueReqPercR(AccelR);
 		ADCStateNew.APPSR = AccelR;
 #endif
 #ifdef APPSFIXL
@@ -244,11 +241,11 @@ bool processANode11Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 #endif
 
 		xSemaphoreGive(ADCUpdate);
-		xTaskNotify( ADCTaskHandle, ( 0x1 << ANode11Bit ), eSetBits);
+		xTaskNotify(ADCTaskHandle, ( 0x1 << ANode11Bit ), eSetBits);
 		return true;
 	} else // bad data.
 	{
-		xTaskNotify( ADCTaskHandle, ( ( 0x1 << 16 ) << ANode11Bit ), eSetBits); // mark some bad data received.
+		xTaskNotify(ADCTaskHandle, ( ( 0x1 << 16 ) << ANode11Bit ), eSetBits); // mark some bad data received.
 		return false;
 	}
 	return true;
@@ -381,136 +378,119 @@ bool processANode18Data(const uint8_t CANRxData[8], const uint32_t DataLength, c
 char ANodeCritStr[10] = "";
 char ANodeStr[15] = "";
 
-void setAnalogNodesStr( const uint32_t nodesonline ) // any of these missing should just be a warning or note.
+void setAnalogNodesStr(const uint32_t nodesonline) // any of these missing should just be a warning or note.
 {
 	ANodeStr[0] = 0;
 
 	uint8_t pos = 0;
 
+	if ( ANodeAllBit & (0x1 << ANode1Bit))
+		if (!(nodesonline & (0x1 << ANode1Bit))) {
+			ANodeStr[pos] = 'i';
+			ANodeStr[pos + 1] = '\0';
+			pos++;
+		}
 
-	if ( ANodeAllBit & ( 0x1 << ANode1Bit ) )
-	if ( !(nodesonline & ( 0x1 << ANode1Bit )) )
-	{
-		ANodeStr[pos] = 'i';
-		ANodeStr[pos+1] = '\0';
-		pos++;
-	}
+	if ( ANodeAllBit & (0x1 << ANode9Bit))
+		if (!(nodesonline & (0x1 << ANode9Bit))) {
+			ANodeStr[pos] = '9';
+			ANodeStr[pos + 1] = '\0';
+			pos++;
+		}
 
-	if ( ANodeAllBit & ( 0x1 << ANode9Bit ) )
-	if ( !(nodesonline & ( 0x1 << ANode9Bit )) )
-	{
-		ANodeStr[pos] = '9';
-		ANodeStr[pos+1] = '\0';
-		pos++;
-	}
+	if ( ANodeAllBit & (0x1 << ANode10Bit))
+		if (!(nodesonline & (0x1 << ANode10Bit))) {
+			ANodeStr[pos] = '0';
+			ANodeStr[pos + 1] = '\0';
+			pos++;
+		}
 
-	if ( ANodeAllBit & ( 0x1 << ANode10Bit ) )
-	if ( !(nodesonline & ( 0x1 << ANode10Bit )) )
-	{
-		ANodeStr[pos] = '0';
-		ANodeStr[pos+1] = '\0';
-		pos++;
-	}
+	if ( ANodeAllBit & (0x1 << ANode11Bit))
+		if (!(nodesonline & (0x1 << ANode11Bit))) {
+			ANodeStr[pos] = '1';
+			ANodeStr[pos + 1] = '\0';
+			pos++;
+		}
 
-	if ( ANodeAllBit & ( 0x1 << ANode11Bit ) )
-	if ( !(nodesonline & ( 0x1 << ANode11Bit )) )
-	{
-		ANodeStr[pos] = '1';
-		ANodeStr[pos+1] = '\0';
-		pos++;
-	}
+	if ( ANodeAllBit & (0x1 << ANode12Bit))
+		if (!(nodesonline & (0x1 << ANode12Bit))) {
+			ANodeStr[pos] = '2';
+			ANodeStr[pos + 1] = '\0';
+			pos++;
+		}
 
-	if ( ANodeAllBit & ( 0x1 << ANode12Bit ) )
-	if ( !(nodesonline & ( 0x1 << ANode12Bit )) )
-	{
-		ANodeStr[pos] = '2';
-		ANodeStr[pos+1] = '\0';
-		pos++;
-	}
+	if ( ANodeAllBit & (0x1 << ANode13Bit))
+		if (!(nodesonline & (0x1 << ANode13Bit))) {
+			ANodeStr[pos] = '3';
+			ANodeStr[pos + 1] = '\0';
+			pos++;
+		}
 
-	if ( ANodeAllBit & ( 0x1 << ANode13Bit ) )
-	if ( !(nodesonline & ( 0x1 << ANode13Bit )) )
-	{
-		ANodeStr[pos] = '3';
-		ANodeStr[pos+1] = '\0';
-		pos++;
-	}
+	if ( ANodeAllBit & (0x1 << ANode14Bit))
+		if (!(nodesonline & (0x1 << ANode14Bit))) {
+			ANodeStr[pos] = '4';
+			ANodeStr[pos + 1] = '\0';
+			pos++;
+		}
 
-	if ( ANodeAllBit & ( 0x1 << ANode14Bit ) )
-	if ( !(nodesonline & ( 0x1 << ANode14Bit )) )
-	{
-		ANodeStr[pos] = '4';
-		ANodeStr[pos+1] = '\0';
-		pos++;
-	}
+	if ( ANodeAllBit & (0x1 << ANode15Bit))
+		if (!(nodesonline & (0x1 << ANode15Bit))) {
+			ANodeStr[pos] = '5';
+			ANodeStr[pos + 1] = '\0';
+			pos++;
+		}
 
-	if ( ANodeAllBit & ( 0x1 << ANode15Bit ) )
-	if ( !(nodesonline & ( 0x1 << ANode15Bit )) )
-	{
-		ANodeStr[pos] = '5';
-		ANodeStr[pos+1] = '\0';
-		pos++;
-	}
+	if ( ANodeAllBit & (0x1 << ANode16Bit))
+		if (!(nodesonline & (0x1 << ANode16Bit))) {
+			ANodeStr[pos] = '6';
+			ANodeStr[pos + 1] = '\0';
+			pos++;
+		}
 
-	if ( ANodeAllBit & ( 0x1 << ANode16Bit ) )
-	if ( !(nodesonline & ( 0x1 << ANode16Bit )) )
-	{
-		ANodeStr[pos] = '6';
-		ANodeStr[pos+1] = '\0';
-		pos++;
-	}
+	if ( ANodeAllBit & (0x1 << ANode17Bit))
+		if (!(nodesonline & (0x1 << ANode17Bit))) {
+			ANodeStr[pos] = '7';
+			ANodeStr[pos + 1] = '\0';
+			pos++;
+		}
 
-	if ( ANodeAllBit & ( 0x1 << ANode17Bit ) )
-	if ( !(nodesonline & ( 0x1 << ANode17Bit )) )
-	{
-		ANodeStr[pos] = '7';
-		ANodeStr[pos+1] = '\0';
-		pos++;
-	}
-
-	if ( ANodeAllBit & ( 0x1 << ANode18Bit ) )
-	if ( !(nodesonline & ( 0x1 << ANode18Bit )) )
-	{
-		ANodeStr[pos] = '8';
-		ANodeStr[pos+1] = '\0';
-		pos++;
-	}
+	if ( ANodeAllBit & (0x1 << ANode18Bit))
+		if (!(nodesonline & (0x1 << ANode18Bit))) {
+			ANodeStr[pos] = '8';
+			ANodeStr[pos + 1] = '\0';
+			pos++;
+		}
 }
 
-
-char * getAnalogNodesCriticalStr( void )
-{
-	if ( ANodeCritStr[0] == 0) return "";
+char* getAnalogNodesCriticalStr(void) {
+	if (ANodeCritStr[0] == 0)
+		return "";
 	return ANodeCritStr;
 }
 
-char * getAnalogNodesStr( void )
-{
-	if ( ANodeStr[0] == 0) return "";
+char* getAnalogNodesStr(void) {
+	if (ANodeStr[0] == 0)
+		return "";
 	return ANodeStr;
 }
 
-
-void setAnalogNodesCriticalStr( const uint32_t nodesonline ) // 1 = APPS1 + regen. 11 = APPS2 + brakes  Only lack of these should prevent startup.
+void setAnalogNodesCriticalStr(const uint32_t nodesonline) // 1 = APPS1 + regen. 11 = APPS2 + brakes  Only lack of these should prevent startup.
 {
 	ANodeCritStr[0] = 0;
 
 	uint8_t pos = 0;
 
-	if ( !(nodesonline & ( 0x1 << ANode1Bit )) )
-	{
+	if (!(nodesonline & (0x1 << ANode1Bit))) {
 		ANodeCritStr[pos] = 'I';
-		ANodeCritStr[pos+1] = '\0';
+		ANodeCritStr[pos + 1] = '\0';
 		pos++;
 	}
-	if ( !(nodesonline & ( 0x1 << ANode11Bit )) )
-	{
+	if (!(nodesonline & (0x1 << ANode11Bit))) {
 		ANodeCritStr[pos] = '1';
-		ANodeCritStr[pos+1] = '\0';
+		ANodeCritStr[pos + 1] = '\0';
 		pos++;
 	}
 }
-
 
 //warning and error codes
 #define ERR_CAN_FIFO_FULL			1
@@ -531,25 +511,38 @@ void setAnalogNodesCriticalStr( const uint32_t nodesonline ) // 1 = APPS1 + rege
 
 #define ERR_INVALID_CONFIG_ID		65
 
-
-bool processANodeErr( const uint8_t nodeid, const uint32_t errorcode, const CANData * datahandle )
-{
+bool processANodeErr(const uint8_t nodeid, const uint32_t errorcode,
+		const CANData *datahandle) {
 	// acknowledge error received.
 
 	char str[41] = "ANode ";
 
 	snprintf(str, 41, "ANode %d ", nodeid);
 
-	switch ( errorcode ) // switch off errors, need to be ACK'ed to stop sending error code.
+	switch (errorcode) // switch off errors, need to be ACK'ed to stop sending error code.
 	{
-		case ERR_WRONG_BYTES : strncat(str, "Wrong Bytes", 40); break;
-		case ERR_INCORRECT_TF : strncat(str, "Incorrect TF", 40); break;
-		case ERR_INCORRECT_TF_VOLTAGE :  strncat(str, "Incorrect TFV", 40); break;
-		case ERR_INCORRECT_TF_NTC :  strncat(str, "Incorrect TF NTC", 40); break;
-		case ERR_INCORRECT_TF_I_TRANS :  strncat(str, "Incorrect TF_I", 40); break;
+	case ERR_WRONG_BYTES:
+		strncat(str, "Wrong Bytes", 40);
+		break;
+	case ERR_INCORRECT_TF:
+		strncat(str, "Incorrect TF", 40);
+		break;
+	case ERR_INCORRECT_TF_VOLTAGE:
+		strncat(str, "Incorrect TFV", 40);
+		break;
+	case ERR_INCORRECT_TF_NTC:
+		strncat(str, "Incorrect TF NTC", 40);
+		break;
+	case ERR_INCORRECT_TF_I_TRANS:
+		strncat(str, "Incorrect TF_I", 40);
+		break;
 
-		case WARN_OVERCURR :  strncat(str,"warn OverCurr", 40);  break;
-		case ERR_OVERCURR_SHUTOFF :  strncat(str,"Err OverCurrOff", 40); break;
+	case WARN_OVERCURR:
+		strncat(str, "warn OverCurr", 40);
+		break;
+	case ERR_OVERCURR_SHUTOFF:
+		strncat(str, "Err OverCurrOff", 40);
+		break;
 	}
 
 	DebugMsg(str);
@@ -557,20 +550,17 @@ bool processANodeErr( const uint8_t nodeid, const uint32_t errorcode, const CAND
 	return true;
 }
 
-
-void resetAnalogNodes( void )
-{
-    ADCState.BrakeF = 0;
-    ADCState.BrakeR = 0;
-    ADCState.Torque_Req_R_Percent = 0;
-    ADCState.Torque_Req_L_Percent = 0;
-    ADCState.Regen_Percent = 0;
+void resetAnalogNodes(void) {
+	ADCState.BrakeF = 0;
+	ADCState.BrakeR = 0;
+	ADCState.Torque_Req_R_Percent = 0;
+	ADCState.Torque_Req_L_Percent = 0;
+	ADCState.Regen_Percent = 0;
 
 	CarState.brake_balance = 0;
 }
 
-int initAnalogNodes( void )
-{
+int initAnalogNodes(void) {
 	assert_param(ADCUpdate);
 
 	RegisterResetCommand(resetAnalogNodes);

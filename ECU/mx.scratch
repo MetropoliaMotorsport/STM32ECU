@@ -3,10 +3,10 @@
   <FileVersion>3.0</FileVersion>
   <Workspace>
     <WorkspaceType>Single-project</WorkspaceType>
-    <WorkspacePath>/Users/visa/Code/motorsport/STM32ECU/ECU/</WorkspacePath>
+    <WorkspacePath>D:\Projects\ECU\ECU\</WorkspacePath>
     <underRoot>true</underRoot>
     <TrustZone>0</TrustZone>
-    <HAL_Driver>/Users/visa/STM32Cube/Repository//STM32Cube_FW_H7_V1.9.0</HAL_Driver>
+    <HAL_Driver>C:\Users\ADMIN\STM32Cube\Repository\STM32Cube_FW_H7_V1.11.1</HAL_Driver>
     <CMSIS>Drivers/CMSIS</CMSIS>
     <Toolchain>STM32CubeIDE</Toolchain>
     <IocFile>ECU.ioc</IocFile>
@@ -27,19 +27,20 @@
           <cpucore>ARM Cortex-M7</cpucore>
           <fpu>DP</fpu>
           <memories>
-            <memory access="xrw" name="DTCMRAM" size="128" start="0x20000000" />
-            <memory access="xrw" name="RAM_D1" size="512" start="0x24000000" />
-            <memory access="xrw" name="RAM_D2" size="288" start="0x30000000" />
-            <memory access="xrw" name="RAM_D3" size="64" start="0x38000000" />
-            <memory access="xrw" name="ITCMRAM" size="64" start="0x00000000" />
-            <memory access="rx" name="FLASH" size="2048" start="0x8000000" />
+            <memory access="xrw" name="DTCMRAM" size="131072" start="0x20000000" />
+            <memory access="xrw" name="RAM_D1" size="524288" start="0x24000000" />
+            <memory access="xrw" name="RAM_D2" size="294912" start="0x30000000" />
+            <memory access="xrw" name="RAM_D3" size="65536" start="0x38000000" />
+            <memory access="xrw" name="ITCMRAM" size="65536" start="0x00000000" />
+            <memory access="rx" name="FLASH" size="2097152" start="0x8000000" />
           </memories>
-          <startup>/Users/visa/STM32Cube/Repository/STM32Cube_FW_H7_V1.9.0/Drivers/CMSIS/Device\ST\STM32H7xx\Source\Templates\gcc\startup_stm32h743xx.s</startup>
+          <startup>C:\Users\ADMIN\STM32Cube\Repository\STM32Cube_FW_H7_V1.11.1\Drivers\CMSIS\Device\ST\STM32H7xx\Source\Templates\gcc\startup_stm32h743xx.s</startup>
           <LinkSettings>
             <LinkAdditionalLibs />
           </LinkSettings>
           <heapSize>0x200</heapSize>
           <stackSize>0x400</stackSize>
+          <cpuclock>240</cpuclock>
           <board>custom</board>
           <optimization />
           <Aincludes>
@@ -52,20 +53,19 @@
           </Cdefines>
           <Ldefines />
           <Cincludes>
-            <include>Core/Inc</include>
-            <include>Drivers/STM32H7xx_HAL_Driver/Inc</include>
-            <include>Drivers/STM32H7xx_HAL_Driver/Inc/Legacy</include>
-            <include>Middlewares/Third_Party/FreeRTOS/Source/include</include>
-            <include>Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2</include>
-            <include>Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F</include>
-            <include>Drivers/CMSIS/Device/ST/STM32H7xx/Include</include>
-            <include>Drivers/CMSIS/Include</include>
+            <include>Core\Inc</include>
+            <include>Drivers\STM32H7xx_HAL_Driver\Inc</include>
+            <include>Drivers\STM32H7xx_HAL_Driver\Inc\Legacy</include>
+            <include>Middlewares\Third_Party\FreeRTOS\Source\include</include>
+            <include>Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS_V2</include>
+            <include>Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM4F</include>
+            <include>Drivers\CMSIS\Device\ST\STM32H7xx\Include</include>
+            <include>Drivers\CMSIS\Include</include>
           </Cincludes>
           <definestoremove>
             <Adefines />
             <Cdefines>
               <define>USE_FULL_LL_DRIVER</define>
-              <define>MBEDTLS_CONFIG_FILE="mbedtls_config.h"</define>
               <define>USE_FULL_ASSERT=1U</define>
             </Cdefines>
             <Ldefines />

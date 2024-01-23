@@ -138,6 +138,7 @@ void Error_Handler(void);
 #define LD0_GPIO_Port GPIOE
 #define LD1_Pin GPIO_PIN_1
 #define LD1_GPIO_Port GPIOE
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
@@ -147,5 +148,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -59,6 +59,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   {
     return HAL_ERROR;
   }
+
   /* Enable TIM17 clock */
   __HAL_RCC_TIM17_CLK_ENABLE();
 
@@ -66,8 +67,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   HAL_RCC_GetClockConfig(&clkconfig, &pFLatency);
 
   /* Compute TIM17 clock */
-
-  uwTimclock = 2*HAL_RCC_GetPCLK2Freq();
+      uwTimclock = 2*HAL_RCC_GetPCLK2Freq();
 
   /* Compute the prescaler value to have TIM17 counter clock equal to 1MHz */
   uwPrescalerValue = (uint32_t) ((uwTimclock / 1000000U) - 1U);
@@ -76,6 +76,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   htim17.Instance = TIM17;
 
   /* Initialize TIMx peripheral as follow:
+
   + Period = [(TIM17CLK/1000) - 1]. to have a (1/1000) s time base.
   + Prescaler = (uwTimclock/1000000 - 1) to have a 1MHz counter clock.
   + ClockDivision = 0
@@ -85,6 +86,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   htim17.Init.Prescaler = uwPrescalerValue;
   htim17.Init.ClockDivision = 0;
   htim17.Init.CounterMode = TIM_COUNTERMODE_UP;
+
   if(HAL_TIM_Base_Init(&htim17) == HAL_OK)
   {
     /* Start the TIM time Base generation in interrupt mode */
@@ -119,4 +121,3 @@ void HAL_ResumeTick(void)
   __HAL_TIM_ENABLE_IT(&htim17, TIM_IT_UPDATE);
 }
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

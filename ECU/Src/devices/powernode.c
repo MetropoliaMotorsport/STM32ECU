@@ -47,14 +47,12 @@ typedef struct devicepowerreqstruct {
 	bool actualstate;
 } devicepowerreq;
 
-
 static uint32_t devicecount = 0;
 
 #ifdef HPF2023
 
 // TODO this list should be sanity checked for duplicates at tune time.
-devicepowerreq DevicePowerList[] =
-{
+devicepowerreq DevicePowerList[] = {
 
 //		{ Telemetry, 33, 4 },
 //		{ Front1, 33, 5 },
@@ -67,18 +65,14 @@ devicepowerreq DevicePowerList[] =
 //		{ LeftPump, 35, 4 },
 //		{ RightPump, 35, 5 },
 
-		{ IVT, 36, 4 },
-		{ Accu, 36, 2 }, // TODO make sure this channel cannot be reset for latching rules.
-		{ AccuFan, 36, 5},
+		{ IVT, 36, 4 }, { Accu, 36, 2 }, // TODO make sure this channel cannot be reset for latching rules.
+		{ AccuFan, 36, 5 },
 
-		{ Brake, 37, 4 },
-		{ Buzzer, 37, 1 },
-		{ Inverters, 37, 2 },
+		{ Brake, 37, 4 }, { Buzzer, 37, 1 }, { Inverters, 37, 2 },
 		//{ TSAL, 37, 3, true, 0, true }, // essential to be powered, else not compliant.
 		//{ Back1, 37, 4 },
 		{ TSALG, 37, 5, true, 0, true }, // TSAL getting constant power from this FSG2023
-		{ None }
-};
+		{ None } };
 
 #else
 
@@ -115,8 +109,7 @@ devicepowerreq DevicePowerList[] =
 
 #endif
 
-nodepowerreq PowerRequests[] =
-{
+nodepowerreq PowerRequests[] = {
 #ifndef HPF2023
 		{ 1, 33, 0, 0, {0} },
 		{ 1, 35, 0, 0, {0} },
@@ -127,14 +120,11 @@ nodepowerreq PowerRequests[] =
 		{ 1, 36, 0, 0, {0} },
 		{ 2, 37, 0, 0, {0} },
 #else
-		{ 1, 34, 0, 0, {0} },
-		{ 1, 36, 0, 0, {0} },
-		{ 1, 37, 0, 0, {0} },
+		{ 1, 34, 0, 0, { 0 } }, { 1, 36, 0, 0, { 0 } }, { 1, 37, 0, 0, { 0 } },
 #endif
-		{ 0 }
-};
+		{ 0 } };
 
-nodepowerpwmreq nodefanpwmreqs[2] = {0};
+nodepowerpwmreq nodefanpwmreqs[2] = { 0 };
 bool queuedfanpwmLeft = false;
 bool queuedfanpwmRight = false;
 
@@ -142,47 +132,53 @@ bool queuedfanpwmRight = false;
 bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 #endif
-bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processPNode34Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle);
+bool processPNode36Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle);
+bool processPNode37Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle);
 
 #ifndef HPF2023
 void PNode33Timeout( uint16_t id );
 void PNode34Timeout( uint16_t id );
 void PNode36Timeout( uint16_t id );
 #endif
-void PNode37Timeout( uint16_t id ); // critical due to brakelight
+void PNode37Timeout(uint16_t id); // critical due to brakelight
 
 //bool processPNodeTimeout(uint8_t CANRxData[8], uint32_t DataLength );
 
-
-bool processPNodeErr(const uint8_t nodeid, const uint32_t errorcode, const CANData * datahandle );
-bool processPNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+bool processPNodeErr(const uint8_t nodeid, const uint32_t errorcode,
+		const CANData *datahandle);
+bool processPNodeAckData(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle);
 
 #ifndef HPF2023
 CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, PNode33Timeout, NODETIMEOUT }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
 CANData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
 #endif
-CANData  PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4, processPNode34Data, NULL, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
-CANData  PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7, processPNode36Data, NULL, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
-CANData  PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 4, processPNode37Data, PNode37Timeout, NODETIMEOUT }; // [?], Current, TSAL.
+CANData PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4,
+		processPNode34Data, NULL, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
+CANData PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7,
+		processPNode36Data, NULL, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
+CANData PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 4,
+		processPNode37Data, PNode37Timeout, NODETIMEOUT }; // [?], Current, TSAL.
 
+int sendPowerNodeErrReset(uint8_t id, uint8_t channel);
 
-int sendPowerNodeErrReset( uint8_t id, uint8_t channel );
-
-
-uint32_t getOldestPNodeData( void )
-{
+uint32_t getOldestPNodeData(void) {
 	uint32_t time = gettimer();
 #ifndef HPF2023
 	if ( PowerNode33.time <  time ) time = PowerNode33.time;
 #endif
-	if ( PowerNode34.time <  time ) time = PowerNode34.time;
+	if (PowerNode34.time < time)
+		time = PowerNode34.time;
 #ifndef HPF2023
 //	if ( PowerNode35.time <  time ) time = PowerNode35.time;
 //	if ( PowerNode36.time <  time ) time = PowerNode36.time; // not currently operational
 #endif
-	if ( PowerNode37.time <  time ) time = PowerNode37.time;
+	if (PowerNode37.time < time)
+		time = PowerNode37.time;
 	return time;
 }
 
@@ -209,8 +205,7 @@ void PNode36Timeout( uint16_t id )
 }
 #endif
 
-void PNode37Timeout( uint16_t id )
-{
+void PNode37Timeout(uint16_t id) {
 #ifdef HPF2023
 
 #else
@@ -234,10 +229,10 @@ bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	}
 
 	if ( DataLength >> 16 == PowerNode33.dlcsize
-		&& CANRxData[0] <= 0b00011101 // max possible value. check for zeros in unused fields?
-		&& CANRxData[1] < 255
-		&& ( CANRxData[2] >= 0 && CANRxData[2] < 255 )
-		)
+			&& CANRxData[0] <= 0b00011101 // max possible value. check for zeros in unused fields?
+			&& CANRxData[1] < 255
+			&& ( CANRxData[2] >= 0 && CANRxData[2] < 255 )
+	)
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode33Bit ), eSetBits);
 
@@ -294,7 +289,7 @@ bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 //		&& ( CANRxData[1] >= 0 && CANRxData[1] <= MAXFANCURRENT )
 //		&& ( CANRxData[2] >= 0 && CANRxData[2] <= MAXPUMPCURRENT )
 //		&& ( CANRxData[3] >= 0 && CANRxData[3] <= MAXPUMPCURRENT )
-		)
+	)
 	{
 		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode35Bit ), eSetBits);
 		CarState.I_LeftFans = CANRxData[0];
@@ -310,42 +305,41 @@ bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 }
 #endif
 
-bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
-{
+bool processPNode34Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle) {
 	static bool first = false;
-	if ( !first )
-	{
+	if (!first) {
 		DebugMsg("PNode 34 First msg.");
 		first = true;
 	}
 	// 0x1f 0x0001 10000
-	if ( DataLength >> 16 == PowerNode34.dlcsize
+	if (DataLength >> 16 == PowerNode34.dlcsize
 //		&& CANRxData[0] & ~(0b00011100) != 0 // check mask fit
-		&& CANRxData[1] < 255
-		&& ( CANRxData[2] >= 0 && CANRxData[2] <= 255 )
-		&& CANRxData[3] < 255
-		)
-	{
-		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode34Bit ), eSetBits);
+			&& CANRxData[1] < 255 && (CANRxData[2] >= 0 && CANRxData[2] <= 255)
+			&& CANRxData[3] < 255) {
+		xTaskNotify(PowerTaskHandle, ( 0x1 << PNode34Bit ), eSetBits);
 
 		bool newstate = CANRxData[0] & (0x1 << 2);
-		if ( Shutdown.CockpitButton != newstate )
-		{
-			DebugPrintf("Cockpit Shutdown Button sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
+		if (Shutdown.CockpitButton != newstate) {
+			DebugPrintf(
+					"Cockpit Shutdown Button sense state changed to %s at (%ul)",
+					newstate ? "Closed" : "Open", gettimer());
 			Shutdown.CockpitButton = newstate;
 		}
 
 		newstate = CANRxData[0] & (0x1 << 3);
-		if ( Shutdown.LeftButton != newstate )
-		{
-			DebugPrintf("Left Shutdown Button sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
+		if (Shutdown.LeftButton != newstate) {
+			DebugPrintf(
+					"Left Shutdown Button sense state changed to %s at (%ul)",
+					newstate ? "Closed" : "Open", gettimer());
 			Shutdown.LeftButton = newstate;
 		}
 
 		newstate = CANRxData[0] & (0x1 << 4);
-		if ( Shutdown.RightButton != newstate )
-		{
-			DebugPrintf("Right Shutdown Button sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
+		if (Shutdown.RightButton != newstate) {
+			DebugPrintf(
+					"Right Shutdown Button sense state changed to %s at (%ul)",
+					newstate ? "Closed" : "Open", gettimer());
 			Shutdown.RightButton = newstate;
 		}
 
@@ -360,28 +354,25 @@ bool processPNode34Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	}
 }
 
-
-bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle ) // Rear
+bool processPNode36Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle) // Rear
 {
 
 	static bool first = false;
-	if ( !first )
-	{
+	if (!first) {
 		DebugMsg("PNode 36 First msg.");
 		first = true;
 	}
 
-	if ( DataLength >> 16 == PowerNode36.dlcsize
-		&& ( CANRxData[0] >= 0 && CANRxData[0] <= 10 )
-		&& ( CANRxData[1] >= 0 && CANRxData[1] <= 10 )
-		&& ( CANRxData[2] >= 0 && CANRxData[2] <= 10 )
-		&& ( CANRxData[3] >= 0 && CANRxData[3] <= 10 )
-		&& ( CANRxData[4] >= 0 && CANRxData[4] <= 10 )
-		&& ( CANRxData[5] >= 0 && CANRxData[5] <= 255 )
-		&& ( CANRxData[6] >= 0 && CANRxData[6] <= 100 )
-		)
-	{
-		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode36Bit ), eSetBits);
+	if (DataLength >> 16 == PowerNode36.dlcsize
+			&& (CANRxData[0] >= 0 && CANRxData[0] <= 10)
+			&& (CANRxData[1] >= 0 && CANRxData[1] <= 10)
+			&& (CANRxData[2] >= 0 && CANRxData[2] <= 10)
+			&& (CANRxData[3] >= 0 && CANRxData[3] <= 10)
+			&& (CANRxData[4] >= 0 && CANRxData[4] <= 10)
+			&& (CANRxData[5] >= 0 && CANRxData[5] <= 255)
+			&& (CANRxData[6] >= 0 && CANRxData[6] <= 100)) {
+		xTaskNotify(PowerTaskHandle, ( 0x1 << PNode36Bit ), eSetBits);
 
 //		CarState.I_BrakeLight = CANRxData[0];
 //		CarState.I_Buzzers = CANRxData[1];
@@ -415,18 +406,17 @@ bool processPNode36Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	}
 }
 
-bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
-{
+bool processPNode37Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle) {
 
 	static bool first = false;
-	if ( !first )
-	{
+	if (!first) {
 		DebugMsg("PNode 37 First msg.");
 		first = true;
 	}
 
 #if 1
-	if ( 1 )
+	if (1)
 #else
 	if ( DataLength >> 16 == PowerNode37.dlcsize
 		&& CANRxData[0] <= 0b00011101 // max possible value. check for zeros in unused fields?
@@ -435,7 +425,7 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 		)
 #endif
 	{
-		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode37Bit ), eSetBits);
+		xTaskNotify(PowerTaskHandle, ( 0x1 << PNode37Bit ), eSetBits);
 
 #ifdef HPF2023
 // no inputs on node 37.
@@ -489,26 +479,22 @@ bool processPNode37Data( const uint8_t CANRxData[8], const uint32_t DataLength, 
 	}
 }
 
-void setAllPowerActualOff( void )
-{
-	for ( int i = 0; DevicePowerList[i].device != None; i++ )
-	{
-		if ( DevicePowerList[i].device != ECU )
-		{
-			if ( DevicePowerList[i].actualstate == true );
-	//		DevicePowerList[i].waiting = false;
+void setAllPowerActualOff(void) {
+	for (int i = 0; DevicePowerList[i].device != None; i++) {
+		if (DevicePowerList[i].device != ECU) {
+			if (DevicePowerList[i].actualstate == true)
+				;
+			//		DevicePowerList[i].waiting = false;
 			DevicePowerList[i].actualstate = false;
 		}
 	}
 }
 
-bool setActualDevicePower( uint8_t nodeid, uint8_t channel, bool state )
-{
+bool setActualDevicePower(uint8_t nodeid, uint8_t channel, bool state) {
 	// find the device
-	for ( int i = 0; DevicePowerList != None; i++ )
-	{
-		if ( DevicePowerList[i].nodeid == nodeid && DevicePowerList[i].output == channel )
-		{
+	for (int i = 0; DevicePowerList != None; i++) {
+		if (DevicePowerList[i].nodeid == nodeid
+				&& DevicePowerList[i].output == channel) {
 			DevicePowerList[i].waiting = false;
 			DevicePowerList[i].actualstate = state;
 			return true;
@@ -517,66 +503,53 @@ bool setActualDevicePower( uint8_t nodeid, uint8_t channel, bool state )
 	return false;
 }
 
+bool processPNodeAckData(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle) {
 
-bool processPNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
-{
-
-	if ( CANRxData[1] == 1) // power set ACK
-	{
-		for ( int i=0;PowerRequests[i].nodeid != 0;i++)
-		{
-			if ( PowerRequests[i].nodeid == CANRxData[0] ) // check for power request change.
+	if (CANRxData[1] == 1) // power set ACK
 			{
+		for (int i = 0; PowerRequests[i].nodeid != 0; i++) {
+			if (PowerRequests[i].nodeid == CANRxData[0]) // check for power request change.
+					{
 				PowerRequests[i].output ^= CANRxData[2]; // XOR the input with the request. if the reply is set, this will zero out the request.
 				PowerRequests[i].state ^= CANRxData[3]; // update the status of which outputs are on.
 
 				// update the device power table for current actual reported state.
-				for ( int j=0;j<6;j++)
-				{
-					if ( CANRxData[2] & ( 1 << j ) )
-					{
-						setActualDevicePower(PowerRequests[i].nodeid, j, CANRxData[3] & ( 1 << j ) );
+				for (int j = 0; j < 6; j++) {
+					if (CANRxData[2] & (1 << j)) {
+						setActualDevicePower(PowerRequests[i].nodeid, j,
+								CANRxData[3] & (1 << j));
 					}
 				}
 
 				return true; // request has been processed, stop iterating.
 			}
 		}
-	} else
-	if ( CANRxData[1] == 2) // PWM set ack
-	{
-		if ( nodefanpwmreqs[0].nodeid == nodefanpwmreqs[1].nodeid )
-		{
-			if ( CANRxData[0] == nodefanpwmreqs[0].nodeid )
+	} else if (CANRxData[1] == 2) // PWM set ack
 			{
+		if (nodefanpwmreqs[0].nodeid == nodefanpwmreqs[1].nodeid) {
+			if (CANRxData[0] == nodefanpwmreqs[0].nodeid) {
 				queuedfanpwmLeft = false;
 				queuedfanpwmRight = false;
 			}
-		} else if ( CANRxData[0] == nodefanpwmreqs[0].nodeid )
-		{
+		} else if (CANRxData[0] == nodefanpwmreqs[0].nodeid) {
 			queuedfanpwmLeft = false;
-		} else if ( CANRxData[0] == nodefanpwmreqs[1].nodeid )
-		{
+		} else if (CANRxData[0] == nodefanpwmreqs[1].nodeid) {
 			queuedfanpwmRight = false;
 		}
-	} else
-	if ( CANRxData[1] == 23) // Error reset
-		{
-			if ( nodefanpwmreqs[0].nodeid == nodefanpwmreqs[1].nodeid )
+	} else if (CANRxData[1] == 23) // Error reset
 			{
-				if ( CANRxData[0] == nodefanpwmreqs[0].nodeid )
-				{
-					queuedfanpwmLeft = false;
-					queuedfanpwmRight = false;
-				}
-			} else if ( CANRxData[0] == nodefanpwmreqs[0].nodeid )
-			{
+		if (nodefanpwmreqs[0].nodeid == nodefanpwmreqs[1].nodeid) {
+			if (CANRxData[0] == nodefanpwmreqs[0].nodeid) {
 				queuedfanpwmLeft = false;
-			} else if ( CANRxData[0] == nodefanpwmreqs[1].nodeid )
-			{
 				queuedfanpwmRight = false;
 			}
+		} else if (CANRxData[0] == nodefanpwmreqs[0].nodeid) {
+			queuedfanpwmLeft = false;
+		} else if (CANRxData[0] == nodefanpwmreqs[1].nodeid) {
+			queuedfanpwmRight = false;
 		}
+	}
 
 	return true;
 }
@@ -601,7 +574,6 @@ bool processPNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength,
 
 #define ERR_MESS_INVALID_BYTES		97
 #define ERR_MESS_UNDEFINED			98
-
 
 #define WARN_UNDERVOLT_U5				193
 #define WARN_OVERVOLT_U5				194
@@ -658,199 +630,265 @@ bool processPNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength,
 #define U7I0_SWITCH_OFF				133 //PO4
 #define U7I1_SWITCH_OFF				134 //PO5
 
-
 #define MAXPNODEERRORS		40
 
-struct PowerNodeError
-{
+struct PowerNodeError {
 	uint8_t nodeid;
 	uint32_t error;
 } PowerNodeErrors[MAXPNODEERRORS];
 
 uint8_t PowerNodeErrorCount = 0;
 
+char* PNodeGetErrStr(uint32_t error) {
+	switch (error) {
+	case U5I0_SWITCH_OFF:
+		return "Ch0 Off";
+	case U5I1_SWITCH_OFF:
+		return "Ch1 Off";
+	case U6I0_SWITCH_OFF:
+		return "Ch2 Off";
+	case U6I1_SWITCH_OFF:
+		return "Ch3 Off";
+	case U7I0_SWITCH_OFF:
+		return "Ch4 Off";
+	case U7I1_SWITCH_OFF:
+		return "Ch5 Off";
 
-char * PNodeGetErrStr( uint32_t error )
-{
-	switch ( error )
-	{
-	case U5I0_SWITCH_OFF 				: return "Ch0 Off";
-	case U5I1_SWITCH_OFF 				: return "Ch1 Off";
-	case U6I0_SWITCH_OFF 				: return "Ch2 Off";
-	case U6I1_SWITCH_OFF 				: return "Ch3 Off";
-	case U7I0_SWITCH_OFF 				: return "Ch4 Off";
-	case U7I1_SWITCH_OFF 				: return "Ch5 Off";
+	case ERR_CAN_BUFFER_FULL:
+		return "CAN_BUFFER_FULL";
+	case ERR_CAN_FIFO_FULL:
+		return "CAN_FIFO_FULL";
+	case ERR_MESSAGE_DISABLED:
+		return "MESSAGE_DISABLED";
+	case ERR_DLC_0:
+		return "DLC_0";
+	case ERR_DLC_LONG:
+		return "DLC_LONG";
+	case ERR_SEND_FAILED:
+		return "SEND_FAILED";
+	case ERR_RECIEVE_FAILED:
+		return "RECIEVE_FAILED";
+	case ERR_INVALID_COMMAND:
+		return "INVALID_COMMAND";
+	case ERR_COMMAND_SHORT:
+		return "COMMAND_SHORT";
+	case ERR_RECIEVED_INVALID_ID:
+		return "RECIEVED_INVALID_ID";
+	case ERR_CANBUSOFFLINE:
+		return "CANBUSOFFLINE";
 
-	case ERR_CAN_BUFFER_FULL			: return "CAN_BUFFER_FULL";
-	case ERR_CAN_FIFO_FULL				: return "CAN_FIFO_FULL";
-	case ERR_MESSAGE_DISABLED			: return "MESSAGE_DISABLED";
-	case ERR_DLC_0						: return "DLC_0";
-	case ERR_DLC_LONG					: return "DLC_LONG";
-	case ERR_SEND_FAILED				: return "SEND_FAILED";
-	case ERR_RECIEVE_FAILED				: return "RECIEVE_FAILED";
-	case ERR_INVALID_COMMAND			: return "INVALID_COMMAND";
-	case ERR_COMMAND_SHORT				: return "COMMAND_SHORT";
-	case ERR_RECIEVED_INVALID_ID 		: return "RECIEVED_INVALID_ID";
-	case ERR_CANBUSOFFLINE				: return "CANBUSOFFLINE";
+	case ERR_MODIFY_INVALID_MESSAGE:
+		return "MODIFY_INVALID_MESSAGE";
+	case ERR_MODIFY_INVALID_THING:
+		return "MODIFY_INVALID_THING";
+	case ERR_CLEAR_INVALID_ERROR:
+		return "CLEAR_INVALID_ERROR";
 
-	case ERR_MODIFY_INVALID_MESSAGE		: return "MODIFY_INVALID_MESSAGE";
-	case ERR_MODIFY_INVALID_THING		: return "MODIFY_INVALID_THING";
-	case ERR_CLEAR_INVALID_ERROR		: return "CLEAR_INVALID_ERROR";
+	case ERR_MESS_INVALID_BYTES:
+		return "MESS_INVALID_BYTES";
+	case ERR_MESS_UNDEFINED:
+		return "MESS_UNDEFINED";
 
-	case ERR_MESS_INVALID_BYTES			: return "MESS_INVALID_BYTES";
-	case ERR_MESS_UNDEFINED				: return "MESS_UNDEFINED";
+	case WARN_UNDERVOLT_U5:
+		return "UNDERVOLT_CH0-1";
+	case WARN_OVERVOLT_U5:
+		return "OVERVOLT_CH0-1";
+	case WARN_UNDERTEMP_U5:
+		return "UNDERTEMP_CH0-1";
+	case WARN_OVERTEMP_U5:
+		return "OVERTEMP_CH0-1";
+	case WARN_UNDERCURR_U5I0:
+		return "UNDERCURR_CH0";
+	case WARN_OVERCURR_U5I0:
+		return "OVERCURR_CH0";
+	case WARN_UNDERCURR_U5I1:
+		return "UNDERCURR_CH1";
+	case WARN_OVERCURR_U5I1:
+		return "OVERCURR_CH1";
+	case ERROR_OVERCURR_TRIP_U5_0:
+		return "OVERCURR_CH0";
+	case ERROR_OVERCURR_TRIP_U5_1:
+		return "OVERCURR_CH1";
+	case WARN_UNDERVOLT_U6:
+		return "UNDERVOLT_CH2-3";
+	case WARN_OVERVOLT_U6:
+		return "OVERVOLT_CH2-3";
+	case WARN_UNDERTEMP_U6:
+		return "UNDERTEMP_CH2-3";
+	case WARN_OVERTEMP_U6:
+		return "OVERTEMP_CH2-3";
+	case WARN_UNDERCURR_U6I0:
+		return "UNDERCURR_CH2";
+	case WARN_OVERCURR_U6I0:
+		return "OVERCURR_CH2";
+	case WARN_UNDERCURR_U6I1:
+		return "UNDERCURR_CH3";
+	case WARN_OVERCURR_U6I1:
+		return "OVERCURR_CH3";
+	case ERROR_OVERCURR_TRIP_U6_0:
+		return "OVERCURR_CH2";
+	case ERROR_OVERCURR_TRIP_U6_1:
+		return "OVERCURR_CH3";
+	case WARN_UNDERVOLT_U7:
+		return "UNDERVOLT_CH4-5";
+	case WARN_OVERVOLT_U7:
+		return "OVERVOLT_CH4-5";
+	case WARN_UNDERTEMP_U7:
+		return "UNDERTEMP_CH4-5";
+	case WARN_OVERTEMP_U7:
+		return "OVERTEMP_CH4-5";
+	case WARN_UNDERCURR_U7I0:
+		return "UNDERCURR_CH4";
+	case WARN_OVERCURR_U7I0:
+		return "OVERCURR_CH4";
+	case WARN_UNDERCURR_U7I1:
+		return "UNDERCURR_CH5";
+	case WARN_OVERCURR_U7I1:
+		return "OVERCURR_CH5";
+	case ERROR_OVERCURR_TRIP_U7_0:
+		return "OVERCURR_CH4";
+	case ERROR_OVERCURR_TRIP_U7_1:
+		return "OVERCURR_CH5";
 
-	case WARN_UNDERVOLT_U5				: return "UNDERVOLT_CH0-1";
-	case WARN_OVERVOLT_U5				: return "OVERVOLT_CH0-1";
-	case WARN_UNDERTEMP_U5				: return "UNDERTEMP_CH0-1";
-	case WARN_OVERTEMP_U5				: return "OVERTEMP_CH0-1";
-	case WARN_UNDERCURR_U5I0			: return "UNDERCURR_CH0";
-	case WARN_OVERCURR_U5I0				: return "OVERCURR_CH0";
-	case WARN_UNDERCURR_U5I1			: return "UNDERCURR_CH1";
-	case WARN_OVERCURR_U5I1				: return "OVERCURR_CH1";
-	case ERROR_OVERCURR_TRIP_U5_0		: return "OVERCURR_CH0";
-	case ERROR_OVERCURR_TRIP_U5_1		: return "OVERCURR_CH1";
-	case WARN_UNDERVOLT_U6				: return "UNDERVOLT_CH2-3";
-	case WARN_OVERVOLT_U6				: return "OVERVOLT_CH2-3";
-	case WARN_UNDERTEMP_U6				: return "UNDERTEMP_CH2-3";
-	case WARN_OVERTEMP_U6				: return "OVERTEMP_CH2-3";
-	case WARN_UNDERCURR_U6I0			: return "UNDERCURR_CH2";
-	case WARN_OVERCURR_U6I0				: return "OVERCURR_CH2";
-	case WARN_UNDERCURR_U6I1			: return "UNDERCURR_CH3";
-	case WARN_OVERCURR_U6I1				: return "OVERCURR_CH3";
-	case ERROR_OVERCURR_TRIP_U6_0		: return "OVERCURR_CH2";
-	case ERROR_OVERCURR_TRIP_U6_1		: return "OVERCURR_CH3";
-	case WARN_UNDERVOLT_U7				: return "UNDERVOLT_CH4-5";
-	case WARN_OVERVOLT_U7				: return "OVERVOLT_CH4-5";
-	case WARN_UNDERTEMP_U7				: return "UNDERTEMP_CH4-5";
-	case WARN_OVERTEMP_U7				: return "OVERTEMP_CH4-5";
-	case WARN_UNDERCURR_U7I0			: return "UNDERCURR_CH4";
-	case WARN_OVERCURR_U7I0				: return "OVERCURR_CH4";
-	case WARN_UNDERCURR_U7I1			: return "UNDERCURR_CH5";
-	case WARN_OVERCURR_U7I1				: return "OVERCURR_CH5";
-	case ERROR_OVERCURR_TRIP_U7_0		: return "OVERCURR_CH4";
-	case ERROR_OVERCURR_TRIP_U7_1		: return "OVERCURR_CH5";
+	case ERROR_READ_TEMP:
+		return "READ_TEMP";
+	case WARN_TEMP_MEASURE_OVERFLOW:
+		return "TEMP_MEASURE_OVERFLOW";
+	case WARN_VOLT_MEASURE_OVERFLOW:
+		return "VOLT_MEASURE_OVERFLOW";
 
-	case ERROR_READ_TEMP				: return "READ_TEMP";
-	case WARN_TEMP_MEASURE_OVERFLOW		: return "TEMP_MEASURE_OVERFLOW";
-	case WARN_VOLT_MEASURE_OVERFLOW		: return "VOLT_MEASURE_OVERFLOW";
-
-	case WARN_PWM_INVALID_CHANNEL		: return "PWM_INVALID_CHANNEL";
-	case WARN_PWM_CHANNEL_UNINITIALIZED	: return "PWM_CHANNEL_UNINITIALIZED";
-	case WARN_UNDEFINED_GPIO			: return "UNDEFINED_GPIO";
-	case WARN_PWM_NOT_ENABLED			: return "PWM_NOT_ENABLED";
+	case WARN_PWM_INVALID_CHANNEL:
+		return "PWM_INVALID_CHANNEL";
+	case WARN_PWM_CHANNEL_UNINITIALIZED:
+		return "PWM_CHANNEL_UNINITIALIZED";
+	case WARN_UNDEFINED_GPIO:
+		return "UNDEFINED_GPIO";
+	case WARN_PWM_NOT_ENABLED:
+		return "PWM_NOT_ENABLED";
 	default:
 		return "Unknown";
 	}
 }
 
-bool PNodeGetErrType( uint32_t error )
-{
-	switch ( error )
-	{
-	case U5I0_SWITCH_OFF 				:
-	case U5I1_SWITCH_OFF 				:
-	case U6I0_SWITCH_OFF 				:
-	case U6I1_SWITCH_OFF 				:
-	case U7I0_SWITCH_OFF 				:
-	case U7I1_SWITCH_OFF 				:
+bool PNodeGetErrType(uint32_t error) {
+	switch (error) {
+	case U5I0_SWITCH_OFF:
+	case U5I1_SWITCH_OFF:
+	case U6I0_SWITCH_OFF:
+	case U6I1_SWITCH_OFF:
+	case U7I0_SWITCH_OFF:
+	case U7I1_SWITCH_OFF:
 
-	case ERR_CAN_BUFFER_FULL			:
-	case ERR_CAN_FIFO_FULL				:
-	case ERR_MESSAGE_DISABLED			:
-	case ERR_DLC_0						:
-	case ERR_DLC_LONG					:
-	case ERR_SEND_FAILED				:
-	case ERR_RECIEVE_FAILED				:
-	case ERR_INVALID_COMMAND			:
-	case ERR_COMMAND_SHORT				:
-	case ERR_RECIEVED_INVALID_ID 		:
-	case ERR_CANBUSOFFLINE				:
+	case ERR_CAN_BUFFER_FULL:
+	case ERR_CAN_FIFO_FULL:
+	case ERR_MESSAGE_DISABLED:
+	case ERR_DLC_0:
+	case ERR_DLC_LONG:
+	case ERR_SEND_FAILED:
+	case ERR_RECIEVE_FAILED:
+	case ERR_INVALID_COMMAND:
+	case ERR_COMMAND_SHORT:
+	case ERR_RECIEVED_INVALID_ID:
+	case ERR_CANBUSOFFLINE:
 
-	case ERR_MODIFY_INVALID_MESSAGE		:
-	case ERR_MODIFY_INVALID_THING		:
-	case ERR_CLEAR_INVALID_ERROR		:
+	case ERR_MODIFY_INVALID_MESSAGE:
+	case ERR_MODIFY_INVALID_THING:
+	case ERR_CLEAR_INVALID_ERROR:
 
-	case ERR_MESS_INVALID_BYTES			:
-	case ERR_MESS_UNDEFINED				: return true;
+	case ERR_MESS_INVALID_BYTES:
+	case ERR_MESS_UNDEFINED:
+		return true;
 
-	case WARN_UNDERVOLT_U5				:
-	case WARN_OVERVOLT_U5				:
-	case WARN_UNDERTEMP_U5				:
-	case WARN_OVERTEMP_U5				:
-	case WARN_UNDERCURR_U5I0			:
-	case WARN_OVERCURR_U5I0				:
-	case WARN_UNDERCURR_U5I1			:
-	case WARN_OVERCURR_U5I1				:
+	case WARN_UNDERVOLT_U5:
+	case WARN_OVERVOLT_U5:
+	case WARN_UNDERTEMP_U5:
+	case WARN_OVERTEMP_U5:
+	case WARN_UNDERCURR_U5I0:
+	case WARN_OVERCURR_U5I0:
+	case WARN_UNDERCURR_U5I1:
+	case WARN_OVERCURR_U5I1:
 
-	case WARN_UNDERVOLT_U6				:
-	case WARN_OVERVOLT_U6				:
-	case WARN_UNDERTEMP_U6				:
-	case WARN_OVERTEMP_U6				:
-	case WARN_UNDERCURR_U6I0			:
-	case WARN_OVERCURR_U6I0				:
-	case WARN_UNDERCURR_U6I1			:
-	case WARN_OVERCURR_U6I1				:
+	case WARN_UNDERVOLT_U6:
+	case WARN_OVERVOLT_U6:
+	case WARN_UNDERTEMP_U6:
+	case WARN_OVERTEMP_U6:
+	case WARN_UNDERCURR_U6I0:
+	case WARN_OVERCURR_U6I0:
+	case WARN_UNDERCURR_U6I1:
+	case WARN_OVERCURR_U6I1:
 
-	case WARN_UNDERVOLT_U7				:
-	case WARN_OVERVOLT_U7				:
-	case WARN_UNDERTEMP_U7				:
-	case WARN_OVERTEMP_U7				:
-	case WARN_UNDERCURR_U7I0			:
-	case WARN_OVERCURR_U7I0				:
-	case WARN_UNDERCURR_U7I1			:
-	case WARN_OVERCURR_U7I1				: return false;
+	case WARN_UNDERVOLT_U7:
+	case WARN_OVERVOLT_U7:
+	case WARN_UNDERTEMP_U7:
+	case WARN_OVERTEMP_U7:
+	case WARN_UNDERCURR_U7I0:
+	case WARN_OVERCURR_U7I0:
+	case WARN_UNDERCURR_U7I1:
+	case WARN_OVERCURR_U7I1:
+		return false;
 
-	case ERROR_OVERCURR_TRIP_U5_0		:
-	case ERROR_OVERCURR_TRIP_U5_1		:
-	case ERROR_OVERCURR_TRIP_U6_0		:
-	case ERROR_OVERCURR_TRIP_U6_1		:
-	case ERROR_OVERCURR_TRIP_U7_0		:
-	case ERROR_OVERCURR_TRIP_U7_1		:
+	case ERROR_OVERCURR_TRIP_U5_0:
+	case ERROR_OVERCURR_TRIP_U5_1:
+	case ERROR_OVERCURR_TRIP_U6_0:
+	case ERROR_OVERCURR_TRIP_U6_1:
+	case ERROR_OVERCURR_TRIP_U7_0:
+	case ERROR_OVERCURR_TRIP_U7_1:
 
-	case ERROR_READ_TEMP				: return true;
-	case WARN_TEMP_MEASURE_OVERFLOW		:
-	case WARN_VOLT_MEASURE_OVERFLOW		:
+	case ERROR_READ_TEMP:
+		return true;
+	case WARN_TEMP_MEASURE_OVERFLOW:
+	case WARN_VOLT_MEASURE_OVERFLOW:
 
-	case WARN_PWM_INVALID_CHANNEL		:
-	case WARN_PWM_CHANNEL_UNINITIALIZED	:
-	case WARN_UNDEFINED_GPIO			:
-	case WARN_PWM_NOT_ENABLED			: return false;
+	case WARN_PWM_INVALID_CHANNEL:
+	case WARN_PWM_CHANNEL_UNINITIALIZED:
+	case WARN_UNDEFINED_GPIO:
+	case WARN_PWM_NOT_ENABLED:
+		return false;
 	default:
 		return true;
 	}
 }
 
-bool processPNodeErr( const uint8_t nodeid, const uint32_t errorcode, const CANData * datahandle )
-{
+bool processPNodeErr(const uint8_t nodeid, const uint32_t errorcode,
+		const CANData *datahandle) {
 	uint8_t channel = 255;
 
 	// log error to power queue.
 	PowerLogError(nodeid, errorcode);
 
-	switch ( errorcode ) // switch off errors, need to be ACK'ed to stop sending error code.
+	switch (errorcode) // switch off errors, need to be ACK'ed to stop sending error code.
 	{
-		case U5I0_SWITCH_OFF : channel = 0; break; //PO0
-		case U5I1_SWITCH_OFF : channel = 1; break; //PO1
-		case U6I0_SWITCH_OFF : channel = 2; break; //PO2
-		case U6I1_SWITCH_OFF : channel = 3; break; //PO3
-		case U7I0_SWITCH_OFF : channel = 4; break; //PO4
-		case U7I1_SWITCH_OFF : channel = 5; break; //PO5
+	case U5I0_SWITCH_OFF:
+		channel = 0;
+		break; //PO0
+	case U5I1_SWITCH_OFF:
+		channel = 1;
+		break; //PO1
+	case U6I0_SWITCH_OFF:
+		channel = 2;
+		break; //PO2
+	case U6I1_SWITCH_OFF:
+		channel = 3;
+		break; //PO3
+	case U7I0_SWITCH_OFF:
+		channel = 4;
+		break; //PO4
+	case U7I1_SWITCH_OFF:
+		channel = 5;
+		break; //PO5
 	}
 
-	if ( channel != 255 ) // received error was assigned a channel.
-	{
-
-		sendPowerNodeErrReset( nodeid,  channel ); // clear error to stop node transmitting error state.
-		for ( int i=0;PowerRequests[i].nodeid != 0;i++)
-		{ // find the node record where error occurred.
-			if ( PowerRequests[i].nodeid == nodeid )
+	if (channel != 255) // received error was assigned a channel.
 			{
-				if ( PowerRequests[i].error[channel] < 255 )
+
+		sendPowerNodeErrReset(nodeid, channel); // clear error to stop node transmitting error state.
+		for (int i = 0; PowerRequests[i].nodeid != 0; i++) { // find the node record where error occurred.
+			if (PowerRequests[i].nodeid == nodeid) {
+				if (PowerRequests[i].error[channel] < 255)
 					PowerRequests[i].error[channel]++;
-				setActualDevicePower( nodeid, channel, false );
+				setActualDevicePower(nodeid, channel, false);
 				// keep a count of how many times an error has occurred.
-		//		blinkOutput(LED, blinkingrate, time)
+				//		blinkOutput(LED, blinkingrate, time)
 			}
 		}
 
@@ -860,17 +898,16 @@ bool processPNodeErr( const uint8_t nodeid, const uint32_t errorcode, const CAND
 	return false;
 }
 
-
 char PNodeStr[10] = "";
 
-char * getPNodeStr( void )
-{
-	if ( PNodeStr[0] == 0) return "";
-	else return PNodeStr;
+char* getPNodeStr(void) {
+	if (PNodeStr[0] == 0)
+		return "";
+	else
+		return PNodeStr;
 }
 
-void setPowerNodeStr( uint32_t nodesonline )
-{
+void setPowerNodeStr(uint32_t nodesonline) {
 	PNodeStr[0] = 0;
 
 	uint8_t pos = 0;
@@ -883,13 +920,12 @@ void setPowerNodeStr( uint32_t nodesonline )
 		pos++;
 	}
 #endif
-	if ( PNodeAllBit & ( 0x1 << PNode34Bit ) )
-	if ( !(nodesonline & ( 0x1 << PNode34Bit )) )
-	{
-		PNodeStr[pos] = '4';
-		PNodeStr[pos+1] = '\0';
-		pos++;
-	}
+	if ( PNodeAllBit & (0x1 << PNode34Bit))
+		if (!(nodesonline & (0x1 << PNode34Bit))) {
+			PNodeStr[pos] = '4';
+			PNodeStr[pos + 1] = '\0';
+			pos++;
+		}
 #ifndef HPF2023
 	if ( PNodeAllBit & ( 0x1 << PNode35Bit ) )
 	if ( !(nodesonline & ( 0x1 << PNode35Bit )) )
@@ -908,31 +944,25 @@ void setPowerNodeStr( uint32_t nodesonline )
 		pos++;
 	}
 #endif
-	if ( PNodeAllBit & ( 0x1 << PNode37Bit ) )
-	if ( !(nodesonline & ( 0x1 << PNode37Bit )) )
-	{
-		PNodeStr[pos] = '7';
-		PNodeStr[pos+1] = '\0';
-		pos++;
-	}
+	if ( PNodeAllBit & (0x1 << PNode37Bit))
+		if (!(nodesonline & (0x1 << PNode37Bit))) {
+			PNodeStr[pos] = '7';
+			PNodeStr[pos + 1] = '\0';
+			pos++;
+		}
 }
 
-
-int setinitialdevicepower( void )
-{
+int setinitialdevicepower(void) {
 	return 0;
 }
 
-int average(int count, ...)
-{
+int average(int count, ...) {
 	return 0;
 }
 
-bool getNodeDevicePower(DevicePower device )
-{
-	for ( int i=0;DevicePowerList[i].device != None;i++)
-	{
-		if ( DevicePowerList[i].device == device )
+bool getNodeDevicePower(DevicePower device) {
+	for (int i = 0; DevicePowerList[i].device != None; i++) {
+		if (DevicePowerList[i].device == device)
 			return DevicePowerList[i].actualstate;
 	}
 
@@ -940,11 +970,9 @@ bool getNodeDevicePower(DevicePower device )
 	return false;
 }
 
-bool getNodeDeviceExpectedPower(DevicePower device )
-{
-	for ( int i=0;DevicePowerList[i].device != None;i++)
-	{
-		if ( DevicePowerList[i].device == device )
+bool getNodeDeviceExpectedPower(DevicePower device) {
+	for (int i = 0; DevicePowerList[i].device != None; i++) {
+		if (DevicePowerList[i].device == device)
 			return DevicePowerList[i].expectedstate;
 	}
 
@@ -952,68 +980,71 @@ bool getNodeDeviceExpectedPower(DevicePower device )
 	return false;
 }
 
-
 // Queue up power node requests to be sent.
-bool setNodeDevicePower( DevicePower device, bool state, bool reset )
-{
+bool setNodeDevicePower(DevicePower device, bool state, bool reset) {
 //	for ( int i=0;DevicePowerList[i].device != None;i++)
 //	{
 
-	int i = getPowerDeviceIndex( device );
+	int i = getPowerDeviceIndex(device);
 
-	if ( DevicePowerList[i].device == device )
-	{ // found the device in list, try to set request.
+	if (DevicePowerList[i].device == device) { // found the device in list, try to set request.
 		DevicePowerList[i].expectedstate = state;
 
-		if ( reset )
-		{
+		if (reset) {
 			DevicePowerList[i].actualstate = state; // resetting internal state, so current expected actual state is false?
 			DevicePowerList[i].waiting = false;
-		}
-		else
-		{
+		} else {
 			// check if we're already in the expected state.
-			if ( DevicePowerList[i].expectedstate != DevicePowerList[i].actualstate )
+			if (DevicePowerList[i].expectedstate
+					!= DevicePowerList[i].actualstate)
 				DevicePowerList[i].waiting = true;
 			else
 				DevicePowerList[i].waiting = false;
 		}
 
-		for ( int j=0;PowerRequests[j].nodeid != 0;j++) // search though the list of power nodes
-		{
-			if ( PowerRequests[j].nodeid == DevicePowerList[i].nodeid ) // check if node on list matches the wanted id.
-			{
-				// check there isn't a current error on the request.
-				if ( PowerRequests[j].error[DevicePowerList[i].output] == 0 || reset)
+		for (int j = 0; PowerRequests[j].nodeid != 0; j++) // search though the list of power nodes
 				{
-					if ( reset ) // we had a pending request, cancel it.
+			if (PowerRequests[j].nodeid == DevicePowerList[i].nodeid) // check if node on list matches the wanted id.
+					{
+				// check there isn't a current error on the request.
+				if (PowerRequests[j].error[DevicePowerList[i].output] == 0
+						|| reset) {
+					if (reset) // we had a pending request, cancel it.
 					{
 						PowerRequests[j].error[DevicePowerList[i].output] = 0;
-						PowerRequests[j].output &= ~(0x1 << DevicePowerList[i].output); // set enable output
-						PowerRequests[j].state &= ~(0x1 << DevicePowerList[i].output); // set enable output
+						PowerRequests[j].output &= ~(0x1
+								<< DevicePowerList[i].output); // set enable output
+						PowerRequests[j].state &= ~(0x1
+								<< DevicePowerList[i].output); // set enable output
 						return true;
 					}
 
 					// no error, can proceed with request.
 					// check existing request queued for node..
-					bool enabled = PowerRequests[j].output & (0x1 <<  DevicePowerList[i].output);
-					if ( !enabled || // no request yet made
-						( enabled && (PowerRequests[j].state & (0x1 << DevicePowerList[i].output) ) != state ) // request different to previously not processed request
-					)
-					{
-						PowerRequests[j].output |= (0x1 << DevicePowerList[i].output); // set enable output
-						if ( state == true )
-							PowerRequests[j].state |=(0x1 << DevicePowerList[i].output); // set bit
+					bool enabled = PowerRequests[j].output
+							& (0x1 << DevicePowerList[i].output);
+					if (!enabled || // no request yet made
+							(enabled
+									&& (PowerRequests[j].state
+											& (0x1 << DevicePowerList[i].output))
+											!= state) // request different to previously not processed request
+							) {
+						PowerRequests[j].output |= (0x1
+								<< DevicePowerList[i].output); // set enable output
+						if (state == true)
+							PowerRequests[j].state |= (0x1
+									<< DevicePowerList[i].output); // set bit
 						else
-							PowerRequests[j].state &= ~(0x1 << DevicePowerList[i].output); // unset bit
+							PowerRequests[j].state &= ~(0x1
+									<< DevicePowerList[i].output); // unset bit
 
 						return true;
 
-					} else
-					{
+					} else {
 						return false; // request already set
 					}
-				} return false; // error on channel, couldn't set
+				}
+				return false; // error on channel, couldn't set
 			}
 		}
 	}
@@ -1021,36 +1052,33 @@ bool setNodeDevicePower( DevicePower device, bool state, bool reset )
 	return false; // return if device was found and request set.
 }
 
-bool sendFanPWM( uint8_t leftduty, uint8_t rightduty )
-{
+bool sendFanPWM(uint8_t leftduty, uint8_t rightduty) {
 	// minimum useful duty is 18/255
 
 	// ensure we don't end up in a stall state
-	if ( leftduty < 20 && leftduty > 0 ) leftduty = 20;
-	if ( rightduty < 20 && rightduty > 0) rightduty = 20;
+	if (leftduty < 20 && leftduty > 0)
+		leftduty = 20;
+	if (rightduty < 20 && rightduty > 0)
+		rightduty = 20;
 
-	if ( nodefanpwmreqs[0].nodeid == 0 ) // nodeid not yet set, find and assign it.
-	{
+	if (nodefanpwmreqs[0].nodeid == 0) // nodeid not yet set, find and assign it.
+			{
 		uint8_t index = getPowerDeviceIndex(LeftFans);
 
-		for ( int j=0;PowerRequests[j].nodeid != 0;j++)
-		{
-			if ( PowerRequests[j].nodeid == nodefanpwmreqs[0].nodeid  )
-			{
-				nodefanpwmreqs[0].bus = PowerRequests[j].bus ;
+		for (int j = 0; PowerRequests[j].nodeid != 0; j++) {
+			if (PowerRequests[j].nodeid == nodefanpwmreqs[0].nodeid) {
+				nodefanpwmreqs[0].bus = PowerRequests[j].bus;
 			}
 		}
 
 		nodefanpwmreqs[0].nodeid = DevicePowerList[index].nodeid;
 		nodefanpwmreqs[0].output = DevicePowerList[index].output;
-		
+
 		index = getPowerDeviceIndex(RightFans);
 
-		for ( int j=0;PowerRequests[j].nodeid != 0;j++)
-		{
-			if ( PowerRequests[j].nodeid == nodefanpwmreqs[0].nodeid  )
-			{
-				nodefanpwmreqs[1].bus = PowerRequests[j].bus ;
+		for (int j = 0; PowerRequests[j].nodeid != 0; j++) {
+			if (PowerRequests[j].nodeid == nodefanpwmreqs[0].nodeid) {
+				nodefanpwmreqs[1].bus = PowerRequests[j].bus;
 			}
 		}
 
@@ -1059,7 +1087,6 @@ bool sendFanPWM( uint8_t leftduty, uint8_t rightduty )
 	}
 	nodefanpwmreqs[0].dutycycle = leftduty;
 
-
 	nodefanpwmreqs[1].dutycycle = rightduty;
 
 	queuedfanpwmLeft = true;
@@ -1067,31 +1094,24 @@ bool sendFanPWM( uint8_t leftduty, uint8_t rightduty )
 	return true;
 }
 
-int sendPowerNodeErrReset( uint8_t id, uint8_t channel )
-{
-	uint8_t candata[8] = { id, 12, channel};
+int sendPowerNodeErrReset(uint8_t id, uint8_t channel) {
+	uint8_t candata[8] = { id, 12, channel };
 	// look up bus, coul
-	for ( int j=0;PowerRequests[j].nodeid != 0;j++)
-	{
-		if ( PowerRequests[j].nodeid == id )
-		{
-			if ( PowerRequests[j].bus == 2 )
-				CAN2Send(NodeCmd_ID, 3, candata );
-			else 
-				CAN1Send(NodeCmd_ID, 3, candata );
+	for (int j = 0; PowerRequests[j].nodeid != 0; j++) {
+		if (PowerRequests[j].nodeid == id) {
+			if (PowerRequests[j].bus == 2)
+				CAN2Send(NodeCmd_ID, 3, candata);
+			else
+				CAN1Send(NodeCmd_ID, 3, candata);
 		}
 	}
 	return 0;
 }
 
-
-int getPowerDeviceIndex( DevicePower device )
-{
+int getPowerDeviceIndex(DevicePower device) {
 	int i = 0;
-	for (;DevicePowerList[i].device != None; i++)
-	{
-		if ( DevicePowerList[i].device == device )
-		{
+	for (; DevicePowerList[i].device != None; i++) {
+		if (DevicePowerList[i].device == device) {
 			return i;
 		}
 	}
@@ -1099,24 +1119,20 @@ int getPowerDeviceIndex( DevicePower device )
 }
 
 // check and return if an power error has occured on a device.
-uint32_t powerErrorOccurred( DevicePower device )
-{
+uint32_t powerErrorOccurred(DevicePower device) {
 //	for ( int i=0;DevicePowerList[i].device != None; i++)
 //	{
-	int i = getPowerDeviceIndex( device );
+	int i = getPowerDeviceIndex(device);
 
-	if ( DevicePowerList[i].device == device )
-	{ // found the device in list, try to set request.
+	if (DevicePowerList[i].device == device) { // found the device in list, try to set request.
 
-		for ( int j=0;PowerRequests[j].nodeid != 0;j++)
-		{
-			if ( PowerRequests[j].nodeid == DevicePowerList[i].nodeid )
-			{
+		for (int j = 0; PowerRequests[j].nodeid != 0; j++) {
+			if (PowerRequests[j].nodeid == DevicePowerList[i].nodeid) {
 				return PowerRequests[j].error[DevicePowerList[i].output];
-		//		if ( PowerRequests[j].error[DevicePowerList[i].output] )
-		//			return true;
-		//		else
-		//			return false;
+				//		if ( PowerRequests[j].error[DevicePowerList[i].output] )
+				//			return true;
+				//		else
+				//			return false;
 			}
 		}
 	}
@@ -1124,25 +1140,21 @@ uint32_t powerErrorOccurred( DevicePower device )
 	return 0;
 }
 
-
-int sendPowerNodeReq( void )
-{
+int sendPowerNodeReq(void) {
 	uint8_t candata[8] = { 0, 1, 0, 0 };
 	bool senderror = false;
 
-	for ( int i=0;PowerRequests[i].nodeid;i++)
-	{
-		if ( PowerRequests[i].output != 0 )
-		{
+	for (int i = 0; PowerRequests[i].nodeid; i++) {
+		if (PowerRequests[i].output != 0) {
 			candata[0] = PowerRequests[i].nodeid;
 			candata[2] = PowerRequests[i].output;
 			candata[3] = PowerRequests[i].state;
-			if ( PowerRequests[i].nodeid != 36) // no commands to node 36?
-			{
-				if ( PowerRequests[i].bus == 2 )
-					CAN2Send(NodeCmd_ID, 8, candata );
-				else 
-					CAN1Send(NodeCmd_ID, 8, candata );
+			if (PowerRequests[i].nodeid != 36) // no commands to node 36?
+					{
+				if (PowerRequests[i].bus == 2)
+					CAN2Send(NodeCmd_ID, 8, candata);
+				else
+					CAN1Send(NodeCmd_ID, 8, candata);
 			}
 			// don't reset request until we've seen an ack -> use ack handler to clear request.
 			// give a small delay between can power request messages, to allow a tiny bit of leeway for some inrush maybe.
@@ -1150,49 +1162,47 @@ int sendPowerNodeReq( void )
 		}
 	};
 
-	if ( queuedfanpwmLeft || queuedfanpwmRight )
-	{
+	if (queuedfanpwmLeft || queuedfanpwmRight) {
 		candata[1] = 2; // pwm set command.
 
-		if ( nodefanpwmreqs[0].nodeid == nodefanpwmreqs[1].nodeid ) // both requests on same node.
-		{
+		if (nodefanpwmreqs[0].nodeid == nodefanpwmreqs[1].nodeid) // both requests on same node.
+				{
 			candata[0] = nodefanpwmreqs[0].nodeid;
-			candata[2] = (0x1 << nodefanpwmreqs[0].output) + (0x1 << nodefanpwmreqs[1].output);
+			candata[2] = (0x1 << nodefanpwmreqs[0].output)
+					+ (0x1 << nodefanpwmreqs[1].output);
 			candata[3] = nodefanpwmreqs[0].dutycycle;
 			candata[4] = nodefanpwmreqs[1].dutycycle;
 
-			if ( nodefanpwmreqs[0].bus == 2 )
-					CAN2Send(NodeCmd_ID, 5, candata );
-				else 
-					CAN1Send(NodeCmd_ID, 5, candata );
+			if (nodefanpwmreqs[0].bus == 2)
+				CAN2Send(NodeCmd_ID, 5, candata);
+			else
+				CAN1Send(NodeCmd_ID, 5, candata);
 
 			//CAN1Send(NodeCmd_ID, 5, candata );
 		} else // fans on different nodes
 		{
-			if ( queuedfanpwmLeft )
-			{
+			if (queuedfanpwmLeft) {
 				candata[0] = nodefanpwmreqs[0].nodeid;
 				candata[2] = (0x1 << nodefanpwmreqs[0].output);
 				candata[3] = nodefanpwmreqs[0].dutycycle;
 
-				if ( nodefanpwmreqs[0].bus == 2 )
-					CAN2Send(NodeCmd_ID, 4, candata );
-				else 
-					CAN1Send(NodeCmd_ID, 4, candata );
+				if (nodefanpwmreqs[0].bus == 2)
+					CAN2Send(NodeCmd_ID, 4, candata);
+				else
+					CAN1Send(NodeCmd_ID, 4, candata);
 
 				//CAN1Send(NodeCmd_ID, 4, candata );
 			}
 
-			if ( queuedfanpwmRight )
-			{
+			if (queuedfanpwmRight) {
 				candata[0] = nodefanpwmreqs[1].nodeid;
 				candata[2] = (0x1 << nodefanpwmreqs[1].output);
 				candata[3] = nodefanpwmreqs[1].dutycycle;
 
-				if ( nodefanpwmreqs[1].bus == 2 )
-					CAN2Send(NodeCmd_ID, 4, candata );
-				else 
-					CAN1Send(NodeCmd_ID, 4, candata );
+				if (nodefanpwmreqs[1].bus == 2)
+					CAN2Send(NodeCmd_ID, 4, candata);
+				else
+					CAN1Send(NodeCmd_ID, 4, candata);
 
 				//CAN1Send(NodeCmd_ID, 4, candata );
 			}
@@ -1202,24 +1212,22 @@ int sendPowerNodeReq( void )
 	return senderror;
 }
 
-uint8_t getDevicePowerListSize( void )
-{
+uint8_t getDevicePowerListSize(void) {
 	int i = 0;
-	for (;DevicePowerList[i].device != None;i++);
+	for (; DevicePowerList[i].device != None; i++)
+		;
 	devicecount = i;
 	return i;
 }
 
-DevicePower getDevicePowerFromList( uint32_t i )
-{
-	if ( i <= devicecount )
+DevicePower getDevicePowerFromList(uint32_t i) {
+	if (i <= devicecount)
 		return DevicePowerList[i].device;
 	else
 		return None;
 }
 
-void resetPowerNodes( void )
-{
+void resetPowerNodes(void) {
 	Shutdown.BOTS = false;
 	Shutdown.InertiaSwitch = false;
 	Shutdown.BSPDAfter = false;
@@ -1243,8 +1251,7 @@ void resetPowerNodes( void )
 
 }
 
-int initPowerNodes( void )
-{
+int initPowerNodes(void) {
 
 	RegisterResetCommand(resetPowerNodes);
 

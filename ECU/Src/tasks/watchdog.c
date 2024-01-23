@@ -21,12 +21,11 @@
 #define MAXWATCHDOGTASKS			10
 #define MAXWATCHDOGTASKNAMELENGTH 	20
 
-
 #define WATCHDOGSTACK_SIZE 128*4
 #define WATCHDOGTASKNAME  "WatchdogTask"
 #define WATCHDOGTASKPRIORITY 1
 StaticTask_t xWATCHDOGTaskBuffer;
-StackType_t xWATCHDOGStack[ WATCHDOGSTACK_SIZE ];
+StackType_t xWATCHDOGStack[WATCHDOGSTACK_SIZE];
 
 TaskHandle_t WatchdogTaskHandle = NULL;
 
@@ -41,128 +40,132 @@ struct watchdogTaskInfo {
 
 char watchdogTasks[MAXWATCHDOGTASKS][MAXWATCHDOGTASKNAMELENGTH] = { 0 };
 
-void setWatchdogBit(uint8_t bit)
-{
-	xEventGroupSetBits(xWatchdog, ( 1 << bit ) );
+void setWatchdogBit(uint8_t bit) {
+	xEventGroupSetBits(xWatchdog, (1 << bit));
 }
 
-uint8_t registerWatchdogBit( char * taskname )
-{
+uint8_t registerWatchdogBit(char *taskname) {
 	// grab semaphore to prevent another task being able to conflict with assignment during startup if a context switch occurs.
 	xSemaphoreTake(debugAllocate, portMAX_DELAY);
 	uint8_t allocation = 0;
 
-	if ( taskname[0] == 0 )
-	{
+	if (taskname[0] == 0) {
 		LogError("Must give a taskname to watchdog");
 
-		while ( 1 )
-		{
+		while (1) {
 // tried to allocate too many watchdog bits, force a hang, which will cause a reset.
 
 		}
 	}
 
-
 	// find first non zero allocation, or a pre existing one matching name.
-	while ( ( watchdogTasks[allocation][0] != 0 && strncmp(taskname, watchdogTasks[allocation],MAXWATCHDOGTASKNAMELENGTH ) ) != 0 && allocation < MAXWATCHDOGTASKS )
-	{
+	while ((watchdogTasks[allocation][0] != 0
+			&& strncmp(taskname, watchdogTasks[allocation],
+					MAXWATCHDOGTASKNAMELENGTH)) != 0
+			&& allocation < MAXWATCHDOGTASKS) {
 		allocation++;
 	}
 
 	// make sure we are within allocation size.
-	if ( allocation >= MAXWATCHDOGTASKS )
-	{
+	if (allocation >= MAXWATCHDOGTASKS) {
 		LogError("Too many watchdog tasks");
 
-		while ( 1 )
-		{
+		while (1) {
 // tried to allocate too many watchdog bits, force a hang, which will cause a reset.
 
 		}
 	}
 	// copy the taskname into buffer
-	strncpy(watchdogTasks[allocation], taskname,  MAXWATCHDOGTASKNAMELENGTH);
+	strncpy(watchdogTasks[allocation], taskname, MAXWATCHDOGTASKNAMELENGTH);
 
-	xEventGroupSetBits(xWatchdogActive, ( 1 << allocation ) );
+	xEventGroupSetBits(xWatchdogActive, (1 << allocation));
 
 	setWatchdogBit(allocation);
 	xSemaphoreGive(debugAllocate);
 	return allocation;
 }
 
-
-bool watchdogRebooted( void )
-{
+bool watchdogRebooted(void) {
 	return watchdogreboot;
 }
 
 /**
-  * @brief  Timeout calculation function.
-  *         This function calculates any timeout related to
-  *         WWDG with given prescaler and system clock.
-  * @param  timevalue: period in term of WWDG counter cycle.
-  * @retval None
-  */
-static uint32_t TimeoutCalculation(uint32_t timevalue)
-{
-  uint32_t timeoutvalue = 0;
-  uint32_t pclk1 = 0;
-  uint32_t wdgtb = 0;
+ * @brief  Timeout calculation function.
+ *         This function calculates any timeout related to
+ *         WWDG with given prescaler and system clock.
+ * @param  timevalue: period in term of WWDG counter cycle.
+ * @retval None
+ */
+static uint32_t TimeoutCalculation(uint32_t timevalue) {
+	uint32_t timeoutvalue = 0;
+	uint32_t pclk1 = 0;
+	uint32_t wdgtb = 0;
 
-  /* Get PCLK1 value */
-  pclk1 = HAL_RCC_GetPCLK1Freq();
+	/* Get PCLK1 value */
+	pclk1 = HAL_RCC_GetPCLK1Freq();
 
-  /* get prescaler */
-  switch(hwwdg1.Init.Prescaler)
-  {
-    case WWDG_PRESCALER_1:   wdgtb = 1;   break;
-    case WWDG_PRESCALER_2:   wdgtb = 2;   break;
-    case WWDG_PRESCALER_4:   wdgtb = 4;   break;
-    case WWDG_PRESCALER_8:   wdgtb = 8;   break;
-    case WWDG_PRESCALER_16:  wdgtb = 16;  break;
-    case WWDG_PRESCALER_32:  wdgtb = 32;  break;
-    case WWDG_PRESCALER_64:  wdgtb = 64;  break;
-    case WWDG_PRESCALER_128: wdgtb = 128; break;
+	/* get prescaler */
+	switch (hwwdg1.Init.Prescaler) {
+	case WWDG_PRESCALER_1:
+		wdgtb = 1;
+		break;
+	case WWDG_PRESCALER_2:
+		wdgtb = 2;
+		break;
+	case WWDG_PRESCALER_4:
+		wdgtb = 4;
+		break;
+	case WWDG_PRESCALER_8:
+		wdgtb = 8;
+		break;
+	case WWDG_PRESCALER_16:
+		wdgtb = 16;
+		break;
+	case WWDG_PRESCALER_32:
+		wdgtb = 32;
+		break;
+	case WWDG_PRESCALER_64:
+		wdgtb = 64;
+		break;
+	case WWDG_PRESCALER_128:
+		wdgtb = 128;
+		break;
 
-    default: Error_Handler(); break;
-  }
+	default:
+		Error_Handler();
+		break;
+	}
 
-  /* calculate timeout */
-  timeoutvalue = ((4096 * wdgtb * timevalue) / ((pclk1*2) / 1000)); // not sure if right.
+	/* calculate timeout */
+	timeoutvalue = ((4096 * wdgtb * timevalue) / ((pclk1 * 2) / 1000)); // not sure if right.
 
-  return timeoutvalue;
+	return timeoutvalue;
 }
 
-
-static void WatchdogTask(void *pvParameters)
-{
+static void WatchdogTask(void *pvParameters) {
 //	xEventGroupSync( xStartupSync, 0, 1, portMAX_DELAY );
 	volatile int count = 0;
 
-	vTaskDelay(CYCLETIME*2);
+	vTaskDelay(CYCLETIME * 2);
 
-	while ( 1 )
-	{
+	while (1) {
 		count++;
 
 		volatile EventBits_t activeBits = xEventGroupGetBits(xWatchdogActive);
 
 		volatile EventBits_t uxBits = xEventGroupGetBits(xWatchdog);
 
-		if( ( uxBits & activeBits ) == ( activeBits ) )
-		{
+		if ((uxBits & activeBits) == (activeBits)) {
 			// only kick the watchdog if all expected bits are set.
 #ifdef WATCHDOG
 			HAL_WWDG_Refresh(&hwwdg1);
 #endif
-		} else
-		{
-			if ( activeBits > 0 )
-			{
+		} else {
+			if (activeBits > 0) {
 				volatile int watchdognotkicked = 1;
 				char str[40] = "";
-				snprintf(str, 40, "Watchdog kicked bits: %4X", (uint32_t)uxBits);
+				snprintf(str, 40, "Watchdog kicked bits: %4X",
+						(uint32_t) uxBits);
 #ifdef WATCHDOG
 				UART_Transmit(DEBUGUART, str, strlen(str));
 #else
@@ -171,16 +174,15 @@ static void WatchdogTask(void *pvParameters)
 			}
 		}
 
-		xEventGroupClearBits(xWatchdog, 0xFF );
+		xEventGroupClearBits(xWatchdog, 0xFF);
 
-		vTaskDelay(CYCLETIME*2);
+		vTaskDelay(CYCLETIME * 2);
 	}
 }
 
-int initWatchdog( void )
-{
+int initWatchdog(void) {
 
-	for ( int i=0; i<MAXWATCHDOGTASKS;i++)
+	for (int i = 0; i < MAXWATCHDOGTASKS; i++)
 		watchdogTasks[i][0] = 0;
 
 	// TODO allocate static?
@@ -293,14 +295,10 @@ int initWatchdog( void )
 	}
 #endif
 
-	WatchdogTaskHandle = xTaskCreateStatic(
-						  WatchdogTask,
-						  WATCHDOGTASKNAME,
-						  WATCHDOGSTACK_SIZE,
-						  ( void * ) 1,
-						  WATCHDOGTASKPRIORITY,
-						  xWATCHDOGStack,
-						  &xWATCHDOGTaskBuffer );
+	WatchdogTaskHandle = xTaskCreateStatic(WatchdogTask,
+	WATCHDOGTASKNAME,
+	WATCHDOGSTACK_SIZE, (void*) 1,
+	WATCHDOGTASKPRIORITY, xWATCHDOGStack, &xWATCHDOGTaskBuffer);
 
 	return 0;
 }

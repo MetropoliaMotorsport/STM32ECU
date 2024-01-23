@@ -37,16 +37,15 @@
 
 typedef struct Debug_msg {
 	char str[MAXDEBUGOUTPUT];
-	//uint32_t msgval;
+//uint32_t msgval;
 } Debug_msg;
-
 
 #define VERSION "10102"
 
 #define DEBUGSTACK_SIZE 128*8
 #define DEBUGTASKNAME  "DebugTask"
 StaticTask_t xDEBUGTaskBuffer;
-RAM_D1 StackType_t xDEBUGStack[ DEBUGSTACK_SIZE ];
+RAM_D1 StackType_t xDEBUGStack[DEBUGSTACK_SIZE];
 
 TaskHandle_t DebugTaskHandle = NULL;
 
@@ -54,73 +53,60 @@ TaskHandle_t DebugTaskHandle = NULL;
 #define DebugITEMSIZE		sizeof( Debug_msg )
 
 static StaticQueue_t DebugStaticQueue;
-uint8_t DebugQueueStorageArea[ DebugQUEUE_LENGTH * DebugITEMSIZE ];
+uint8_t DebugQueueStorageArea[DebugQUEUE_LENGTH * DebugITEMSIZE];
 
 QueueHandle_t DebugQueue;
 
 extern bool debugconfig;
 
-
 #define DEBUGPROMPT    "DebugCmd: "
 
-
-int UARTprintf(const char * format, ... )
-{
+int UARTprintf(const char *format, ...) {
 	va_list ap;
-	uint8_t buffer [128];
+	uint8_t buffer[128];
 	int n;
 	va_start(ap, format);
-	n = vsnprintf ((char*)buffer, 128, format, ap);
+	n = vsnprintf((char*) buffer, 128, format, ap);
 	va_end(ap);
 
 #ifdef RTTDEBUG
 	SEGGER_RTT_Write(0, buffer, n);
 #endif
 
-	if ( !UART_Transmit(DEBUGUART, (uint8_t*)buffer, n) )
-	{
+	if (!UART_Transmit(DEBUGUART, (uint8_t*) buffer, n)) {
 		return 0;
 	}
 
 	return UART_WaitTXDone( DEBUGUART, 100);
 }
 
-
-int UARTwritech( const char ch)
-{
+int UARTwritech(const char ch) {
 #ifdef RTTDEBUG
 	SEGGER_RTT_Write(0, &ch, 1);
 #endif
-	if(!UART_Transmit(DEBUGUART, (uint8_t *)&ch, 1)) {
+	if (!UART_Transmit(DEBUGUART, (uint8_t*) &ch, 1)) {
 		return 0;
 	}
 
 	return UART_WaitTXDone( DEBUGUART, 100);
 }
 
-
-
-void UARTwrite( const char *str)
-{
+void UARTwrite(const char *str) {
 	UARTprintf(str);
 }
 
-void UARTwriteRaw( const char *str)
-{
+void UARTwriteRaw(const char *str) {
 #ifdef RTTDEBUG
 	SEGGER_RTT_printf(0, str);
 #endif
-	if ( !UART_Transmit(DEBUGUART, (uint8_t*)str, strlen(str)) )
-	{
+	if (!UART_Transmit(DEBUGUART, (uint8_t*) str, strlen(str))) {
 		return;
 	}
 
 	UART_WaitTXDone( DEBUGUART, 100);
 }
 
-
-void UARTwritetwoline(const char *str, const char *str2)
-{
+void UARTwritetwoline(const char *str, const char *str2) {
 #ifdef RTTDEBUG
 	SEGGER_RTT_printf(0, str);
 	SEGGER_RTT_printf(0, str2);
@@ -131,41 +117,37 @@ void UARTwritetwoline(const char *str, const char *str2)
 	UARTprintf("\r\n");
 }
 
-
 // Add message to uart message queue. Might be called from ISR so add a check.
-bool DebugMsg( const char * msg)
-{
+bool DebugMsg(const char *msg) {
 	struct Debug_msg debugmsg;
-	strncpy( debugmsg.str, msg, MAXDEBUGOUTPUT );
-	if ( xPortIsInsideInterrupt() )
-		return xQueueSendFromISR( DebugQueue, &debugmsg, 0 );
+	strncpy(debugmsg.str, msg, MAXDEBUGOUTPUT);
+	if (xPortIsInsideInterrupt())
+		return xQueueSendFromISR(DebugQueue, &debugmsg, 0);
 	else
-		return xQueueSendToBack( DebugQueue, &debugmsg, 0); // send it to error state handler queue for display to user.
+		return xQueueSendToBack(DebugQueue, &debugmsg, 0); // send it to error state handler queue for display to user.
 }
 
 // print a message to debug output using printf format.
-bool DebugPrintf( const char * format, ... )
-{
+bool DebugPrintf(const char *format, ...) {
 	va_list ap;
 
 	struct Debug_msg debugmsg;
 	va_start(ap, format);
-	vsnprintf ((char*)debugmsg.str, MAXDEBUGOUTPUT, format, ap);
+	vsnprintf((char*) debugmsg.str, MAXDEBUGOUTPUT, format, ap);
 	va_end(ap);
 
-	if ( xPortIsInsideInterrupt() )
-		return xQueueSendFromISR( DebugQueue, &debugmsg, 0 );
+	if (xPortIsInsideInterrupt())
+		return xQueueSendFromISR(DebugQueue, &debugmsg, 0);
 	else
-		return xQueueSendToBack( DebugQueue, &debugmsg, 0); // send it to error state handler queue for display to user.
+		return xQueueSendToBack(DebugQueue, &debugmsg, 0); // send it to error state handler queue for display to user.
 }
 
 bool redraw;
 
 // also handle printing debug messages here.
-uint8_t uartWait( char *ch )
-{
-	if(!UART_Receive(DEBUGUART, (uint8_t *)ch, 1)) {
-		#if 0
+uint8_t uartWait(char *ch) {
+	if (!UART_Receive(DEBUGUART, (uint8_t*) ch, 1)) {
+#if 0
 		int rttch = SEGGER_RTT_GetKey();
 
 		if ( rttch > 0  )
@@ -182,9 +164,8 @@ uint8_t uartWait( char *ch )
 
 	redraw = false;
 
-	while ( 1 )
-	{
-		#if 0
+	while (1) {
+#if 0
 		int rttch = SEGGER_RTT_GetKey();
 
 		if ( rttch > 0  )
@@ -194,13 +175,11 @@ uint8_t uartWait( char *ch )
 		}
 		#endif
 
-		if ( UART_WaitRXDone( DEBUGUART, 0 ) )
-		{
+		if (UART_WaitRXDone( DEBUGUART, 0)) {
 			return 1;
 		}
 
-		if ( xQueueReceive(DebugQueue,&msg,10) )
-		{
+		if (xQueueReceive(DebugQueue, &msg, 10)) {
 			UARTwrite("\r\n");
 			UARTwrite(msg.str);
 			// TODO could redraw prompt here instead so it always displays correctly.
@@ -216,188 +195,168 @@ uint8_t uartWait( char *ch )
 
 #endif
 
-static char str[40*50] = { 0 };
+static char str[40 * 50] = { 0 };
 
-bool streql( const char * str1, const char * str2 )
-{
-	return ! ( strcmp(str1, str2) );
+bool streql(const char *str1, const char *str2) {
+	return !(strcmp(str1, str2));
 }
 
-bool checkOn( const char * tkn )
-{
-	if ( streql(tkn, "closed") || streql(tkn, "on") || streql(tkn, "true") || streql(tkn, "enable")  || streql(tkn, "enabled") )
+bool checkOn(const char *tkn) {
+	if (streql(tkn, "closed") || streql(tkn, "on") || streql(tkn, "true")
+			|| streql(tkn, "enable") || streql(tkn, "enabled"))
 		return true;
 	else
 		return false;
 }
 
-bool checkOff( const char * tkn )
-{
-	if ( streql(tkn, "open") || streql(tkn, "off") || streql(tkn, "false") || streql(tkn, "disable") || streql(tkn, "disabled") )
+bool checkOff(const char *tkn) {
+	if (streql(tkn, "open") || streql(tkn, "off") || streql(tkn, "false")
+			|| streql(tkn, "disable") || streql(tkn, "disabled"))
 		return true;
 	else
 		return false;
 }
 
-
-static void debugFanPWM( const int tokens, const int val1, const int val2 )
-{
-	if ( tokens != 3 )
-	{
+static void debugFanPWM(const int tokens, const int val1, const int val2) {
+	if (tokens != 3) {
 		UARTwrite("Please give left and right pwm duty.\r\n");
-	} else
-	{
-		if ( val1 > 255 || val2 > 255 || val1 < 0 || val2 < 0 )
-		{
+	} else {
+		if (val1 > 255 || val2 > 255 || val1 < 0 || val2 < 0) {
 			UARTwrite("invalid PWM duty cycles given");
-		} else
-		{
-			snprintf(str, 80, "Requesting fan PWMs Left: %4d Right: %4d\r\n", val1, val2);
+		} else {
+			snprintf(str, 80, "Requesting fan PWMs Left: %4d Right: %4d\r\n",
+					val1, val2);
 			UARTwrite(str);
 
-			FanPWMControl( val1, val2 );
+			FanPWMControl(val1, val2);
 		}
 	}
 }
 
-static void debugLEDs( const int tokens, const int val1, const int val2 )
-{
-	if ( tokens != 3 )
-	{
+static void debugLEDs(const int tokens, const int val1, const int val2) {
+	if (tokens != 3) {
 		UARTwrite("Please give led no and state. 0 0 to reset debug mode.\r\n");
-	} else if ( val1 > 18 || val1 < 0 )
-	{
+	} else if (val1 > 18 || val1 < 0) {
 		UARTwrite("Invalid Output number given (0-18)\r\n");
-	}
-	else
-	{
-		if ( val2 == 0 )
-		{
+	} else {
+		if (val2 == 0) {
 			snprintf(str, 80, "Setting LED %d to off\r\n", val1);
 			UARTwrite(str);
-			if ( val1 == 0 )
-				blinkOutputDebug(0,Stopdebug, 500);
+			if (val1 == 0)
+				blinkOutputDebug(0, Stopdebug, 500);
 			else
 				setOutputDebug(val1, Off); // debug commands disable other threads controlling output till reboot
-		} else if ( val2 == 1 )
-		{
+		} else if (val2 == 1) {
 			snprintf(str, 80, "Setting LED %d to on\r\n", val1);
 			UARTwrite(str);
 			setOutputDebug(val1, On);
-		} else if ( val2 <= BlinkVeryFast )
-		{
-			switch ( val2 )
-			{
-			case BlinkVerySlow: snprintf(str, 80, "Setting LED %d to BlinkVerySlow for 5s\r\n", val1); break;
-			case BlinkSlow: snprintf(str, 80, "Setting LED %d to BlinkSlow for 5s\r\n", val1); break;
-			case BlinkMed: snprintf(str, 80, "Setting LED %d to BlinkMed for 5s\r\n", val1); break;
-			case BlinkFast: snprintf(str, 80, "Setting LED %d to BlinkFast for 5s\r\n", val1); break;
-			case BlinkVeryFast: snprintf(str, 80, "Setting LED %d to BlinkVeryFast for 5s\r\n", val1); break;
+		} else if (val2 <= BlinkVeryFast) {
+			switch (val2) {
+			case BlinkVerySlow:
+				snprintf(str, 80, "Setting LED %d to BlinkVerySlow for 5s\r\n",
+						val1);
+				break;
+			case BlinkSlow:
+				snprintf(str, 80, "Setting LED %d to BlinkSlow for 5s\r\n",
+						val1);
+				break;
+			case BlinkMed:
+				snprintf(str, 80, "Setting LED %d to BlinkMed for 5s\r\n",
+						val1);
+				break;
+			case BlinkFast:
+				snprintf(str, 80, "Setting LED %d to BlinkFast for 5s\r\n",
+						val1);
+				break;
+			case BlinkVeryFast:
+				snprintf(str, 80, "Setting LED %d to BlinkVeryFast for 5s\r\n",
+						val1);
+				break;
 			default:
 				break;
 			}
 
 			blinkOutputDebug(val1, val2, 5000);
-		} else
-		{
+		} else {
 			UARTwrite("Invalid LED state given 0 to 6\r\n");
 		}
 
 	}
 }
 
+static void debugInverter(const char *tkn2, const char *tkn3, const int val2) {
+	if (streql(tkn2, "state") || streql(tkn2, "status")) {// PreOperation  PreOperation
 
-
-static void debugInverter( const char *tkn2, const char *tkn3, const int val2 )
-{
-	if ( streql(tkn2, "state") || streql(tkn2, "status") )
-	{				  // PreOperation  PreOperation
-
-
-		UARTprintf("Inverter handling enabled: %s Global state: %s Online:%d\r\n",
-				getEEPROMBlock(0)->InvEnabled? "Y":"N", getDeviceStatusStr(GetInverterState()), getInvOnlineCount());
+		UARTprintf(
+				"Inverter handling enabled: %s Global state: %s Online:%d\r\n",
+				getEEPROMBlock(0)->InvEnabled ? "Y" : "N",
+				getDeviceStatusStr(GetInverterState()), getInvOnlineCount());
 		UARTwrite("-----------------------------------\r\n");
 		UARTwrite("Inv  Current State  Requested State\r\n");
 		UARTwrite("-----------------------------------\r\n");
 
-
-		for ( int i=0;i<MOTORCOUNT;i++)
-		{
-			InverterState_t * invs = getInvState(i);
+		for (int i = 0; i < MOTORCOUNT; i++) {
+			InverterState_t *invs = getInvState(i);
 			char str[MAXDEBUGOUTPUT];
 			snprintf(str, MAXDEBUGOUTPUT, "%4d %14s %14s HV:%s\r\n", i,
-					getDeviceStatusStr(invs->InvState ),
-					getDeviceStatusStr(invs->InvRequested ),
-					invs->HighVoltageAvailable ? "Y" : "N"
-			);
+					getDeviceStatusStr(invs->InvState),
+					getDeviceStatusStr(invs->InvRequested),
+					invs->HighVoltageAvailable ? "Y" : "N");
 			UARTwrite(str);
 		}
 
-	}
-	else if ( checkOn(tkn2) )
-	{
+	} else if (checkOn(tkn2)) {
 		UARTwrite("Enabling inverters and saving config.\r\n");
 		getEEPROMBlock(0)->InvEnabled = true;
-		if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+		if (writeEEPROMCurConf()) // enqueue write the data to eeprom.
 		{
 			vTaskDelay(20);
-			while ( EEPROMBusy() )
-			{
+			while (EEPROMBusy()) {
 				vTaskDelay(20);
 			}
 			UARTwrite("Saved, power cycle to activate.\r\n");
 		} else
 			UARTwrite("Error saving config.\r\n");
-	}
-	else if ( checkOff(tkn2) )
-	{
+	} else if (checkOff(tkn2)) {
 		UARTwrite("Disabling inverters and saving config.\r\n");
 		getEEPROMBlock(0)->InvEnabled = false;
-		if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+		if (writeEEPROMCurConf()) // enqueue write the data to eeprom.
 		{
 			vTaskDelay(100);
-			while ( EEPROMBusy() )
-			{
+			while (EEPROMBusy()) {
 				vTaskDelay(100);
 			}
 			UARTwrite("Saved, power cycle to activate.\r\n");
 		} else
 			UARTwrite("Error saving config.\r\n");
-	}
-	else if ( streql(tkn2, "startup") )
-	{
+	} else if (streql(tkn2, "startup")) {
 		UARTwrite("Sending inverter startup\r\n");
-		for ( int i=0;i<MOTORCOUNT;i++)
-		{
-			InvStartupCfg( getInvState(i) );
+		for (int i = 0; i < MOTORCOUNT; i++) {
+			InvStartupCfg(getInvState(i));
 		}
-	}
-	else if ( streql(tkn2, "reset") ) // should try and reset errors.
-	{
+	} else if (streql(tkn2, "reset")) // should try and reset errors.
+			{
 		UARTprintf("Sending inverter reset to %d\r\n", val2);
-		if ( val2 < 0 || val2 > MOTORCOUNT-1)
-		{
+		if (val2 < 0 || val2 > MOTORCOUNT - 1) {
 			UARTwrite("Invalid inverter given.\r\n");
 		}
-	//	else
+		//	else
 		InvReset(getInvState(val2));
-	} else
-	{
+	} else {
 		UARTprintf("unknown inverter cmd\r\n");
 	}
 }
 
 bool regentest = false;
 
-static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1, const int32_t motor )
-{
+static void debugMotor(const char *tkn2, const char *tkn3, const int32_t value1,
+		const int32_t motor) {
 	int16_t speed = getEEPROMBlock(0)->maxRpm;
 	int32_t maxNm = getEEPROMBlock(0)->MaxTorque;
 
 	uint32_t motorsenabled = getEEPROMBlock(0)->EnabledMotors;
 
-	if (  streql( tkn2, "test" ) )
-	{
+	if (streql(tkn2, "test")) {
 		UARTwrite("Setting front power enabled.\r\n");
 
 		ShutdownCircuitSet(true);
@@ -408,23 +367,20 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 #endif
 		UARTwrite("Power wait.\r\n");
 		vTaskDelay(6000);
-		setDevicePower( Inverters, true);
-		if ( !getNodeDevicePower(Front1) )
-		{
+		setDevicePower(Inverters, true);
+		if (!getNodeDevicePower(Front1)) {
 			UARTwrite("Front1 not powered.\r\n");
 			return;
 		}
 
-		if ( !getNodeDevicePower(Front2) )
-		{
+		if (!getNodeDevicePower(Front2)) {
 			UARTwrite("Front2 not powered.\r\n");
 			return;
 		}
 
-		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline() ;
+		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline();
 		// anode 1
-		if ( ! (AnalogueNodesOnline & ( 0x1 << ANode11Bit ) ) )
-		{
+		if (!(AnalogueNodesOnline & (0x1 << ANode11Bit))) {
 			UARTwrite("No pedal data from Analogue Node 11.\r\n");
 			return;
 		}
@@ -433,10 +389,9 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 
 		int16_t pedalreq;
 		float curreq = PedalTorqueRequest(&pedalreq);
-		if ( curreq == 0 )
-		{
+		if (curreq == 0) {
 			vTaskDelay(100);
-			invRequestState( OPERATIONAL );
+			invRequestState(OPERATIONAL);
 			UARTwrite("1.\r\n");
 			vTaskDelay(100);
 			InverterAllowTorqueAll(true);
@@ -452,7 +407,7 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 
 			char ch = 0;
 
-			if(!UART_Receive(DEBUGUART, (uint8_t *)&ch, 1)) {
+			if (!UART_Receive(DEBUGUART, (uint8_t*) &ch, 1)) {
 				UARTwrite("UART error\r\n");
 				return;
 			}
@@ -462,26 +417,24 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 			uint16_t oldrequest = 0xffff;
 			uint32_t lasttime = 0;
 
-			while ( !quit )
-			{
-				if ( UART_WaitRXDone( DEBUGUART, 0 ) )
-				{
+			while (!quit) {
+				if (UART_WaitRXDone( DEBUGUART, 0)) {
 					UARTwrite("Done.\r\n");
 					// reset request to 0 here.
 					return;
 				}
 
 				// print other pending messages.
-				if ( xQueueReceive(DebugQueue,&msg,10) )
-				{
+				if (xQueueReceive(DebugQueue, &msg, 10)) {
 					UARTwrite("\r\n");
 					UARTwrite(msg.str);
 				}
 
-				int16_t requestRaw = ADCState.Torque_Req_R_Percent;//PedalTorqueRequest();
+				int16_t requestRaw = ADCState.Torque_Req_R_Percent; //PedalTorqueRequest();
 //				if ( abs(oldrequest-requestRaw) > 50 || gettimer() - lasttime > 1000) // only update if value changes.
-				if ( abs(oldrequest-requestRaw) > 5 || gettimer() - lasttime > 1000) // only update if value changes.
-				{
+				if (abs(oldrequest - requestRaw) > 5
+						|| gettimer() - lasttime > 1000) // only update if value changes.
+								{
 					oldrequest = requestRaw;
 					lasttime = gettimer();
 					uint32_t percR = requestRaw;
@@ -492,69 +445,61 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 //					if ( percR > 1000 )
 //						percR = 1000;
 
-					float requestNm = (percR*maxNm)/1000;//*0x4000)/1000; // speed is 0x4000 scaling.
+					float requestNm = (percR * maxNm) / 1000; //*0x4000)/1000; // speed is 0x4000 scaling.
 
-					for ( int i=0;i<MOTORCOUNT;i++)
-					{
-						if ( requestNm > 0 && ( ( 1 << i ) & motorsenabled ) )
-							InverterSetTorqueInd( i, requestNm, speed);
+					for (int i = 0; i < MOTORCOUNT; i++) {
+						if (requestNm > 0 && ((1 << i) & motorsenabled))
+							InverterSetTorqueInd(i, requestNm, speed);
 						else
-							InverterSetTorqueInd( i, 0, speed);
+							InverterSetTorqueInd(i, 0, speed);
 					}
 
-					UARTprintf("Pedal: r%d%%, reqNm %d, raw %d, speed %d, maxNm %d, to MC[%s] 0[I%dc M%dc] 1[I%dc M%dc] 2[I%dc M%dc] 3[I%dc M%dc]\r\n ",
-							percR/10, (int16_t)requestNm, requestNm, speed, maxNm, getMotorsEnabledStr(),
+					UARTprintf(
+							"Pedal: r%d%%, reqNm %d, raw %d, speed %d, maxNm %d, to MC[%s] 0[I%dc M%dc] 1[I%dc M%dc] 2[I%dc M%dc] 3[I%dc M%dc]\r\n ",
+							percR / 10, (int16_t) requestNm, requestNm, speed,
+							maxNm, getMotorsEnabledStr(),
 							getInvState(0)->InvTemp, getInvState(0)->MotorTemp,
 							getInvState(1)->InvTemp, getInvState(1)->MotorTemp,
 							getInvState(2)->InvTemp, getInvState(2)->MotorTemp,
-							getInvState(3)->InvTemp, getInvState(3)->MotorTemp
-						);
+							getInvState(3)->InvTemp, getInvState(3)->MotorTemp);
 				}
 			}
 
-			InverterAllowTorqueAll( false );
+			InverterAllowTorqueAll( false);
 			setTestMotors(false);
-			invRequestState( BOOTUP );
+			invRequestState(BOOTUP);
 			UARTwrite("Setting torque disabled.\r\n");
-		} else
-		{
-			UARTprintf("APPS request not 0, not enabling test [curreq %dnm, ped pos l%d r%d , brakes r%d f%d].\r\n", curreq, ADCState.Torque_Req_L_Percent, ADCState.Torque_Req_R_Percent, ADCState.BrakeR, ADCState.BrakeF);
+		} else {
+			UARTprintf(
+					"APPS request not 0, not enabling test [curreq %dnm, ped pos l%d r%d , brakes r%d f%d].\r\n",
+					curreq, ADCState.Torque_Req_L_Percent,
+					ADCState.Torque_Req_R_Percent, ADCState.BrakeR,
+					ADCState.BrakeF);
 		}
-	}
-	else if ( checkOn( tkn2 )  )
-	{
-		if ( value1 >= 0 )
-		{
+	} else if (checkOn(tkn2)) {
+		if (value1 >= 0) {
 			uint8_t curenabled = getEEPROMBlock(0)->EnabledMotors;
 
-			if ( strcmp( tkn3, "all") == 0)
-			{
+			if (strcmp(tkn3, "all") == 0) {
 				UARTwrite("Setting all Motors enabled\r\n");
-				for ( int i=0; i< MOTORCOUNT; i++)
-				{
+				for (int i = 0; i < MOTORCOUNT; i++) {
 					curenabled |= 1 << i;
 				}
-			}
-			else
-			{
-				if ( value1 >=0 && value1 < MOTORCOUNT)
-				{
+			} else {
+				if (value1 >= 0 && value1 < MOTORCOUNT) {
 					UARTprintf("Setting motor %d enabled\r\n", value1);
 					curenabled |= 1 << value1;
-				} else
-				{
+				} else {
 					UARTprintf("Invalid motor given\r\n");
 				}
 			}
 
 			getEEPROMBlock(0)->EnabledMotors = curenabled;
 
-
-			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			if (writeEEPROMCurConf()) // enqueue write the data to eeprom.
 			{
 				vTaskDelay(20);
-				while ( EEPROMBusy() )
-				{
+				while (EEPROMBusy()) {
 					vTaskDelay(20);
 				}
 				UARTwrite("Saved.\r\n");
@@ -562,48 +507,37 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 				UARTwrite("Error saving config.\r\n");
 
 		}
-	}
-	else if ( checkOff( tkn2 ) )
-	{
-		if ( value1 >= 0 )
-			{
-				uint8_t curenabled = getEEPROMBlock(0)->EnabledMotors;
+	} else if (checkOff(tkn2)) {
+		if (value1 >= 0) {
+			uint8_t curenabled = getEEPROMBlock(0)->EnabledMotors;
 
-				if ( strcmp( tkn3, "all") == 0 )
-				{
-					UARTwrite("Setting all Motors disabled\r\n");
-					curenabled = 0;
+			if (strcmp(tkn3, "all") == 0) {
+				UARTwrite("Setting all Motors disabled\r\n");
+				curenabled = 0;
+			} else {
+				if (value1 >= 0 && value1 < MOTORCOUNT) {
+					curenabled &= ~(1 << value1);
+					UARTprintf("Setting motor %d disabled\r\n", value1);
+				} else {
+					UARTprintf("Invalid motor given\r\n");
 				}
-				else
-				{
-					if ( value1 >=0 && value1 < MOTORCOUNT)
-					{
-						curenabled &= ~(1 << value1);
-						UARTprintf("Setting motor %d disabled\r\n", value1);
-					} else
-					{
-						UARTprintf("Invalid motor given\r\n");
-					}
-				}
-
-				getEEPROMBlock(0)->EnabledMotors = curenabled;
-
-
-				if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
-				{
-					vTaskDelay(20);
-					while ( EEPROMBusy() )
-					{
-						vTaskDelay(20);
-					}
-					UARTwrite("Saved.\r\n");
-				} else
-					UARTwrite("Error saving config.\r\n");
-
 			}
 
-	} else if ( streql( tkn2, "status" ) )
-	{
+			getEEPROMBlock(0)->EnabledMotors = curenabled;
+
+			if (writeEEPROMCurConf()) // enqueue write the data to eeprom.
+			{
+				vTaskDelay(20);
+				while (EEPROMBusy()) {
+					vTaskDelay(20);
+				}
+				UARTwrite("Saved.\r\n");
+			} else
+				UARTwrite("Error saving config.\r\n");
+
+		}
+
+	} else if (streql(tkn2, "status")) {
 		UARTwrite("Motors control status\r\n\r\n");
 
 		UARTprintf("Motors Enabled: [%s]\r\n", getMotorsEnabledStr());
@@ -612,216 +546,185 @@ static void debugMotor( const char *tkn2, const char *tkn3, const int32_t value1
 		UARTprintf("Max torque %dNm\r\n", maxNm);
 		UARTprintf("Max torque slope %d\r\n", getEEPROMBlock(0)->TorqueSlope);
 
-
-	} else if ( streql( tkn2, "accel" )  )
-	{
-		if ( value1 >= 0 && value1 < 16000 )
-		{
+	} else if (streql(tkn2, "accel")) {
+		if (value1 >= 0 && value1 < 16000) {
 			UARTwrite("Setting accelRPM/s\r\n");
 
 			getEEPROMBlock(0)->AccelRpms = value1;
-			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			if (writeEEPROMCurConf()) // enqueue write the data to eeprom.
 			{
 				vTaskDelay(20);
-				while ( EEPROMBusy() )
-				{
+				while (EEPROMBusy()) {
 					vTaskDelay(20);
 				}
 				UARTwrite("Saved.\r\n");
 			} else
 				UARTwrite("Error saving config.\r\n");
 
-			for ( int i=0;i<MOTORCOUNT;i++)
-			{
-				InvSendSDO(getInvState(i)->COBID+(getInvState(i)->MCChannel*LENZE_MOTORB_OFFSET),
-						0x6048+(getInvState(i)->MCChannel*0x800),
-						0, getEEPROMBlock(0)->AccelRpms*4);
+			for (int i = 0; i < MOTORCOUNT; i++) {
+				InvSendSDO(
+						getInvState(i)->COBID
+								+ (getInvState(i)->MCChannel
+										* LENZE_MOTORB_OFFSET),
+						0x6048 + (getInvState(i)->MCChannel * 0x800), 0,
+						getEEPROMBlock(0)->AccelRpms * 4);
 			}
-		} else
-		{
+		} else {
 			UARTwrite("Invalid maxRPM given\r\n");
 		}
-	} else if ( streql( tkn2, "decel" )  )
-	{
-		if ( value1 >= 0 && value1 < 16000 )
-		{
+	} else if (streql(tkn2, "decel")) {
+		if (value1 >= 0 && value1 < 16000) {
 			UARTwrite("Setting decelRPM/s\r\n");
 
 			getEEPROMBlock(0)->DecelRpms = value1;
-			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			if (writeEEPROMCurConf()) // enqueue write the data to eeprom.
 			{
 				vTaskDelay(20);
-				while ( EEPROMBusy() )
-				{
+				while (EEPROMBusy()) {
 					vTaskDelay(20);
 				}
 				UARTwrite("Saved.\r\n");
 			} else
 				UARTwrite("Error saving config.\r\n");
 
-			for ( int i=0;i<MOTORCOUNT;i++)
-			{
-				InvSendSDO(getInvState(i)->COBID+(getInvState(i)->MCChannel*LENZE_MOTORB_OFFSET),
-						0x6049+(getInvState(i)->MCChannel*0x800),
-						0, getEEPROMBlock(0)->DecelRpms*4);
+			for (int i = 0; i < MOTORCOUNT; i++) {
+				InvSendSDO(
+						getInvState(i)->COBID
+								+ (getInvState(i)->MCChannel
+										* LENZE_MOTORB_OFFSET),
+						0x6049 + (getInvState(i)->MCChannel * 0x800), 0,
+						getEEPROMBlock(0)->DecelRpms * 4);
 			}
-		} else
-		{
+		} else {
 			UARTwrite("Invalid maxRPM given\r\n");
 		}
-	} else if ( streql( tkn2, "slope" )  )
-	{
-		if ( value1 >= 0 && value1 < 16000 )
-		{
+	} else if (streql(tkn2, "slope")) {
+		if (value1 >= 0 && value1 < 16000) {
 			UARTwrite("Setting torque slope\r\n");
 
 			getEEPROMBlock(0)->TorqueSlope = value1;
-			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			if (writeEEPROMCurConf()) // enqueue write the data to eeprom.
 			{
 				vTaskDelay(20);
-				while ( EEPROMBusy() )
-				{
+				while (EEPROMBusy()) {
 					vTaskDelay(20);
 				}
 				UARTwrite("Saved.\r\n");
 			} else
 				UARTwrite("Error saving config.\r\n");
 
-			for ( int i=0;i<MOTORCOUNT;i++)
-			{
-				InvSendSDO(getInvState(i)->COBID+(getInvState(i)->MCChannel*LENZE_MOTORB_OFFSET),
-						0x6087+(getInvState(i)->MCChannel*0x800),
-						0, getEEPROMBlock(0)->TorqueSlope*TORQUESLOPESCALING); // verify slope value, seems to be x100
+			for (int i = 0; i < MOTORCOUNT; i++) {
+				InvSendSDO(
+						getInvState(i)->COBID
+								+ (getInvState(i)->MCChannel
+										* LENZE_MOTORB_OFFSET),
+						0x6087 + (getInvState(i)->MCChannel * 0x800), 0,
+						getEEPROMBlock(0)->TorqueSlope * TORQUESLOPESCALING); // verify slope value, seems to be x100
 			}
-		} else
-		{
+		} else {
 			UARTwrite("Invalid maxRPM given\r\n");
 		}
-	} else if ( streql( tkn2, "speed" )  )
-	{
-		if ( value1 >= 0 && value1 < 16000 )
-		{
+	} else if (streql(tkn2, "speed")) {
+		if (value1 >= 0 && value1 < 16000) {
 			UARTwrite("Setting maxRPM\r\n");
 			getEEPROMBlock(0)->maxRpm = value1;
-			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			if (writeEEPROMCurConf()) // enqueue write the data to eeprom.
 			{
 				vTaskDelay(20);
-				while ( EEPROMBusy() )
-				{
+				while (EEPROMBusy()) {
 					vTaskDelay(20);
 				}
 				UARTwrite("Saved.\r\n");
 			} else
 				UARTwrite("Error saving config.\r\n");
 
-		} else
-		{
+		} else {
 			UARTwrite("Invalid RPM given\r\n");
 		}
-	}
-	else if ( streql( tkn2, "torque" )  )
-	{
-		if ( value1 >= 0 &&  value1 <= 65)
-		{
+	} else if (streql(tkn2, "torque")) {
+		if (value1 >= 0 && value1 <= 65) {
 			UARTwrite("Setting max Torque\r\n");
 			getEEPROMBlock(0)->MaxTorque = value1;
-			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			if (writeEEPROMCurConf()) // enqueue write the data to eeprom.
 			{
 				vTaskDelay(20);
-				while ( EEPROMBusy() )
-				{
+				while (EEPROMBusy()) {
 					vTaskDelay(20);
 				}
 				UARTwrite("Saved.\r\n");
 			} else
 				UARTwrite("Error saving config.\r\n");
 
-		} else
-		{
+		} else {
 			UARTwrite("Invalid Torque value given.\r\n");
 		}
-	} else
-	{
+	} else {
 		UARTwrite("[motor test] runs pedal test\r\n");
 		UARTwrite("[motor on x] enables motor for testing ( 0-3 or all )\r\n");
-		UARTwrite("[motor off x] disables motor for testing ( 0-3 or all )\r\n");
-		UARTwrite("[motor torque x] sets maxNm on car ( testing/otherwise ) to any value between 0-65Nm\r\n");
+		UARTwrite(
+				"[motor off x] disables motor for testing ( 0-3 or all )\r\n");
+		UARTwrite(
+				"[motor torque x] sets maxNm on car ( testing/otherwise ) to any value between 0-65Nm\r\n");
 		UARTwrite("[motor speed x] sets target speed for test, 0-?\r\n");
 		UARTwrite("[motor accel x] sets RPM/s acceleration max for MC\r\n");
 		UARTwrite("[motor slope x] sets torque slope for MC\r\n");
 	}
 }
 
-
-static bool showShutdown(char *str, bool state, bool prev)
-{
-	if ( prev )
-		UARTprintf("%13s %s\r\n", str, state?"Closed":"Open");
+static bool showShutdown(char *str, bool state, bool prev) {
+	if (prev)
+		UARTprintf("%13s %s\r\n", str, state ? "Closed" : "Open");
 	else
 		UARTprintf("%13s Unknown\r\n", str);
-	if ( !prev ) return false;
+	if (!prev)
+		return false;
 	return state;
 }
 
+static void debugShutdown(const char *tkn2, const char *tkn3) {
+	uint8_t shutdownstate = 0;
 
-
-static void debugShutdown( const char *tkn2, const char *tkn3 )
-{
-	uint8_t shutdownstate=0;
-
-	if ( streql( tkn2, "help" )  )
-	{
-		UARTprintf("shutdown boot off|on to change startup state of ECU HV switch.\r\n");
+	if (streql(tkn2, "help")) {
+		UARTprintf(
+				"shutdown boot off|on to change startup state of ECU HV switch.\r\n");
 		UARTprintf("shutdown off|on to change current state.\r\n");
-	} else
-	if ( streql( tkn2, "boot" )  )
-	{
-		if ( checkOn(tkn3) )
-		{
-			shutdownstate=1;
-		} else if ( checkOff(tkn3) )
-		{
-			shutdownstate=0;
+	} else if (streql(tkn2, "boot")) {
+		if (checkOn(tkn3)) {
+			shutdownstate = 1;
+		} else if (checkOff(tkn3)) {
+			shutdownstate = 0;
 		} else
-			shutdownstate=2;
+			shutdownstate = 2;
 
-		if ( shutdownstate < 2 )
-		{
-			UARTprintf("Setting shutdown circuit at power on to: %s\r\n", shutdownstate?"Open":"Closed");
+		if (shutdownstate < 2) {
+			UARTprintf("Setting shutdown circuit at power on to: %s\r\n",
+					shutdownstate ? "Open" : "Closed");
 			getEEPROMBlock(0)->alwaysHV = 1;
-			if ( writeEEPROMCurConf() ) // enqueue write the data to eeprom.
+			if (writeEEPROMCurConf()) // enqueue write the data to eeprom.
 			{
 				vTaskDelay(20);
-				while ( EEPROMBusy() )
-				{
+				while (EEPROMBusy()) {
 					vTaskDelay(20);
 				}
 				UARTwrite("Saved.\r\n");
-			} else
-			{
+			} else {
 				UARTwrite("Error saving config.\r\n");
 			}
-		} else
-		{
+		} else {
 			UARTprintf("Invalid value given.\r\n");
 		}
-	} else if ( checkOn(tkn2) )
-	{
+	} else if (checkOn(tkn2)) {
 		UARTwrite("Setting shutdown circuit closed.\r\n");
 		ShutdownCircuitSet(true);
-	}
-	else if ( checkOff(tkn2) )
-	{
+	} else if (checkOff(tkn2)) {
 		UARTwrite("Setting shutdown circuit open.\r\n");
 		ShutdownCircuitSet(false);
-	}
-	else
-	{
+	} else {
 		UARTwrite("Current state of shutdown switches:\r\n");
 
 		bool last = true;
 		last = showShutdown("BSPD Before", Shutdown.BSPDBefore, true);
-		last = showShutdown("BSPD After",  Shutdown.BSPDAfter, true);
+		last = showShutdown("BSPD After", Shutdown.BSPDAfter, true);
 		last = showShutdown("BOTS", Shutdown.BOTS, true);
 		last = showShutdown("Inertia", Shutdown.InertiaSwitch, true);
 
@@ -831,10 +734,8 @@ static void debugShutdown( const char *tkn2, const char *tkn3 )
 		last = showShutdown("Right", Shutdown.RightButton, last);
 		last = showShutdown("Left", Shutdown.LeftButton, last);
 
-
 		showShutdown("BMS", Shutdown.BMS, true);
 		showShutdown("IMD", Shutdown.IMD, true);
-
 
 		showShutdown("AIRm", Shutdown.AIRm, true);
 		showShutdown("AIRp", Shutdown.AIRp, true);
@@ -844,12 +745,12 @@ static void debugShutdown( const char *tkn2, const char *tkn3 )
 	}
 }
 
-extern CANData  AnalogNode1;
+extern CANData AnalogNode1;
 #ifndef HPF2023
 extern CANData  AnalogNode9;
 #endif
-extern CANData  AnalogNode10;
-extern CANData  AnalogNode11;
+extern CANData AnalogNode10;
+extern CANData AnalogNode11;
 #ifndef HPF2023
 extern CANData  AnalogNode12;
 extern CANData  AnalogNode13;
@@ -862,10 +763,9 @@ extern CANData  AnalogNode17;
 extern CANData  AnalogNode18;
 #endif
 
-static void debugSensors( const char *tkn2 )
-{
+static void debugSensors(const char *tkn2) {
 	{
-		xEventGroupSync( xCycleSync, 0, 1, portMAX_DELAY ); // wait for cycle to sync readings.
+		xEventGroupSync(xCycleSync, 0, 1, portMAX_DELAY); // wait for cycle to sync readings.
 
 		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline();
 
@@ -890,19 +790,22 @@ static void debugSensors( const char *tkn2 )
 
 		CAN_SendErrorStatus(10, 0, gettimer());
 
-		UARTprintf("Current Analog nodes not seen[%s] ( %4X ), Oldest data (%lu) at (%lu):\r\n", getADCWait(), AnalogueNodesOnline, ADCStateDebug.Oldest, gettimer());
+		UARTprintf(
+				"Current Analog nodes not seen[%s] ( %4X ), Oldest data (%lu) at (%lu):\r\n",
+				getADCWait(), AnalogueNodesOnline, ADCStateDebug.Oldest,
+				gettimer());
 
-		UARTprintf("Steering Angle %d Duty %d Freq %d State %s\r\n", ADCState.SteeringAngle, ADCState.SteeringDuty, ADCState.SteeringFreq, getDeviceStatusStr(DeviceState.PWM));
+		UARTprintf("Steering Angle %d Duty %d Freq %d State %s\r\n",
+				ADCState.SteeringAngle, ADCState.SteeringDuty,
+				ADCState.SteeringFreq, getDeviceStatusStr(DeviceState.PWM));
 
 		// anode 1
-		if ( force || AnalogueNodesOnline & ( 0x1 << ANode1Bit ) )
-		{
-			UARTprintf("Anode1: Torque Req L %3d%% (raw:%lu)   Regen %3d%% (raw:%lu) Last at (%lu)\r\n",
-					ADCStateDebug.Torque_Req_L_Percent/10,
-					ADCStateDebug.APPSL,
-					ADCStateDebug.Regen_Percent/10,
-					ADCStateDebug.Regen,
-					adctimes[1]);
+		if (force || AnalogueNodesOnline & (0x1 << ANode1Bit)) {
+			UARTprintf(
+					"Anode1: Torque Req L %3d%% (raw:%lu)   Regen %3d%% (raw:%lu) Last at (%lu)\r\n",
+					ADCStateDebug.Torque_Req_L_Percent / 10,
+					ADCStateDebug.APPSL, ADCStateDebug.Regen_Percent / 10,
+					ADCStateDebug.Regen, adctimes[1]);
 		}
 #ifndef HPF2023
 		if ( force || AnalogueNodesOnline & ( 0x1 << ANode9Bit ) )
@@ -914,26 +817,22 @@ static void debugSensors( const char *tkn2 )
 					adctimes[9]);
 		}
 #endif
-		if ( force || AnalogueNodesOnline & ( 0x1 << ANode10Bit ) )
-		{
-			UARTprintf("Anode10: Susp1: %lu Susp2: %lu OilTemp2: %dc   WaterTempe2 %dc   Last at (%lu)\r\n",
-					ADCStateSensors.Susp1,
-					ADCStateSensors.susp2,
-					ADCStateSensors.OilTemp2,
-					ADCStateSensors.WaterTemp2,
+		if (force || AnalogueNodesOnline & (0x1 << ANode10Bit)) {
+			UARTprintf(
+					"Anode10: Susp1: %lu Susp2: %lu OilTemp2: %dc   WaterTempe2 %dc   Last at (%lu)\r\n",
+					ADCStateSensors.Susp1, ADCStateSensors.susp2,
+					ADCStateSensors.OilTemp2, ADCStateSensors.WaterTemp2,
 					AnalogNode10.time);
 		}
 
-		if ( force || AnalogueNodesOnline & ( 0x1 << ANode11Bit ) )
-		{
-			UARTprintf("Anode11: BrakeTemp2 %dc   BrakeF Pres %dPa   BrakeF Pres %dPa   Torque Req R %3d%% (raw:%lu)   Last at (%lu)\r\n",
+		if (force || AnalogueNodesOnline & (0x1 << ANode11Bit)) {
+			UARTprintf(
+					"Anode11: BrakeTemp2 %dc   BrakeF Pres %dPa   BrakeF Pres %dPa   Torque Req R %3d%% (raw:%lu)   Last at (%lu)\r\n",
 
-					ADCStateSensors.BrakeTemp2,
-					ADCStateDebug.BrakeF,
+					ADCStateSensors.BrakeTemp2, ADCStateDebug.BrakeF,
 					ADCStateDebug.BrakeR,
-					ADCStateDebug.Torque_Req_R_Percent/10,
-					ADCStateDebug.APPSR,
-					adctimes[11]);
+					ADCStateDebug.Torque_Req_R_Percent / 10,
+					ADCStateDebug.APPSR, adctimes[11]);
 		}
 
 #ifndef HPF2023
@@ -1007,247 +906,207 @@ static void debugSensors( const char *tkn2 )
 	}
 }
 
-
-static void debugPower( const char *tkn2, const char *tkn3 )
-{
+static void debugPower(const char *tkn2, const char *tkn3) {
 	DevicePower device = None;
 	bool state = false;
 	bool badcmd = false;
 
-	if ( strlen(tkn2) == 0 ) // we need some sub commands, otherwise show help
-	{
+	if (strlen(tkn2) == 0) // we need some sub commands, otherwise show help
+			{
 		UARTwrite("Power command: Help\r\n");
-	}
-	else if ( streql(tkn2, "status") || streql(tkn2, "state") )
-	{
+	} else if (streql(tkn2, "status") || streql(tkn2, "state")) {
 		UARTwrite("------------------------\r\n");
 		UARTwrite("Power        Exp Act Err\r\n");
 		UARTwrite("------------------------\r\n");
 
 		uint8_t listsize = getDevicePowerListSize();
 
-		for ( int i=1;i<=listsize;i++) // i is wrong.
-		{
-			DevicePower device=getDevicePowerFromList(i);
+		for (int i = 1; i <= listsize; i++) // i is wrong.
+				{
+			DevicePower device = getDevicePowerFromList(i);
 
 			snprintf(str, 80, "%-12s %-4s%-4s%-4lu\r\n",
-						getDevicePowerNameLong(device),
-						getNodeDeviceExpectedPower(device)?"On":"Off",
-						getNodeDevicePower(device)?"On":"Off",
-						powerErrorOccurred(device)
+					getDevicePowerNameLong(device),
+					getNodeDeviceExpectedPower(device) ? "On" : "Off",
+					getNodeDevicePower(device) ? "On" : "Off",
+					powerErrorOccurred(device)
 					//    powerErrorOccurred(i)?"Yes":"No"
-			);
+							);
 			UARTwrite(str);
 		}
-	}
-	else if ( streql(tkn2, "all") )
-	{
-		if ( streql(tkn3, "reset") )
-		{
+	} else if (streql(tkn2, "all")) {
+		if (streql(tkn3, "reset")) {
 			UARTwrite("Power error reset for all\r\n");
-			for ( int i=1; i <= AccuFan; i++ )
-				resetDevicePower( i );
-		}
-		else
-		{
-			if ( checkOn( tkn3 ) )
-			{
+			for (int i = 1; i <= AccuFan; i++)
+				resetDevicePower(i);
+		} else {
+			if (checkOn(tkn3)) {
 				state = true;
-			}
-			else if ( checkOff( tkn3 ) )
-			{
+			} else if (checkOff(tkn3)) {
 				state = false;
-			}
-			else
-			{
+			} else {
 				badcmd = true;
 			}
 
-			if ( !badcmd )
-			{
+			if (!badcmd) {
 				UARTwrite("Manual power request for all power set ");
-				UARTwrite(state? "on":"off");
+				UARTwrite(state ? "on" : "off");
 				UARTwrite("\r\n");
 
-				for ( int i=1; i <= AccuFan; i++ )
-					setDevicePower( i, state );
+				for (int i = 1; i <= AccuFan; i++)
+					setDevicePower(i, state);
 
-			}
-			else
-			{
+			} else {
 				badcmd = true;
 			}
 		}
-	}
-	else
-	{
-		if ( streql(tkn2, "none") )
+	} else {
+		if (streql(tkn2, "none"))
 			device = None;
-		else if ( streql(tkn2, "buzzer") )
+		else if (streql(tkn2, "buzzer"))
 			device = Buzzer;
-		else if ( streql(tkn2, "back1") )
+		else if (streql(tkn2, "back1"))
 			device = Back1;
-		else if ( streql(tkn2, "telemetry") )
+		else if (streql(tkn2, "telemetry"))
 			device = Telemetry;
-		else if ( streql(tkn2, "front1") )
+		else if (streql(tkn2, "front1"))
 			device = Front1;
-		else if ( streql(tkn2, "inverters") )
+		else if (streql(tkn2, "inverters"))
 			device = Inverters;
-		else if ( streql(tkn2, "ecu") )
+		else if (streql(tkn2, "ecu"))
 			device = ECU;
-		else if ( streql(tkn2, "front2") )
+		else if (streql(tkn2, "front2"))
 			device = Front2;
-		else if ( streql(tkn2, "leftfans") )
+		else if (streql(tkn2, "leftfans"))
 			device = LeftFans;
-		else if ( streql(tkn2, "rightfans") )
+		else if (streql(tkn2, "rightfans"))
 			device = RightFans;
-		else if ( streql(tkn2, "leftpump") )
+		else if (streql(tkn2, "leftpump"))
 			device = LeftPump;
-		else if ( streql(tkn2, "rightpump") )
+		else if (streql(tkn2, "rightpump"))
 			device = RightPump;
-		else if ( streql(tkn2, "ivt") )
+		else if (streql(tkn2, "ivt"))
 			device = IVT;
-		else if ( streql(tkn2, "current") )
+		else if (streql(tkn2, "current"))
 			device = Current;
-		else if ( streql(tkn2, "tsal") )
+		else if (streql(tkn2, "tsal"))
 			device = TSAL;
-		else if ( streql(tkn2, "brake") )
+		else if (streql(tkn2, "brake"))
 			device = Brake;
-		else if ( streql(tkn2, "accu") )
+		else if (streql(tkn2, "accu"))
 			device = Accu;
-		else if ( streql(tkn2, "accufan") )
+		else if (streql(tkn2, "accufan"))
 			device = AccuFan;
 
-		if ( streql(tkn3, "reset") )
-		{
+		if (streql(tkn3, "reset")) {
 			UARTwrite("Power error reset for ");
 			UARTwrite(getDevicePowerNameLong(device));
 			UARTwrite("\r\n");
 			resetDevicePower(device);
-		} else
-		{
-			if ( checkOn( tkn3 ) )
-			{
+		} else {
+			if (checkOn(tkn3)) {
 				state = true;
-			}
-			else if ( checkOff( tkn3 ) )
-			{
+			} else if (checkOff(tkn3)) {
 				state = false;
-			}
-			else
-			{
+			} else {
 				device = None;
 			}
 
-			if ( device != None )
-			{
+			if (device != None) {
 				UARTwrite("Manual power request for ");
 				UARTwrite(getDevicePowerNameLong(device));
 				UARTwrite(" set ");
-				UARTwrite(state? "on":"off");
+				UARTwrite(state ? "on" : "off");
 				UARTwrite("\r\n");
-				setDevicePower( device, state );
-			}
-			else
-			{
+				setDevicePower(device, state);
+			} else {
 				badcmd = true;
 			}
 		}
 	}
 
-
-	if ( badcmd )
-	{
+	if (badcmd) {
 		UARTwrite("Invalid power request given: Help\r\n");
 	}
 }
 
-void debugCurrent( const char * tkn2 )
-{
-		if ( strlen(tkn2) == 0 ) // we need some sub commands, otherwise show help
-		{
-			UARTprintf("Current Max %dmA ( clear to reset )\r\n",runtimedata_p->maxIVTI);
-			for ( int i=0;i<MOTORCOUNT;i++)
-				UARTprintf("Motor %i Max %dA\r\n", i, runtimedata_p->maxMotorI[i]);
-		}
-		else if ( streql(tkn2, "clear") || streql(tkn2, "reset") )
-		{
-			UARTwrite("Clearing Current Max values\r\n");
-			clearRunningData();
-		}
+void debugCurrent(const char *tkn2) {
+	if (strlen(tkn2) == 0) // we need some sub commands, otherwise show help
+			{
+		UARTprintf("Current Max %dmA ( clear to reset )\r\n",
+				runtimedata_p->maxIVTI);
+		for (int i = 0; i < MOTORCOUNT; i++)
+			UARTprintf("Motor %i Max %dA\r\n", i, runtimedata_p->maxMotorI[i]);
+	} else if (streql(tkn2, "clear") || streql(tkn2, "reset")) {
+		UARTwrite("Clearing Current Max values\r\n");
+		clearRunningData();
+	}
 }
 
-static void debugCurve( const int tokens, const char * tkn2, const int val3 )
-{
-	if ( tokens != 3 )
-	{
+static void debugCurve(const int tokens, const char *tkn2, const int val3) {
+	if (tokens != 3) {
 		UARTwrite("Please give interpolation and test value\r\n");
-	} else
-	{
-		if ( val3 > 1024*64-1 || val3 < 0 )
-		{
+	} else {
+		if (val3 > 1024 * 64 - 1 || val3 < 0) {
 			UARTwrite("invalid RAW value given");
-		} else
-		{
-			if ( streql(tkn2, "left") || streql(tkn2, "l" ) )
-				snprintf(str, 80, "Pedal Left input %d -> %d\r\n", val3, getTorqueReqPercL(val3) / 10);
-			else if ( streql(tkn2, "right") || streql(tkn2, "r" ) )
-				snprintf(str, 80, "Pedal Right input %d -> %d\r\n", val3, getTorqueReqPercR(val3) / 10);
-			else if ( streql(tkn2, "regen") || streql(tkn2, "reg" ) )
-				snprintf(str, 80, "Pedal Regen input %d -> %d\r\n", val3, getBrakeTravelPerc(val3) / 10);
-			else if ( streql(tkn2, "curve") || streql(tkn2, "c" ) )
-				snprintf(str, 80, "Pedal torque req curve input %d -> %d\r\n", val3, getTorqueReqCurve(val3) / 10);
+		} else {
+			if (streql(tkn2, "left") || streql(tkn2, "l"))
+				snprintf(str, 80, "Pedal Left input %d -> %d\r\n", val3,
+						getTorqueReqPercL(val3) / 10);
+			else if (streql(tkn2, "right") || streql(tkn2, "r"))
+				snprintf(str, 80, "Pedal Right input %d -> %d\r\n", val3,
+						getTorqueReqPercR(val3) / 10);
+			else if (streql(tkn2, "regen") || streql(tkn2, "reg"))
+				snprintf(str, 80, "Pedal Regen input %d -> %d\r\n", val3,
+						getBrakeTravelPerc(val3) / 10);
+			else if (streql(tkn2, "curve") || streql(tkn2, "c"))
+				snprintf(str, 80, "Pedal torque req curve input %d -> %d\r\n",
+						val3, getTorqueReqCurve(val3) / 10);
 			else
 				snprintf(str, 80, "Bad input %s %d\r\n", tkn2, val3);
-			
+
 			UARTwrite(str);
 		}
 	}
 }
 
-
 //run a small state machine on incoming uart charecters to seperate escape co
-uint16_t processUARTchar( const uint8_t ch, uint8_t * state )
-{
+uint16_t processUARTchar(const uint8_t ch, uint8_t *state) {
 
 	// didn't receive a char, skip.
-	if ( ch == 0 )
-	{
+	if (ch == 0) {
 		return ch; // nothing to do this loop, return untouched.
 	}
 
 	// 27/91/67 = left
 	// 27/91/68 = right
 	// ch 8 == backspace.
-	switch ( *state )
-	{
-	case 0 :
-		if ( ch == 27 ) // escape code
-		{
+	switch (*state) {
+	case 0:
+		if (ch == 27) // escape code
+				{
 			*state = 1;
 			return 0;
 		}
 
 		break;
 
-	case 1 :
-		if ( ch == 91) // [
-		{
+	case 1:
+		if (ch == 91) // [
+				{
 			*state = 2;
 			return 0;
-		}  else
-		{
+		} else {
 			*state = 0;
 			break;
 		}
 
-	case 2 :
-		switch ( ch<<8 )
-		{
-		case KEY_LEFT :
-		case KEY_RIGHT :
-		case KEY_UP :
-		case KEY_DOWN :
+	case 2:
+		switch (ch << 8) {
+		case KEY_LEFT:
+		case KEY_RIGHT:
+		case KEY_UP:
+		case KEY_DOWN:
 			*state = 0;
 			uint16_t retch = ch << 8;
 			return retch;
@@ -1261,8 +1120,7 @@ uint16_t processUARTchar( const uint8_t ch, uint8_t * state )
 
 }
 
-void debugConfig( bool menu )
-{
+void debugConfig( bool menu) {
 	bool quit = false;
 
 	uint8_t state = 0;
@@ -1277,64 +1135,46 @@ void debugConfig( bool menu )
 
 	debugconfig = menu;
 
-	while ( !quit )
-	{
+	while (!quit) {
 		// just to be on safe side then.
-		volatile uint16_t read = uartWait((char*)&ch);
+		volatile uint16_t read = uartWait((char*) &ch);
 
-		read = processUARTchar( (uint8_t) ch, &state );
+		read = processUARTchar((uint8_t) ch, &state);
 
-		if ( read == 0 )
+		if (read == 0)
 			continue;
 
-		if ( read == 'q' )
+		if (read == 'q')
 			quit = true;
-		else if ( read == KEY_LEFT || read == 'j' )
-		{
+		else if (read == KEY_LEFT || read == 'j') {
 			UARTprintf("Left\r\n");
 			setInput(Left_Input);
-		}
-		else if ( read == KEY_RIGHT || read == 'l')
-		{
+		} else if (read == KEY_RIGHT || read == 'l') {
 			UARTprintf("Right\r\n");
 			setInput(Right_Input);
-		}
-		else if ( read == KEY_UP || read == 'i')
-		{
+		} else if (read == KEY_UP || read == 'i') {
 			UARTprintf("Up\r\n");
 			setInput(Up_Input);
-		}
-		else if ( read == KEY_DOWN || read == 'k')
-		{
+		} else if (read == KEY_DOWN || read == 'k') {
 			UARTprintf("Down\r\n");
 			setInput(Down_Input);
-		}
-		else if ( read == KEY_ENTER )
-		{
+		} else if (read == KEY_ENTER) {
 			UARTprintf("Enter\r\n");
 			setInput(Center_Input);
-		}
-		else if ( read == 'c' )
-		{
+		} else if (read == 'c') {
 			//ConfigInput( 0xFFFF );
 			read = 0;
-		}
-		else if ( read == 's' )
-		{
+		} else if (read == 's') {
 			UARTprintf("Start/Stop\r\n");
 			setInput(StartStop_Input);
-		}
-		else if ( read == 't' )
-		{
+		} else if (read == 't') {
 			UARTprintf("TS\r\n");
 			setInput(TS_Input);
-		}
-		else if ( read == 'r' )
-		{
+		} else if (read == 'r') {
 			UARTprintf("RTDM\r\n");
 			setInput(RTDM_Input);
 		}
-		#if 0
+#if 0
 		else if ( read == 'i' )
 		{
 			UARTprintf("Test save of I\r\n");
@@ -1351,8 +1191,7 @@ void debugConfig( bool menu )
 	UARTwrite("Config done.\r\n");
 }
 
-void debugESCCodeInput( void )
-{
+void debugESCCodeInput(void) {
 	bool quit = false;
 
 	uint8_t state = 0;
@@ -1360,24 +1199,24 @@ void debugESCCodeInput( void )
 
 	UARTwrite("Reading keys.\r\n");
 
-	while ( !quit ) {
+	while (!quit) {
 		// just to be on safe side then.
-		volatile uint16_t read = uartWait((char*)&ch);
+		volatile uint16_t read = uartWait((char*) &ch);
 
-		read = processUARTchar( (uint8_t) ch, &state );
+		read = processUARTchar((uint8_t) ch, &state);
 
-		if ( read == 0 )
+		if (read == 0)
 			continue;
 
-		if ( read == 'q' )
+		if (read == 'q')
 			quit = true;
-		else if ( read == KEY_LEFT )
+		else if (read == KEY_LEFT)
 			UARTprintf("Left\r\n");
-		else if ( read == KEY_RIGHT )
+		else if (read == KEY_RIGHT)
 			UARTprintf("Right\r\n");
-		else if ( read == KEY_UP )
+		else if (read == KEY_UP)
 			UARTprintf("Up\r\n");
-		else if ( read == KEY_DOWN )
+		else if (read == KEY_DOWN)
 			UARTprintf("Down\r\n");
 		else
 			UARTwritech(ch);
@@ -1386,9 +1225,7 @@ void debugESCCodeInput( void )
 	UARTwrite("Done.\r\n");
 }
 
-
-static void DebugTask(void *pvParameters)
-{
+static void DebugTask(void *pvParameters) {
 	uint8_t charcount = 0;
 
 	UARTwrite("\r\nBooting ECU "VERSION"...\r\n\r\n");
@@ -1405,8 +1242,7 @@ static void DebugTask(void *pvParameters)
 		// just to be on safe side then.
 		volatile uint16_t read = uartWait(&ch);
 
-		if ( redraw )
-		{
+		if (redraw) {
 			// we received debug output during keyboard wait, resend prompt and current imput to help.
 			UARTwrite("\r\n");
 			// uartwrite("\x1b[k");
@@ -1415,12 +1251,11 @@ static void DebugTask(void *pvParameters)
 		}
 
 		// didn't receive a char, skip.
-		if ( read == 0 )
-		{
+		if (read == 0) {
 			continue; // nothing to do this loop, return to start.
 		}
 
-		read = processUARTchar( ch, &escstate );
+		read = processUARTchar(ch, &escstate);
 
 		bool endline = false;
 
@@ -1429,47 +1264,39 @@ static void DebugTask(void *pvParameters)
 		// 91/68 = right
 		// ch 8 == backspace.
 
-		if ( read == 0 )
-		{
+		if (read == 0) {
 			continue; // nothing to do this loop, return to start.
 		}
 
-		if ( read == 8 || read == 127)
-		{
-			if ( charcount > 0 )
-			{
+		if (read == 8 || read == 127) {
+			if (charcount > 0) {
 				--charcount;
 				str[charcount] = 0;
-				str[charcount+1] = 0;
+				str[charcount + 1] = 0;
 				UARTwritech(8);
 				UARTwritech(' ');
 				UARTwritech(8);
 			}
-		} else
-		if ( !( read == '\n' || read == '\r') )
-		{
-			if ( read >= 32 && read <= 128) // only process printable charecters.
-			{
+		} else if (!(read == '\n' || read == '\r')) {
+			if (read >= 32 && read <= 128) // only process printable charecters.
+					{
 				str[charcount] = read;
-				str[charcount+1] = 0;
+				str[charcount + 1] = 0;
 				UARTwritech(read);
 				++charcount;
 			}
-		} else
-		{
+		} else {
 			endline = true;
 			UARTwrite("\r\n");
 		}
 
 #define TOKENLENGTH   12
 
-		if ( charcount == 60 || endline )
-		{
-			if ( charcount > 0 )
-			{
+		if (charcount == 60 || endline) {
+			if (charcount > 0) {
 				// lowercase the input string.
-				for ( int i=0;str[i];i++)
-					str[i]=tolower(str[i]);
+				for (int i = 0; str[i]; i++)
+					str[i] = tolower(str[i]);
 
 				char tkn1[TOKENLENGTH] = "";
 				char tkn2[TOKENLENGTH] = "";
@@ -1486,27 +1313,24 @@ static void DebugTask(void *pvParameters)
 
 				// parse the input string into tokens to be processed.
 
-				char *s=str;
+				char *s = str;
 
 				if (*(s += strspn(s, " ")) != '\0') { // find the first non space, and move string pointer to it. Check if we have reached end of string.
-					size_t tknlen = strcspn(s, " ");  // if not at end of string, find the next space, getting the span of token.
-					if ( tknlen < TOKENLENGTH )
-					{
+					size_t tknlen = strcspn(s, " "); // if not at end of string, find the next space, getting the span of token.
+					if (tknlen < TOKENLENGTH) {
 						strncpy(tkn1, s, tknlen);
 						tkn1[tknlen] = '\0';
 
 						s += tknlen;
 						tokens++;
-					} else
-					{
+					} else {
 						strncpy(tkn1, "too long", tknlen);
 					}
 				}
 
 				if (*(s += strspn(s, " ")) != '\0') {
 					size_t tknlen = strcspn(s, " ");
-					if ( tknlen < TOKENLENGTH )
-					{
+					if (tknlen < TOKENLENGTH) {
 						strncpy(tkn2, s, tknlen);
 						tkn2[tknlen] = '\0';
 
@@ -1515,16 +1339,14 @@ static void DebugTask(void *pvParameters)
 					}
 				}
 
-				if ( strlen(tkn2) >0 )
-				{
+				if (strlen(tkn2) > 0) {
 					val1 = strtol(tkn2, NULL, 10);
-				} else val1 = 0;
-
+				} else
+					val1 = 0;
 
 				if (*(s += strspn(s, " ")) != '\0') {
 					size_t tknlen = strcspn(s, " ");
-					if ( tknlen < TOKENLENGTH )
-					{
+					if (tknlen < TOKENLENGTH) {
 						strncpy(tkn3, s, tknlen);
 						tkn3[tknlen] = '\0';
 						s += tknlen;
@@ -1532,15 +1354,14 @@ static void DebugTask(void *pvParameters)
 					}
 				}
 
-				if ( strlen(tkn3)>0 )
-				{
+				if (strlen(tkn3) > 0) {
 					val2 = strtol(tkn3, NULL, 10);
-				} else val2 = 0;
+				} else
+					val2 = 0;
 
 				if (*(s += strspn(s, " ")) != '\0') {
 					size_t tknlen = strcspn(s, " ");
-					if ( tknlen < TOKENLENGTH )
-					{
+					if (tknlen < TOKENLENGTH) {
 						strncpy(tkn4, s, tknlen);
 						tkn4[tknlen] = '\0';
 						s += tknlen;
@@ -1548,37 +1369,31 @@ static void DebugTask(void *pvParameters)
 					}
 				}
 
-				if ( strlen(tkn4)>0 )
-				{
+				if (strlen(tkn4) > 0) {
 					val3 = strtol(tkn4, NULL, 10);
-				} else val3 = 0;
-
+				} else
+					val3 = 0;
 
 				if (*(s += strspn(s, " ")) != '\0') {
 					size_t tknlen = strcspn(s, " ");
-					if ( tknlen < TOKENLENGTH )
-					{
+					if (tknlen < TOKENLENGTH) {
 						strncpy(tkn5, s, tknlen);
 						tkn5[tknlen] = '\0';
 						tokens++;
 					}
 				}
 
-				if ( strlen(tkn5)>0 )
-				{
+				if (strlen(tkn5) > 0) {
 					val4 = strtol(tkn5, NULL, 10);
-				} else val4 = 0;
+				} else
+					val4 = 0;
 
-
-
-				if ( streql(tkn1, "esckey" ) )
-				{
+				if (streql(tkn1, "esckey")) {
 					debugESCCodeInput();
 				} else
 
-				if ( streql(tkn1, "calibinfo") )
-				{
-					eepromdata * data = getEEPROMBlock(0);
+				if (streql(tkn1, "calibinfo")) {
+					eepromdata *data = getEEPROMBlock(0);
 					DebugPrintf("Apps Calib L: %5d - %5d ( %5d %5d )\r\n",
 							data->ADCTorqueReqLInput[0],
 							data->ADCTorqueReqLInput[1],
@@ -1598,64 +1413,40 @@ static void DebugTask(void *pvParameters)
 							data->ADCBrakeTravelInput[3]);
 				} else
 
-				if ( streql(tkn1, "config" ) )
-				{
+				if (streql(tkn1, "config")) {
 					debugConfig(true);
-				} else
-				if ( streql(tkn1, "input" ) )
-				{
+				} else if (streql(tkn1, "input")) {
 					debugConfig(false);
-				} else
-				if ( streql(tkn1, "inverter" ) )
-				{
-					debugInverter( tkn2, tkn3, val2 );
-				}
-				else if ( streql(tkn1, "motor") )
-				{
+				} else if (streql(tkn1, "inverter")) {
+					debugInverter(tkn2, tkn3, val2);
+				} else if (streql(tkn1, "motor")) {
 					debugMotor(tkn2, tkn3, val2, val3);
-				}
-				else if ( streql(tkn1, "shutdown") )
-				{
+				} else if (streql(tkn1, "shutdown")) {
 					debugShutdown(tkn2, tkn3);
-				}
-				else if ( streql(tkn1, "fanpwm") )
-				{
-					debugFanPWM(tokens, val1, val2 );
-				}
-				else if ( streql(tkn1, "power") )
-				{
+				} else if (streql(tkn1, "fanpwm")) {
+					debugFanPWM(tokens, val1, val2);
+				} else if (streql(tkn1, "power")) {
 					debugPower(tkn2, tkn3);
-				}
-				else if ( streql(tkn1, "current") )
-				{
-					debugCurrent( tkn2 );
-				}
-				else if ( streql(tkn1, "sensors") )
-				{
+				} else if (streql(tkn1, "current")) {
+					debugCurrent(tkn2);
+				} else if (streql(tkn1, "sensors")) {
 					debugSensors(tkn2);
-				}
-				else if ( streql(tkn1, "eeprom") )
-				{
+				} else if (streql(tkn1, "eeprom")) {
 					resetEEPROM();
-				}
-				else if ( streql(tkn1, "zeroeeprom") )
-				{
+				} else if (streql(tkn1, "zeroeeprom")) {
 					clearEEPROM();
 					vTaskDelay(20);
-					while ( EEPROMBusy() )
-					{
+					while (EEPROMBusy()) {
 						vTaskDelay(20);
 					}
 					UARTwrite("Cleared.\r\n");
 
-				}
-				else if ( streql(tkn1, "profiles") )
-				{
+				} else if (streql(tkn1, "profiles")) {
 					UARTwrite("Setting pedal profiles.\r\n");
-					eepromdata * data = getEEPROMBlock(0);
+					eepromdata *data = getEEPROMBlock(0);
 
 					snprintf(data->VersionString, "%s", EEPROMVERSIONSTR);
-					
+
 					data->pedalcurves[0].PedalCurveInput[0] = 50;
 					data->pedalcurves[0].PedalCurveInput[1] = 950;
 					data->pedalcurves[0].PedalCurveInput[2] = 0;
@@ -1679,11 +1470,10 @@ static void DebugTask(void *pvParameters)
 					data->pedalcurves[2].PedalCurveOutput[2] = 1000;
 					data->pedalcurves[2].PedalCurveOutput[3] = 0;
 
-					if ( writeFullConfigEEPROM() ) // enqueue write the data to eeprom.
+					if (writeFullConfigEEPROM()) // enqueue write the data to eeprom.
 					{
 						vTaskDelay(20);
-						while ( EEPROMBusy() )
-						{
+						while (EEPROMBusy()) {
 							vTaskDelay(20);
 						}
 						UARTwrite("Saved.\r\n");
@@ -1691,37 +1481,30 @@ static void DebugTask(void *pvParameters)
 						UARTwrite("Error saving config.\r\n");
 
 					SetupADCInterpolationTables(getEEPROMBlock(0));
-				}
-				else if ( streql(tkn1, "adcval") )
-				{
-					debugCurve( tokens, tkn2, val2 );
-				}
-				else if ( streql(tkn1, "eepromfix") )
-				{
+				} else if (streql(tkn1, "adcval")) {
+					debugCurve(tokens, tkn2, val2);
+				} else if (streql(tkn1, "eepromfix")) {
 					UARTwrite("Fixing eeprom header.\r\n");
-					eepromdata * data = getEEPROMBlock(1);
+					eepromdata *data = getEEPROMBlock(1);
 					snprintf(data->VersionString, "%s", EEPROMVERSIONSTR);
 					data = getEEPROMBlock(2);
 					snprintf(data->VersionString, "%s", EEPROMVERSIONSTR);
 
-					if ( writeFullEEPROM() ) // enqueue write the data to eeprom.
+					if (writeFullEEPROM()) // enqueue write the data to eeprom.
 					{
 						vTaskDelay(20);
-						while ( EEPROMBusy() )
-						{
+						while (EEPROMBusy()) {
 							vTaskDelay(20);
 						}
 						UARTwrite("Saved.\r\n");
 					} else
 						UARTwrite("Error saving config.\r\n");
-				}
-				else if ( streql(tkn1, "settestcal") )
-				{
+				} else if (streql(tkn1, "settestcal")) {
 					UARTwrite("Setting pedal profiles.\r\n");
-					eepromdata * data = getEEPROMBlock(0);
+					eepromdata *data = getEEPROMBlock(0);
 
 					snprintf(data->VersionString, "%s", EEPROMVERSIONSTR);
-				
+
 					data->ADCTorqueReqLInput[0] = 423;
 					data->ADCTorqueReqLInput[1] = 1831;
 					data->ADCTorqueReqLInput[2] = 0;
@@ -1736,11 +1519,10 @@ static void DebugTask(void *pvParameters)
 					data->ADCBrakeTravelInput[2] = 0;
 					data->ADCBrakeTravelInput[3] = 0;
 
-					if ( writeFullConfigEEPROM() ) // enqueue write the data to eeprom.
+					if (writeFullConfigEEPROM()) // enqueue write the data to eeprom.
 					{
 						vTaskDelay(20);
-						while ( EEPROMBusy() )
-						{
+						while (EEPROMBusy()) {
 							vTaskDelay(20);
 						}
 						UARTwrite("Saved.\r\n");
@@ -1749,25 +1531,18 @@ static void DebugTask(void *pvParameters)
 
 					SetupADCInterpolationTables(getEEPROMBlock(0));
 
-				}
-				else if ( streql(tkn1, "buzzer") )
-				{
+				} else if (streql(tkn1, "buzzer")) {
 					UARTprintf("Sounding buzzer\r\n");
 					soundBuzzer();
-				}
-				else if ( streql(tkn1, "led") )
-				{
+				} else if (streql(tkn1, "led")) {
 					debugLEDs(tokens, val1, val2);
-				}
-				else if ( streql(tkn1, "uarttest") )
-				{
-					UART_Transmit(UART1, (uint8_t *)"This is a test.", 15);
-				} else if ( streql( str, "stats") )
-				{
+				} else if (streql(tkn1, "uarttest")) {
+					UART_Transmit(UART1, (uint8_t*) "This is a test.", 15);
+				} else if (streql(str, "stats")) {
 					// print stats.
 					UARTwrite("\r\nRuntime statistics output:\r\n");
 					UARTwrite("Taskname        Runtime         Percentage\r\n");
-					vTaskGetRunTimeStatsNoDyn( str );
+					vTaskGetRunTimeStatsNoDyn(str);
 
 					UARTwriteRaw(str);
 
@@ -1775,18 +1550,17 @@ static void DebugTask(void *pvParameters)
 
 				} else
 
-				if ( streql( str, "list") )
-				{
+				if (streql(str, "list")) {
 					// print list.
 					UARTwrite("\r\nTask List\r\n");
-					UARTwrite("Name            Stat    Prio    StackF  TaskNo\r\n");
-					vTaskListNoDyn( str );
+					UARTwrite(
+							"Name            Stat    Prio    StackF  TaskNo\r\n");
+					vTaskListNoDyn(str);
 					UARTwriteRaw(str);
 					UARTwrite("\r\n");
 				} else
 
-				if ( streql(tkn1, "help" ) )
-				{
+				if (streql(tkn1, "help")) {
 					UARTwrite("\r\nECU Debug Help.\r\n\r\n");
 
 					UARTwrite("List of available commands:\r\n");
@@ -1823,25 +1597,17 @@ static void DebugTask(void *pvParameters)
 	vTaskDelete(NULL);
 }
 
+int initDebug(void) {
 
-int initDebug( void )
-{
+	DebugQueue = xQueueCreateStatic(DebugQUEUE_LENGTH, DebugITEMSIZE,
+			DebugQueueStorageArea, &DebugStaticQueue);
 
-	DebugQueue = xQueueCreateStatic( DebugQUEUE_LENGTH,
-							  DebugITEMSIZE,
-							  DebugQueueStorageArea,
-							  &DebugStaticQueue );
+	vQueueAddToRegistry(DebugQueue, "DebugQueue");
 
-	vQueueAddToRegistry(DebugQueue, "DebugQueue" );
-
-	DebugTaskHandle = xTaskCreateStatic(
-						  DebugTask,
-						  DEBUGTASKNAME,
-						  DEBUGSTACK_SIZE,
-						  ( void * ) 1,
-						  DEBUGTASKPRIORITY,
-						  xDEBUGStack,
-						  &xDEBUGTaskBuffer );
+	DebugTaskHandle = xTaskCreateStatic(DebugTask,
+	DEBUGTASKNAME,
+	DEBUGSTACK_SIZE, (void*) 1,
+	DEBUGTASKPRIORITY, xDEBUGStack, &xDEBUGTaskBuffer);
 
 	return 0;
 }

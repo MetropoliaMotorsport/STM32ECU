@@ -667,7 +667,7 @@ int readEEPROMAddr(uint16_t address, uint16_t size) {
 	uint32_t startread = gettimer();
 	eepromreceivedone = false;
 	if (HAL_I2C_Mem_Read_IT(&hi2c2, (uint16_t) EEPROM_ADDRESS, address,
-			I2C_MEMADD_SIZE_16BIT, (uint8_t*) &EEPROMdata.buffer[address], size)
+	I2C_MEMADD_SIZE_16BIT, (uint8_t*) &EEPROMdata.buffer[address], size)
 			!= HAL_OK) {
 		DebugPrintf("EEPROM read failed to start");
 		/* Reading process Error */
@@ -694,8 +694,8 @@ int readEEPROMAddr(uint16_t address, uint16_t size) {
 int readEEPROM(void) {
 	eepromreceivedone = false;
 	if (HAL_I2C_Mem_Read_IT(&hi2c2, (uint16_t) EEPROM_ADDRESS, 0,
-			I2C_MEMADD_SIZE_16BIT, (uint8_t*) EEPROMdata.buffer,
-			sizeof(EEPROMdata) + 1) != HAL_OK) {
+	I2C_MEMADD_SIZE_16BIT, (uint8_t*) EEPROMdata.buffer, sizeof(EEPROMdata) + 1)
+			!= HAL_OK) {
 		/* Reading process Error */
 		Error_Handler();
 	}

@@ -10,19 +10,18 @@
 #include "output.h"
 #include "power.h"
 
+bool processPDMData(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle);
+void PDMTimeout(uint16_t id);
 
-bool processPDMData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-void PDMTimeout( uint16_t id );
-
-
-CANData PDMCanData = { &DeviceState.PDM, PDM_ID, 8, processPDMData, PDMTimeout, PDMTIMEOUT };
-
+CANData PDMCanData = { &DeviceState.PDM, PDM_ID, 8, processPDMData, PDMTimeout,
+		PDMTIMEOUT };
 
 //	0x520,0,8 -> BMS_relay_status
 //	0x520,8,8 -> IMD_relay_status
 //	0x520,16,8 -> BSPD_relay_status
-bool processPDMData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
-{
+bool processPDMData(const uint8_t CANRxData[8], const uint32_t DataLength,
+		const CANData *datahandle) {
 #ifdef PDM
 	if ( DataLength == FDCAN_DLC_BYTES_8
 		&& CANRxData[0] < 2
@@ -62,39 +61,35 @@ bool processPDMData( const uint8_t CANRxData[8], const uint32_t DataLength, cons
 #endif
 }
 
+void PDMTimeout(uint16_t id) {
+	/* T 11.9.3
+	 * Safe state is defined depending on the signals as follows:
+	 • signals only influencing indicators – Indicating a failure of its own function or of the connected system
 
-void PDMTimeout( uint16_t id )
-{
-    /* T 11.9.3
-     * Safe state is defined depending on the signals as follows:
-     • signals only influencing indicators – Indicating a failure of its own function or of the connected system
+	 -- thus show a timeout as error status.
 
-  	  -- thus show a timeout as error status.
+	 */
 
-     */
-
-    Shutdown.BMS = true;
-    Shutdown.IMD = true;
-    Shutdown.BSPDBefore = true;
-    Shutdown.AIRm = false;
-    Shutdown.AIRp = false;
-    Shutdown.PRE = false;
+	Shutdown.BMS = true;
+	Shutdown.IMD = true;
+	Shutdown.BSPDBefore = true;
+	Shutdown.AIRm = false;
+	Shutdown.AIRp = false;
+	Shutdown.PRE = false;
 }
 
-int receivePDM( void )
-{
+int receivePDM(void) {
 	return receivedCANData(&PDMCanData);
 }
 
 /*
-CanData * PDMCAN( void )
-{
-	return PDMCanData;
-}
-*/
+ CanData * PDMCAN( void )
+ {
+ return PDMCanData;
+ }
+ */
 
-int errorPDM( void )
-{
+int errorPDM(void) {
 	int returnval = 0;
 
 #ifndef POWERNODES
@@ -104,24 +99,23 @@ int errorPDM( void )
     }
 #endif
 
-	if ( Shutdown.BMS )
-	{
-		returnval +=2;
+	if (Shutdown.BMS) {
+		returnval += 2;
 		//stopBlinkOutput(BMSLED); // ensure potential limp mode blinking disabled.
 		//setOutputNOW(BMSLED,On);
 	} //else setOutput(BMSLED,Off);
 
-	if ( Shutdown.IMD )
-	{
-		returnval +=4;
-		setOutputNOW(IMDLED,On);
-	} else setOutput(IMDLED,Off);
+	if (Shutdown.IMD) {
+		returnval += 4;
+		setOutputNOW(IMDLED, On);
+	} else
+		setOutput(IMDLED, Off);
 
-	if ( Shutdown.BSPDBefore )
-	{
-		returnval +=8;
-		setOutputNOW(BSPDLED,On);
-	} else setOutput(BSPDLED,Off);
+	if (Shutdown.BSPDBefore) {
+		returnval += 8;
+		setOutputNOW(BSPDLED, On);
+	} else
+		setOutput(BSPDLED, Off);
 
 	/* EV 4.10.3
 	 * The TS is deactivated when ALL of the following conditions are true:
@@ -135,12 +129,10 @@ int errorPDM( void )
 
 #ifdef SHUTDOWNSWITCHSTATUS // use mid dash led for shutdown switch
 #ifndef TORQUEVECTOR
-	if ( CheckShutdown() )
-	{
-		setOutput(TSOFFLED,On);
-	} else
-	{
-		setOutput(TSOFFLED,Off);
+	if (CheckShutdown()) {
+		setOutput(TSOFFLED, On);
+	} else {
+		setOutput(TSOFFLED, Off);
 	}
 #endif
 #else // use mid dash led for TSOFF status.
@@ -158,32 +150,28 @@ int errorPDM( void )
 	return returnval;
 }
 
-int requestPDM( int nodeid )
-{
+int requestPDM(int nodeid) {
 	return 0; // this is operating with cansync, no extra needed.
 }
 
-int sendPDM( bool buzzer )
-{
+int sendPDM( bool buzzer) {
 #ifdef PDMSECONDMESSAGE
 	CANSendPDMFAN();
 #endif
 	bool HVR = true;
-	for ( int i = 0;i<MOTORCOUNT;i++)
-	{
+	for (int i = 0; i < MOTORCOUNT; i++) {
 		// TODO inverter check HVA
 		//if ( ! CarState.Inverters[i].HighVoltageAllowed) HVR = false;
 	} // HVR will be false if any of the inverters are not in true state.
 
-	if ( HVR && getPowerHVReady() )
-		return CANSendPDM(10,buzzer);
+	if (HVR && getPowerHVReady())
+		return CANSendPDM(10, buzzer);
 	else
-		return CANSendPDM(0,buzzer);
+		return CANSendPDM(0, buzzer);
 
 }
 
-void resetPDM ( void )
-{
+void resetPDM(void) {
 //	PDMCanData.seen = false;
 	DeviceState.PDM = OFFLINE;
 
@@ -198,8 +186,7 @@ void resetPDM ( void )
 	Shutdown.CockpitButton = true;
 }
 
-void initPDM( void )
-{
+void initPDM(void) {
 
 	RegisterResetCommand(resetPDM);
 	resetPDM();

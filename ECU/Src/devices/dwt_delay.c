@@ -28,13 +28,12 @@
  * You might need to enable access to DWT registers on Cortex-M7
  *   DWT->LAR = 0xC5ACCE55
  */
-void DWT_Init(void)
-{
-    if (!(CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk)) {
-        CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-        DWT->CYCCNT = 0;
-        DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
-    }
+void DWT_Init(void) {
+	if (!(CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk)) {
+		CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+		DWT->CYCCNT = 0;
+		DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+	}
 }
 
 #if DWT_DELAY_NEWBIE
@@ -69,10 +68,11 @@ void DWT_Delay(uint32_t us) // microseconds
  */
 void DWT_Delay(uint32_t us) // microseconds
 {
-    uint32_t startTick = DWT->CYCCNT,
-             delayTicks = us * (SystemCoreClock/1000000);
+	uint32_t startTick = DWT->CYCCNT, delayTicks = us
+			* (SystemCoreClock / 1000000);
 
-    while (DWT->CYCCNT - startTick < delayTicks);
+	while (DWT->CYCCNT - startTick < delayTicks)
+		;
 }
 
 #endif

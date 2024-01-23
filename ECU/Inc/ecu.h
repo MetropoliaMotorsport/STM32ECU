@@ -44,7 +44,6 @@
 #define TORQUE_DIFFERENCE (30)
 #define TORQUE_LEFT_PRIMARY
 
-
 #define HPF20
 #define HPF2023
 #define FSG23 //to enable quick hacks for FSG2023
@@ -60,21 +59,21 @@
 
 // HPF 20 doesn't use any local ADC, all via analogue nodes, and PWM.
 #ifdef HPF20
-    #define RTOS
-	#define EEPROMSTORAGE
-	#define SCREEN
-	#define POWERNODES
-	#define ANALOGNODES
-	#define MATLAB
-	#define USEIMU
-	#define PWMSTEERING
-	#define LENZE
+#define RTOS
+#define EEPROMSTORAGE
+#define SCREEN
+#define POWERNODES
+#define ANALOGNODES
+#define MATLAB
+#define USEIMU
+#define PWMSTEERING
+#define LENZE
 #ifdef TWOWHEELS
 	#define MOTORCOUNT		(2)
 #else
-	#define MOTORCOUNT		(4)
+#define MOTORCOUNT		(4)
 #endif
-	#define retransmitIMU
+#define retransmitIMU
 #endif
 
 // Calibration settings for pedals.
@@ -184,7 +183,6 @@
 // Use BMS Messages.
 #define BMSEnable				// if not defined, BMS ignored and assumed present.
 
-
 // Define whether front speed encoders are expected.
 //#define FRONTSPEED				// enable front speed encoder reading.
 
@@ -217,7 +215,6 @@
 // Allow limp mode to be exited on request.
 #define ALLOWLIMPCANCEL
 
-
 #define RTDMStopTime    3 // 3 seconds from entering RTDM before stop button active.
 
 // Try to restart CANBUS if ECU goes offbus.
@@ -241,7 +238,6 @@
 #define LOGLOOPCOUNTSLOW	 	10
 
 // Timeout Values, for bench testing with App if SIM defined and real car if not.
-
 
 #define MS1000					(1000)
 #define MS1						(1)
@@ -376,22 +372,22 @@ typedef struct {
 
 	float Torque_Req;
 	uint8_t Torque_Req_Max;
-    uint8_t Torque_Req_CurrentMax;
-    uint32_t PowerLimit;
-    bool AllowTorque;
-    bool AllowRegen;
-    uint8_t DrivingMode;
-    uint8_t PedalProfile;
-    bool RegenLight;
+	uint8_t Torque_Req_CurrentMax;
+	uint32_t PowerLimit;
+	bool AllowTorque;
+	bool AllowRegen;
+	uint8_t DrivingMode;
+	uint8_t PedalProfile;
+	bool RegenLight;
 
-    uint8_t FanPowered;
+	uint8_t FanPowered;
 
 	uint8_t APPSstatus;
 
-    uint8_t LimpRequest;
-    uint8_t LimpActive;
+	uint8_t LimpRequest;
+	uint8_t LimpActive;
 	uint8_t LimpNM;
-    bool LimpDisable;
+	bool LimpDisable;
 
 	int32_t Current;
 	int32_t VoltageINV;
@@ -404,8 +400,8 @@ typedef struct {
 	int32_t VoltageAIRPDM;
 	int32_t Power;
 	int32_t Wh;
-    uint8_t BMSSOC;
-	float   SOC;
+	uint8_t BMSSOC;
+	float SOC;
 
 	uint8_t I_BrakeLight;
 	uint8_t I_Buzzers;
@@ -483,7 +479,6 @@ typedef struct {
 
 	bool timeout;
 
-
 } DeviceStateType;
 
 // helpers
@@ -492,15 +487,15 @@ void storeBEint16(const uint16_t input, uint8_t Data[2]);
 void storeLEint32(const uint32_t input, uint8_t Data[4]);
 void storeLEint16(const uint16_t input, uint8_t Data[2]);
 
-uint32_t getLEint32( const uint8_t data[4] );
-uint16_t getLEint16( const uint8_t data[2] );
-uint32_t getBEint32( const uint8_t data[4] );
-uint16_t getBEint16( const uint8_t data[2] );
+uint32_t getLEint32(const uint8_t data[4]);
+uint16_t getLEint16(const uint8_t data[2]);
+uint32_t getBEint32(const uint8_t data[4]);
+uint16_t getBEint16(const uint8_t data[2]);
 
 uint8_t getByte(const uint32_t input, const int8_t returnbyte);
 
-char * getDeviceStatusStr( const DeviceStatus status );
+char* getDeviceStatusStr(const DeviceStatus status);
 
-int initECU( void );
+int initECU(void);
 
 #endif /* ECU_H_ */
