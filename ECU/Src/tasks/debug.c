@@ -33,7 +33,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#include "../RTT/SEGGER_RTT.h"
+
 
 typedef struct Debug_msg {
 	char str[MAXDEBUGOUTPUT];

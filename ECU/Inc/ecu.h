@@ -25,7 +25,7 @@
 
 #define TESTBOARD
 
-#define RTTDEBUG
+//#define RTTDEBUG
 
 #define LCDBUFFER
 

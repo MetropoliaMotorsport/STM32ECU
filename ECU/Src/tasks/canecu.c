@@ -740,24 +740,14 @@ char CAN_SENDINVERTERERRORS(void) {
 	// TODO get inverter state.
 	//CarState.Inverters[RearLeftInverter].InvState,
 	//CarState.Inverters[RearRightInverter].InvState,
-#ifdef SIEMENS
-	  CarState.Inverters[RearLeftInverter].InvStateCheck,
-	  CarState.Inverters[RearRightInverter].InvStateCheck,
-#else
+
 			0, 0,
-#endif
-#ifndef HPF20
-			0,0,0,0
-#else
+
 			0,
 			//CarState.Inverters[FrontRightInverter].InvState,
-#ifdef SIEMENS
-			CarState.Inverters[FrontLeftInverter].InvStateCheck,
-			CarState.Inverters[FrontRightInverter].InvStateCheck
-#else
+
 			0, 0
-#endif
-#endif
+
 			};
 
 #ifdef CAN2ERRORSTATUS
