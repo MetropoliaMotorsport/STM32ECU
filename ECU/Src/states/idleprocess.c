@@ -18,9 +18,23 @@
 #include "power.h"
 #include "debug.h"
 #include "adcecu.h"
+#include "canecu.h"
 
 uint32_t OperationalReceive(void) {
-	uint32_t returnvalue = 0;
+uint32_t returnvalue = 0;
+#ifdef HPF24
+if( DeviceState.BMS == OPERATIONAL )
+	returnvalue |= (0x1 << BMSReceived);
+if( DeviceState.IVT == OPERATIONAL )
+	returnvalue |= (0x1 << IVTReceived);
+if( DeviceState.Inverters == OPERATIONAL )
+	returnvalue |= (0x1 << InverterReceived);
+if( DeviceState.PWR_Node == OPERATIONAL )
+	returnvalue |= (0x1 << PWR_Nodereceived);
+
+
+#else
+	
 	if (returnvalue == 0xFF) {
 		returnvalue = (0x1 << BMSReceived) + (0x1 << IVTReceived) +
 #ifndef POWERNODES
@@ -28,8 +42,7 @@ uint32_t OperationalReceive(void) {
 #endif
 				(0x1 << InverterReceived) + // TODO inverter receive
 				(0x1 << PedalADCReceived);
-#ifdef HPF20
-#endif
+
 	}
 
 	// check all inverters are present.
@@ -55,7 +68,7 @@ uint32_t OperationalReceive(void) {
 	// need new function to check for ADC input, so that more workable with a CAN node.
 	if (DeviceState.ADCSanity == 0)
 		returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
-
+#endif
 	return returnvalue;
 }
 
@@ -74,6 +87,7 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 			{
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		DebugMsg("Entering Idle State");
+		//TODO add can bus msg
 		ShutdownCircuitSet( false);
 		//12345678901234567890
 		invRequestState(BOOTUP); // request to go into ready for HV
@@ -97,8 +111,11 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 
 	if (CarState.allowtsactivation)
 		PrintRunning("TS:Off");
+		//TODO add can bus msg
 	else
 		PrintRunning("TS:BAD");
+		//TODO add can bus msg
+
 
 	uint32_t received = OperationalReceive();
 

@@ -203,7 +203,7 @@
 
 // Transmit error messages and status on 2nd CANBUS also.
 #ifndef ONECAN
-#define CAN2ERRORSTATUS
+#define CAN2ERRORSTATUS 0
 #endif
 
 // Allow a 450ms window of brake + apps before throttle is cut.
@@ -337,10 +337,20 @@
 
 #define BMSVoltageErrorBit		11
 
+
+#ifdef HPF24
+#define InverterReceived		0
+#define PedalReceived			1
+#define PedalReceived			2
+#define BMSReceived				3
+#define IVTReceived				4
+#define PWR_Nodereceived		5
+
+#else
 #define InverterReceived		0
 //#define FLeftSpeedReceived		2
 //#define FRightSpeedReceived		3
-#define PedalADCReceived		4
+#define PedalADCReceived			4
 #define BMSReceived				5
 #define PDMReceived				6
 #define MEMORATORReceived		7
@@ -350,6 +360,7 @@
 #define PNodeReceived			9
 
 #define INVERTERRECEIVED		20
+#endif
 
 //#define POWERNODERECEIVED
 

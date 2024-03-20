@@ -120,6 +120,7 @@ int PreOperationState(uint32_t OperationLoops) {
 		ledtimer = gettimer();
 		//   	setOutput(LED2,On);
 		DebugMsg("Entering Pre Operation State");
+		//TODO add can bus msg
 		// pre operation state is to allow hardware to get ready etc, no point in logging errors at this point.
 		// the user can see operational state.
 		SetErrorLogging( false);

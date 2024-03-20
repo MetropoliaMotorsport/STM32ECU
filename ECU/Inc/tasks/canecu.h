@@ -10,46 +10,17 @@
 
 #include "ecu.h"
 #include "queue.h"
+#include "can_ids.h"
+
 
 // definition of CAN ID's for nodes - Bus definitions not currently used
 
 #define CANBUS0 				hfdcan2
 #define	CANBUS1					hfdcan1
 
-#define BMSBASE_ID				0x008
-#define BMSVOLT_ID				BMSBASE_ID+3 // 0xB is voltage.
-#define BMSSOC_ID				0x97
-#define FLSpeed_COBID			0x71 // 112 // 0x70 orig
 #define FLSpeed_BUS				CAN1
-#define FRSpeed_COBID			0x70 // 113 // 0x71 orig
 #define FRSpeed_BUS				CAN1
 
-#define PDM_ID					0x520
-#define MEMORATOR_ID			0x07B
-
-#define NodeErr_ID        		0x600
-#define NodeCmd_ID				0x602
-#define NodeAck_ID				0x601
-
-#define AdcSimInput_ID			0x608
-
-#define AnalogNode1_ID			(0x680) // (1664)
-#define AnalogNode9_ID			(0x690) // (1680)
-#define AnalogNode10_ID			(0x692) // (1682)
-#define AnalogNode11_ID			(0x694) // (1684)
-#define AnalogNode12_ID			(0x696) // (1686)
-#define AnalogNode13_ID			(0x698) // (1688)
-#define AnalogNode14_ID			(0x69A) // (1690)
-#define AnalogNode15_ID			(0x69C) // (1692)
-#define AnalogNode16_ID			(0x69E) // (1694)
-#define AnalogNode17_ID			(0x6A0) // (1696)
-#define AnalogNode18_ID			(0x6A2) // (1698)
-
-#define PowerNode33_ID			(0x6AE) // 1710 0x6AE
-#define PowerNode34_ID			(0x6AF) // 17110x6AF
-#define PowerNode35_ID			(0x6B0) // 1712
-#define PowerNode36_ID			(0x6B1) // 1713
-#define PowerNode37_ID			(0x6B2) // 1714
 
 #define CANB0					(2)
 #define CANB1					(1)
@@ -62,26 +33,9 @@
 #define INV1_BUS				CANB0
 #define INV2_BUS				CANB0
 
-
-#define COBERR_ID				(0x080)
-#define COBNMT_ID				(0x700)
-
-#define COBTPDO1_ID				(0x180)
-#define COBTPDO2_ID				(0x280)
-#define COBTPDO3_ID				(0x380)
-#define COBTPDO4_ID				(0x480)
-
-#define COBRPDO1_ID				(0x200)
-#define COBRPDO2_ID				(0x300)
-#define COBRPDO3_ID				(0x400)
-#define COBRPDO4_ID				(0x500)
-#define COBRPDO5_ID				(0x540)
-
-#define COBSDOS_ID				(0x600)
-
 #define Inverter_BUS			CANB0
 
-#define ECU_CAN_ID				(0x020) // send +1
+
 
 // brake temp sensors 0x1a - first two bytes.
 
@@ -103,6 +57,16 @@
 #define DISABLED				(false)
 
 enum canbus { bus0, bus1, bus2 = 0 };
+
+typedef struct devices_online{
+	bool BMS;
+	bool IVT;
+	bool Inverter;
+	bool Pedal;
+	bool PWR_Node;
+	bool Node;
+} devices_online;
+
 
 typedef struct can_msg {
 	enum canbus bus;
@@ -141,7 +105,7 @@ int getNMTstate(volatile CANData *data );
 void resetCanTx(volatile uint8_t CANTxData[8]);
 int ResetCanReceived( void );
 int ResetOperationCanReceived( void );
-uint8_t CAN1Send( uint16_t id, uint8_t dlc, const uint8_t *pTxData );
+//uint8_t CAN1Send( uint16_t id, uint8_t dlc, const uint8_t *pTxData );
 uint8_t CAN2Send( uint16_t id, uint8_t dlc, const uint8_t *pTxData );
 uint8_t CANSendSDO( enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub, uint32_t data);
 char CAN_NMT( uint8_t, uint8_t );
@@ -154,7 +118,7 @@ uint8_t CANSendPDMFAN( void );
 
 char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode );
 char CAN_SendStatus( char state, char substate, uint32_t errorcode );
-//char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter );
+char CANSendInverter( uint16_t response, uint16_t request, uint8_t inverter );
 char CANLogDataFast( void );
 char CANLogDataSlow( void );
 char CAN_NMTSyncRequest( void );
@@ -169,13 +133,15 @@ void ResetCanData(volatile CANData *data );
 
 
 char CAN_SendErrors( void );
+
+
 char reTransmitError(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength );
 char reTransmitOnCan1(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength );
 
 char CAN_SendTimeBase( void );
 
 char CAN_SendADCminmax( void );
-char CAN_SendADC( volatile uint32_t *ADC_Data, uint8_t error );
+char BMSBASE_ID( volatile uint32_t *ADC_Data, uint8_t error );
 //char CAN_SendADCVals( void );
 
 int CheckCanError( void );

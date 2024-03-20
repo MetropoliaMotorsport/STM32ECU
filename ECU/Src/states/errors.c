@@ -41,6 +41,12 @@ uint8_t critcalerrorcode;
 
 bool logerrors = false;
 
+
+#ifdef Can_bus logging
+void LogError(int error_code) {
+	
+}
+#else
 void LogError(char *message) {
 	if (logerrors) {
 		struct error_msg error;
@@ -228,3 +234,4 @@ int initERRORState(void) {
 
 	return 0;
 }
+#endif
