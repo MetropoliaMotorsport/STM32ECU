@@ -96,6 +96,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 			CarState.Torque_Req_CurrentMax = LIMPNM;
 
 	}
+	////////////////////////////////////////////////////////////////////////////////////
 #ifndef everyloop
 	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
 #endif

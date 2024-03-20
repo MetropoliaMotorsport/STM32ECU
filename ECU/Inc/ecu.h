@@ -468,17 +468,7 @@ typedef struct {
 	DeviceStatus BrakeLight;
 
 	DeviceStatus AnalogNode1;
-	DeviceStatus AnalogNode9;
-	DeviceStatus AnalogNode10;
-	DeviceStatus AnalogNode11;
-	DeviceStatus AnalogNode12;
-	DeviceStatus AnalogNode13;
-	DeviceStatus AnalogNode14;
-
-	DeviceStatus AnalogNode15; // tyre temps FL
-	DeviceStatus AnalogNode16; // tyre temps FR
-	DeviceStatus AnalogNode17; // tyre temps RL
-	DeviceStatus AnalogNode18; // tyre temps RR
+	DeviceStatus AnalogNode2;
 
 	DeviceStatus PowerNodes;
 	DeviceStatus PowerNode33; // [BOTS, inertia switch, BSPD.], Telemetry, front power

@@ -11,53 +11,41 @@
 #include "ecumain.h"
 #include "canecu.h"
 
+
+struct analognode
+{
+	uint16_t sensor1;
+	uint16_t sensor2;
+	uint16_t sensor3;
+	uint16_t sensor4;
+	uint16_t sensor5;
+	uint16_t sensor6;
+	uint16_t sensor7;
+	uint16_t sensor8;
+	uint16_t sensor9;
+	uint16_t sensor10;
+	uint16_t sensor11;
+	uint16_t sensor12;
+	uint16_t sensor13;
+	uint16_t sensor14;
+	uint16_t sensor15;
+	uint16_t sensor16;
+};
+
+
+
 #define ANode1Bit  (0)
-#define ANode9Bit  (1)
-#define ANode10Bit (2)
-#define ANode11Bit (3)
-#define ANode12Bit (4)
-#define ANode13Bit (5)
-#define ANode14Bit (6)
-#define ANode15Bit (7)
-#define ANode16Bit (8)
-#define ANode17Bit (9)
-#define ANode18Bit (10)
+#define ANode2Bit  (1)
+
 
 #define ANodeBADDataShift (16)
 
-#ifdef ALLANODES
-#define ANodeAllBit ( (0x1 << ANode1Bit ) \
-					+ (0x1 << ANode9Bit)  \
-					+ (0x1 << ANode10Bit) \
-					+ (0x1 << ANode11Bit) \
-					+ (0x1 << ANode12Bit) \
-					+ (0x1 << ANode13Bit) \
-					+ (0x1 << ANode14Bit) \
-					+ (0x1 << ANode15Bit) \
-					+ (0x1 << ANode16Bit) \
-					+ (0x1 << ANode17Bit) \
-					+ (0x1 << ANode18Bit) \
-					)
-#else
-#define ANodeAllBit ( (0x1 << ANode1Bit ) \
-					+ (0x1 << ANode11Bit) \
-					)
-#endif
 
 #define AnodeCriticalBit ( (0x1 << ANode1Bit ) + (0x1 << ANode11Bit) )
 
 
 extern CANData AnalogNode1;
-extern CANData AnalogNode9;
-extern CANData AnalogNode10;
-extern CANData AnalogNode11;
-extern CANData AnalogNode12;
-extern CANData AnalogNode13;
-extern CANData AnalogNode14;
-extern CANData AnalogNode15;
-extern CANData AnalogNode16;
-extern CANData AnalogNode17;
-extern CANData AnalogNode18;
+extern CANData AnalogNode2;
 
 uint32_t getOldestANodeCriticalData( void );
 
