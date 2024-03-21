@@ -1,0 +1,816 @@
+ECU
+├─ .cproject
+├─ .cproject_org
+├─ .gitignore
+├─ .project
+├─ .project_org
+├─ .settings
+│  └─ language.settings.xml
+├─ .vs
+│  └─ launch.vs.json
+├─ .vscode
+│  ├─ extensions.json
+│  ├─ launch.json
+│  ├─ settings.json
+│  └─ tasks.json
+├─ board testing.txt
+├─ build
+│  └─ debug
+│     └─ build
+│        ├─ .cmake
+│        │  └─ api
+│        │     └─ v1
+│        │        └─ query
+│        │           └─ client-vscode
+│        │              └─ query.json
+│        ├─ CMakeCache.txt
+│        └─ CMakeFiles
+│           ├─ 3.20.0
+│           │  ├─ CMakeASMCompiler.cmake
+│           │  ├─ CMakeCCompiler.cmake
+│           │  ├─ CMakeCXXCompiler.cmake
+│           │  ├─ CMakeDetermineCompilerABI_C.bin
+│           │  ├─ CMakeDetermineCompilerABI_CXX.bin
+│           │  ├─ CMakeSystem.cmake
+│           │  ├─ CompilerIdASM
+│           │  ├─ CompilerIdC
+│           │  │  ├─ CMakeCCompilerId.c
+│           │  │  ├─ CMakeCCompilerId.o
+│           │  │  └─ tmp
+│           │  └─ CompilerIdCXX
+│           │     ├─ CMakeCXXCompilerId.cpp
+│           │     ├─ CMakeCXXCompilerId.o
+│           │     └─ tmp
+│           ├─ 3.29.0-rc4
+│           │  ├─ CMakeASMCompiler.cmake
+│           │  ├─ CMakeCCompiler.cmake
+│           │  ├─ CMakeCXXCompiler.cmake
+│           │  ├─ CMakeDetermineCompilerABI_C.bin
+│           │  ├─ CMakeDetermineCompilerABI_CXX.bin
+│           │  ├─ CMakeSystem.cmake
+│           │  ├─ CompilerIdASM
+│           │  ├─ CompilerIdC
+│           │  │  ├─ CMakeCCompilerId.c
+│           │  │  ├─ CMakeCCompilerId.o
+│           │  │  └─ tmp
+│           │  └─ CompilerIdCXX
+│           │     ├─ CMakeCXXCompilerId.cpp
+│           │     ├─ CMakeCXXCompilerId.o
+│           │     └─ tmp
+│           ├─ cmake.check_cache
+│           ├─ CMakeConfigureLog.yaml
+│           ├─ CMakeError.log
+│           ├─ CMakeOutput.log
+│           ├─ CMakeTmp
+│           └─ pkgRedirects
+├─ cmake
+│  ├─ gcc-arm-none-eabi.cmake
+│  └─ st-project.cmake
+├─ CMakeLists.txt
+├─ CMakePresets.json
+├─ Core
+│  ├─ Inc
+│  │  ├─ adc.h
+│  │  ├─ comp.h
+│  │  ├─ dma.h
+│  │  ├─ fdcan.h
+│  │  ├─ FreeRTOSConfig.h
+│  │  ├─ gpio.h
+│  │  ├─ i2c.h
+│  │  ├─ main.h
+│  │  ├─ rng.h
+│  │  ├─ stm32h7xx_hal_conf.h
+│  │  ├─ stm32h7xx_it.h
+│  │  ├─ tim.h
+│  │  ├─ usart.h
+│  │  └─ wwdg.h
+│  └─ Src
+│     ├─ adc.c
+│     ├─ comp.c
+│     ├─ dma.c
+│     ├─ fdcan.c
+│     ├─ freertos.c
+│     ├─ gpio.c
+│     ├─ i2c.c
+│     ├─ main.c
+│     ├─ rng.c
+│     ├─ stm32h7xx_hal_msp.c
+│     ├─ stm32h7xx_hal_timebase_tim.c
+│     ├─ stm32h7xx_it.c
+│     ├─ syscalls.c
+│     ├─ system_stm32h7xx.c
+│     ├─ tim.c
+│     ├─ usart.c
+│     └─ wwdg.c
+├─ Debug
+│  ├─ Core
+│  │  └─ Src
+│  │     ├─ adc.cyclo
+│  │     ├─ adc.d
+│  │     ├─ adc.o
+│  │     ├─ adc.su
+│  │     ├─ comp.cyclo
+│  │     ├─ comp.d
+│  │     ├─ comp.o
+│  │     ├─ comp.su
+│  │     ├─ dma.cyclo
+│  │     ├─ dma.d
+│  │     ├─ dma.o
+│  │     ├─ dma.su
+│  │     ├─ fdcan.cyclo
+│  │     ├─ fdcan.d
+│  │     ├─ fdcan.o
+│  │     ├─ fdcan.su
+│  │     ├─ freertos.cyclo
+│  │     ├─ freertos.d
+│  │     ├─ freertos.o
+│  │     ├─ freertos.su
+│  │     ├─ gpio.cyclo
+│  │     ├─ gpio.d
+│  │     ├─ gpio.o
+│  │     ├─ gpio.su
+│  │     ├─ i2c.cyclo
+│  │     ├─ i2c.d
+│  │     ├─ i2c.o
+│  │     ├─ i2c.su
+│  │     ├─ main.cyclo
+│  │     ├─ main.d
+│  │     ├─ main.o
+│  │     ├─ main.su
+│  │     ├─ rng.cyclo
+│  │     ├─ rng.d
+│  │     ├─ rng.o
+│  │     ├─ rng.su
+│  │     ├─ stm32h7xx_hal_msp.cyclo
+│  │     ├─ stm32h7xx_hal_msp.d
+│  │     ├─ stm32h7xx_hal_msp.o
+│  │     ├─ stm32h7xx_hal_msp.su
+│  │     ├─ stm32h7xx_hal_timebase_tim.cyclo
+│  │     ├─ stm32h7xx_hal_timebase_tim.d
+│  │     ├─ stm32h7xx_hal_timebase_tim.o
+│  │     ├─ stm32h7xx_hal_timebase_tim.su
+│  │     ├─ stm32h7xx_it.cyclo
+│  │     ├─ stm32h7xx_it.d
+│  │     ├─ stm32h7xx_it.o
+│  │     ├─ stm32h7xx_it.su
+│  │     ├─ subdir.mk
+│  │     ├─ syscalls.cyclo
+│  │     ├─ syscalls.d
+│  │     ├─ syscalls.o
+│  │     ├─ syscalls.su
+│  │     ├─ system_stm32h7xx.cyclo
+│  │     ├─ system_stm32h7xx.d
+│  │     ├─ system_stm32h7xx.o
+│  │     ├─ system_stm32h7xx.su
+│  │     ├─ tim.cyclo
+│  │     ├─ tim.d
+│  │     ├─ tim.o
+│  │     ├─ tim.su
+│  │     ├─ usart.cyclo
+│  │     ├─ usart.d
+│  │     ├─ usart.o
+│  │     ├─ usart.su
+│  │     ├─ wwdg.cyclo
+│  │     ├─ wwdg.d
+│  │     ├─ wwdg.o
+│  │     └─ wwdg.su
+│  ├─ Drivers
+│  │  └─ STM32H7xx_HAL_Driver
+│  │     └─ Src
+│  │        ├─ stm32h7xx_hal.cyclo
+│  │        ├─ stm32h7xx_hal.d
+│  │        ├─ stm32h7xx_hal.o
+│  │        ├─ stm32h7xx_hal.su
+│  │        ├─ stm32h7xx_hal_adc.cyclo
+│  │        ├─ stm32h7xx_hal_adc.d
+│  │        ├─ stm32h7xx_hal_adc.o
+│  │        ├─ stm32h7xx_hal_adc.su
+│  │        ├─ stm32h7xx_hal_adc_ex.cyclo
+│  │        ├─ stm32h7xx_hal_adc_ex.d
+│  │        ├─ stm32h7xx_hal_adc_ex.o
+│  │        ├─ stm32h7xx_hal_adc_ex.su
+│  │        ├─ stm32h7xx_hal_comp.cyclo
+│  │        ├─ stm32h7xx_hal_comp.d
+│  │        ├─ stm32h7xx_hal_comp.o
+│  │        ├─ stm32h7xx_hal_comp.su
+│  │        ├─ stm32h7xx_hal_cortex.cyclo
+│  │        ├─ stm32h7xx_hal_cortex.d
+│  │        ├─ stm32h7xx_hal_cortex.o
+│  │        ├─ stm32h7xx_hal_cortex.su
+│  │        ├─ stm32h7xx_hal_dma.cyclo
+│  │        ├─ stm32h7xx_hal_dma.d
+│  │        ├─ stm32h7xx_hal_dma.o
+│  │        ├─ stm32h7xx_hal_dma.su
+│  │        ├─ stm32h7xx_hal_dma_ex.cyclo
+│  │        ├─ stm32h7xx_hal_dma_ex.d
+│  │        ├─ stm32h7xx_hal_dma_ex.o
+│  │        ├─ stm32h7xx_hal_dma_ex.su
+│  │        ├─ stm32h7xx_hal_exti.cyclo
+│  │        ├─ stm32h7xx_hal_exti.d
+│  │        ├─ stm32h7xx_hal_exti.o
+│  │        ├─ stm32h7xx_hal_exti.su
+│  │        ├─ stm32h7xx_hal_fdcan.cyclo
+│  │        ├─ stm32h7xx_hal_fdcan.d
+│  │        ├─ stm32h7xx_hal_fdcan.o
+│  │        ├─ stm32h7xx_hal_fdcan.su
+│  │        ├─ stm32h7xx_hal_flash.cyclo
+│  │        ├─ stm32h7xx_hal_flash.d
+│  │        ├─ stm32h7xx_hal_flash.o
+│  │        ├─ stm32h7xx_hal_flash.su
+│  │        ├─ stm32h7xx_hal_flash_ex.cyclo
+│  │        ├─ stm32h7xx_hal_flash_ex.d
+│  │        ├─ stm32h7xx_hal_flash_ex.o
+│  │        ├─ stm32h7xx_hal_flash_ex.su
+│  │        ├─ stm32h7xx_hal_gpio.cyclo
+│  │        ├─ stm32h7xx_hal_gpio.d
+│  │        ├─ stm32h7xx_hal_gpio.o
+│  │        ├─ stm32h7xx_hal_gpio.su
+│  │        ├─ stm32h7xx_hal_hsem.cyclo
+│  │        ├─ stm32h7xx_hal_hsem.d
+│  │        ├─ stm32h7xx_hal_hsem.o
+│  │        ├─ stm32h7xx_hal_hsem.su
+│  │        ├─ stm32h7xx_hal_i2c.cyclo
+│  │        ├─ stm32h7xx_hal_i2c.d
+│  │        ├─ stm32h7xx_hal_i2c.o
+│  │        ├─ stm32h7xx_hal_i2c.su
+│  │        ├─ stm32h7xx_hal_i2c_ex.cyclo
+│  │        ├─ stm32h7xx_hal_i2c_ex.d
+│  │        ├─ stm32h7xx_hal_i2c_ex.o
+│  │        ├─ stm32h7xx_hal_i2c_ex.su
+│  │        ├─ stm32h7xx_hal_mdma.cyclo
+│  │        ├─ stm32h7xx_hal_mdma.d
+│  │        ├─ stm32h7xx_hal_mdma.o
+│  │        ├─ stm32h7xx_hal_mdma.su
+│  │        ├─ stm32h7xx_hal_pwr.cyclo
+│  │        ├─ stm32h7xx_hal_pwr.d
+│  │        ├─ stm32h7xx_hal_pwr.o
+│  │        ├─ stm32h7xx_hal_pwr.su
+│  │        ├─ stm32h7xx_hal_pwr_ex.cyclo
+│  │        ├─ stm32h7xx_hal_pwr_ex.d
+│  │        ├─ stm32h7xx_hal_pwr_ex.o
+│  │        ├─ stm32h7xx_hal_pwr_ex.su
+│  │        ├─ stm32h7xx_hal_rcc.cyclo
+│  │        ├─ stm32h7xx_hal_rcc.d
+│  │        ├─ stm32h7xx_hal_rcc.o
+│  │        ├─ stm32h7xx_hal_rcc.su
+│  │        ├─ stm32h7xx_hal_rcc_ex.cyclo
+│  │        ├─ stm32h7xx_hal_rcc_ex.d
+│  │        ├─ stm32h7xx_hal_rcc_ex.o
+│  │        ├─ stm32h7xx_hal_rcc_ex.su
+│  │        ├─ stm32h7xx_hal_rng.cyclo
+│  │        ├─ stm32h7xx_hal_rng.d
+│  │        ├─ stm32h7xx_hal_rng.o
+│  │        ├─ stm32h7xx_hal_rng.su
+│  │        ├─ stm32h7xx_hal_rng_ex.cyclo
+│  │        ├─ stm32h7xx_hal_rng_ex.d
+│  │        ├─ stm32h7xx_hal_rng_ex.o
+│  │        ├─ stm32h7xx_hal_rng_ex.su
+│  │        ├─ stm32h7xx_hal_tim.cyclo
+│  │        ├─ stm32h7xx_hal_tim.d
+│  │        ├─ stm32h7xx_hal_tim.o
+│  │        ├─ stm32h7xx_hal_tim.su
+│  │        ├─ stm32h7xx_hal_tim_ex.cyclo
+│  │        ├─ stm32h7xx_hal_tim_ex.d
+│  │        ├─ stm32h7xx_hal_tim_ex.o
+│  │        ├─ stm32h7xx_hal_tim_ex.su
+│  │        ├─ stm32h7xx_hal_uart.cyclo
+│  │        ├─ stm32h7xx_hal_uart.d
+│  │        ├─ stm32h7xx_hal_uart.o
+│  │        ├─ stm32h7xx_hal_uart.su
+│  │        ├─ stm32h7xx_hal_uart_ex.cyclo
+│  │        ├─ stm32h7xx_hal_uart_ex.d
+│  │        ├─ stm32h7xx_hal_uart_ex.o
+│  │        ├─ stm32h7xx_hal_uart_ex.su
+│  │        ├─ stm32h7xx_hal_wwdg.cyclo
+│  │        ├─ stm32h7xx_hal_wwdg.d
+│  │        ├─ stm32h7xx_hal_wwdg.o
+│  │        ├─ stm32h7xx_hal_wwdg.su
+│  │        └─ subdir.mk
+│  ├─ ECU.elf
+│  ├─ ECU.hex
+│  ├─ ECU.list
+│  ├─ ECU.map
+│  ├─ makefile
+│  ├─ Middlewares
+│  │  └─ Third_Party
+│  │     └─ FreeRTOS
+│  │        └─ Source
+│  │           ├─ CMSIS_RTOS_V2
+│  │           │  ├─ cmsis_os2.cyclo
+│  │           │  ├─ cmsis_os2.d
+│  │           │  ├─ cmsis_os2.o
+│  │           │  ├─ cmsis_os2.su
+│  │           │  └─ subdir.mk
+│  │           ├─ croutine.cyclo
+│  │           ├─ croutine.d
+│  │           ├─ croutine.o
+│  │           ├─ croutine.su
+│  │           ├─ event_groups.cyclo
+│  │           ├─ event_groups.d
+│  │           ├─ event_groups.o
+│  │           ├─ event_groups.su
+│  │           ├─ list.cyclo
+│  │           ├─ list.d
+│  │           ├─ list.o
+│  │           ├─ list.su
+│  │           ├─ portable
+│  │           │  ├─ GCC
+│  │           │  │  └─ ARM_CM4F
+│  │           │  │     ├─ port.cyclo
+│  │           │  │     ├─ port.d
+│  │           │  │     ├─ port.o
+│  │           │  │     ├─ port.su
+│  │           │  │     └─ subdir.mk
+│  │           │  └─ MemMang
+│  │           │     ├─ heap_1.cyclo
+│  │           │     ├─ heap_1.d
+│  │           │     ├─ heap_1.o
+│  │           │     ├─ heap_1.su
+│  │           │     └─ subdir.mk
+│  │           ├─ queue.cyclo
+│  │           ├─ queue.d
+│  │           ├─ queue.o
+│  │           ├─ queue.su
+│  │           ├─ stream_buffer.cyclo
+│  │           ├─ stream_buffer.d
+│  │           ├─ stream_buffer.o
+│  │           ├─ stream_buffer.su
+│  │           ├─ subdir.mk
+│  │           ├─ tasks.cyclo
+│  │           ├─ tasks.d
+│  │           ├─ tasks.o
+│  │           ├─ tasks.su
+│  │           ├─ timers.cyclo
+│  │           ├─ timers.d
+│  │           ├─ timers.o
+│  │           └─ timers.su
+│  ├─ objects.list
+│  ├─ objects.mk
+│  ├─ sources.mk
+│  ├─ Src
+│  │  ├─ devices
+│  │  │  ├─ analognode.cyclo
+│  │  │  ├─ analognode.d
+│  │  │  ├─ analognode.o
+│  │  │  ├─ analognode.su
+│  │  │  ├─ bms.cyclo
+│  │  │  ├─ bms.d
+│  │  │  ├─ bms.o
+│  │  │  ├─ bms.su
+│  │  │  ├─ brake.cyclo
+│  │  │  ├─ brake.d
+│  │  │  ├─ brake.o
+│  │  │  ├─ brake.su
+│  │  │  ├─ dwt_delay.cyclo
+│  │  │  ├─ dwt_delay.d
+│  │  │  ├─ dwt_delay.o
+│  │  │  ├─ dwt_delay.su
+│  │  │  ├─ freertosstats.cyclo
+│  │  │  ├─ freertosstats.d
+│  │  │  ├─ freertosstats.o
+│  │  │  ├─ freertosstats.su
+│  │  │  ├─ imu.cyclo
+│  │  │  ├─ imu.d
+│  │  │  ├─ imu.o
+│  │  │  ├─ imu.su
+│  │  │  ├─ interrupts.cyclo
+│  │  │  ├─ interrupts.d
+│  │  │  ├─ interrupts.o
+│  │  │  ├─ interrupts.su
+│  │  │  ├─ ivt.cyclo
+│  │  │  ├─ ivt.d
+│  │  │  ├─ ivt.o
+│  │  │  ├─ ivt.su
+│  │  │  ├─ lenzeinverter.cyclo
+│  │  │  ├─ lenzeinverter.d
+│  │  │  ├─ lenzeinverter.o
+│  │  │  ├─ lenzeinverter.su
+│  │  │  ├─ memorator.cyclo
+│  │  │  ├─ memorator.d
+│  │  │  ├─ memorator.o
+│  │  │  ├─ memorator.su
+│  │  │  ├─ node.cyclo
+│  │  │  ├─ node.d
+│  │  │  ├─ node.o
+│  │  │  ├─ node.su
+│  │  │  ├─ pdm.cyclo
+│  │  │  ├─ pdm.d
+│  │  │  ├─ pdm.o
+│  │  │  ├─ pdm.su
+│  │  │  ├─ powerloss.cyclo
+│  │  │  ├─ powerloss.d
+│  │  │  ├─ powerloss.o
+│  │  │  ├─ powerloss.su
+│  │  │  ├─ powernode.cyclo
+│  │  │  ├─ powernode.d
+│  │  │  ├─ powernode.o
+│  │  │  ├─ powernode.su
+│  │  │  ├─ subdir.mk
+│  │  │  ├─ timerecu.cyclo
+│  │  │  ├─ timerecu.d
+│  │  │  ├─ timerecu.o
+│  │  │  ├─ timerecu.su
+│  │  │  ├─ torquecontrol.cyclo
+│  │  │  ├─ torquecontrol.d
+│  │  │  ├─ torquecontrol.o
+│  │  │  ├─ torquecontrol.su
+│  │  │  ├─ uartecu.cyclo
+│  │  │  ├─ uartecu.d
+│  │  │  ├─ uartecu.o
+│  │  │  └─ uartecu.su
+│  │  ├─ ecu.cyclo
+│  │  ├─ ecu.d
+│  │  ├─ ecu.o
+│  │  ├─ ecu.su
+│  │  ├─ ecumain.cyclo
+│  │  ├─ ecumain.d
+│  │  ├─ ecumain.o
+│  │  ├─ ecumain.su
+│  │  ├─ matlab
+│  │  │  ├─ Regeneration_ert_rtw
+│  │  │  │  ├─ Regeneration.cyclo
+│  │  │  │  ├─ Regeneration.d
+│  │  │  │  ├─ Regeneration.o
+│  │  │  │  ├─ Regeneration.su
+│  │  │  │  ├─ Regeneration_data.cyclo
+│  │  │  │  ├─ Regeneration_data.d
+│  │  │  │  ├─ Regeneration_data.o
+│  │  │  │  ├─ Regeneration_data.su
+│  │  │  │  └─ subdir.mk
+│  │  │  ├─ TorqueVectoring_ert_rtw
+│  │  │  │  ├─ subdir.mk
+│  │  │  │  ├─ TorqueVectoring.cyclo
+│  │  │  │  ├─ TorqueVectoring.d
+│  │  │  │  ├─ TorqueVectoring.o
+│  │  │  │  ├─ TorqueVectoring.su
+│  │  │  │  ├─ TorqueVectoring_data.cyclo
+│  │  │  │  ├─ TorqueVectoring_data.d
+│  │  │  │  ├─ TorqueVectoring_data.o
+│  │  │  │  └─ TorqueVectoring_data.su
+│  │  │  └─ TractionControl_ert_rtw
+│  │  │     ├─ subdir.mk
+│  │  │     ├─ TractionControl.cyclo
+│  │  │     ├─ TractionControl.d
+│  │  │     ├─ TractionControl.o
+│  │  │     ├─ TractionControl.su
+│  │  │     ├─ TractionControl_data.cyclo
+│  │  │     ├─ TractionControl_data.d
+│  │  │     ├─ TractionControl_data.o
+│  │  │     └─ TractionControl_data.su
+│  │  ├─ states
+│  │  │  ├─ errors.cyclo
+│  │  │  ├─ errors.d
+│  │  │  ├─ errors.o
+│  │  │  ├─ errors.su
+│  │  │  ├─ idleprocess.cyclo
+│  │  │  ├─ idleprocess.d
+│  │  │  ├─ idleprocess.o
+│  │  │  ├─ idleprocess.su
+│  │  │  ├─ operationalprocess.cyclo
+│  │  │  ├─ operationalprocess.d
+│  │  │  ├─ operationalprocess.o
+│  │  │  ├─ operationalprocess.su
+│  │  │  ├─ operationalreadyness.cyclo
+│  │  │  ├─ operationalreadyness.d
+│  │  │  ├─ operationalreadyness.o
+│  │  │  ├─ operationalreadyness.su
+│  │  │  ├─ preoperation.cyclo
+│  │  │  ├─ preoperation.d
+│  │  │  ├─ preoperation.o
+│  │  │  ├─ preoperation.su
+│  │  │  ├─ runningprocess.cyclo
+│  │  │  ├─ runningprocess.d
+│  │  │  ├─ runningprocess.o
+│  │  │  ├─ runningprocess.su
+│  │  │  ├─ subdir.mk
+│  │  │  ├─ tsactiveprocess.cyclo
+│  │  │  ├─ tsactiveprocess.d
+│  │  │  ├─ tsactiveprocess.o
+│  │  │  └─ tsactiveprocess.su
+│  │  ├─ subdir.mk
+│  │  └─ tasks
+│  │     ├─ adcecu.cyclo
+│  │     ├─ adcecu.d
+│  │     ├─ adcecu.o
+│  │     ├─ adcecu.su
+│  │     ├─ canecu.cyclo
+│  │     ├─ canecu.d
+│  │     ├─ canecu.o
+│  │     ├─ canecu.su
+│  │     ├─ configuration.cyclo
+│  │     ├─ configuration.d
+│  │     ├─ configuration.o
+│  │     ├─ configuration.su
+│  │     ├─ debug.cyclo
+│  │     ├─ debug.d
+│  │     ├─ debug.o
+│  │     ├─ debug.su
+│  │     ├─ eeprom.cyclo
+│  │     ├─ eeprom.d
+│  │     ├─ eeprom.o
+│  │     ├─ eeprom.su
+│  │     ├─ input.cyclo
+│  │     ├─ input.d
+│  │     ├─ input.o
+│  │     ├─ input.su
+│  │     ├─ inverter.cyclo
+│  │     ├─ inverter.d
+│  │     ├─ inverter.o
+│  │     ├─ inverter.su
+│  │     ├─ output.cyclo
+│  │     ├─ output.d
+│  │     ├─ output.o
+│  │     ├─ output.su
+│  │     ├─ power.cyclo
+│  │     ├─ power.d
+│  │     ├─ power.o
+│  │     ├─ power.su
+│  │     ├─ subdir.mk
+│  │     ├─ watchdog.cyclo
+│  │     ├─ watchdog.d
+│  │     ├─ watchdog.o
+│  │     └─ watchdog.su
+│  └─ startup
+│     ├─ startup_stm32h743xx.d
+│     ├─ startup_stm32h743xx.o
+│     └─ subdir.mk
+├─ Drivers
+│  ├─ CMSIS
+│  │  ├─ Device
+│  │  │  └─ ST
+│  │  │     └─ STM32H7xx
+│  │  │        ├─ Include
+│  │  │        │  ├─ stm32h743xx.h
+│  │  │        │  ├─ stm32h7xx.h
+│  │  │        │  └─ system_stm32h7xx.h
+│  │  │        └─ LICENSE.txt
+│  │  ├─ Include
+│  │  │  ├─ cmsis_armcc.h
+│  │  │  ├─ cmsis_armclang.h
+│  │  │  ├─ cmsis_armclang_ltm.h
+│  │  │  ├─ cmsis_compiler.h
+│  │  │  ├─ cmsis_gcc.h
+│  │  │  ├─ cmsis_iccarm.h
+│  │  │  ├─ cmsis_version.h
+│  │  │  ├─ core_armv81mml.h
+│  │  │  ├─ core_armv8mbl.h
+│  │  │  ├─ core_armv8mml.h
+│  │  │  ├─ core_cm0.h
+│  │  │  ├─ core_cm0plus.h
+│  │  │  ├─ core_cm1.h
+│  │  │  ├─ core_cm23.h
+│  │  │  ├─ core_cm3.h
+│  │  │  ├─ core_cm33.h
+│  │  │  ├─ core_cm35p.h
+│  │  │  ├─ core_cm4.h
+│  │  │  ├─ core_cm7.h
+│  │  │  ├─ core_sc000.h
+│  │  │  ├─ core_sc300.h
+│  │  │  ├─ mpu_armv7.h
+│  │  │  ├─ mpu_armv8.h
+│  │  │  └─ tz_context.h
+│  │  └─ LICENSE.txt
+│  └─ STM32H7xx_HAL_Driver
+│     ├─ Inc
+│     │  ├─ Legacy
+│     │  │  └─ stm32_hal_legacy.h
+│     │  ├─ stm32h7xx_hal.h
+│     │  ├─ stm32h7xx_hal_adc.h
+│     │  ├─ stm32h7xx_hal_adc_ex.h
+│     │  ├─ stm32h7xx_hal_comp.h
+│     │  ├─ stm32h7xx_hal_cortex.h
+│     │  ├─ stm32h7xx_hal_def.h
+│     │  ├─ stm32h7xx_hal_dma.h
+│     │  ├─ stm32h7xx_hal_dma_ex.h
+│     │  ├─ stm32h7xx_hal_exti.h
+│     │  ├─ stm32h7xx_hal_fdcan.h
+│     │  ├─ stm32h7xx_hal_flash.h
+│     │  ├─ stm32h7xx_hal_flash_ex.h
+│     │  ├─ stm32h7xx_hal_gpio.h
+│     │  ├─ stm32h7xx_hal_gpio_ex.h
+│     │  ├─ stm32h7xx_hal_hsem.h
+│     │  ├─ stm32h7xx_hal_i2c.h
+│     │  ├─ stm32h7xx_hal_i2c_ex.h
+│     │  ├─ stm32h7xx_hal_mdma.h
+│     │  ├─ stm32h7xx_hal_pwr.h
+│     │  ├─ stm32h7xx_hal_pwr_ex.h
+│     │  ├─ stm32h7xx_hal_rcc.h
+│     │  ├─ stm32h7xx_hal_rcc_ex.h
+│     │  ├─ stm32h7xx_hal_rng.h
+│     │  ├─ stm32h7xx_hal_rng_ex.h
+│     │  ├─ stm32h7xx_hal_tim.h
+│     │  ├─ stm32h7xx_hal_tim_ex.h
+│     │  ├─ stm32h7xx_hal_uart.h
+│     │  ├─ stm32h7xx_hal_uart_ex.h
+│     │  ├─ stm32h7xx_hal_wwdg.h
+│     │  ├─ stm32h7xx_ll_adc.h
+│     │  ├─ stm32h7xx_ll_bus.h
+│     │  ├─ stm32h7xx_ll_comp.h
+│     │  ├─ stm32h7xx_ll_cortex.h
+│     │  ├─ stm32h7xx_ll_crs.h
+│     │  ├─ stm32h7xx_ll_dma.h
+│     │  ├─ stm32h7xx_ll_dmamux.h
+│     │  ├─ stm32h7xx_ll_exti.h
+│     │  ├─ stm32h7xx_ll_gpio.h
+│     │  ├─ stm32h7xx_ll_hsem.h
+│     │  ├─ stm32h7xx_ll_i2c.h
+│     │  ├─ stm32h7xx_ll_lpuart.h
+│     │  ├─ stm32h7xx_ll_pwr.h
+│     │  ├─ stm32h7xx_ll_rcc.h
+│     │  ├─ stm32h7xx_ll_rng.h
+│     │  ├─ stm32h7xx_ll_system.h
+│     │  ├─ stm32h7xx_ll_tim.h
+│     │  ├─ stm32h7xx_ll_usart.h
+│     │  ├─ stm32h7xx_ll_utils.h
+│     │  └─ stm32h7xx_ll_wwdg.h
+│     ├─ LICENSE.txt
+│     └─ Src
+│        ├─ stm32h7xx_hal.c
+│        ├─ stm32h7xx_hal_adc.c
+│        ├─ stm32h7xx_hal_adc_ex.c
+│        ├─ stm32h7xx_hal_comp.c
+│        ├─ stm32h7xx_hal_cortex.c
+│        ├─ stm32h7xx_hal_dma.c
+│        ├─ stm32h7xx_hal_dma_ex.c
+│        ├─ stm32h7xx_hal_exti.c
+│        ├─ stm32h7xx_hal_fdcan.c
+│        ├─ stm32h7xx_hal_flash.c
+│        ├─ stm32h7xx_hal_flash_ex.c
+│        ├─ stm32h7xx_hal_gpio.c
+│        ├─ stm32h7xx_hal_hsem.c
+│        ├─ stm32h7xx_hal_i2c.c
+│        ├─ stm32h7xx_hal_i2c_ex.c
+│        ├─ stm32h7xx_hal_mdma.c
+│        ├─ stm32h7xx_hal_pwr.c
+│        ├─ stm32h7xx_hal_pwr_ex.c
+│        ├─ stm32h7xx_hal_rcc.c
+│        ├─ stm32h7xx_hal_rcc_ex.c
+│        ├─ stm32h7xx_hal_rng.c
+│        ├─ stm32h7xx_hal_rng_ex.c
+│        ├─ stm32h7xx_hal_tim.c
+│        ├─ stm32h7xx_hal_tim_ex.c
+│        ├─ stm32h7xx_hal_uart.c
+│        ├─ stm32h7xx_hal_uart_ex.c
+│        └─ stm32h7xx_hal_wwdg.c
+├─ ECU (ST-Link).launch
+├─ ECU.cfg
+├─ ecu.csv
+├─ ECU.elf.launch
+├─ ECU.ioc
+├─ ECU.launch
+├─ ECU_converter.log
+├─ Inc
+│  ├─ adc_hpf20.h
+│  ├─ devices
+│  │  ├─ analognode.h
+│  │  ├─ bms.h
+│  │  ├─ brake.h
+│  │  ├─ can_ids.h
+│  │  ├─ dwt_delay.h
+│  │  ├─ freertosstats.h
+│  │  ├─ imu.h
+│  │  ├─ interrupts.h
+│  │  ├─ ivt.h
+│  │  ├─ lenzeinverter.h
+│  │  ├─ memorator.h
+│  │  ├─ node.h
+│  │  ├─ pdm.h
+│  │  ├─ powerloss.h
+│  │  ├─ powernode.h
+│  │  ├─ timerecu.h
+│  │  ├─ torquecontrol.h
+│  │  └─ uartecu.h
+│  ├─ ecu.h
+│  ├─ ecumain.h
+│  ├─ states
+│  │  ├─ errors.h
+│  │  ├─ idleprocess.h
+│  │  ├─ operationalprocess.h
+│  │  ├─ operationalreadyness.h
+│  │  ├─ preoperation.h
+│  │  ├─ runningprocess.h
+│  │  └─ tsactiveprocess.h
+│  ├─ taskpriorities.h
+│  └─ tasks
+│     ├─ adcecu.h
+│     ├─ canecu.h
+│     ├─ configuration.h
+│     ├─ debug.h
+│     ├─ eeprom.h
+│     ├─ input.h
+│     ├─ inverter.h
+│     ├─ output.h
+│     ├─ power.h
+│     └─ watchdog.h
+├─ Middlewares
+│  └─ Third_Party
+│     └─ FreeRTOS
+│        └─ Source
+│           ├─ CMSIS_RTOS_V2
+│           │  ├─ cmsis_os.h
+│           │  ├─ cmsis_os2.c
+│           │  ├─ cmsis_os2.h
+│           │  ├─ freertos_mpool.h
+│           │  └─ freertos_os2.h
+│           ├─ croutine.c
+│           ├─ event_groups.c
+│           ├─ include
+│           │  ├─ atomic.h
+│           │  ├─ croutine.h
+│           │  ├─ deprecated_definitions.h
+│           │  ├─ event_groups.h
+│           │  ├─ FreeRTOS.h
+│           │  ├─ list.h
+│           │  ├─ message_buffer.h
+│           │  ├─ mpu_prototypes.h
+│           │  ├─ mpu_wrappers.h
+│           │  ├─ portable.h
+│           │  ├─ projdefs.h
+│           │  ├─ queue.h
+│           │  ├─ semphr.h
+│           │  ├─ StackMacros.h
+│           │  ├─ stack_macros.h
+│           │  ├─ stream_buffer.h
+│           │  ├─ task.h
+│           │  └─ timers.h
+│           ├─ LICENSE
+│           ├─ list.c
+│           ├─ portable
+│           │  ├─ GCC
+│           │  │  └─ ARM_CM4F
+│           │  │     ├─ port.c
+│           │  │     └─ portmacro.h
+│           │  └─ MemMang
+│           │     └─ heap_1.c
+│           ├─ queue.c
+│           ├─ stream_buffer.c
+│           ├─ tasks.c
+│           └─ timers.c
+├─ mx.scratch
+├─ pdm air voltages.txt
+├─ Src
+│  ├─ devices
+│  │  ├─ analognode.c
+│  │  ├─ bms.c
+│  │  ├─ brake.c
+│  │  ├─ dwt_delay.c
+│  │  ├─ freertosstats.c
+│  │  ├─ imu.c
+│  │  ├─ interrupts.c
+│  │  ├─ ivt.c
+│  │  ├─ lenzeinverter.c
+│  │  ├─ memorator.c
+│  │  ├─ node.c
+│  │  ├─ pdm.c
+│  │  ├─ powerloss.c
+│  │  ├─ powernode.c
+│  │  ├─ timerecu.c
+│  │  ├─ torquecontrol.c
+│  │  └─ uartecu.c
+│  ├─ ecu.c
+│  ├─ ecumain.c
+│  ├─ matlab
+│  │  ├─ Regeneration_ert_rtw
+│  │  │  ├─ buildInfo.mat
+│  │  │  ├─ Regeneration.c
+│  │  │  ├─ Regeneration.h
+│  │  │  ├─ Regeneration_data.c
+│  │  │  └─ rtwtypes.h
+│  │  ├─ TorqueVectoring_ert_rtw
+│  │  │  ├─ buildInfo.mat
+│  │  │  ├─ rtwtypes.h
+│  │  │  ├─ TorqueVectoring.c
+│  │  │  ├─ TorqueVectoring.h
+│  │  │  └─ TorqueVectoring_data.c
+│  │  └─ TractionControl_ert_rtw
+│  │     ├─ buildInfo.mat
+│  │     ├─ rtwtypes.h
+│  │     ├─ TractionControl.c
+│  │     ├─ TractionControl.h
+│  │     └─ TractionControl_data.c
+│  ├─ states
+│  │  ├─ errors.c
+│  │  ├─ idleprocess.c
+│  │  ├─ operationalprocess.c
+│  │  ├─ operationalreadyness.c
+│  │  ├─ preoperation.c
+│  │  ├─ runningprocess.c
+│  │  └─ tsactiveprocess.c
+│  └─ tasks
+│     ├─ adcecu.c
+│     ├─ canecu.c
+│     ├─ configuration.c
+│     ├─ debug.c
+│     ├─ eeprom.c
+│     ├─ input.c
+│     ├─ inverter.c
+│     ├─ output.c
+│     ├─ power.c
+│     └─ watchdog.c
+├─ startup
+│  └─ startup_stm32h743xx.s
+├─ STM32H743ZI_FLASH - Copy.ld
+├─ STM32H743ZI_FLASH.ld
+├─ syscalls.c
+├─ unused code snippets.txt
+└─ vcpkg-configuration.json

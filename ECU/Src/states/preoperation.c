@@ -113,14 +113,14 @@ int PreOperationState(uint32_t OperationLoops) {
 #ifdef PRINTDEBUGRUNNING
 	PrintRunning( "Boot" );
 #else
-	sprintf(str, "Boot   %8.8s %.3liv", getCurTimeStr(), CarState.VoltageBMS);
+	sprintf(str, "Boot   %8.8s %.3liv", getCurTimeStr(), CarState.VoltageBMS); // TODO add can bus msg
 #endif
 	if (OperationLoops == 0) {
 		TSLEDstate = false;
 		ledtimer = gettimer();
 		//   	setOutput(LED2,On);
 		DebugMsg("Entering Pre Operation State");
-		//TODO add can bus msg
+		CAN_SendDebug(EPOS_ID);
 		// pre operation state is to allow hardware to get ready etc, no point in logging errors at this point.
 		// the user can see operational state.
 		SetErrorLogging( false);
@@ -470,10 +470,12 @@ int PreOperationState(uint32_t OperationLoops) {
 			setDevicePower(RightFans, true);
 			setDevicePower(LeftFans, true);
 			DebugMsg("Power requested.");
+			CAN_SendDebug(PWRR_ID);
 			powerset = true;
 		} else {
 			setDevicePower(Inverters, false);
 			DebugMsg("Power off to inverters requested.");
+			CAN_SendDebug(PWRINV_ID);
 			powerset = false;
 		}
 
@@ -663,9 +665,11 @@ int PreOperationState(uint32_t OperationLoops) {
 
 	if (CheckActivationRequest())
 		DebugPrintf("Start pressedr\n");
+		CAN_SendDebug(STT_ID);
 
 	if (CheckTSActivationRequest())
 		DebugPrintf("TS pressedr\n");
+		CAN_SendDebug(TSP_ID);
 
 	if (CheckRTDMActivationRequest())
 		DebugPrintf("RTDM pressedr\n");

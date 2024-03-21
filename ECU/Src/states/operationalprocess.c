@@ -105,7 +105,7 @@ int Startup(uint32_t OperationLoops) {
 	{
 		//CarState.allowtsactivation = true;
 		DebugMsg("Entering Startup State");
-		CAN_SendStatus(1, StartupState, 0);
+		CAN_SendDebug(ESS_ID);
 	}
 
 	// send startup state message here.

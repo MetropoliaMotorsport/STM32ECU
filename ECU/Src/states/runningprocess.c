@@ -78,6 +78,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 			{
 		CarState.AllowRegen = getEEPROMBlock(0)->Regen > 0;
 		DebugMsg("Entering RTDM State");
+		CAN_SendDebug(ERDTM_ID);
 		/* EV 4.12.1
 		 * The vehicle must make a characteristic sound, continuously for at least one second and a maximum of three seconds when it enters ready-to-drive mode.
 		 */
@@ -106,6 +107,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 	uint32_t curtick = gettimer();
 
 	PrintRunning("RTDM:TA");
+	CAN_SendDebug(RDTMTA_ID);
 
 	invRequestState(OPERATIONAL);
 
@@ -157,6 +159,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 			&& CheckRTDMActivationRequest()) {
 		blinkOutput(RTDMLED, BlinkFast, 1000);
 		DebugMsg("Disalowing regen");
+		CAN_SendDebug(DISRN_ID);
 		CarState.AllowRegen = false;
 	}
 
@@ -271,7 +274,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 
 		if (curtick > nextmsg) {
 			nextmsg = curtick + 1000;
-			DebugPrintf("Current req %f pedals %lu %lu %lu brakes %lu %lu",
+			DebugPrintf("Current req %f pedals %lu %lu %lu brakes %lu %lu", //TODO make can message
 					torque_req, ADCState.Torque_Req_R_Percent,
 					ADCState.Torque_Req_L_Percent, ADCState.Regen_Percent,
 					ADCState.BrakeF, ADCState.BrakeR);

@@ -35,6 +35,8 @@ int TSActiveProcess(uint32_t OperationLoops) {
 			{
 		CheckHVLost();
 		DebugMsg("Entering TS Active State");
+		CAN_SendDebug(ETSAS_ID)
+
 		ShutdownCircuitSet(true);
 		CarState.allowtsactivation = false;
 		//12345678901234567890
@@ -56,10 +58,14 @@ int TSActiveProcess(uint32_t OperationLoops) {
 		CAN_SendStatus(1, TSActiveState, readystate);
 	}
 
-	if (CarState.VoltageINV < TSACTIVEV)
+	if (CarState.VoltageINV < TSACTIVEV){
 		PrintRunning("TS:LoV");
-	else
+		CAN_SendDebug(TSLOV);
+	}
+	else{
 		PrintRunning("TS:On");
+		CAN_SendDebug(TSON);
+	}
 
 	uint8_t ReceiveNonCriticalError = 0;
 
@@ -90,7 +96,7 @@ int TSActiveProcess(uint32_t OperationLoops) {
 			DebugPrintf(
 					"TS Activation failure at %lu invV:%d Shutdown.Pre:%d, prechargetimer:%d",
 					gettimer(), CarState.VoltageINV, Shutdown.PRE,
-					prechargetimer);
+					prechargetimer); // TODO make CAN message.
 			prechargedone = 0;
 			return IdleState;
 		}
@@ -99,13 +105,13 @@ int TSActiveProcess(uint32_t OperationLoops) {
 	if (!prechargedone) {
 		if (nextprechargemsg < curtime) {
 			nextprechargemsg = curtime + 200;
-			DebugPrintf("TS at %lu invV:%d", curtime, CarState.VoltageINV);
+			DebugPrintf("TS at %lu invV:%d", curtime, CarState.VoltageINV); // TODO make CAN message.
 		}
 	}
 
 	if (prechargedone && CarState.VoltageINV <= TSACTIVEV) {
-		DebugPrintf(
-				"TS failure at %lu invV:%d Shutdown.Pre:%d, prechargetimer:%d",
+		DebugPrintf(	
+				"TS failure at %lu invV:%d Shutdown.Pre:%d, prechargetimer:%d",	// TODO make CAN message.
 				gettimer(), CarState.VoltageINV, Shutdown.PRE, prechargetimer);
 		prechargedone = 0;
 		return IdleState;
@@ -182,15 +188,19 @@ int TSActiveProcess(uint32_t OperationLoops) {
 			{
 		if (getBrakeRTDM())
 			return RunningState;
-		else
+		else{
 			DebugPrintf("RTDM activation attempt with no braking");
+			CAN_SendDebug(RTDMAC_ID);
+		}
 	}
 
 	if (CheckActivationRequest()) {
 		if (!prechargedone) {
 			DebugPrintf("Wait for Precharge\n");
+			CAN_SendDebug(WFP_ID);
 		} else {
 			DebugPrintf("Returning to idle state at request.");
+			CAN_SendDebug(RTIS_ID);
 			return IdleState;  // if requested disable TS drop state
 		}
 	}

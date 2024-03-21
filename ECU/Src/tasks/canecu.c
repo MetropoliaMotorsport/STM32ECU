@@ -864,6 +864,11 @@ char CAN_SendErrors(void) {
 	return 1;
 }
 
+char CAN_SendDebug(uint16_t id){
+	CAN2Send(id, 0, 0);
+	return 1;
+}
+
 char CAN_Send4vals(uint16_t id, uint16_t val1, uint16_t val2, uint16_t val3,
 		uint16_t val4) {
 

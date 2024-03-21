@@ -73,8 +73,9 @@ uint16_t ReadyReceive(uint16_t returnvalue) {
 //		if ( !first )
 		{
 //			first = true;
-			DebugPrintf("Readyness Power fail: %s",
+			DebugPrintf("Readyness Power fail: %s",		//TODO: Make a can bus message for this.
 					getDeviceStatusStr(DeviceState.CriticalPower));
+			
 		}
 	}
 
@@ -109,6 +110,7 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 	if (OperationLoops == 0) // reset state on entering/rentering.
 			{
 		DebugMsg("Entering Readyness check State");
+		CAN_SendDebug(ERCS_ID);
 		SetErrorLogging(true);
 		received = 0xFFFF;
 	}
@@ -118,6 +120,7 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 	if (OperationLoops > 5) // 500 )	// how many loops allow to get all data on time?, failure timeout.
 			{
 		DebugMsg("Errorplace 0xBA Too many loops.");
+		CAN_SendDebug(ERRTL_ID);
 		Errors.ErrorPlace = 0xBA;
 		return OperationalErrorState; // error, too long waiting for data. Go to error state to inform and allow restart of process.
 	}
@@ -138,6 +141,7 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 		//	CAN_SendErrorStatus(5, OperationalReadyState, received);
 		//	Errors.State = OperationalReadyState;
 		DebugMsg("Errorplace 0xBB critical error.");
+		CAN_SendDebug(CRT_ID);
 		Errors.ErrorReason = ReceivedCriticalError
 				| (CheckCriticalError() << 8);
 		Errors.ErrorPlace = 0xBB;

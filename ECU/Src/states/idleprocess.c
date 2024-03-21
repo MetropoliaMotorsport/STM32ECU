@@ -87,7 +87,8 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 			{
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
 		DebugMsg("Entering Idle State");
-		//TODO add can bus msg
+		CAN_SendDebug(EIS_ID);
+
 		ShutdownCircuitSet( false);
 		//12345678901234567890
 		invRequestState(BOOTUP); // request to go into ready for HV
@@ -111,9 +112,11 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 
 	if (CarState.allowtsactivation)
 		PrintRunning("TS:Off");
+		Can_SendDebug(TSO_ID);
 		//TODO add can bus msg
 	else
 		PrintRunning("TS:BAD");
+		Can_SendDebug(TSB_ID);
 		//TODO add can bus msg
 
 
@@ -133,6 +136,7 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 
 	if (CheckCriticalError()) {
 		DebugMsg("Errorplace 0xCA Critical error.");
+		CAN_SendDebug(CRT_ID);
 		Errors.ErrorPlace = 0xCA;
 		Errors.ErrorReason = ReceivedCriticalError
 				| (CheckCriticalError() << 8);
@@ -186,7 +190,7 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 	CarState.Torque_Req = PedalTorqueRequest(&pedalreq); // calculate request from APPS
 
 	if (abs(lastreq - CarState.Torque_Req) > 10) {
-		DebugPrintf("Torquereq %d for Curve adj %d Act %d\r\n",
+		DebugPrintf("Torquereq %d for Curve adj %d Act %d\r\n", //TODO add can bus msg
 				CarState.Torque_Req,
 				getTorqueReqCurve(ADCState.Torque_Req_R_Percent),
 				ADCState.Torque_Req_R_Percent);
@@ -224,6 +228,7 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 	if (CheckTSActivationRequest()) {
 		if (readystate == 0 && CarState.allowtsactivation) {
 			DebugMsg("TS Activation requested whilst ready.");
+			CAN_SendDebug(TSR_ID);
 			TSRequested = 1;
 			HVEnableTimer = gettimer();
 			return TSActiveState;
@@ -232,6 +237,7 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 			blinkOutput(TSLED, BlinkFast, 1000);
 			CAN_SendErrorStatus(1, PowerOnRequestBeforeReady, 0);
 			DebugMsg("TS Activation requested whilst not ready.");
+			CAN_SendDebug(TSSNR_ID);
 		}
 	}
 

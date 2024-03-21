@@ -133,7 +133,7 @@ void ResetCanData(volatile CANData *data );
 
 
 char CAN_SendErrors( void );
-
+char CAN_SendDebug(uint16_t id);
 
 char reTransmitError(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength );
 char reTransmitOnCan1(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength );
