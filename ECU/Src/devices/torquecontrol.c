@@ -7,7 +7,7 @@
 
 #include "ecumain.h"
 #include "torquecontrol.h"
-#include "adcecu.h"
+
 #include "brake.h"
 #include "timerecu.h"
 #include "inverter.h"

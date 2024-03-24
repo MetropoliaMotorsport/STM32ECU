@@ -21,7 +21,20 @@ file(GLOB_RECURSE SOURCES
   "Core/Src/*.c"
   "Drivers/STM32H7xx_HAL_Driver/Src/*.c"
   "Middlewares/Third_Party/FreeRTOS/Source/*.c"
+  "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/*.c"
+  "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/*.c"
   "Src/*.c"
+)
+file(GLOB_RECURSE HEADERS
+  "Core/Inc/*.h"
+  "Drivers/STM32H7xx_HAL_Driver/Inc/*.h"
+  "Drivers/STM32H7xx_HAL_Driver/Inc/Legacy/*.h"
+  "Drivers/CMSIS/Device/ST/STM32H7xx/Include/*.h"
+  "Drivers/CMSIS/Include/*.h"
+  "Middlewares/Third_Party/FreeRTOS/Source/include/*.h"
+  "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/*.h"
+  "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/*.h"
+  "Inc/*.h"
 )
 
 # ASM startup file

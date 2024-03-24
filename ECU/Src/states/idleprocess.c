@@ -17,7 +17,7 @@
 #include "output.h"
 #include "power.h"
 #include "debug.h"
-#include "adcecu.h"
+
 #include "canecu.h"
 
 uint32_t OperationalReceive(void) {

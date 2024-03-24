@@ -8,7 +8,7 @@
 #include "ecumain.h"
 #include "dwt_delay.h"
 #include "canecu.h"
-#include "adcecu.h"
+
 #include "errors.h"
 #include "uartecu.h"
 #include "debug.h"

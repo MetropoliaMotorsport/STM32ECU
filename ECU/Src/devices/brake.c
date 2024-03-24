@@ -7,7 +7,7 @@
 
 #include "ecumain.h"
 #include "brake.h"
-#include "adcecu.h"
+
 
 bool getBrakeLight(void) {
 	return (CarState.RegenLight || ADCState.BrakeR >= APPSBrakeLight

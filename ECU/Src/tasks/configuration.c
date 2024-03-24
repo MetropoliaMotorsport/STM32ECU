@@ -10,7 +10,7 @@
 #include "input.h"
 #include "timerecu.h"
 #include "eeprom.h"
-#include "adcecu.h"
+
 #include "semphr.h"
 #include "taskpriorities.h"
 #include "power.h"

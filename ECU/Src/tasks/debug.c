@@ -18,7 +18,7 @@
 #include "uartecu.h"
 #include "taskpriorities.h"
 #include "preoperation.h"
-#include "adcecu.h"
+
 #include "timerecu.h"
 
 #include "lenzeinverter.h"

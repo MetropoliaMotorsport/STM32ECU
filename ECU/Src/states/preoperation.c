@@ -13,7 +13,7 @@
 #include "configuration.h"
 #include "errors.h"
 #include "power.h"
-#include "adcecu.h"
+
 #include "bms.h"
 #include "input.h"
 #include "output.h"

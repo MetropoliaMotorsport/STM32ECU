@@ -9,7 +9,7 @@
 #include "tsactiveprocess.h"
 #include "runningprocess.h"
 #include "idleprocess.h"
-#include "adcecu.h"
+
 #include "inverter.h"
 #include "input.h"
 #include "output.h"

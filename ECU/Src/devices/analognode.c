@@ -16,7 +16,7 @@
 #include "queue.h"
 
 #include "operationalprocess.h"
-#include "adcecu.h"
+
 #include "debug.h"
 #include "errors.h"
 
