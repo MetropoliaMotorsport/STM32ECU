@@ -776,6 +776,12 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
+			"path" : "Src/devices/node_devices.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
 			"path" : "Src/devices/pdm.c",
 			"sourceGroupIndex" : 0
 		},
@@ -897,12 +903,6 @@
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
 			"path" : "Src/states/tsactiveprocess.c",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 0,
-			"path" : "Src/tasks/adcecu.c",
 			"sourceGroupIndex" : 0
 		},
 		{

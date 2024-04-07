@@ -105,110 +105,6 @@ bool processBMSSOC(const uint8_t CANRxData[8], const uint32_t DataLength,
 		return true;
 }
 
-#else
-bool processBMSVoltageData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
-{
-	if ( DeviceState.BMSEnabled )
-	{
-		uint16_t voltage = CANRxData[2]*256+CANRxData[3];
-
-		if (  DataLength == FDCAN_DLC_BYTES_8
-				&& CANRxData[0] == 0
-				&& CANRxData[1] == 0
-				&& CANRxData[4] < 2 // limp byte
-				&& CANRxData[5] == 0
-				&& CANRxData[6] == 0xAB
-				&& CANRxData[7] == 0xCD
-				&& ( voltage > 480 && voltage < 620 ) ) // increased max voltage, so it can be reported better as error if it goes over.
-		{
-			CarState.VoltageBMS = voltage;
-			CarState.LimpRequest = CANRxData[4];
-			//if ( CarState.LimpRequest )
-			//	blinkOutput(BMSLED,LEDBLINK_TWO,LEDBLINKNONSTOP); // start BMS led blinking to indicate limp mode.
-			return true;
-		} else // bad data.
-		{
-			return false;
-		}
-	} else return true;
-}
-
-
-bool processBMSOpMode( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
-{
-	if ( DeviceState.BMSEnabled )
-	{
-//		uint16_t voltage = CANRxData[2]*256+CANRxData[3];
-
-		if ( true // no current validation on this message.
-/*				&& CANRxData[0] == 0
-				&& CANRxData[1] == 0
-				&& CANRxData[4] == 0
-				&& CANRxData[5] == 0
-				&& CANRxData[6] == 0
-				&& CANRxData[7] == 0 */
-	//			&& ( voltage > 480 && voltage < 600 )
-				)
-		{
-			return true;
-		} else // bad data.
-		{
-			return false;
-		}
-	} else return true;
-}
-
-bool processBMSError( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
-{
-    if ( DeviceState.BMSEnabled )
-    {
-  //      uint16_t voltage = CANRxData[2]*256+CANRxData[3];
-
-        if ( true // no current validation on this message.
-        /*                && CANRxData[0] == 0
-         && CANRxData[1] == 0
-         && CANRxData[4] == 0
-         && CANRxData[5] == 0
-         && CANRxData[6] == 0
-         && CANRxData[7] == 0 */
-            //            && ( voltage > 480 && voltage < 600 )
-            )
-        {
-    		CarState.LowestCellV = CANRxData[6]*256+CANRxData[7];
-    		//CarState.HighestCellV =
-
-        	if ( CANRxData[0] != 0 ) // In Safestate.
-        	{
-				setOutputNOW(BMSLED,On);
-        		Shutdown.BMS = false;
-        		Shutdown.BMSReason = CANRxData[1];
-                /*
-                      0 : str := 'undefined';
-                      1 : str := 'overvoltage';
-                      2 : str := 'undervoltage';
-                      3 : str := 'overtemperature';
-                      4 : str := 'undertemperature';
-                      5 : str := 'overcurrent';
-                      6 : str := 'overpower';
-                      7 : str := 'external';
-                      8 : str := 'pec_error';
-                      9 : str := 'Accumulator Undervoltage';
-                      10 : str := 'IVT MOD timeout';
-				*/
-        	} else
-        	{
-         		Shutdown.BMS = true;
-         		Shutdown.BMSReason = 0;
-        	}
-
-            return true;
-        } else // bad data.
-        {
-            return false;
-        }
-    } else return true;
-}
-#endif
 
 void BMSTimeout(uint16_t id) {
 	setOutputNOW(BMSLED, On);
@@ -234,10 +130,6 @@ int receiveBMS(void) {
 		CarState.VoltageBMS = 540; // set an assumed voltage that allows operation.
 		return 1;
 	}
-}
-
-int requestBMS(int nodeid) {
-	return 0; // this is operating cyclically, no extra request needed.
 }
 
 void resetBMS(void) {

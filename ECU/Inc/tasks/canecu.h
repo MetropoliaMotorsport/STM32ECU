@@ -91,6 +91,7 @@ typedef volatile struct CanDataType {
 	uint8_t dlcsize;
 	DataHandler getData;
 	TimeoutHandler doTimeout;
+	uint32_t data;
 	uint32_t timeout;
 	uint8_t  index;
 	uint32_t time;
@@ -111,10 +112,6 @@ uint8_t CANSendSDO( enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub, uin
 char CAN_NMT( uint8_t, uint8_t );
 char CAN_ConfigRequest( uint8_t command, uint8_t success );
 char CANKeepAlive( void );
-uint8_t CANSendPDM( uint8_t highvoltage, uint8_t buzz );
-#ifdef PDMSECONDMESSAGE
-uint8_t CANSendPDMFAN( void );
-#endif
 
 char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode );
 char CAN_SendStatus( char state, char substate, uint32_t errorcode );
@@ -140,15 +137,13 @@ char reTransmitOnCan1(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLen
 
 char CAN_SendTimeBase( void );
 
-char CAN_SendADCminmax( void );
 char BMSBASE_ID( volatile uint32_t *ADC_Data, uint8_t error );
-//char CAN_SendADCVals( void );
 
 int CheckCanError( void );
 
+uint64_t readCanData(CanDataType * datahandle, uint8_t * CANRxData );
 void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLength );
 int receivedCANData( CANData * datahandle );
-
 
 int RegisterCan1Message(CANData * CanMessage);
 int RegisterCan2Message(CANData * CanMessage);

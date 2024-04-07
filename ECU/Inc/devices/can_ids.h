@@ -18,23 +18,7 @@
 #define AdcSimInput_ID			0x608
 
 //Needs to be change due to new hardware
-#define AnalogNode1_ID			(0x680) // (1664)
-#define AnalogNode9_ID			(0x690) // (1680)
-#define AnalogNode10_ID			(0x692) // (1682)
-#define AnalogNode11_ID			(0x694) // (1684)
-#define AnalogNode12_ID			(0x696) // (1686)
-#define AnalogNode13_ID			(0x698) // (1688)
-#define AnalogNode14_ID			(0x69A) // (1690)
-#define AnalogNode15_ID			(0x69C) // (1692)
-#define AnalogNode16_ID			(0x69E) // (1694)
-#define AnalogNode17_ID			(0x6A0) // (1696)
-#define AnalogNode18_ID			(0x6A2) // (1698)
 
-#define PowerNode33_ID			(0x6AE) // 1710 0x6AE
-#define PowerNode34_ID			(0x6AF) // 17110x6AF
-#define PowerNode35_ID			(0x6B0) // 1712
-#define PowerNode36_ID			(0x6B1) // 1713
-#define PowerNode37_ID			(0x6B2) // 1714
 ////////////////////////////////////////
 
 
