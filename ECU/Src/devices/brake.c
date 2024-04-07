@@ -31,13 +31,6 @@ uint8_t getBrakeRTDM(void) {
 			|| ADCState.BrakeF >= RTDMBRAKEPRESSURE;
 }
 
-uint8_t getBrake(void) {
-	if (DeviceState.BrakeLight == OPERATIONAL)
-		return (ADCState.BrakeR + ADCState.BrakeF) / 2;
-	else
-		return APPSBrakeHard;
-}
-
 void resetBrake(void) {
 	//DeviceState.BrakeLight = Offline;
 }

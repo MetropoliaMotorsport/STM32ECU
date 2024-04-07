@@ -2,14 +2,30 @@
 #ifndef CAN_IDS_H
 #define CAN_IDS_H
 
+// Device IDs
+////////////////////////////////////////
+
 #define BMS_ID					0x008
 #define BMSVOLT_ID				BMS_ID+3 // 0xB is voltage.
 #define BMSSOC_ID				0x97
 #define FLSpeed_COBID			0x71 // 112 // 0x70 orig
 #define FRSpeed_COBID			0x70 // 113 // 0x71 orig
 
-#define PDM_ID					0x520
-#define MEMORATOR_ID			0x07B
+#define APPS1_ID				0x00
+#define APPS2_ID				0x01
+#define BrakeFront_ID			0x02
+#define BrakeRear_ID			0x03
+#define SteeringAngle_ID		0x04
+#define BPPS_ID					0x05
+#define WaterLevel_ID			0x06
+#define HeavesFront_ID			0x07
+#define HeavesRear_ID			0x09
+#define Rolls1_ID				0x08
+#define Rolls2_ID				0x10
+
+
+// Some IDs
+////////////////////////////////////////
 
 #define NodeErr_ID        		0x600
 #define NodeCmd_ID				0x602

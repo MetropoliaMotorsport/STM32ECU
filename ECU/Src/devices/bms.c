@@ -18,8 +18,7 @@
 // 0x9   byte 6-7 last two.
 
 #ifdef HPF2023
-bool processBMSSOC(const uint8_t CANRxData[8], const uint32_t DataLength,
-		const CANData *datahandle);
+bool processBMSSOC(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
 #else
 bool processBMSVoltageData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
 bool processBMSOpMode( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
