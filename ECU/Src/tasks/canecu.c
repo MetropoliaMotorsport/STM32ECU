@@ -23,10 +23,6 @@
 #include "eeprom.h"
 #include "inverter.h"
 
-#ifdef ONECAN
-	#define sharedCAN
-#endif
-
 FDCAN_HandleTypeDef *hfdcan2p = NULL;
 
 //variables that need to be accessible in ISR's
@@ -396,14 +392,13 @@ void FDCAN1_start(void) {
 		// Initialization Error
 		Error_Handler();
 	}
-#ifndef ONECAN
+
 	hfdcan2p = &hfdcan2;
 	if (HAL_FDCAN_Init(hfdcan2p) != HAL_OK) // if can2 not initialised before filters set they are lost
 			{
 		// Initialization Error
 		Error_Handler();
 	}
-#endif
 
 	HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_ACCEPT_IN_RX_FIFO0,
 	FDCAN_ACCEPT_IN_RX_FIFO0, DISABLE, DISABLE);
@@ -411,7 +406,6 @@ void FDCAN1_start(void) {
 	HAL_FDCAN_ConfigRxFifoOverwrite(&hfdcan1, FDCAN_RX_FIFO0,
 	FDCAN_RX_FIFO_OVERWRITE);
 
-#ifndef ONECAN
 	/* Start the FDCAN module */
 	if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) {
 		// Start Error
@@ -426,37 +420,17 @@ void FDCAN1_start(void) {
 		// Notification Error
 		Error_Handler();
 	}
-#endif
+
 }
 
 void FDCAN2_start(void) {
-#ifdef ONECAN
-  hfdcan2p = &hfdcan1;
-#else
+
 	HAL_FDCAN_ConfigGlobalFilter(hfdcan2p,
 	FDCAN_IT_TIMEOUT_OCCURRED | FDCAN_ACCEPT_IN_RX_FIFO1,
 	FDCAN_ACCEPT_IN_RX_FIFO1, DISABLE, DISABLE);
 	HAL_FDCAN_ConfigRxFifoOverwrite(hfdcan2p, FDCAN_RX_FIFO1,
 	FDCAN_RX_FIFO_OVERWRITE);
-#endif
 
-#ifdef ONECAN
-  // Start the FDCAN module
-  if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK)
-  {
-    //  Start Error
-    Error_Handler();
-  }
-
-  // start can receive interrupt for first CAN's messages
-
-  if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_FLAG_ERROR_PASSIVE | FDCAN_IT_TIMEOUT_OCCURRED | FDCAN_IT_TX_COMPLETE | FDCAN_IT_RX_FIFO0_NEW_MESSAGE , 0) != HAL_OK)
-  {
-    // Notification Error
-    Error_Handler();
-  }
-
-#else
 	// Start the FDCAN module
 	if (HAL_FDCAN_Start(hfdcan2p) != HAL_OK) {
 		//  Start Error
@@ -471,21 +445,7 @@ void FDCAN2_start(void) {
 		// Notification Error
 		Error_Handler();
 	}
-#endif
-}
 
-void resetCanTx(volatile uint8_t CANTxData[8]) {
-	for (int i = 0; i < 8; i++) {
-		CANTxData[i] = 0;
-	}
-}
-
-int getNMTstate(volatile CANData *data) {
-
-	if (data->dlcsize == 1) {
-
-	}
-	return 0;
 }
 
 uint8_t CAN1Send(uint16_t id, uint8_t dlc, const uint8_t *pTxData) {
@@ -575,9 +535,8 @@ char reTransmitError(uint32_t canid, const uint8_t *CANRxData,
 
 char reTransmitOnCan1(uint32_t canid, const uint8_t *CANRxData,
 		uint32_t DataLength) {
-#ifndef sharedCAN // only retransmit if can1 and can2 are not sharing lines.
+// only retransmit if can1 and can2 are not sharing lines.
 	CAN1Send(canid, DataLength >> 16, CANRxData); // return values.
-#endif
 	return 0;
 }
 
@@ -588,9 +547,8 @@ char CAN_NMTSyncRequest(void) {
 
 	uint8_t CANTxData[1] = { 1 };
 	CAN1Send(0x80, 0, CANTxData); // return values.
-#ifndef sharedCAN
 	CAN2Send(0x80, 0, CANTxData); // return values.
-#endif
+
 	return 1;
 	// send to both buses.
 }
@@ -804,9 +762,7 @@ char CAN_SendADC(volatile uint32_t *ADC_Data, uint8_t error) {
 #endif
 }
 
-char CAN_SendADCminmax(void) {
-	return 0;
-}
+
 
 // send nmt command to all nodes.
 
@@ -820,25 +776,18 @@ char CAN_SendADCminmax(void) {
  */
 
 char CAN_NMT(uint8_t command, uint8_t node) {
-#ifndef sharedCAN
+
 	uint8_t CANTxData2[2] = { command, node }; // 0 sends command to all nodes.
 	CAN2Send(0, 2, CANTxData2); // return values.
-#endif
+
 //	DWT_Delay(100); // delay of ~ > 80us needed, or messages entangle and error frame somehow if both can outputs are connected. unknown bug.
 	uint8_t CANTxData[2] = { command, node }; // 0 sends command to all nodes.
 	CAN1Send(0, 2, CANTxData); // send command to both buses.
 	return 1;
 }
 
-char CAN_ConfigRequest(uint8_t command, uint8_t success) {
-	uint8_t CANTxData[3] = { 0x21, command, success }; // 0 sends command to all nodes.
-	CAN1Send(0x20, 3, CANTxData); // send command to both buses.
-	return 1;
-}
 
 char CAN_SendErrors(void) {
-#ifndef sharedCAN
-#endif
 
 	uint8_t CANTxData[8] = { 0, 0,
 	// TODO get inverer state.
@@ -890,101 +839,9 @@ char CAN_SendTorq2(int16_t val1, uint16_t val2, uint16_t val3, int16_t val4) {
 	return CAN1Send(0x7CE, 8, CANTxData);
 }
 
-char CANLogDataSlow(void) {
-	return 0;
-}
-
-char CANLogDataFast(void) {
-	// build data logging blocks
-	uint8_t CANTxData[8];
-
-	resetCanTx(CANTxData);
-	CANTxData[0] = ADCState.BrakeF; 	//brk_press_f can0 0x7C6 32,16bee
-	CANTxData[1] = ADCState.BrakeR; 	//brk_press_r can0 0x7C6 48,16be
-	storeBEint16(ADCState.SteeringAngle, &CANTxData[2]);
-
-	CANTxData[4] = ADCState.Torque_Req_L_Percent / 10;
-	CANTxData[5] = ADCState.Torque_Req_R_Percent / 10;
-	CANTxData[6] = ADCState.Regen_Percent / 10;
-
-// 	CANTxData[7] = highest coolant temp?
-
-	CAN1Send(0x7C6, 8, CANTxData); // lagging in sending
-
-	resetCanTx(CANTxData);
-
-	for (int i = 0; i < MOTORCOUNT; i++) {
-		storeBEint16(getInvState(i)->Speed, &CANTxData[i * 2]);
-	}
-
-	CAN1Send(0x7C7, 8, CANTxData);
-
-//	resetCanTx(CANTxData);
-
-//	CAN1Send( 0x7C8, 8, CANTxData );
-
-	resetCanTx(CANTxData);
-
-	for (int i = 0; i < MOTORCOUNT; i++) {
-		int16_t torquereqint = getInvState(i)->Torque_Req * 90;
-		storeBEint16(torquereqint, &CANTxData[i * 2]);
-	}
-
-	CAN1Send(0x7C9, 8, CANTxData);
-	resetCanTx(CANTxData);
-
-	// not being sent in current simulink, but is set?
-
-	resetCanTx(CANTxData);
-	for (int i = 0; i < MOTORCOUNT; i++) {
-		storeBEint16(getInvState(i)->InvTorque, &CANTxData[i * 2]);
-	}
-
-	CAN1Send(0x7CA, 8, CANTxData);
-
-	resetCanTx(CANTxData);
-
-	// IVT
-
-	storeBEint16(CarState.Current, &CANTxData[0]);
-#if 0
-#ifdef IVTEnable
-	storeBEint16(CarState.VoltageINV, &CANTxData[2]);
-	storeBEint16(CarState.VoltageIVTAccu, &CANTxData[6]);
-#endif
-#endif
-
-	storeBEint16(getInvState(0)->InvVolt, &CANTxData[2]);
-	storeBEint16(getInvState(2)->InvVolt, &CANTxData[4]);
-
-	storeBEint16(CarState.VoltageBMS, &CANTxData[6]);
-	CAN1Send(0x7CB, 8, CANTxData);
-
-	resetCanTx(CANTxData);
-	//CANTxData[0] = (int8_t)CarState.Current;
-	for (int i = 0; i < MOTORCOUNT; i++)
-		CANTxData[1 + i] = (int8_t) getInvState(i)->InvCurrent;
-
-	storeBEint16(CarState.LowestCellV, &CANTxData[5]);
-
-	CAN1Send(0x7CC, 8, CANTxData);
-
-	resetCanTx(CANTxData);
-	for (int i = 0; i < MOTORCOUNT; i++) {
-		CANTxData[i] = getInvState(i)->InvTemp;
-		CANTxData[i + 4] = getInvState(i)->MotorTemp;
-	}
-
-	CAN1Send(0x7CD, 8, CANTxData);
-
-	CAN_SendTimeBase();
-
-	return 0;
-}
 
 
-
-uint64_t readCanData(CanDataType * datahandle, uint8_t * CANRxData ){
+uint64_t readCanData(CANData * datahandle, uint8_t * CANRxData ){
 	uint64_t messaga;
 	uint16_t data = 0;
 	for (int i = 0; i < datahandle->dlcsize; i++) {
@@ -1120,9 +977,7 @@ int RegisterCan1Message(CANData *CanMessage) {
 
 int RegisterCan2Message(CANData *CanMessage) {
 	char str[80];
-#ifdef sharedCAN
-	return RegisterCan1Message(CanMessage);
-#else
+
 	if (CanMessage != NULL && CanMessage->id != 0) {
 		if (CanBUS2Messages[CanMessage->id] != NULL) {
 			snprintf(str, 80, "Tried to add a duplicate CAN id %3X on bus0!",
@@ -1138,7 +993,6 @@ int RegisterCan2Message(CANData *CanMessage) {
 		return 0;
 	} else
 		return 1;
-#endif
 }
 
 bool processCan1Message(FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]) {
@@ -1378,14 +1232,12 @@ int CheckCanError(void) {
 	HAL_FDCAN_GetProtocolStatus(&hfdcan2, &CAN2Status);
 
 	static uint8_t offcan1 = 0;
-#ifndef ONECAN
 	static uint8_t offcan2 = 0;
-#endif
+
 #ifdef RECOVERCAN
 	static uint32_t offcan1time = 0;
-#ifndef ONECAN
 	static uint32_t offcan2time = 0;
-#endif
+
 #endif
 
 	uint32_t curtick = gettimer();
@@ -1413,6 +1265,8 @@ int CheckCanError(void) {
 //		  result +=1;
 	}
 
+
+
 #ifdef RECOVERCAN
 	if (CAN1Status.BusOff && offcan1time + 1000 > curtick && offcan1 < 2) {
 		if (HAL_FDCAN_Start(&hfdcan1) != HAL_OK) // add a 5 cycle counter before try again? check in can1 send to disable whilst bus not active.
@@ -1437,7 +1291,7 @@ int CheckCanError(void) {
 	}
 #endif
 
-#ifndef ONECAN
+
 	if (CAN2Status.BusOff || CAN2Status.ErrorPassive) // detect passive error instead and try to stay off bus till clears?
 			{
 		//	Errors.ErrorPlace = 0xAA;
@@ -1455,7 +1309,7 @@ int CheckCanError(void) {
 		Errors.ErrorPlace = 0xF3;
 		if (!msg2) {
 			msg2 = true;
-			LogError("CANBUS0 Down");
+			LogError("CANBUS2 Down");
 		}
 //		  result +=1;
 	} else {
@@ -1468,7 +1322,7 @@ int CheckCanError(void) {
 				{
 			// Start Error
 			Errors.ErrorPlace = 0xF4;
-			LogError("CANBUS0 Offline");
+			LogError("CANBUS2 Offline");
 			result += 8;
 		} else {
 			offcan2 = 2;
@@ -1478,14 +1332,12 @@ int CheckCanError(void) {
 	}
 
 	if (offcan2 == 2 && offcan2time + 6000 > curtick && !CAN2Status.BusOff) {
-		LogError("CANBUS0 Up");
+		LogError("CANBUS2 Up");
 		DeviceState.CAN1 = OPERATIONAL;
 		offcan2 = 0;
 		msg2 = false;
 	}
 #endif
-#endif
-
 	return result;
 
 }
@@ -1515,9 +1367,8 @@ int initCAN(void) {
 	bus1TXDone = xSemaphoreCreateMutex();
 
 	MX_FDCAN1_Init();
-#ifndef ONECAN
 	MX_FDCAN2_Init();
-#endif
+
 
 	FDCAN1_start(); // sets up can ID filters and starts can bus 1
 	FDCAN2_start(); // starts up can bus 2

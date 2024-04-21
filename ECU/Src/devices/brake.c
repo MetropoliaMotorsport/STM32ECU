@@ -7,28 +7,29 @@
 
 #include "ecumain.h"
 #include "brake.h"
+#include "node_device.h"
 
 
 bool getBrakeLight(void) {
-	return (CarState.RegenLight || ADCState.BrakeR >= APPSBrakeLight
-			|| ADCState.BrakeF >= APPSBrakeLight);
+	return (CarState.RegenLight ||BrakeRear.data >= APPSBrakeLight
+			|| BrakeFront.data >= APPSBrakeLight);
 }
 
 bool getBrakeLow(void) {
-//	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && ADCState.Regen_Percent < 500 ) return true;
-	return (ADCState.BrakeR < APPSBrakeRelease
-			|| ADCState.BrakeF < APPSBrakeRelease);
+//	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && BPPS.data_Percent < 500 ) return true;
+	return (BrakeRear.data < APPSBrakeRelease
+			|| BrakeFront.data < APPSBrakeRelease);
 }
 
 uint8_t getBrakeHigh(void) {
-//	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && ADCState.Regen_Percent > 500 ) return true;
-	return ADCState.BrakeR >= APPSBrakeHard || ADCState.BrakeF >= APPSBrakeHard;
+//	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && BPPS.data_Percent > 500 ) return true;
+	return BrakeRear.data >= APPSBrakeHard || BrakeFront.data >= APPSBrakeHard;
 }
 
 uint8_t getBrakeRTDM(void) {
-//	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && ADCState.Regen_Percent > 500 ) return true;
-	return ADCState.BrakeR >= RTDMBRAKEPRESSURE
-			|| ADCState.BrakeF >= RTDMBRAKEPRESSURE;
+//	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && BPPS.data_Percent > 500 ) return true;
+	return BrakeRear.data >= RTDMBRAKEPRESSURE
+			|| BrakeFront.data >= RTDMBRAKEPRESSURE;
 }
 
 void resetBrake(void) {

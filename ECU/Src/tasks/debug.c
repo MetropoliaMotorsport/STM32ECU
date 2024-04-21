@@ -5,6 +5,9 @@
  *      Author: visa
  */
 
+
+#ifdef DEBUG
+
 #include "debug.h"
 #include "ecumain.h"
 #include "inverter.h"
@@ -23,7 +26,7 @@
 
 #include "lenzeinverter.h"
 #include "inverter.h"
-#include "analognode.h"
+
 #include "output.h"
 
 // freeRTOS
@@ -148,14 +151,7 @@ bool redraw;
 uint8_t uartWait(char *ch) {
 	if (!UART_Receive(DEBUGUART, (uint8_t*) ch, 1)) {
 #if 0
-		int rttch = SEGGER_RTT_GetKey();
-
-		if ( rttch > 0  )
-		{
-			redraw = false;
-			*ch = rttch;
-			return 1;
-		}
+		
 		#endif
 		return 0;
 	}
@@ -166,13 +162,7 @@ uint8_t uartWait(char *ch) {
 
 	while (1) {
 #if 0
-		int rttch = SEGGER_RTT_GetKey();
-
-		if ( rttch > 0  )
-		{
-			*ch = rttch;
-			return 1;
-		}
+	
 		#endif
 
 		if (UART_WaitRXDone( DEBUGUART, 0)) {
@@ -745,24 +735,6 @@ static void debugShutdown(const char *tkn2, const char *tkn3) {
 	}
 }
 
-extern CANData AnalogNode1;
-#ifndef HPF2023
-extern CANData  AnalogNode9;
-#endif
-extern CANData AnalogNode10;
-extern CANData AnalogNode11;
-#ifndef HPF2023
-extern CANData  AnalogNode12;
-extern CANData  AnalogNode13;
-#endif
-#ifndef HPF2023
-extern CANData  AnalogNode14;
-extern CANData  AnalogNode15;
-extern CANData  AnalogNode16;
-extern CANData  AnalogNode17;
-extern CANData  AnalogNode18;
-#endif
-
 static void debugSensors(const char *tkn2) {
 	{
 		xEventGroupSync(xCycleSync, 0, 1, portMAX_DELAY); // wait for cycle to sync readings.
@@ -796,7 +768,7 @@ static void debugSensors(const char *tkn2) {
 				gettimer());
 
 		UARTprintf("Steering Angle %d Duty %d Freq %d State %s\r\n",
-				ADCState.SteeringAngle, ADCState.SteeringDuty,
+				SteeringAngle.data, ADCState.SteeringDuty,
 				ADCState.SteeringFreq, getDeviceStatusStr(DeviceState.PWM));
 
 		// anode 1
@@ -1611,4 +1583,5 @@ int initDebug(void) {
 
 	return 0;
 }
+#endif
 

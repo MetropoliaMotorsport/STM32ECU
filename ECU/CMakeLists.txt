@@ -48,3 +48,5 @@ add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
   COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_NAME}.hex
   COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_NAME}.bin
 )
+
+"C:\Program Files\CMake\bin\cmake.EXE" -DCMAKE_BUILD_TYPE=Debug -DPRESET_NAME=debug -DCMAKE_INSTALL_PREFIX=C:/Users/dovlatib/Documents/STM32ECU/ECU/build/debug/install -DCMAKE_TOOLCHAIN_FILE:FILEPATH=C:/Users/dovlatib/Documents/STM32ECU/ECU/cmake/gcc-arm-none-eabi.cmake -DCMAKE_MAKE_PROGRAM=C:/Tools/ninja/ninja.exe -SC:/Users/dovlatib/Documents/STM32ECU/ECU -BC:/Users/dovlatib/Documents/STM32ECU/ECU/build/debug/build -G Ninja

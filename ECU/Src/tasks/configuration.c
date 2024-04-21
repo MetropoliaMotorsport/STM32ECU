@@ -10,12 +10,17 @@
 #include "input.h"
 #include "timerecu.h"
 #include "eeprom.h"
-
+#include "node_device.h"
 #include "semphr.h"
 #include "taskpriorities.h"
 #include "power.h"
 #include "inverter.h"
 #include "debug.h"
+#include "canecu.h"
+
+////////////////////////////////////////
+
+////////////////////////////////////////
 
 // ADC conversion buffer, should be aligned in memory for faster DMA?
 typedef struct {
@@ -165,17 +170,18 @@ bool doPedalCalibration(uint16_t input) {
 
 	bool baddata = false;
 
-	if (ADCState.APPSL > (UINT16_MAX * ADCMAXTHRESH) || ADCState.APPSL < 0 // (UINT16_MAX*ADCMINTHRESH)
+	//TODO implement
+	if (APPS1.data > (UINT16_MAX * ADCMAXTHRESH) || APPS1.data < 0 // (UINT16_MAX*ADCMINTHRESH)
 			) {
 		baddata = true;
 	}
 
-	if (ADCState.APPSR > (UINT16_MAX * ADCMAXTHRESH) || ADCState.APPSR < 0 //  (UINT16_MAX*ADCMINTHRESH)
+	if (APPS2.data > (UINT16_MAX * ADCMAXTHRESH) || APPS2.data < 0 //  (UINT16_MAX*ADCMINTHRESH)
 			) {
 		baddata = true;
 	}
 
-	if (ADCState.Regen > (UINT16_MAX * ADCMAXTHRESH) || ADCState.Regen < 0 //(UINT16_MAX*ADCMINTHRESH)
+	if (BPPS.data > (UINT16_MAX * ADCMAXTHRESH) || BPPS.data < 0 //(UINT16_MAX*ADCMINTHRESH)
 			) {
 		baddata = true;
 	}
@@ -188,20 +194,20 @@ bool doPedalCalibration(uint16_t input) {
 //			return true;
 	}
 
-	setMin(&APPSL_min, ADCState.APPSL);
-	setMin(&APPSR_min, ADCState.APPSR);
-	setMin(&REG_min, ADCState.Regen);
+	setMin(&APPSL_min, APPS1.data);
+	setMin(&APPSR_min, APPS2.data);
+	setMin(&REG_min, BPPS.data);
 
-	setMax(&APPSL_max, ADCState.APPSL);
-	setMax(&APPSR_max, ADCState.APPSR);
-	setMax(&REG_max, ADCState.Regen);
+	setMax(&APPSL_max, APPS1.data);
+	setMax(&APPSR_max, APPS2.data);
+	setMax(&REG_max, BPPS.data);
 
 	int32_t APPSL_close = abs(APPSL_max - APPSL_min) < 500 ? 1 : 0;
 	int32_t APPSR_close = abs(APPSR_max - APPSR_min) < 500 ? 1 : 0;
 	int32_t REG_close = abs(REG_max - REG_min) < 50 ? 1 : 0;
 
-	snprintf(str, 21, "L%5d R%5d B%5d", ADCState.APPSL, ADCState.APPSR,
-			ADCState.Regen);
+	snprintf(str, 21, "L%5d R%5d B%5d", APPS1.data, APPS2.data,
+			BPPS.data);
 
 	if (APPSL_close || APPSR_close) {
 		if (debugconfig && redraw) {
@@ -217,16 +223,16 @@ bool doPedalCalibration(uint16_t input) {
 		}
 	} else {
 		int APPSL = 100.0 / (APPSL_max - APPSL_min)
-				* (ADCState.APPSL - APPSL_min);
+				* (APPS1.data - APPSL_min);
 		if (APPSL > 99)
 			APPSL = 99;
 
 		int APPSR = 100.0 / (APPSR_max - APPSR_min)
-				* (ADCState.APPSR - APPSR_min);
+				* (APPS2.data - APPSR_min);
 		if (APPSR > 99)
 			APPSR = 99;
 
-		int REGEN = 100.0 / (REG_max - REG_min) * (ADCState.Regen - REG_min);
+		int REGEN = 100.0 / (REG_max - REG_min) * (BPPS.data - REG_min);
 		if (APPSR > 99)
 			APPSR = 99;
 
@@ -468,14 +474,14 @@ bool DoMenu(uint16_t input) {
 		snprintf(MenuLines[1 + MENU_STEERING], sizeof(MenuLines[0]),
 				"%cSteeringCalib %+4d",
 				(menu.selection == MENU_STEERING) ? '>' : ' ',
-				ADCState.SteeringAngle);
+				SteeringAngle.data);
 
 		if (menu.selection == MENU_STEERING && input == KEY_ENTER) {
-			if (ADCState.SteeringAngleAct != 0xFFFF) {
-				getEEPROMBlock(0)->steerCalib = 180 - ADCState.SteeringAngleAct;
+			if (SteeringAngle.data != 0xFFFF) {
+				getEEPROMBlock(0)->steerCalib = 180 - SteeringAngle.data;
 				// value should update on display. add a set message.
 				DebugPrintf("Steering angle calibrated to offset %d",
-						180 - ADCState.SteeringAngleAct);
+						180 - SteeringAngle.data);
 			} else {
 				DebugPrintf("Steering angle no data to calibrate");
 			}
@@ -618,7 +624,7 @@ void ConfigTask(void *argument) {
 				if (ECUConfigdata[0] != 0) {
 					switch (ECUConfigdata[0]) {
 					case 2:
-						CAN_SendADCminmax();
+						//CAN_SendADCminmax();
 						break;
 					case 3:
 						// toggle HV.

@@ -1,0 +1,20 @@
+1) Watchdog does nothing
+2) 
+DO4 LED TS Ready
+DO3 LED RDTDM
+DI11 LV Power On
+DT13 RDTM button
+DI8 TS On button
+DI4 LED Ts off
+DI7 Steering wheel Interrupt
+DI6 Steering wheel Position Signal
+
+Uses 
+
+CAN0
+CAN1
+I2C3 - screen
+USART1
+USART3 - st-link
+I2C4
+I2C2 - eeprom

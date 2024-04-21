@@ -157,12 +157,14 @@ bool processPNodeAckData(const uint8_t CANRxData[8], const uint32_t DataLength,
 CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, PNode33Timeout, NODETIMEOUT }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
 CANData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
 #endif
-CANData PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4,
+
+/////////////////////////////////////////////////////////////////////////
+/*CANData PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4,
 		processPNode34Data, NULL, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
 CANData PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7,
 		processPNode36Data, NULL, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
 CANData PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 4,
-		processPNode37Data, PNode37Timeout, NODETIMEOUT }; // [?], Current, TSAL.
+		processPNode37Data, PNode37Timeout, NODETIMEOUT }; // [?], Current, TSAL.*/
 
 int sendPowerNodeErrReset(uint8_t id, uint8_t channel);
 

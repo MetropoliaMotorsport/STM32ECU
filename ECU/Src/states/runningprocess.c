@@ -17,7 +17,7 @@
 #include "output.h"
 #include "inverter.h"
 #include "debug.h"
-
+#include "node_device.h"
 #include "imu.h"
 
 uint16_t PrintRunning(char *title) {
@@ -25,7 +25,7 @@ uint16_t PrintRunning(char *title) {
 
 	sprintf(str, "%-6s %8s %3liv", title, getCurTimeStr(), CarState.VoltageBMS);
 
-	int Torque = ADCState.Torque_Req_R_Percent / 10;
+	int Torque = APPS1.data / 10;
 	if (Torque > 99)
 		Torque = 99;
 
@@ -39,13 +39,13 @@ uint16_t PrintRunning(char *title) {
 
 	char angdir = ' ';
 
-	if (ADCState.SteeringAngle < 0)
+	if (SteeringAngle.data < 0)
 		angdir = 'L';
-	if (ADCState.SteeringAngle > 0)
+	if (SteeringAngle.data > 0)
 		angdir = 'R';
 
 	sprintf(str, "Spd:%3likmh Ang:%3d%c", (ActualSpeed),
-			abs(ADCState.SteeringAngle), angdir);
+			abs(SteeringAngle.data), angdir);
 	return 0;
 }
 
@@ -53,8 +53,8 @@ uint16_t PrintBrakeBalance(void) {
 	char str[255];
 
 	if (CarState.brake_balance < 255) {
-		sprintf(str, "Bal: %.3dF %.3dR (%.2d%%)", ADCState.BrakeF,
-				ADCState.BrakeR, CarState.brake_balance);
+		sprintf(str, "Bal: %.3dF %.3dR (%.2d%%)", BrakeFront.data,
+				BrakeRear.data, CarState.brake_balance);
 	} else {
 		sprintf(str, "Bal: Press Brakes");
 	}
@@ -153,7 +153,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 		allowstop = 0;
 	}
 
-	if (ADCState.Regen_Percent < (REGENMINIMUM * 10)
+	if (BPPS.data < (REGENMINIMUM * 10)
 			&& CheckRTDMActivationRequest()) {
 		blinkOutput(RTDMLED, BlinkFast, 1000);
 		DebugMsg("Disalowing regen");
@@ -253,15 +253,15 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 
 		if (CarState.AllowRegen && CarState.LimpActive == 0) // only check for regen if alowed and not in limp.
 				{
-			if (ADCState.Regen_Percent > (REGENMINIMUM * 10)
+			if (BPPS.data > (REGENMINIMUM * 10)
 					&& getEEPROMBlock(0)->Regen > 0) // no torque request, but we do have a regen request, return that.
 							{
 				//if ( getEEPROMBlock(0)->Regen == 2 )
-				//	doRegen(ADCState.Regen_Percent, ADCState.SteeringAngle, &adj);
+				//	doRegen(BPPS.data_Percent, SteeringAngle.data, &adj);
 				//else
 				{
 					torque_req = -(((getEEPROMBlock(0)->regenMax
-							* ADCState.Regen_Percent)) / 1000);
+							* BPPS.data)) / 1000);
 				}
 				if (torque_req < 0)
 					CarState.RegenLight = true;
@@ -274,7 +274,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 			nextmsg = curtick + 1000;
 			DebugPrintf("Current req %f pedals %lu %lu %lu brakes %lu %lu", //TODO make can message
 					torque_req, ADCState.Torque_Req_R_Percent,
-					ADCState.Torque_Req_L_Percent, ADCState.Regen_Percent,
+					ADCState.Torque_Req_L_Percent, BPPS.data_Percent,
 					ADCState.BrakeF, ADCState.BrakeR);
 		}
 
@@ -290,7 +290,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 		int8_t adjtorque = adj.RL;
 
 		uint8_t CANTxData[8] = { ADCState.Torque_Req_L_Percent / 10,
-				ADCState.Regen_Percent / 10, CarState.LimpActive << 1
+				BPPS.data_Percent / 10, CarState.LimpActive << 1
 						| CarState.AllowRegen, getEEPROMBlock(0)->Regen,
 				ADCState.BrakeF, ADCState.BrakeR, inttorque, adjtorque };
 

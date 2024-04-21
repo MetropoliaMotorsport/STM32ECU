@@ -13,7 +13,7 @@
 #include "configuration.h"
 #include "errors.h"
 #include "power.h"
-
+#include "node_device.h"
 #include "bms.h"
 #include "input.h"
 #include "output.h"
@@ -337,10 +337,10 @@ int PreOperationState(uint32_t OperationLoops) {
 			sprintf(str,"A3 %.5lu %.5lu %.5lu", ADC_Data[3], ADC_Data[4], ADC_Data[5]);
 #else
 			sprintf(str, "L%3d%% R%3d%% B%3d%% ",
-					ADCState.Torque_Req_L_Percent / 10,
-					ADCState.Torque_Req_R_Percent / 10,
-					ADCState.Regen_Percent / 10);
-			sprintf(str, "Ang %d", ADCState.SteeringAngle);
+					APPS1.data / 10,
+					APPS2.data / 10,
+					BPPS.data / 10);
+			sprintf(str, "Ang %d", SteeringAngle.data);
 #endif
 		}
 	} else {

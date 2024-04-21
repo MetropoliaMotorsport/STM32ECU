@@ -11,6 +11,8 @@
 #include <stdbool.h>
 #include "freertos.h"
 
+#define DEBUG
+
 //#define WATCHDOG
 
 //#define TWOWHEELS
@@ -202,9 +204,6 @@
 //#define RETRANSMITBADDATA
 
 // Transmit error messages and status on 2nd CANBUS also.
-#ifndef ONECAN
-#define CAN2ERRORSTATUS 0
-#endif
 
 // Allow a 450ms window of brake + apps before throttle is cut.
 #define APPSALLOWBRAKE
@@ -218,7 +217,7 @@
 #define RTDMStopTime    3 // 3 seconds from entering RTDM before stop button active.
 
 // Try to restart CANBUS if ECU goes offbus.
-#define RECOVERCAN
+#define RECOVERCAN 
 
 // Do not send any torque request to inverters, for bench testing safely.
 //#define NOTORQUEREQUEST
@@ -376,24 +375,34 @@
 
 extern volatile uint32_t ADCloops;
 
+typedef enum {TEST, MAX, AUTOCROSS, ENDURANCE} MODE;
+
 typedef struct {
 	uint8_t brake_balance;
 
 	uint8_t TorqueVectoring;
 
 	float Torque_Req;
-	uint8_t Torque_Req_Max;
-	uint8_t Torque_Req_CurrentMax;
 	uint32_t PowerLimit;
 	bool AllowTorque;
 	bool AllowRegen;
-	uint8_t DrivingMode;
+	
 	uint8_t PedalProfile;
 	bool RegenLight;
 
 	uint8_t FanPowered;
 
 	uint8_t APPSstatus;
+
+	//////////////////////// Vehicle Mode
+	MODE DrivingMode;					// Vehicle Mode Selection
+	uint8_t Torque_Req_Max; 			// Maximum Torque Requested
+	uint8_t Torque_Req_CurrentMax; 		// Current Maximum Torque Requested
+	//////////////////////// Vehicle Dynamics Control
+	bool AllowTV;						// Allow Torque Vectoring
+	bool AllowTC;						// Allow Traction Control
+	uint8_t PowerBalance; 				// 0-100% power balance between front and rear.
+	////////////////////////
 
 	uint8_t LimpRequest;
 	uint8_t LimpActive;

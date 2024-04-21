@@ -1,3 +1,0 @@
-C:/Users/dovla.DESKTOP-S1IGPJL/Documents/STM32ECU/ECU/build/debug/build/CMakeFiles/ECU.elf.dir
-C:/Users/dovla.DESKTOP-S1IGPJL/Documents/STM32ECU/ECU/build/debug/build/CMakeFiles/edit_cache.dir
-C:/Users/dovla.DESKTOP-S1IGPJL/Documents/STM32ECU/ECU/build/debug/build/CMakeFiles/rebuild_cache.dir

@@ -17,7 +17,7 @@
 #include "output.h"
 #include "power.h"
 #include "debug.h"
-
+#include "node_device.h"
 #include "canecu.h"
 
 uint32_t OperationalReceive(void) {
@@ -110,14 +110,15 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 
 	uint32_t curtime = gettimer();
 
-	if (CarState.allowtsactivation)
+	if (CarState.allowtsactivation){
 		PrintRunning("TS:Off");
-		Can_SendDebug(TSO_ID);
+		Can_SendDebug(TSO_ID);}
 		//TODO add can bus msg
-	else
+	else{
 		PrintRunning("TS:BAD");
 		Can_SendDebug(TSB_ID);
 		//TODO add can bus msg
+		}
 
 
 	uint32_t received = OperationalReceive();
@@ -192,8 +193,8 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 	if (abs(lastreq - CarState.Torque_Req) > 10) {
 		DebugPrintf("Torquereq %d for Curve adj %d Act %d\r\n", //TODO add can bus msg
 				CarState.Torque_Req,
-				getTorqueReqCurve(ADCState.Torque_Req_R_Percent),
-				ADCState.Torque_Req_R_Percent);
+				getTorqueReqCurve(APPS1.data),
+				APPS1.data);
 	}
 
 // allow APPS checking before RTDM
@@ -205,9 +206,9 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 	if (curtick > nextmsg) {
 		nextmsg = curtick + 1000;
 		DebugPrintf("Current req %f pedals %lu %lu %lu brakes %lu %lu",
-				CarState.Torque_Req, ADCState.Torque_Req_R_Percent,
-				ADCState.Torque_Req_L_Percent, ADCState.Regen_Percent,
-				ADCState.BrakeF, ADCState.BrakeR);
+				CarState.Torque_Req, APPS1.data,
+				APPS2.data, BPPS.data,
+				BrakeFront.data, BrakeRear.data);
 	}
 
 	doVectoring(CarState.Torque_Req, &adj, &spd, pedalreq);

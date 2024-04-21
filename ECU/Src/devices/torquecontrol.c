@@ -130,13 +130,13 @@ void doVectoring(float Torque_Req, vectoradjust *adj, speedadjust *spd,
 	TractionControl_step();
 
 	TorqueVectoring_U.VehicleYawRate = IMUReceived.GyroZ * 0.001;
-	TorqueVectoring_U.StrAngleDeg = ADCState.SteeringAngle; // SteeringAngle;
+	TorqueVectoring_U.StrAngleDeg = SteeringAngle.data; // SteeringAngle;
 
 	TorqueVectoring_step();
 
 	Regeneration_U.static_P_min_lim = -44; // regeneration power that we can regen always with from -100 - 0 kW should be negative
 	Regeneration_U.Torque_pedal = ADCState.Torque_Req_R_Percent / 10.0;
-	Regeneration_U.brake_pedal_position = ADCState.Regen_Percent / 10.0;
+	Regeneration_U.brake_pedal_position = BPPS.data_Percent / 10.0;
 	Regeneration_U.pedal_rege_thresh_endurance_max = 10; // allow regen if throttle less than 10%
 	Regeneration_U.IVT_WhCalculated = CarState.Wh;
 
@@ -242,7 +242,7 @@ float PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm requ
 		Torque_drivers_request = 0;
 		CarState.APPSstatus = 1;
 	} else if (CarState.AllowRegen
-			&& ADCState.Regen_Percent > (REGENMINIMUM * 10)
+			&& BPPS.data_Percent > (REGENMINIMUM * 10)
 			&& getEEPROMBlock(0)->Regen) {
 		Torque_drivers_request = 0;
 		No_Torque_Until_Pedal_Released = 1;
