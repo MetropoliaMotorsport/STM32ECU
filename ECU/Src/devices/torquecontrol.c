@@ -120,7 +120,7 @@ void doVectoring(float Torque_Req, vectoradjust *adj, speedadjust *spd,
 	int16_t VELUSED = TractionControl_U.VehicleSpeed;
 
 	TractionControl_U.BrakePressure =
-			ADCState.BrakeR > ADCState.BrakeF ?
+			BrakeRear.data > BrakeFront.data ?
 					ADCState.BrakeR : ADCState.BrakeF;
 	TractionControl_U.WheelRotVelocityFL = getInvState(invFL)->Speed * 0.10472; // convert wheel rpm to rad/s
 	TractionControl_U.WheelRotVelocityFR = getInvState(invFR)->Speed * 0.10472;
@@ -218,12 +218,12 @@ float PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm requ
 	//The absolute value of the difference between the APPS (Accelerator Pedal Position Sensors)
 
 	int difference = abs(
-			ADCState.Torque_Req_L_Percent - ADCState.Torque_Req_R_Percent) / 10;
+			APPS1.data - APPS2.data) / 10;
 
 #ifdef TORQUE_LEFT_PRIMARY
-	int torqueperc = ADCState.Torque_Req_L_Percent;
+	int torqueperc = APPS1.data;
 #else
-	int torqueperc = ADCState.Torque_Req_R_Percent;
+	int torqueperc = APPS2.data;
 	#endif
 
 	//The average value of the APPS // signals pedal travel equivalent to ≥25 % desired motor torque
