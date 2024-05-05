@@ -734,34 +734,6 @@ char CAN_SendADCValue(uint16_t adcdata, uint8_t index) {
 	return CAN1Send(ECU_CAN_ID, 4, CANTxData);
 }
 
-char CAN_SendADC(volatile uint32_t *ADC_Data, uint8_t error) {
-	uint16_t id = ECU_CAN_ID + 0x10;
-
-	if (error != 0) {
-		id = ECU_CAN_ID + 0x12;
-	}
-
-	uint8_t CANTxData[8] = { getByte(ADC_Data[ThrottleLADC], 0), getByte(
-			ADC_Data[ThrottleLADC], 1), getByte(ADC_Data[ThrottleRADC], 0),
-			getByte(ADC_Data[ThrottleRADC], 1), getByte(ADC_Data[BrakeFADC], 0),
-			getByte(ADC_Data[BrakeFADC], 1), getByte(ADC_Data[BrakeRADC], 0),
-			getByte(ADC_Data[BrakeRADC], 1), };
-
-	CAN1Send(id, 8, CANTxData);
-
-	if (error == 0) {
-		id = ECU_CAN_ID + 0x11;
-	} else
-		id = ECU_CAN_ID + 0x13;
-
-//	int16_t steering12bit = ADC_Data[SteeringADC] >> 4;
-#ifdef HPF20
-	uint8_t CANTxData2[8] = { // TODO Update for HPF20
-			0, 0, 0, 0, 0, 0, 0, 0, };
-	return CAN1Send(id, 8, CANTxData2);
-#endif
-}
-
 
 
 // send nmt command to all nodes.

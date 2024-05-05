@@ -458,8 +458,7 @@ typedef struct {
 	bool IVTEnabled;
 	bool BMSEnabled;
 	bool LoggingEnabled;
-	DeviceStatus ADC;
-	uint16_t ADCSanity;
+
 	DeviceStatus Sensors;
 	DeviceStatus CriticalSensors;
 	DeviceStatus CriticalPower;
@@ -467,34 +466,33 @@ typedef struct {
 	DeviceStatus Inverter;
 	DeviceStatus BMS;
 	DeviceStatus IMU;
-	DeviceStatus PDM;
 	DeviceStatus FLSpeed;
 	DeviceStatus FRSpeed;
 	DeviceStatus IVT;
 	DeviceStatus LCD;
 	DeviceStatus EEPROM;
-	DeviceStatus Memorator;
 	DeviceStatus BrakeLight;
 
+	DeviceStatus BPPS;
+	DeviceStatus APPS1;
+	DeviceStatus APPS2;
+	DeviceStatus SteeringAngle;
+	DeviceStatus WaterLevel;
+	DeviceStatus HeavesFront;
+	DeviceStatus HeavesRear;
+	DeviceStatus Rolls1;
+	DeviceStatus Rolls2;
+	DeviceStatus BrakeFront;
+	DeviceStatus BrakeRear;
+
+
+
 	DeviceStatus AnalogNode1;
-	DeviceStatus AnalogNode9;
-	DeviceStatus AnalogNode10;
-	DeviceStatus AnalogNode11;
-	DeviceStatus AnalogNode12;
-	DeviceStatus AnalogNode13;
-	DeviceStatus AnalogNode14;
+	DeviceStatus AnalogNode2;
 
-	DeviceStatus AnalogNode15; // tyre temps FL
-	DeviceStatus AnalogNode16; // tyre temps FR
-	DeviceStatus AnalogNode17; // tyre temps RL
-	DeviceStatus AnalogNode18; // tyre temps RR
-
-	DeviceStatus PowerNodes;
-	DeviceStatus PowerNode33; // [BOTS, inertia switch, BSPD.], Telemetry, front power
-	DeviceStatus PowerNode34; // [shutdown switches.], inverters, ECU, Front,
-	DeviceStatus PowerNode35; // Cooling ( fans, pumps )
-	DeviceStatus PowerNode36; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
-	DeviceStatus PowerNode37; // [?], Current, TSAL.
+	DeviceStatus PowerNode1;
+	DeviceStatus PowerNode2;
+	
 //	char ;
 
 	bool timeout;

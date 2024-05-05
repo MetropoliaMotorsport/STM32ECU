@@ -81,17 +81,7 @@ uint16_t ReadyReceive(uint16_t returnvalue) {
 
 #endif
 
-	if (DeviceState.ADCSanity == 0) {
-		returnvalue &= ~(0x1 << PedalADCReceived); // using local adc, already established online in initialisation.
-	} else {
-		//		static bool first = false;
-		//		if ( !first )
-		{
-			//			first = true;
-			DebugPrintf("Readyness ADC fail ADCSanity %d",
-					DeviceState.ADCSanity);
-		}
-	}
+
 
 	return returnvalue;
 }

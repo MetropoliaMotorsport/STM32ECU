@@ -66,7 +66,7 @@ if( DeviceState.PWR_Node == OPERATIONAL )
 		returnvalue &= ~(0x1 << IVTReceived);
 
 	// need new function to check for ADC input, so that more workable with a CAN node.
-	if (DeviceState.ADCSanity == 0)
+	if (DeviceState.APPS1 == 0)
 		returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
 #endif
 	return returnvalue;

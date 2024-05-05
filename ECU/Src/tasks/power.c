@@ -141,7 +141,7 @@ void PowerTask(void *argument) {
 
 		uint32_t curtime = gettimer();
 
-		if (DeviceState.PowerNodes == OPERATIONAL) {
+		if (DeviceState.PowerNode1 == OPERATIONAL && DeviceState.PowerNode2 == OPERATIONAL) {
 			if (curtime - CYCLETIME * 2 - 1 > oldestcritical) {
 				DebugPrintf("Oldest PNode data %d old at (%lu)",
 						curtime - oldestcritical, curtime);
@@ -238,10 +238,11 @@ void PowerTask(void *argument) {
 
 		if ((powernodesOnline & PNodeAllBit) == PNodeAllBit) // all expected power nodes reported in. // TODO automate
 		{
-			if (DeviceState.PowerNodes != OPERATIONAL) {
+			if (DeviceState.PowerNode1 == OPERATIONAL && DeviceState.PowerNode2 == OPERATIONAL) {
 				DebugMsg("Power nodes all online");
 			}
-			DeviceState.PowerNodes = OPERATIONAL;
+			DeviceState.PowerNode1 = OPERATIONAL;
+			DeviceState.PowerNode2 = OPERATIONAL;
 			PNodeWaitStr[0] = 0;
 			powernodesOnlineSince = 0;
 			curpowernodesOnline = powernodesOnline;
@@ -256,15 +257,16 @@ void PowerTask(void *argument) {
 			curpowernodesOnline = powernodesOnlineSince;
 
 			if (powernodesOnlineSince == 0) {
-				if (DeviceState.PowerNodes != OFFLINE) {
+				if (DeviceState.PowerNode1 != OFFLINE && DeviceState.PowerNode2 != OFFLINE) {
 					DebugMsg("Power node timeout");
 				}
-				DeviceState.PowerNodes = OFFLINE; // can't see any nodes, so offline.
+				DeviceState.PowerNode1 = OFFLINE; // can't see any nodes, so offline.
+				DeviceState.PowerNode2 = OFFLINE;
 			} else {
-				if (DeviceState.PowerNodes != INERROR) {
+				if (DeviceState.PowerNode1 != INERROR || DeviceState.PowerNode2 != INERROR) {
 					DebugMsg("Power nodes partially online");
 				}
-				DeviceState.PowerNodes = INERROR; // haven't seen all needed, so in error.
+				//DeviceState.PowerNodes = INERROR; // haven't seen all needed, so in error. //TODO
 			}
 
 			powernodesOnlineSince = 0;

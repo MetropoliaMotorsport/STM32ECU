@@ -36,7 +36,7 @@ static uint16_t DevicesOnline(uint16_t returnvalue) {
 				(0x1 << PedalADCReceived) + (0x1 << IVTReceived);
 	}
 
-	if (DeviceState.ADCSanity == 0)
+	if (DeviceState.APPS1 == 0)
 		returnvalue &= ~(0x1 << PedalADCReceived); // ensures even if analogue nodes online, input needs to be sane for bootup.
 	else
 		returnvalue |= 0x1 << PedalADCReceived;
@@ -624,7 +624,7 @@ int PreOperationState(uint32_t OperationLoops) {
 	if (DeviceState.CriticalSensors != OPERATIONAL) {
 		ReadyToStart |= (1 << READYSENSBIT);
 	} // require critical sensor nodes online for startup.
-	if (DeviceState.PowerNodes != OPERATIONAL) {
+	if (DeviceState.PowerNode1 != OPERATIONAL || DeviceState.PowerNode2 != OPERATIONAL) {
 		ReadyToStart |= (1 << READYPOWERBIT);
 	}
 #ifdef CHECKTSALPOWER

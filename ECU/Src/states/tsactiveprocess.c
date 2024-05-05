@@ -35,7 +35,7 @@ int TSActiveProcess(uint32_t OperationLoops) {
 			{
 		CheckHVLost();
 		DebugMsg("Entering TS Active State");
-		CAN_SendDebug(ETSAS_ID)
+		CAN_SendDebug(ETSAS_ID);
 
 		ShutdownCircuitSet(true);
 		CarState.allowtsactivation = false;

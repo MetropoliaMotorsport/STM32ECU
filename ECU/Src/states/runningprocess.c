@@ -274,7 +274,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 			nextmsg = curtick + 1000;
 			DebugPrintf("Current req %f pedals %lu %lu %lu brakes %lu %lu", //TODO make can message
 					torque_req, ADCState.Torque_Req_R_Percent,
-					ADCState.Torque_Req_L_Percent, BPPS.data_Percent,
+					ADCState.Torque_Req_L_Percent, BPPS.data,
 					ADCState.BrakeF, ADCState.BrakeR);
 		}
 
@@ -290,7 +290,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 		int8_t adjtorque = adj.RL;
 
 		uint8_t CANTxData[8] = { ADCState.Torque_Req_L_Percent / 10,
-				BPPS.data_Percent / 10, CarState.LimpActive << 1
+				BPPS.data / 10, CarState.LimpActive << 1
 						| CarState.AllowRegen, getEEPROMBlock(0)->Regen,
 				ADCState.BrakeF, ADCState.BrakeR, inttorque, adjtorque };
 

@@ -23,8 +23,6 @@
 #include "errors.h"
 #include "eeprom.h"
 #include "powernode.h"
-#include "analognode.h"
-#include "node.h"
 #include "input.h"
 #include "output.h"
 

@@ -80,7 +80,6 @@ void ResetStateData(void) // set default startup values for global state values.
 	DeviceState.LoggingEnabled = DISABLED;
 #endif
 
-	DeviceState.ADC = OFFLINE;
 
 	CarState.Torque_Req_Max = 0;
 	CarState.Torque_Req_CurrentMax = 0;

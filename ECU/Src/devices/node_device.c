@@ -25,21 +25,21 @@ bool processBrakeFront(const uint8_t CANRxData[8], const uint32_t DataLength, co
 bool processBrakeRear(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
 
 
-    BPPS = { &DeviceState.BPPS, BPPS_ID, 8, processBPPS, NULL, 0 };
-    APPS1 = { &DeviceState.APPS1, APPS1_ID, 8, processAPPS1, NULL, 0 };
-    APPS2 = { &DeviceState.APPS2, APPS2_ID, 8, processAPPS2, NULL, 0 };
-    SteeringAngle = { &DeviceState.SteeringAngle, STEERINGANGLE_ID, 8, processSteeringAngle, NULL, 0 };
-    WaterLevel = { &DeviceState.WaterLevel, WATERLEVEL_ID, 8, processWaterLevel, NULL, 0 };
-    HeavesFront = { &DeviceState.HeavesFront, HEAVESFRONT_ID, 8, processHeavesFront, NULL, 0 };
-    Rolls1 = { &DeviceState.Rolls1, ROLLS1_ID, 8, processRolls1, NULL, 0 };
-    Rolls2 = { &DeviceState.Rolls2, ROLLS2_ID, 8, processRolls2, NULL, 0 };
-    BrakeFront = { &DeviceState.BrakeFront, BRAKEFRONT_ID, 8, processBrakeFront, NULL, 0 };
-    BrakeRear = { &DeviceState.BrakeRear, BRAKEREAR_ID, 8, processBrakeRear, NULL, 0 };
+CANData BPPS = { &DeviceState.BPPS, BPPS_ID, 8, processBPPS, NULL, 0 };
+CANData APPS1 = { &DeviceState.APPS1, APPS1_ID, 8, processAPPS1, NULL, 0 };
+CANData APPS2 = { &DeviceState.APPS2, APPS2_ID, 8, processAPPS2, NULL, 0 };
+CANData SteeringAngle = { &DeviceState.SteeringAngle, SteeringAngle_ID, 8, processSteeringAngle, NULL, 0 };
+CANData WaterLevel = { &DeviceState.WaterLevel, WaterLevel_ID, 8, processWaterLevel, NULL, 0 };
+CANData HeavesFront = { &DeviceState.HeavesFront, HeavesFront_ID, 8, processHeavesFront, NULL, 0 };
+CANData Rolls1 = { &DeviceState.Rolls1, Rolls1_ID, 8, processRolls1, NULL, 0 };
+CANData Rolls2 = { &DeviceState.Rolls2, Rolls2_ID, 8, processRolls2, NULL, 0 };
+CANData BrakeFront = { &DeviceState.BrakeFront, BrakeFront_ID, 8, processBrakeFront, NULL, 0 };
+CANData BrakeRear = { &DeviceState.BrakeRear, BrakeRear_ID, 8, processBrakeRear, NULL, 0 };
 
 
 
 
-int initNodeDevices( void ){
+void initNodeDevices( void ){
 
     RegisterCan2Message( &BPPS );
     RegisterCan2Message( &APPS1 );
@@ -58,3 +58,4 @@ int initNodeDevices( void ){
     return 0;
 
 }
+

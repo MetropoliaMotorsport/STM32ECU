@@ -180,11 +180,7 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 		strcat(str, "NTO ");
 	}
 
-	if (!(DeviceState.ADCSanity == 0)) {
-		allowreset += 4;
-		strcat(str, "PDL ");
 
-	}
 
 #ifdef SHUTDOWNSWITCHCHECK
     if ( !CheckShutdown() )
