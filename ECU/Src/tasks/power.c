@@ -12,7 +12,7 @@
 #include "powerloss.h"
 #include "powernode.h"
 #include "errors.h"
-
+#include "eeprom.h"
 #include "inverter.h"
 #include "taskpriorities.h"
 #include "debug.h"

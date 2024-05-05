@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 #include <time.h>
+#include "eeprom.h"
 
 int initVectoring(void) {
 #ifdef MATLAB

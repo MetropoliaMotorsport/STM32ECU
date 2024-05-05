@@ -20,6 +20,7 @@
 #include "debug.h"
 #include "node_device.h"
 #include "imu.h"
+#include "eeprom.h"
 
 uint16_t PrintRunning(char *title) {
 	char str[80] = "";
