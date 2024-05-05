@@ -6,6 +6,7 @@
  */
 
 #include "ecumain.h"
+#include "node_device.h"
 #include "operationalprocess.h"
 #include "idleprocess.h"
 #include "errors.h"
@@ -170,52 +171,6 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 	{
 		// check if limp mode allowed ( don't want for acceleration test ), and if so, if BMS has requested.
 
-		if ((CarState.LimpRequest && !CarState.LimpDisable)
-				|| ADCState.CoolantTempR > COOLANTLIMPTEMP) {
-			CarState.LimpActive = 1;
-			CarState.LimpNM = LIMPNM;
-		}
-
-		if (!CarState.LimpActive && ADCState.CoolantTempR > COOLANTLIMPTEMPHALF) {
-			CarState.LimpActive = 2;
-			CarState.LimpNM = CarState.Torque_Req_Max / 2;
-
-			if (CarState.LimpNM < LIMPNM)
-				CarState.LimpNM = LIMPNM;
-		}
-
-		if (CarState.LimpActive
-				&& CarState.Torque_Req_CurrentMax > CarState.LimpNM) {
-			limpcounter++;
-			if ((limpcounter % 10) == 0) // every 100ms decrease nm request
-				CarState.Torque_Req_CurrentMax--;
-		}
-
-#ifdef ALLOWLIMPCANCEL
-		// don't allow immiediete exit from limp mode if it was already triggered
-		if (CarState.LimpActive
-				&& OperationLoops
-						> 200&& CheckRTDMActivationRequest() && ADCState.CoolantTempR < COOLANTLIMPTEMP) {
-			CarState.LimpDisable = 1;
-			CarState.LimpActive = 0;
-		}
-
-		if (CarState.LimpActive && !CarState.LimpRequest
-				&& ADCState.CoolantTempR < COOLANTLIMPEXITTEMP) {
-			CarState.LimpDisable = 1;
-			CarState.LimpActive = 0;
-		}
-
-		if (CarState.LimpDisable
-				&& CarState.Torque_Req_CurrentMax < CarState.Torque_Req_Max) {
-			limpcounter++;
-			if ((limpcounter % 10) == 0) // every 100ms increase nm request back to original setting.
-				CarState.Torque_Req_CurrentMax++;
-
-			if (CarState.Torque_Req_CurrentMax == CarState.Torque_Req_Max)
-				CarState.LimpActive = 0;
-		}
-#endif
 
 		// if allowed, process torque request, else request 0.
 
@@ -273,9 +228,9 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 		if (curtick > nextmsg) {
 			nextmsg = curtick + 1000;
 			DebugPrintf("Current req %f pedals %lu %lu %lu brakes %lu %lu", //TODO make can message
-					torque_req, ADCState.Torque_Req_R_Percent,
-					ADCState.Torque_Req_L_Percent, BPPS.data,
-					ADCState.BrakeF, ADCState.BrakeR);
+					torque_req, APPS1.data,
+					APPS2.data, BPPS.data,
+					BrakeFront.data, BrakeRear.data);
 		}
 
 		// doVectoring sets the final torque request value for state.
@@ -289,10 +244,10 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 		int8_t inttorque = torque_req;
 		int8_t adjtorque = adj.RL;
 
-		uint8_t CANTxData[8] = { ADCState.Torque_Req_L_Percent / 10,
+		uint8_t CANTxData[8] = { APPS1.data / 10,
 				BPPS.data / 10, CarState.LimpActive << 1
 						| CarState.AllowRegen, getEEPROMBlock(0)->Regen,
-				ADCState.BrakeF, ADCState.BrakeR, inttorque, adjtorque };
+				BrakeFront.data,BrakeRear.data, inttorque, adjtorque };
 
 		CAN1Send(0x7D2, 8, CANTxData);
 

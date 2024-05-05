@@ -121,7 +121,7 @@ void doVectoring(float Torque_Req, vectoradjust *adj, speedadjust *spd,
 
 	TractionControl_U.BrakePressure =
 			BrakeRear.data > BrakeFront.data ?
-					ADCState.BrakeR : ADCState.BrakeF;
+					BrakeRear.data : BrakeFront.data;
 	TractionControl_U.WheelRotVelocityFL = getInvState(invFL)->Speed * 0.10472; // convert wheel rpm to rad/s
 	TractionControl_U.WheelRotVelocityFR = getInvState(invFR)->Speed * 0.10472;
 	TractionControl_U.WheelRotVelocityRL = getInvState(invRL)->Speed * 0.10472;
@@ -135,7 +135,7 @@ void doVectoring(float Torque_Req, vectoradjust *adj, speedadjust *spd,
 	TorqueVectoring_step();
 
 	Regeneration_U.static_P_min_lim = -44; // regeneration power that we can regen always with from -100 - 0 kW should be negative
-	Regeneration_U.Torque_pedal = ADCState.Torque_Req_R_Percent / 10.0;
+	Regeneration_U.Torque_pedal = APPS2.data / 10.0;
 	Regeneration_U.brake_pedal_position = BPPS.data / 10.0;
 	Regeneration_U.pedal_rege_thresh_endurance_max = 10; // allow regen if throttle less than 10%
 	Regeneration_U.IVT_WhCalculated = CarState.Wh;
