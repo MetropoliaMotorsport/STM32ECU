@@ -11,42 +11,27 @@
 #include "ecumain.h"
 #include "power.h"
 
-#define PNode33Bit  0
-#define PNode34Bit  1
-#define PNode35Bit  2
-#define PNode36Bit  3
-#define PNode37Bit  4
-#ifdef HPF2023
+#define PNode1Bit  0
+#define PNode2Bit  1
 
-#define PNodeAllBit ( (0x1 << PNode34Bit) \
-					+ (0x1 << PNode36Bit) \
-					+ (0x1 << PNode37Bit) \
+
+
+#define PNodeAllBit ( (0x1 << PNode1Bit) \
+					+ (0x1 << PNode2Bit) \
 					) // + (0x1 << PNode36Bit) // 36 is currently not powered, don't check for.
 
-#define PNODECRITICALBITS	( (0x1 << PNode37Bit) )  // brake and buzzer are critical
+#define PNODECRITICALBITS	( (0x1 << PNode1Bit) )  // brake and buzzer are critical
 
-#else
 
-#define PNodeAllBit ( (0x1 << PNode33Bit) \
-					+ (0x1 << PNode34Bit) \
-					+ (0x1 << PNode35Bit) \
-					+ (0x1 << PNode37Bit) \
-					) // + (0x1 << PNode36Bit) // 36 is currently not powered, don't check for.
 
-#define PNODECRITICALBITS	( (0x1 << PNode34Bit) )  // brake and buzzer are critical
-
-#endif
-
-#define POWERNODE_FAN_BIT  (PNode35Bit)
+#define POWERNODE_FAN_BIT  (PNode2Bit)
 
 extern CANData PowerNodeErr;
 extern CANData PowerNodeAck;
 
-extern CANData PowerNode33; // [BOTS, inertia switch, BSPD.], Telemetry, front power
-extern CANData PowerNode34;
-extern CANData PowerNode35;
-extern CANData PowerNode36;
-extern CANData PowerNode37;
+extern CANData PowerNode1; // [BOTS, inertia switch, BSPD.], Telemetry, front power
+extern CANData PowerNode2;
+
 
 bool processPNodeErr(const uint8_t nodeid, const uint32_t errorcode, const CANData * datahandle );
 bool processPNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );

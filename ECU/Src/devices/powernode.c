@@ -110,41 +110,26 @@ devicepowerreq DevicePowerList[] =
 #endif
 
 nodepowerreq PowerRequests[] = {
-#ifndef HPF2023
-		{ 1, 33, 0, 0, {0} },
-		{ 1, 35, 0, 0, {0} },
-#endif
-#ifdef BACKUPCAN
-		{ 1, 34, 0, 0, {0} },
-		{ 2, 35, 0, 0, {0} },
-		{ 1, 36, 0, 0, {0} },
-		{ 2, 37, 0, 0, {0} },
-#else
+
+
 		{ 1, 34, 0, 0, { 0 } }, { 1, 36, 0, 0, { 0 } }, { 1, 37, 0, 0, { 0 } },
-#endif
+
 		{ 0 } };
 
 nodepowerpwmreq nodefanpwmreqs[2] = { 0 };
 bool queuedfanpwmLeft = false;
 bool queuedfanpwmRight = false;
 
-#ifndef HPF2023
-bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-#endif
-bool processPNode34Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+
+bool processPNode1Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle);
-bool processPNode36Data(const uint8_t CANRxData[8], const uint32_t DataLength,
-		const CANData *datahandle);
-bool processPNode37Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+bool processPNode2Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle);
 
-#ifndef HPF2023
-void PNode33Timeout( uint16_t id );
-void PNode34Timeout( uint16_t id );
-void PNode36Timeout( uint16_t id );
-#endif
-void PNode37Timeout(uint16_t id); // critical due to brakelight
+
+void PNode1Timeout( uint16_t id );
+void PNode2Timeout( uint16_t id );
+
 
 //bool processPNodeTimeout(uint8_t CANRxData[8], uint32_t DataLength );
 
@@ -153,10 +138,6 @@ bool processPNodeErr(const uint8_t nodeid, const uint32_t errorcode,
 bool processPNodeAckData(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle);
 
-#ifndef HPF2023
-CANData  PowerNode33 = { &DeviceState.PowerNode33, PowerNode33_ID, 3, processPNode33Data, PNode33Timeout, NODETIMEOUT }; // [BOTS, inertia switch, BSPD.], Telemetry, front power
-CANData  PowerNode35 = { &DeviceState.PowerNode35, PowerNode35_ID, 4, processPNode35Data, NULL, NODETIMEOUT }; // Cooling ( fans, pumps )
-#endif
 
 /////////////////////////////////////////////////////////////////////////
 /*CANData PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4,
@@ -170,148 +151,29 @@ int sendPowerNodeErrReset(uint8_t id, uint8_t channel);
 
 uint32_t getOldestPNodeData(void) {
 	uint32_t time = gettimer();
-#ifndef HPF2023
-	if ( PowerNode33.time <  time ) time = PowerNode33.time;
-#endif
+
 	if (PowerNode34.time < time)
 		time = PowerNode34.time;
-#ifndef HPF2023
-//	if ( PowerNode35.time <  time ) time = PowerNode35.time;
-//	if ( PowerNode36.time <  time ) time = PowerNode36.time; // not currently operational
-#endif
+
 	if (PowerNode37.time < time)
 		time = PowerNode37.time;
 	return time;
 }
 
-#ifndef HPF2023
-void PNode33Timeout( uint16_t id )
-{
-	Shutdown.BOTS = 0;
-	Shutdown.InertiaSwitch = 0;
-	Shutdown.BSPDAfter = 0;
-	Shutdown.BSPDBefore = 0;
-}
 
-void PNode34Timeout( uint16_t id )
-{
-	Shutdown.CockpitButton = 0; // TODO set to right inputs.
-	Shutdown.LeftButton = 0;
-	Shutdown.RightButton = 0;
-}
 
-void PNode36Timeout( uint16_t id )
-{
-	DeviceState.BrakeLight = OFFLINE;
-    SetCriticalError(CRITERBL);
-}
-#endif
+void PNode2Timeout(uint16_t id) {
 
-void PNode37Timeout(uint16_t id) {
-#ifdef HPF2023
 
-#else
-	Shutdown.AIRm = false;
-	Shutdown.AIRp = false;
-	Shutdown.PRE = false;
-	Shutdown.TS_OFF = false;
-	Shutdown.IMD = true;
-#endif
 	SetCriticalError(CRITERBL); // brakelight is a critical signal.
 }
 
-#ifndef HPF2023
-bool processPNode33Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle )
-{
-	static bool first = false;
-	if ( !first )
-	{
-		DebugMsg("PNode 33 First msg.");
-		first = true;
-	}
 
-	if ( DataLength >> 16 == PowerNode33.dlcsize
-			&& CANRxData[0] <= 0b00011101 // max possible value. check for zeros in unused fields?
-			&& CANRxData[1] < 255
-			&& ( CANRxData[2] >= 0 && CANRxData[2] < 255 )
-	)
-	{
-		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode33Bit ), eSetBits);
-
-		bool newstate = CANRxData[0] & (0x1 << 4);
-		if ( Shutdown.BOTS != newstate )
-		{
-			DebugPrintf("BOTS Shutdown sense state changed to %s", newstate?"Closed":"Open");
-			Shutdown.BOTS = newstate;
-		}
-
-		newstate = CANRxData[0] & (0x1 << 0);
-		if ( Shutdown.InertiaSwitch != newstate )
-		{
-			DebugPrintf("Inertia Switch Shutdown sense state changed to %s", newstate?"Closed":"Open");
-			Shutdown.InertiaSwitch = newstate;
-		}
-
-		newstate = CANRxData[0] & (0x1 << 2);
-		if ( Shutdown.BSPDAfter != newstate )
-		{
-			DebugPrintf("BSPD After Switch Shutdown sense state changed to %s", newstate?"Closed":"Open");
-			Shutdown.BSPDAfter = newstate;
-		}
-
-		newstate = CANRxData[0] & (0x1 << 3);
-		if ( Shutdown.BSPDBefore != newstate )
-		{
-			DebugPrintf("BSPD Before Switch Shutdown sense state changed to %s", newstate?"Closed":"Open");
-			Shutdown.BSPDBefore = newstate;
-		}
-
-//		CarState.I_Telementry =  CANRxData[1];
-//		CarState.I_Front1 =  CANRxData[2];
-		return true;
-
-	} else // bad data.
-	{
-		return false;
-	}
-}
-
-bool processPNode35Data( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle ) // Cooling
-{
-
-	static bool first = false;
-	if ( !first )
-	{
-		DebugMsg("PNode 35 First msg.");
-		first = true;
-	}
-
-	if ( DataLength >> 16 == PowerNode35.dlcsize
-//		&& ( CANRxData[0] >= 0 && CANRxData[0] <= MAXFANCURRENT )
-//		&& ( CANRxData[1] >= 0 && CANRxData[1] <= MAXFANCURRENT )
-//		&& ( CANRxData[2] >= 0 && CANRxData[2] <= MAXPUMPCURRENT )
-//		&& ( CANRxData[3] >= 0 && CANRxData[3] <= MAXPUMPCURRENT )
-	)
-	{
-		xTaskNotify( PowerTaskHandle, ( 0x1 << PNode35Bit ), eSetBits);
-		CarState.I_LeftFans = CANRxData[0];
-		CarState.I_RightFans = CANRxData[1];
-		CarState.I_LeftPump = CANRxData[2];
-		CarState.I_RightPump = CANRxData[3];
-		return true;
-
-	} else // bad data.
-	{
-		return false;
-	}
-}
-#endif
-
-bool processPNode34Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+bool processPNode1Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle) {
-	static bool first = false;
+	/*static bool first = false;
 	if (!first) {
-		DebugMsg("PNode 34 First msg.");
+		DebugMsg("PNode 1 First msg.");
 		first = true;
 	}
 	// 0x1f 0x0001 10000
@@ -353,16 +215,16 @@ bool processPNode34Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 	} else // bad data.
 	{
 		return false;
-	}
+	}*/
 }
 
-bool processPNode36Data(const uint8_t CANRxData[8], const uint32_t DataLength,
+bool processPNode2Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle) // Rear
 {
-
+/*
 	static bool first = false;
 	if (!first) {
-		DebugMsg("PNode 36 First msg.");
+		DebugMsg("PNode 2 First msg.");
 		first = true;
 	}
 
@@ -468,12 +330,7 @@ bool processPNode37Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 		}
 #endif
 
-		//		CarState.I_BrakeLight = CANRxData[0];
-		//		CarState.I_Buzzers = CANRxData[1];
 
-//		CarState.??? = (CANRxData[0] & (0x1 << 4) );
-//		CarState.I_currentMeasurement =  CANRxData[1];
-//		CarState.I_TSAL =  CANRxData[2];
 		return true;
 	} else // bad data.
 	{
@@ -553,7 +410,7 @@ bool processPNodeAckData(const uint8_t CANRxData[8], const uint32_t DataLength,
 		}
 	}
 
-	return true;
+	return true;/*/
 }
 
 // ERROR list from powernode main.h
@@ -913,39 +770,14 @@ void setPowerNodeStr(uint32_t nodesonline) {
 	PNodeStr[0] = 0;
 
 	uint8_t pos = 0;
-#ifndef HPF2023
-	if ( PNodeAllBit & ( 0x1 << PNode33Bit ) )
-	if ( !(nodesonline & ( 0x1 << PNode33Bit )) )
-	{
-		PNodeStr[pos] = '3';
-		PNodeStr[pos+1] = '\0';
-		pos++;
-	}
-#endif
+
 	if ( PNodeAllBit & (0x1 << PNode34Bit))
 		if (!(nodesonline & (0x1 << PNode34Bit))) {
 			PNodeStr[pos] = '4';
 			PNodeStr[pos + 1] = '\0';
 			pos++;
 		}
-#ifndef HPF2023
-	if ( PNodeAllBit & ( 0x1 << PNode35Bit ) )
-	if ( !(nodesonline & ( 0x1 << PNode35Bit )) )
-	{
-		PNodeStr[pos] = '5';
-		PNodeStr[pos+1] = '\0';
-		pos++;
-	}
 
-
-	if ( PNodeAllBit & ( 0x1 << PNode36Bit ) )
-	if ( !(nodesonline & ( 0x1 << PNode36Bit )) )
-	{
-		PNodeStr[pos] = '6';
-		PNodeStr[pos+1] = '\0';
-		pos++;
-	}
-#endif
 	if ( PNodeAllBit & (0x1 << PNode37Bit))
 		if (!(nodesonline & (0x1 << PNode37Bit))) {
 			PNodeStr[pos] = '7';
@@ -1237,10 +1069,6 @@ void resetPowerNodes(void) {
 	Shutdown.CockpitButton = false;
 	Shutdown.LeftButton = false;
 	Shutdown.RightButton = false;
-
-#ifndef HPF2023
-	Shutdown.BMS = false;
-#endif
 	Shutdown.BMSReason = false;
 	Shutdown.IMD = false;
 	Shutdown.AIRm = false;
@@ -1258,20 +1086,13 @@ int initPowerNodes(void) {
 	RegisterResetCommand(resetPowerNodes);
 
 	resetPowerNodes();
-#ifndef HPF2023
-	RegisterCan1Message(&PowerNode33);
-	RegisterCan1Message(&PowerNode35);
-#endif
+
 	RegisterCan1Message(&PowerNode34);
 
 	RegisterCan1Message(&PowerNode36);
 
-#ifdef BACKUPCAN
-	RegisterCan2Message(&PowerNode35);
-	RegisterCan2Message(&PowerNode37);
-#else
 	RegisterCan1Message(&PowerNode37);
-#endif
+
 
 	return 0;
 }

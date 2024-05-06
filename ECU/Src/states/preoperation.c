@@ -52,18 +52,6 @@ static uint16_t DevicesOnline(uint16_t returnvalue) {
 	} else
 		returnvalue |= 0x1 << InverterReceived;
 
-#ifndef POWERNODES
-
-
-//	if ( receivePDM() )// && !errorPDM() )
-	{
-		returnvalue &= ~(0x1 << PDMReceived);
-	}
-	else
-	{
-		returnvalue |= 0x1 << PDMReceived;
-	}
-#endif
 
 	if (receiveBMS()) // ensure heard from BMS
 	{
@@ -134,20 +122,6 @@ int PreOperationState(uint32_t OperationLoops) {
 		ReadyToStart = 0xFFFF;
 		// set startup powerstates to bring devices up.
 
-#ifdef HPF2023
-		// nothing should need powering up manually at startup currently.
-#else
-		setDevicePower( Front1, true );
-		setDevicePower( Front2, true );
-		//setDevicePower( Back1, true );
-		setDevicePower( TSAL, true );
-		setDevicePower( Current, true );
-
-//		setDevicePower(Buzzer, 0);
-
-//		setDevicePower(IVT, 1);
-		setDevicePower(Telemetry, getEEPROMBlock(0)->Telemetry); // if enabled in config, turn telemetry on.
-#endif
 		initVectoring();
 
 		//   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
@@ -207,10 +181,7 @@ int PreOperationState(uint32_t OperationLoops) {
 			if (preoperationstate & (0x1 << BMSReceived)) {
 				strcat(str, "BMS ");
 			}
-#ifndef POWERNODES
-			if (preoperationstate & (0x1 << PDMReceived) ) { strcat(str, "PDM " ); }
-#endif
-			if (preoperationstate & (0x1 << PedalADCReceived)) {
+			if (preoperationstate & (0x1 << PedalReceived)) {
 				strcat(str, "ADC ");
 			}
 			if (preoperationstate & (0x1 << IVTReceived)) {
@@ -223,18 +194,6 @@ int PreOperationState(uint32_t OperationLoops) {
 			if (ReadyToStart != 0) {
 				strcpy(str, "Err:");
 
-//				if (ReadyToStart & (0x1 << READYTESTING ) ) {	strcat(str, "TST " ); }
-
-#if 0
-				if (ReadyToStart & (0x1 << READYSDCBIT ) ) {
-
-					strcat(str, "SDC(" );
-
-						strcat(str, ShutDownOpenStr());
-
-					strcat(str, ") " );
-				}
-#endif
 
 				if (ReadyToStart & (0x1 << READYTSALBIT)) {
 					strcat(str, "TSAL ");
@@ -256,14 +215,6 @@ int PreOperationState(uint32_t OperationLoops) {
 					strcat(str, "PWR ");
 				}
 
-#ifndef POWERNODES
-				if (! ( preoperationstate & (0x1 << PDMReceived) ) ) {
-				// only show as PDM error if pdm is on bus.
-					if (preoperationstate & (0x1 << PDMReceived) ) { strcat(str, "PDM " ); }
-
-					if (ReadyToStart & (0x1 << READYPOWERBIT ) ) { strcat(str, "PDM " );  } // ?
-				}
-#endif
 				if (ReadyToStart & (0x1 << READYINVBIT)) {
 
 					if (getEEPROMBlock(0)->InvEnabled)
@@ -332,10 +283,6 @@ int PreOperationState(uint32_t OperationLoops) {
 			PrintBrakeBalance();
 
 		if (showadc) {
-#ifdef ADC
-			sprintf(str,"A1 %.5lu %.5lu %.5lu", ADC_Data[0], ADC_Data[1], ADC_Data[2]);
-			sprintf(str,"A3 %.5lu %.5lu %.5lu", ADC_Data[3], ADC_Data[4], ADC_Data[5]);
-#else
 			sprintf(str, "L%3d%% R%3d%% B%3d%% ",
 					APPS1.data / 10,
 					APPS2.data / 10,
@@ -375,26 +322,6 @@ int PreOperationState(uint32_t OperationLoops) {
 		}
 
 	}
-#if 0
-
-	static uint32_t count = 9;
-	static uint32_t lastcount = 0;
-
-	uint32_t curtime = gettimer();
-
-	if ( curtime > ledtimer+MS1000 )
-	{
-		ledtimer = curtime;
-		lastcount = count;
-		setOutput(lastcount, Off);
-		count++;
-		if ( count > 9 )
-			count = 1;
-		char str[32];
-		sprintf(str, "Led %d", count);
-		setOutput(count, On);
-	}
-#endif
 
 	vTaskDelay(5);
 
@@ -423,20 +350,6 @@ int PreOperationState(uint32_t OperationLoops) {
 #endif
 	// Check startup requirements.
 
-#if 0
-	if ( !CheckShutdown() )
-	{
-		blinkOutput(TSOFFLED, BlinkMed, 1);
-#ifdef SHUTDOWNSWITCHCHECK
-	    ReadyToStart |= (0x1 << READYSDCBIT );
-#endif
-	}  else
-	{
-		blinkOutput(TSOFFLED, On, 0);
-		setOutput(TSOFFLED,On);
-	}
-#endif
-
 	if (!getDevicePower(Front1) || !getDevicePower(Front2)
 			|| !getDevicePower(Inverters)) {
 		if (!TSLEDstate) {
@@ -459,12 +372,6 @@ int PreOperationState(uint32_t OperationLoops) {
 			invRequestState(BOOTUP);
 			resetDevicePower(Inverters);
 			setDevicePower(Inverters, true);
-#ifndef HPF2023
-			resetDevicePower(Front1);
-			setDevicePower( Front1, true );
-			resetDevicePower(Front2);
-			setDevicePower( Front2, true );
-#endif
 			setDevicePower(RightPump, true);
 			setDevicePower(LeftPump, true);
 			setDevicePower(RightFans, true);
@@ -481,131 +388,6 @@ int PreOperationState(uint32_t OperationLoops) {
 
 	}
 
-#if 0
-
-	if ( CheckRTDMActivationRequest() || testmotors != testmotorslast ) // manual startup power request whilst in testing phases, allows to reset if error occurred.
-	{
-		if ( testmotors )
-		{
-			DebugMsg("Ending test mode.");
-			percR = -1;
-			requestNm = 0;
-			testmotors = false;
-			InverterAllowTorqueAll( false );
-			ShutdownCircuitSet(false);
-			setDevicePower( Buzzer, false );
-			invRequestState( BOOTUP );
-			// don't disable power other than HV.
-		} else
-		{
-			if ( ADCState.Torque_Req_R_Percent == 0 )
-			{
-				DebugMsg("Starting test mode.");
-				testmotors = true;
-#if 1
-				setDevicePower( Inverters, true );
-				setDevicePower( RightPump, true );
-				setDevicePower( LeftPump, true );
-				InverterAllowTorqueAll( true );
-				invRequestState( OPERATIONAL );
-
-				// TODO set a timer to turn off buzzer.
-//				setDevicePower( Buzzer, true );
-#endif
-				ShutdownCircuitSet(true);
-				waitprecharge = false;
-				doneprecharge = false;
-			} else
-			{
-				DebugMsg("Can't start test mode, pedal not at 0.");
-			}
-		}
-
-		testmotorslast = testmotors;
-	}
-
-	if ( testmotors )
-	{
-		int16_t speed = getEEPROMBlock(0)->maxRpm;
-		int32_t maxNm = getEEPROMBlock(0)->MaxTorque;
-
-		uint32_t motorsenabled = getEEPROMBlock(0)->EnabledMotors;
-
-		if ( percR != ADCState.Torque_Req_R_Percent ) // only update if value changes.
-		{
-			if ( DeviceState.CriticalSensors == OPERATIONAL )
-			{
-				percR = ADCState.Torque_Req_R_Percent;
-			} else
-			{
-				percR = 0;
-			}
-
-			requestNm = ((percR*maxNm)*0x4000)/1000;
-
-			if ( Shutdown.PRE )
-			{
-				if ( ! doneprecharge )
-				{
-					DebugMsg("Precharge done, torque request active.");
-					doneprecharge = true;
-					waitprecharge = false;
-				}
-
-				for ( int i=0;i<MOTORCOUNT;i++)
-				{
-	#if 1
-					if ( requestNm > 0 && ( ( 1 << i ) & motorsenabled ) )
-						InverterSetTorqueInd( i, requestNm, speed);
-					else
-	#endif
-						InverterSetTorqueInd( i, 0, 0);
-				}
-			} else
-			{
-				if ( ! waitprecharge )
-				{
-					waitprecharge = true;
-					DebugMsg("Waiting for precharge");
-				}
-			}
-
-
-			DebugPrintf("Pedal: r%d%%, reqNm %d speed %d, maxNm %d, to MC[%s] 0[I%dc M%dc] 1[I%dc M%dc] 2[I%dc M%dc] 3[I%dc M%dc]\r\n ",
-						percR/10, requestNm/0x4000, speed, maxNm, getMotorsEnabledStr(),
-						getInvState(0)->InvTemp, getInvState(0)->MotorTemp,
-						getInvState(1)->InvTemp, getInvState(1)->MotorTemp,
-						getInvState(2)->InvTemp, getInvState(2)->MotorTemp,
-						getInvState(3)->InvTemp, getInvState(3)->MotorTemp
-					);
-		}
-
-		snprintf(str, 80, "P%3d%% Nm %lu %drpm", percR/10, requestNm/0x4000, speed);
-
-
-		int highesti = 0;
-		int highestin = -1;
-		int highestm = 0;
-		int highestmn = -1;
-
-		for ( int i=0;i<MOTORCOUNT;i++)
-		{
-			if (getInvState(i)->InvTemp >= highesti )
-			{
-				highesti = getInvState(i)->InvTemp;
-				highestin = i;
-			}
-			if (getInvState(i)->MotorTemp >= highesti )
-			{
-				highestm = getInvState(i)->MotorTemp;
-				highestmn = i;
-			}
-		}
-
-		sprintf(str, "I%d %dc  M%d %dc", highestin, highesti, highestmn, highestm);
-
-	}
-#endif
 
 //	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYTESTING); }
 

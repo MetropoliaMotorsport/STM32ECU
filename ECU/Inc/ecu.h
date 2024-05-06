@@ -349,7 +349,7 @@
 #define InverterReceived		0
 //#define FLeftSpeedReceived		2
 //#define FRightSpeedReceived		3
-#define PedalADCReceived			4
+#define PedalReceived			4
 #define BMSReceived				5
 #define PDMReceived				6
 #define MEMORATORReceived		7
@@ -420,7 +420,6 @@ typedef struct {
 	int32_t VoltageAIRPDM;
 	int32_t Power;
 	int32_t Wh;
-	uint8_t BMSSOC;
 	float SOC;
 
 	uint8_t I_BrakeLight;

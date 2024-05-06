@@ -241,10 +241,8 @@ int OperationalProcess(void) {
 #ifndef everyloop
 	if ( ( loopcount % LOGLOOPCOUNTFAST ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
 #endif
-	{
-		if (DeviceState.LoggingEnabled)
-			CANLogDataFast();
-	}
+
+
 
 	if ((loopcount % LOGLOOPCOUNTSLOW) == 0) // only send status message every 5'th loop to not flood, but keep update on where executing
 			{
@@ -253,8 +251,7 @@ int OperationalProcess(void) {
 		// no point in sending raw adc state if using nodes.
 		if ( Errors.OperationalReceiveError == 0) CAN_SendADC(ADC_Data, 0);
 #endif
-		if (DeviceState.LoggingEnabled)
-			CANLogDataSlow();
+
 	}
 
 	loopcount++;

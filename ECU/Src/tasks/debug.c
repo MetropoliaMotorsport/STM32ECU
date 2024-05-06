@@ -6,7 +6,7 @@
  */
 
 
-#ifdef DEBUG
+
 
 #include "debug.h"
 #include "ecumain.h"
@@ -14,14 +14,14 @@
 #include "input.h"
 #include "configuration.h"
 #include "freertosstats.h"
-
+#include "eeprom.h"
 #include "usart.h"
 #include "power.h"
 #include "powernode.h"
 #include "uartecu.h"
 #include "taskpriorities.h"
 #include "preoperation.h"
-
+#include "node_device.h"
 #include "timerecu.h"
 
 #include "lenzeinverter.h"
@@ -370,8 +370,10 @@ static void debugMotor(const char *tkn2, const char *tkn3, const int32_t value1,
 
 		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline();
 		// anode 1
-		if (!(AnalogueNodesOnline & (0x1 << ANode11Bit))) {
-			UARTwrite("No pedal data from Analogue Node 11.\r\n");
+
+
+		if(DeviceState.APPS1 != OPERATIONAL && DeviceState.APPS2 != OPERATIONAL){
+			UARTwrite("No pedal data from Analogue Node 1.\r\n");
 			return;
 		}
 
@@ -420,7 +422,7 @@ static void debugMotor(const char *tkn2, const char *tkn3, const int32_t value1,
 					UARTwrite(msg.str);
 				}
 
-				int16_t requestRaw = ADCState.Torque_Req_R_Percent; //PedalTorqueRequest();
+				int16_t requestRaw = APPS2.data; //PedalTorqueRequest();
 //				if ( abs(oldrequest-requestRaw) > 50 || gettimer() - lasttime > 1000) // only update if value changes.
 				if (abs(oldrequest - requestRaw) > 5
 						|| gettimer() - lasttime > 1000) // only update if value changes.
@@ -462,9 +464,9 @@ static void debugMotor(const char *tkn2, const char *tkn3, const int32_t value1,
 		} else {
 			UARTprintf(
 					"APPS request not 0, not enabling test [curreq %dnm, ped pos l%d r%d , brakes r%d f%d].\r\n",
-					curreq, ADCState.Torque_Req_L_Percent,
-					ADCState.Torque_Req_R_Percent, ADCState.BrakeR,
-					ADCState.BrakeF);
+					curreq, APPS1.data,
+					APPS1.data, APPS2.data,
+					BrakeFront.data);
 		}
 	} else if (checkOn(tkn2)) {
 		if (value1 >= 0) {
@@ -736,7 +738,7 @@ static void debugShutdown(const char *tkn2, const char *tkn3) {
 }
 
 static void debugSensors(const char *tkn2) {
-	{
+	/*{
 		xEventGroupSync(xCycleSync, 0, 1, portMAX_DELAY); // wait for cycle to sync readings.
 
 		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline();
@@ -807,75 +809,8 @@ static void debugSensors(const char *tkn2) {
 					ADCStateDebug.APPSR, adctimes[11]);
 		}
 
-#ifndef HPF2023
-		if ( force || AnalogueNodesOnline & ( 0x1 << ANode12Bit ) )
-		{
-			UARTprintf("Anode12: WaterTemps 3-6 %dc   %dc   %dc   %dc   Last at (%lu)\r\n",
-					ADCStateSensors.WaterTemp3,
-					ADCStateSensors.WaterTemp4,
-					ADCStateSensors.WaterTemp5,
-					ADCStateSensors.WaterTemp6,
-					AnalogNode12.time );
-		}
 
-		if ( force || AnalogueNodesOnline & ( 0x1 << ANode13Bit ) )
-		{
-			UARTprintf("Anode13: Suspension 3-4 %lu   %lu   Last at (%lu)\r\n",
-					ADCStateSensors.Susp3,
-					ADCStateSensors.susp4,
-					AnalogNode13.time);
-		}
-#endif
-
-#ifndef HPF2023
-		if ( force || AnalogueNodesOnline & ( 0x1 << ANode14Bit ) )
-		{
-			UARTprintf("Anode14: Brake Temps 3-4 %dc   %dc   Oil Temps 3-4 %dc   %dc   Last at (%lu)\r\n",
-					ADCStateSensors.BrakeTemp3,
-					ADCStateSensors.BrakeTemp4,
-					ADCStateSensors.OilTemp3,
-					ADCStateSensors.OilTemp4,
-					AnalogNode14.time
-					);
-		}
-
-		if ( force || AnalogueNodesOnline & ( 0x1 << ANode15Bit ) )
-		{
-			UARTprintf("Anode15: Tire Temps 1-3 %dc   %dc   %dc   Last at (%lu)\r\n",
-					ADCStateSensors.TireTemp1,
-					ADCStateSensors.TireTemp2,
-					ADCStateSensors.TireTemp3,
-					AnalogNode15.time);
-		}
-
-		if ( force || AnalogueNodesOnline & ( 0x1 << ANode16Bit ) )
-		{
-			UARTprintf("Anode16: Tire Temps 4-6 %dc   %dc   %dc   Last at (%lu)\r\n",
-					ADCStateSensors.TireTemp4,
-					ADCStateSensors.TireTemp5,
-					ADCStateSensors.TireTemp6,
-					AnalogNode16.time);
-		}
-
-		if ( force || AnalogueNodesOnline & ( 0x1 << ANode17Bit ) )
-		{
-			UARTprintf("Anode17: Tire Temps 7-9 %dc   %dc   %dc   Last at (%lu)\r\n",
-					ADCStateSensors.TireTemp7,
-					ADCStateSensors.TireTemp8,
-					ADCStateSensors.TireTemp9,
-					AnalogNode17.time);
-		}
-
-		if ( force || AnalogueNodesOnline & ( 0x1 << ANode18Bit ) )
-		{
-			UARTprintf("Anode18: Tire Temps 10-12 %dc   %dc   %dc   Last at (%lu)\r\n",
-					ADCStateSensors.TireTemp10,
-					ADCStateSensors.TireTemp11,
-					ADCStateSensors.TireTemp12,
-					AnalogNode18.time);
-		}
-#endif
-	}
+	}*/
 }
 
 static void debugPower(const char *tkn2, const char *tkn3) {
@@ -1583,5 +1518,5 @@ int initDebug(void) {
 
 	return 0;
 }
-#endif
+
 
