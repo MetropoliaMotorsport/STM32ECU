@@ -4,7 +4,8 @@
 
 // Device IDs
 ////////////////////////////////////////
-
+#define PNode1_ID				0x03;
+#define PNode2_ID				0x04;
 #define BMS_ID					0x008
 #define BMSVOLT_ID				BMS_ID+3 // 0xB is voltage.
 #define BMSSOC_ID				0x97

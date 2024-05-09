@@ -215,9 +215,18 @@ int getTorqueReqCurve(int16_t pedalreq) {
 	return pedalreq;
 }
 
-int getBrakeTravelPercent(int16_t pedalreq) {
+int getBrakeTravelPerc(int16_t pedalreq) {
 	return pedalreq;
 }
+
+int getTorqueReqPercL(int16_t pedalreq) {
+	return pedalreq;
+}
+
+int getTorqueReqPercR(int16_t pedalreq) {
+	return pedalreq;
+}
+
 
 float PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm request amount.
 {
@@ -371,3 +380,11 @@ float PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm requ
 	}
 }
 
+void SetupTorque(uint8_t pedal) {
+	//TODO implement
+}
+
+int SetupInterpolationTables(eepromdata* eepromdatahandle) {
+	//TODO implement
+	return 0;
+}

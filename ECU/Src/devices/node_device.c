@@ -12,17 +12,40 @@
 
 
 //TODO Keep it updated with the devices you want to use in the car
-bool processBPPS(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
-bool processAPPS1(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
-bool processAPPS2(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
-bool processSteeringAngle(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
-bool processWaterLevel(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
-bool processHeavesFront(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
-bool processHeavesRear(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
-bool processRolls1(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
-bool processRolls2(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
-bool processBrakeFront(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
-bool processBrakeRear(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
+bool processBPPS(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
+	return true;
+}
+
+bool processAPPS1(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
+	return true;
+}
+bool processAPPS2(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
+	return true;
+}
+bool processSteeringAngle(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
+	return true;
+}
+bool processWaterLevel(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
+    return true;
+}
+bool processHeavesFront(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
+    return true;
+}
+bool processHeavesRear(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
+    return true;
+}
+bool processRolls1(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
+    return true;
+}
+bool processRolls2(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
+    return true;
+}
+bool processBrakeFront(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
+	return true;
+}
+bool processBrakeRear(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
+    return true;
+}
 
 
 CANData BPPS = { &DeviceState.BPPS, BPPS_ID, 8, processBPPS, NULL, 0 };
@@ -38,6 +61,14 @@ CANData BrakeRear = { &DeviceState.BrakeRear, BrakeRear_ID, 8, processBrakeRear,
 
 
 
+
+int getNodeWait(){
+	return 0;
+}
+
+uint32_t getAnalogueNodesOnline(){
+    return 0;
+}
 
 void initNodeDevices( void ){
 

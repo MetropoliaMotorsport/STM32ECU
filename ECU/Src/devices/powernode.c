@@ -12,6 +12,8 @@
 #include "errors.h"
 #include "timerecu.h"
 #include <stdarg.h>
+#include "bms.h"
+#include "can_ids.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -19,6 +21,7 @@
 #define MAXECUCURRENT 		20
 #define MAXFANCURRENT		20
 #define MAXPUMPCURRENT		20
+
 
 typedef struct nodepowerreqstruct {
 	uint8_t bus;
@@ -127,10 +130,6 @@ bool processPNode2Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle);
 
 
-void PNode1Timeout( uint16_t id );
-void PNode2Timeout( uint16_t id );
-
-
 //bool processPNodeTimeout(uint8_t CANRxData[8], uint32_t DataLength );
 
 bool processPNodeErr(const uint8_t nodeid, const uint32_t errorcode,
@@ -139,17 +138,8 @@ bool processPNodeAckData(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle);
 
 
-/////////////////////////////////////////////////////////////////////////
-/*CANData PowerNode34 = { &DeviceState.PowerNode34, PowerNode34_ID, 4,
-		processPNode34Data, NULL, NODETIMEOUT }; // [shutdown switches.], inverters, ECU, Front,
-CANData PowerNode36 = { &DeviceState.PowerNode36, PowerNode36_ID, 7,
-		processPNode36Data, NULL, NODETIMEOUT }; // BRL, buzz, IVT, ACCUPCB, ACCUFAN, imdfreq, dc_imd?
-CANData PowerNode37 = { &DeviceState.PowerNode37, PowerNode37_ID, 4,
-		processPNode37Data, PNode37Timeout, NODETIMEOUT }; // [?], Current, TSAL.*/
-
-int sendPowerNodeErrReset(uint8_t id, uint8_t channel);
-
 uint32_t getOldestPNodeData(void) {
+
 	uint32_t time = gettimer();
 
 	if (PowerNode1.time < time)
@@ -157,6 +147,7 @@ uint32_t getOldestPNodeData(void) {
 
 	if (PowerNode2.time < time)
 		time = PowerNode2.time;
+
 	return time;
 }
 
@@ -171,17 +162,17 @@ void PNode2Timeout(uint16_t id) {
 
 bool processPNode1Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle) {
-	/*static bool first = false;
+	static bool first = false;
 	if (!first) {
 		DebugMsg("PNode 1 First msg.");
 		first = true;
 	}
 	// 0x1f 0x0001 10000
-	if (DataLength >> 16 == PowerNode34.dlcsize
+	if (DataLength >> 16 == PowerNode1.dlcsize
 //		&& CANRxData[0] & ~(0b00011100) != 0 // check mask fit
 			&& CANRxData[1] < 255 && (CANRxData[2] >= 0 && CANRxData[2] <= 255)
 			&& CANRxData[3] < 255) {
-		xTaskNotify(PowerTaskHandle, ( 0x1 << PNode34Bit ), eSetBits);
+		xTaskNotify(PowerTaskHandle, ( 0x1 << PNode1Bit ), eSetBits);
 
 		bool newstate = CANRxData[0] & (0x1 << 2);
 		if (Shutdown.CockpitButton != newstate) {
@@ -215,20 +206,20 @@ bool processPNode1Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 	} else // bad data.
 	{
 		return false;
-	}*/
+	}
 }
 
 bool processPNode2Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle) // Rear
 {
-/*
+
 	static bool first = false;
 	if (!first) {
 		DebugMsg("PNode 2 First msg.");
 		first = true;
 	}
 
-	if (DataLength >> 16 == PowerNode36.dlcsize
+	if (DataLength >> 16 == PowerNode2.dlcsize
 			&& (CANRxData[0] >= 0 && CANRxData[0] <= 10)
 			&& (CANRxData[1] >= 0 && CANRxData[1] <= 10)
 			&& (CANRxData[2] >= 0 && CANRxData[2] <= 10)
@@ -236,7 +227,7 @@ bool processPNode2Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 			&& (CANRxData[4] >= 0 && CANRxData[4] <= 10)
 			&& (CANRxData[5] >= 0 && CANRxData[5] <= 255)
 			&& (CANRxData[6] >= 0 && CANRxData[6] <= 100)) {
-		xTaskNotify(PowerTaskHandle, ( 0x1 << PNode36Bit ), eSetBits);
+		xTaskNotify(PowerTaskHandle, ( 0x1 << PNode2Bit ), eSetBits);
 
 //		CarState.I_BrakeLight = CANRxData[0];
 //		CarState.I_Buzzers = CANRxData[1];
@@ -270,73 +261,11 @@ bool processPNode2Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 	}
 }
 
-bool processPNode37Data(const uint8_t CANRxData[8], const uint32_t DataLength,
-		const CANData *datahandle) {
-
-	static bool first = false;
-	if (!first) {
-		DebugMsg("PNode 37 First msg.");
-		first = true;
-	}
-
-#if 1
-	if (1)
-#else
-	if ( DataLength >> 16 == PowerNode37.dlcsize
-		&& CANRxData[0] <= 0b00011101 // max possible value. check for zeros in unused fields?
-		&& CANRxData[1] < 100
-		&& ( CANRxData[2] >= 0 && CANRxData[2] <= 100 )
-		)
-#endif
-	{
-		xTaskNotify(PowerTaskHandle, ( 0x1 << PNode37Bit ), eSetBits);
-
-#ifdef HPF2023
-// no inputs on node 37.
-#else
-		bool newstate = ! ( CANRxData[0] & (0x1 << 0) ); // DI3
-		if ( Shutdown.PRE != newstate )
-		{
-			DebugPrintf("PREcharge sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
-			Shutdown.PRE = newstate;
-		}
-
-		newstate = ! ( CANRxData[0] & (0x1 << 2) ); // DI5
-		if ( Shutdown.AIRp != newstate )
-		{
-			DebugPrintf("AIR Plus sense state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
-			Shutdown.AIRp = newstate;
-		}
-#if 0
-		newstate = ! ( CANRxData[0] & (0x1 << 3) ); // DI6
-		if ( Shutdown.AIRm != newstate )
-		{
-			DebugPrintf("AIR minus state changed to %s at (%ul)", newstate?"Closed":"Open", gettimer());
-			Shutdown.AIRm = newstate;
-		}
-#endif
-		newstate = ! ( CANRxData[0] & (0x1 << 3) ); // DI6
-		if ( Shutdown.IMD != newstate )
-		{
-			DebugPrintf("IMD sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
-			Shutdown.IMD = newstate;
-		}
-
-		newstate = ( CANRxData[0] & (0x1 << 4) ); // DI15
-		if ( Shutdown.TS_OFF != newstate )
-		{
-			DebugPrintf("TS_OFF sense state changed to %s at (%ul)", newstate?"True":"False", gettimer());
-			Shutdown.TS_OFF = newstate;
-		}
-#endif
+CANData PowerNode1;
+CANData PowerNode2;
 
 
-		return true;
-	} else // bad data.
-	{
-		return false;
-	}
-}
+
 
 void setAllPowerActualOff(void) {
 	for (int i = 0; DevicePowerList[i].device != None; i++) {
@@ -410,7 +339,7 @@ bool processPNodeAckData(const uint8_t CANRxData[8], const uint32_t DataLength,
 		}
 	}
 
-	return true;/*/
+	return true;
 }
 
 // ERROR list from powernode main.h
@@ -790,9 +719,6 @@ int setinitialdevicepower(void) {
 	return 0;
 }
 
-int average(int count, ...) {
-	return 0;
-}
 
 bool getNodeDevicePower(DevicePower device) {
 	for (int i = 0; DevicePowerList[i].device != None; i++) {
@@ -1090,9 +1016,6 @@ int initPowerNodes(void) {
 	RegisterCan1Message(&PowerNode1);
 
 	RegisterCan1Message(&PowerNode2);
-
-
-
 
 	return 0;
 }

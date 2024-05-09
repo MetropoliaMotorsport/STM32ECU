@@ -41,6 +41,7 @@ int getTorqueReqPercL( int16_t pedalreq );
 int getTorqueReqPercR( int16_t pedalreq );
 
 
+
 float PedalTorqueRequest( int16_t *used_pedal_percent );
 
 void SetupTorque( uint8_t pedal );

@@ -108,12 +108,12 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 
 	if (CarState.allowtsactivation){
 		PrintRunning("TS:Off");
-		Can_SendDebug(TSO_ID);}
-		//TODO add can bus msg
+		//Can_SendDebug(TSO_ID);	//TODO add can bus msg
+	}
 	else{
 		PrintRunning("TS:BAD");
-		Can_SendDebug(TSB_ID);
-		//TODO add can bus msg
+		//Can_SendDebug(TSB_ID); 	//TODO add can bus msg
+
 		}
 
 

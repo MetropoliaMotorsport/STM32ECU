@@ -18,7 +18,9 @@
 // 0x9   byte 6-7 last two.
 
 
-bool processBMSSOC(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle);
+bool processBMSSOC(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
+	return true;
+}
 void BMSTimeout(uint16_t id);
 
 CANData BMSSOC = { &DeviceState.BMS, BMSSOC_ID, 8, processBMSSOC, BMSTimeout,
