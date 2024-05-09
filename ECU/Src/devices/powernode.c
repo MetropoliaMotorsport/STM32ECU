@@ -152,11 +152,11 @@ int sendPowerNodeErrReset(uint8_t id, uint8_t channel);
 uint32_t getOldestPNodeData(void) {
 	uint32_t time = gettimer();
 
-	if (PowerNode34.time < time)
-		time = PowerNode34.time;
+	if (PowerNode1.time < time)
+		time = PowerNode1.time;
 
-	if (PowerNode37.time < time)
-		time = PowerNode37.time;
+	if (PowerNode2.time < time)
+		time = PowerNode2.time;
 	return time;
 }
 
@@ -766,20 +766,20 @@ char* getPNodeStr(void) {
 		return PNodeStr;
 }
 
-void setPowerNodeStr(uint32_t nodesonline) {
+void setPowerNodeStr(uint32_t nodesonline) { //TODO what is that?
 	PNodeStr[0] = 0;
 
 	uint8_t pos = 0;
 
-	if ( PNodeAllBit & (0x1 << PNode34Bit))
-		if (!(nodesonline & (0x1 << PNode34Bit))) {
+	if ( PNodeAllBit & (0x1 << PNode1Bit))				//Need to be understood
+		if (!(nodesonline & (0x1 << PNode1Bit))) {
 			PNodeStr[pos] = '4';
 			PNodeStr[pos + 1] = '\0';
 			pos++;
 		}
 
-	if ( PNodeAllBit & (0x1 << PNode37Bit))
-		if (!(nodesonline & (0x1 << PNode37Bit))) {
+	if ( PNodeAllBit & (0x1 << PNode2Bit))				//Need to be understood
+		if (!(nodesonline & (0x1 << PNode2Bit))) {
 			PNodeStr[pos] = '7';
 			PNodeStr[pos + 1] = '\0';
 			pos++;
@@ -1087,11 +1087,11 @@ int initPowerNodes(void) {
 
 	resetPowerNodes();
 
-	RegisterCan1Message(&PowerNode34);
+	RegisterCan1Message(&PowerNode1);
 
-	RegisterCan1Message(&PowerNode36);
+	RegisterCan1Message(&PowerNode2);
 
-	RegisterCan1Message(&PowerNode37);
+
 
 
 	return 0;

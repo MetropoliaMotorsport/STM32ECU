@@ -16,6 +16,8 @@ extern CANData BrakeRear;
 
 //TODO finnish this
 
+int getNodeWait( void );
+uint32_t getAnalogueNodesOnline( void );
 
 void initNodeDevices( void );
 

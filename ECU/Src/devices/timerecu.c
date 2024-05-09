@@ -111,7 +111,7 @@ time_t getTime(void) {
 
 int initRTC(void) {
 	rtctime = 0;
-	return initMemorator();
+
 }
 
 int initTimer(void) {

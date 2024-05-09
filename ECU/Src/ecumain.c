@@ -36,10 +36,12 @@
 #include "operationalprocess.h"
 #include "uartecu.h"
 #include "taskpriorities.h"
+#include "node_device.h"
 
 #include "dma.h"
 #include "gpio.h"
 #include "rng.h"
+
 
 
 //Hello worldS
@@ -261,16 +263,14 @@ static int HardwareInit(void) {
 	initECU();
 
 #ifdef POWERNODES
-	initNodes();
 	initPowerNodes();
-#else
-	initPDM();
+
 #endif
 #ifdef ANALOGNODES
-	initAnalogNodes();
+	initNodeDevices;
 #endif
 
-	initADC();
+	//initADC(); TODO
 
 #ifdef EEPROMSTORAGE
 	initEEPROM();

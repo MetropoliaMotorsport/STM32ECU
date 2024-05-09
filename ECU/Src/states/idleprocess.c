@@ -37,11 +37,9 @@ if( DeviceState.PWR_Node == OPERATIONAL )
 	
 	if (returnvalue == 0xFF) {
 		returnvalue = (0x1 << BMSReceived) + (0x1 << IVTReceived) +
-#ifndef POWERNODES
-				  (0x1 << PDMReceived)+
-#endif
+
 				(0x1 << InverterReceived) + // TODO inverter receive
-				(0x1 << PedalADCReceived);
+				(0x1 << PedalReceived);
 
 	}
 
@@ -56,9 +54,7 @@ if( DeviceState.PWR_Node == OPERATIONAL )
 	if (invcount == MOTORCOUNT)
 		returnvalue &= ~(0x1 << (InverterReceived));
 
-#ifndef POWERNODES
-	if ( receivePDM() ) returnvalue &= ~(0x1 << PDMReceived);
-#endif
+
 	if (DeviceState.BMS == OPERATIONAL)
 		returnvalue &= ~(0x1 << BMSReceived);
 
@@ -67,7 +63,7 @@ if( DeviceState.PWR_Node == OPERATIONAL )
 
 	// need new function to check for ADC input, so that more workable with a CAN node.
 	if (DeviceState.APPS1 == 0)
-		returnvalue &= ~(0x1 << PedalADCReceived); // change this to just indicate ADC received in some form.
+		returnvalue &= ~(0x1 << PedalReceived); // change this to just indicate ADC received in some form.
 #endif
 	return returnvalue;
 }

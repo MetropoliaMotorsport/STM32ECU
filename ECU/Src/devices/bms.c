@@ -35,8 +35,22 @@ void BMSTimeout(uint16_t id) {
 	}
 }
 
+int receiveBMS(void) { // TODO update it as per the new code.
+	if (DeviceState.BMS == OFFLINE) {
+		return 0;
+	}
 
-void resetBMS(void) {
+	if (DeviceState.BMS == OPERATIONAL) {
+		// check for timeout.
+		if (BMSSOC.timeout) {
+			BMSTimeout(BMSSOC.id);
+		}
+	}
+
+	return 0;
+}
+
+void resetBMS() {
 #ifdef BMSEnable
 	DeviceState.BMSEnabled = ENABLED;
 #else

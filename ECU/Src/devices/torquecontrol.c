@@ -12,6 +12,7 @@
 #include "timerecu.h"
 #include "inverter.h"
 #include "imu.h"
+#include "node_device.h"
 #ifdef MATLAB
 
 #include "../matlab/Regeneration_ert_rtw/Regeneration.h"
@@ -34,6 +35,7 @@ int initVectoring(void) {
 
 void doVectoring(float Torque_Req, vectoradjust *adj, speedadjust *spd,
 		int16_t pedalreq) {
+
 #ifdef TORQUEBALANCE
 	uint8_t torquebalInt = getEEPROMBlock(0)->TorqueBal;
 	uint8_t torquebal = 0;
@@ -199,8 +201,32 @@ void doVectoring(float Torque_Req, vectoradjust *adj, speedadjust *spd,
  * APPS Check, Should ignore regen sensor and only use physical brake.
  *
  */
+
+
+int16_t linearInterpolate(uint16_t Input[], int16_t Output[], uint16_t count, uint16_t RawInput)
+{
+	//TODO implement linear interpolation
+   return RawInput;
+}
+
+int getTorqueReqCurve(int16_t pedalreq) {
+	
+
+	return pedalreq;
+}
+
+int getBrakeTravelPercent(int16_t pedalreq) {
+	return pedalreq;
+}
+
 float PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm request amount.
 {
+
+	uint16_t APPS1_raw = APPS1.data;
+	uint16_t APPS2_raw = APPS2.data;
+	uint16_t BPPS_raw = BPPS.data;
+
+
 	//T 11.8.8:  If an implausibility occurs between the values of the APPSs and persists for more than 100 ms
 
 	//[EV ONLY] The power to the motor(s) must be immediately shut down completely.
@@ -218,6 +244,7 @@ float PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm requ
 
 	//The absolute value of the difference between the APPS (Accelerator Pedal Position Sensors)
 
+
 	int difference = abs(
 			APPS1.data - APPS2.data) / 10;
 
@@ -225,10 +252,11 @@ float PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm requ
 	int torqueperc = APPS1.data;
 #else
 	int torqueperc = APPS2.data;
-	#endif
+#endif
+
 
 	//The average value of the APPS // signals pedal travel equivalent to ≥25 % desired motor torque
-	int TorqueRequestPercent = getTorqueReqCurve(torqueperc) / 10;
+	int TorqueRequestPercent = getTorqueReqCurve(torqueperc) / 10; //TODO Implement curve
 	*used_pedal_percent = TorqueRequestPercent;
 
 	// The commanded motor torque must remain at 0 N m until the APPS signals less than 5 % pedal travel
@@ -243,7 +271,11 @@ float PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm requ
 		Torque_drivers_request = 0;
 		CarState.APPSstatus = 1;
 	} else if (CarState.AllowRegen
+
 			&& BPPS.data > (REGENMINIMUM * 10)
+
+			&& BPPS_raw > (REGENMINIMUM * 10)
+
 			&& getEEPROMBlock(0)->Regen) {
 		Torque_drivers_request = 0;
 		No_Torque_Until_Pedal_Released = 1;
@@ -254,14 +286,6 @@ float PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm requ
 	//   -Brake Pressure allowed : less than 30
 	//   -Torque-Brake Violation : Free
 
-#if 0
-	else if ( CarState.Current > 1000 || CarState.Power > 1000 ) // if we're drawing more current than allowed, cut torque request till pedal released.
-	{
-		No_Torque_Until_Pedal_Released = 1;
-		Torque_drivers_request = 0;
-	    CarState.APPSstatus = 10;
-	}
-#endif
 	else if (difference <= TORQUE_DIFFERENCE && getBrakeLow() // 30
 			&& No_Torque_Until_Pedal_Released == 0) {
 		Torque_drivers_request = 1;
@@ -320,9 +344,6 @@ float PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm requ
 
 	else if (difference <= TORQUE_DIFFERENCE
 			&& getBrakeLow() // 30
-#ifdef REGEN
-
-#endif
 			&& No_Torque_Until_Pedal_Released == 1
 			&& TorqueRequestTravelPercent < 5) {
 		No_Torque_Until_Pedal_Released = 0;

@@ -23,6 +23,7 @@
 #include "preoperation.h"
 #include "node_device.h"
 #include "timerecu.h"
+#include "torquecontrol.h"
 
 #include "lenzeinverter.h"
 #include "inverter.h"
@@ -1387,7 +1388,7 @@ static void DebugTask(void *pvParameters) {
 					} else
 						UARTwrite("Error saving config.\r\n");
 
-					SetupADCInterpolationTables(getEEPROMBlock(0));
+					SetupInterpolationTables(getEEPROMBlock(0));
 				} else if (streql(tkn1, "adcval")) {
 					debugCurve(tokens, tkn2, val2);
 				} else if (streql(tkn1, "eepromfix")) {
@@ -1436,7 +1437,7 @@ static void DebugTask(void *pvParameters) {
 					} else
 						UARTwrite("Error saving config.\r\n");
 
-					SetupADCInterpolationTables(getEEPROMBlock(0));
+					SetupInterpolationTables(getEEPROMBlock(0));
 
 				} else if (streql(tkn1, "buzzer")) {
 					UARTprintf("Sounding buzzer\r\n");

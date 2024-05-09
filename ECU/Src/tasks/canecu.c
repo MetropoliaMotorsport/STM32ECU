@@ -786,7 +786,7 @@ char CAN_SendErrors(void) {
 }
 
 char CAN_SendDebug(uint16_t id){
-	CAN2Send(id, 0, 0);
+	CAN2Send(id, 0, 0); //TODO add data
 	return 1;
 }
 

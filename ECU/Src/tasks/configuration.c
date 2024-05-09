@@ -17,7 +17,7 @@
 #include "inverter.h"
 #include "debug.h"
 #include "canecu.h"
-
+#include "torquecontrol.h"
 ////////////////////////////////////////
 
 ////////////////////////////////////////
@@ -432,7 +432,7 @@ bool DoMenu(uint16_t input) {
 				redraw = true;
 				incalib = false;
 				dofullsave = true;
-				SetupADCInterpolationTables(getEEPROMBlock(0));
+				SetupInterpolationTables(getEEPROMBlock(0));
 
 				// set the current pedal calibration after calibration exited.
 			} else
@@ -661,7 +661,7 @@ bool initConfig(void) {
 
 	vQueueAddToRegistry(ConfigInputQueue, "Config Input");
 
-	if (!SetupADCInterpolationTables(getEEPROMBlock(0))) {
+	if (!SetupInterpolationTables(getEEPROMBlock(0))) {
 		// bad config, fall back to some kind of of default, force recalibration of pedal?
 //		doPedalCalibration();
 	}

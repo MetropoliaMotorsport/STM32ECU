@@ -1,9 +1,16 @@
 cmake_minimum_required(VERSION 3.20)
-project("ECU" C CXX ASM)
+project("ECU" LANGUAGES C CXX ASM)
+
+# Specify the path to the toolchain file
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/cmake/gcc-arm-none-eabi.cmake)
 
 include(cmake/st-project.cmake)
+
+# Define the executable
+add_executable(${PROJECT_NAME}.elf)
+
 # Include directories
-include_directories(
+target_include_directories(${PROJECT_NAME}.elf PRIVATE
   Core/Inc
   Drivers/STM32H7xx_HAL_Driver/Inc
   Drivers/STM32H7xx_HAL_Driver/Inc/Legacy
@@ -25,6 +32,7 @@ file(GLOB_RECURSE SOURCES
   "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/*.c"
   "Src/*.c"
 )
+
 file(GLOB_RECURSE HEADERS
   "Core/Inc/*.h"
   "Drivers/STM32H7xx_HAL_Driver/Inc/*.h"
@@ -37,11 +45,11 @@ file(GLOB_RECURSE HEADERS
   "Inc/*.h"
 )
 
+target_sources(${PROJECT_NAME}.elf PRIVATE ${SOURCES})
+
 # ASM startup file
 set(ASM_SOURCES startup/startup_stm32h743xx.s)
-
-# Define the executable
-add_executable(${PROJECT_NAME}.elf ${SOURCES} ${ASM_SOURCES})
+target_sources(${PROJECT_NAME}.elf PRIVATE ${ASM_SOURCES})
 
 # Post-build commands
 add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
@@ -49,4 +57,6 @@ add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
   COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_NAME}.bin
 )
 
-"C:\Program Files\CMake\bin\cmake.EXE" -DCMAKE_BUILD_TYPE=Debug -DPRESET_NAME=debug -DCMAKE_INSTALL_PREFIX=C:/Users/dovlatib/Documents/STM32ECU/ECU/build/debug/install -DCMAKE_TOOLCHAIN_FILE:FILEPATH=C:/Users/dovlatib/Documents/STM32ECU/ECU/cmake/gcc-arm-none-eabi.cmake -DCMAKE_MAKE_PROGRAM=C:/Tools/ninja/ninja.exe -SC:/Users/dovlatib/Documents/STM32ECU/ECU -BC:/Users/dovlatib/Documents/STM32ECU/ECU/build/debug/build -G Ninja
+# Compiler options, linker scripts, etc, should be specified too
+# Example: target_compile_options, target_link_libraries, etc.
+

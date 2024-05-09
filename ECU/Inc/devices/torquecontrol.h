@@ -8,6 +8,8 @@
 #ifndef TORQUECONTROL_H_
 #define TORQUECONTROL_H_
 
+#include "eeprom.h"
+
 #define TORQUE_VECTORINGBIT			(0)
 #define TORQUE_TRACTIONBIT			(1)
 #define TORQUE_VELOCITYBIT			(2)
@@ -34,7 +36,17 @@ int initVectoring( void );
 void doVectoring(float Torque_Req, vectoradjust * adj, speedadjust * spd, int16_t pedalreq );
 
 int getTorqueReqCurve(int16_t pedalreq);
+int getBrakeTravelPerc( int16_t pedalreq );
+int getTorqueReqPercL( int16_t pedalreq );
+int getTorqueReqPercR( int16_t pedalreq );
+
+
 float PedalTorqueRequest( int16_t *used_pedal_percent );
+
+void SetupTorque( uint8_t pedal );
+int SetupInterpolationTables( eepromdata* eepromdatahandle );
+
+
 
 #endif /* TORQUECONTROL_H_ */
 

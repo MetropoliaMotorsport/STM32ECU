@@ -27,7 +27,7 @@ uint16_t ReadyReceive(uint16_t returnvalue) {
 				(0x1 << PNodeReceived) +
 #endif
 						(0x1 << BMSReceived) + (0x1 << IVTReceived)
-						+ (0x1 << PedalADCReceived);
+						+ (0x1 << PedalReceived);
 
 		//(0x1 << YAWOnlineBit);
 	}

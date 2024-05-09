@@ -33,13 +33,13 @@ static uint16_t DevicesOnline(uint16_t returnvalue) {
 #ifndef POWERNODES
 						  (0x1 << PDMReceived) +
 #endif
-				(0x1 << PedalADCReceived) + (0x1 << IVTReceived);
+				(0x1 << PedalReceived) + (0x1 << IVTReceived);
 	}
 
 	if (DeviceState.APPS1 == 0)
-		returnvalue &= ~(0x1 << PedalADCReceived); // ensures even if analogue nodes online, input needs to be sane for bootup.
+		returnvalue &= ~(0x1 << PedalReceived); // ensures even if analogue nodes online, input needs to be sane for bootup.
 	else
-		returnvalue |= 0x1 << PedalADCReceived;
+		returnvalue |= 0x1 << PedalReceived;
 
 	static bool first = false;
 	if (1) //DeviceState.Inverter != OFFLINE ) // && GetInverterState() != INERROR )
@@ -164,7 +164,7 @@ int PreOperationState(uint32_t OperationLoops) {
 
 #ifdef ANALOGNODES
 			if (DeviceState.Sensors != OPERATIONAL) {
-				nodewait = getADCWait();
+				nodewait = getNodeWait();
 				if (nodewait[0] != 0) {
 					sprintf(&str[strlen(str)], "A%s ", nodewait);
 				}
@@ -288,7 +288,7 @@ int PreOperationState(uint32_t OperationLoops) {
 					APPS2.data / 10,
 					BPPS.data / 10);
 			sprintf(str, "Ang %d", SteeringAngle.data);
-#endif
+
 		}
 	} else {
 		ReadyToStart |= (1 << READYCONFIGBIT); // being in config means not ready to start.
