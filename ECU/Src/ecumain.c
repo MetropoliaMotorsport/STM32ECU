@@ -137,18 +137,6 @@ void MainTask(void *argument) {
 
 	uint8_t watchdogBit = registerWatchdogBit("MainTask");
 
-#ifdef LEDTEST
-	setOutput(LED4, On);
-
-	vTaskDelay(1000);
-	blinkOutput(LED4, BlinkMed, 1);
-
-
-	setOutput(LED5, Off);
-	blinkOutput(LED5, Timed, 800);
-
-	blinkOutput(LED7, BlinkFast, 1500);
-#endif
 
 	xEventGroupSync(xStartupSync, 1, 1, 100);
 
@@ -250,13 +238,8 @@ static int HardwareInit(void) {
 
 	initCAN();
 	initRTC();
-
 	initPower();
-
 	initIMU();
-#ifdef PDM
-	initPDM();
-#endif
 	initIVT();
 	initBMS();
 	initInput();
@@ -270,7 +253,6 @@ static int HardwareInit(void) {
 	initNodeDevices;
 #endif
 
-	//initADC(); TODO
 
 #ifdef EEPROMSTORAGE
 	initEEPROM();

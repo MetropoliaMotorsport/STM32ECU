@@ -131,8 +131,6 @@ char CAN_SendTimeBase( void );
 
 int CheckCanError( void );
 
-uint64_t readCanData(CANData * datahandle, uint8_t * CANRxData );
-
 void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLength );
 int receivedCANData( CANData * datahandle );
 

@@ -6,6 +6,7 @@
 			[
 				{
 					"build" : ".",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.20"
@@ -37,9 +38,9 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "ECU.elf::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ECU.elf-Debug-21a761651b79ea88fac3.json",
-					"name" : "ECU.elf",
+					"id" : "ECU::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ECU-Debug-e9018ad5ff1eda1c3f3e.json",
+					"name" : "ECU",
 					"projectIndex" : 0
 				}
 			]
@@ -54,6 +55,6 @@
 	"version" : 
 	{
 		"major" : 2,
-		"minor" : 2
+		"minor" : 7
 	}
 }

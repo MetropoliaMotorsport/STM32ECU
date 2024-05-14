@@ -1,2 +1,4 @@
 # ninja log v5
-43	2075	7369400022957545	CMakeFiles/ECU.elf.dir/Core/Src/syscalls.c.obj	aa1152e487a80077
+47	651	7369796949568595	CMakeFiles/ECU.elf.dir/Core/Src/syscalls.c.obj	3e53609c52107978
+30	401	7369808796096548	CMakeFiles/ECU.dir/Core/Src/syscalls.c.obj	c63f0bb7131f32a8
+0	211	7369808791379759	build.ninja	c85b586e2ccf61c4

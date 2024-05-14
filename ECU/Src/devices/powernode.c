@@ -112,7 +112,28 @@ devicepowerreq DevicePowerList[] =
 
 #endif
 
-nodepowerreq PowerRequests[] = {
+devicepowerreq DevicePowerList[] = { //TODO update power distribution
+				{ Front1, 1, 5 },
+
+				{ Inverters, 2, 3 },
+				{ ECU, 1, 4, true, 0, true }, // ECU has to have power or we aren't booted.. so just assume it.
+				{ Front2, 1, 5 },
+
+				{ LeftFans, 2, 2 },
+				{ RightFans, 2, 3 },
+				{ LeftPump, 2, 4 },
+				{ RightPump, 2, 5 },
+
+				{ Current, 2, 1 },
+				{ Buzzer, 2, 2 },
+				{ Brake, 2, 3 },
+				{ Back1, 2, 4 },
+				{ TSAL, 2, 5, true, 0, true }, // essential to be powered, else not compliant.
+
+				{ None }
+};
+
+nodepowerreq PowerRequests[] = { //TODO How does it work?
 
 
 		{ 1, 34, 0, 0, { 0 } }, { 1, 36, 0, 0, { 0 } }, { 1, 37, 0, 0, { 0 } },

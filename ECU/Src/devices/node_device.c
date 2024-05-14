@@ -13,7 +13,15 @@
 
 //TODO Keep it updated with the devices you want to use in the car
 bool processBPPS(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
-	return true;
+	uint64_t messaga;
+		uint16_t data = 0;
+		for (int i = 0; i < datahandle->dlcsize; i++) {
+			messaga |= CANRxData[i] << (i * 8);
+		}
+		for (int i = datahandle->bitpos; i < datahandle->length; i++) {
+			data |= (messaga >> i) & 1;
+		}
+		datahandle->data = data;
 }
 
 bool processAPPS1(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){

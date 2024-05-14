@@ -813,18 +813,6 @@ char CAN_SendTorq2(int16_t val1, uint16_t val2, uint16_t val3, int16_t val4) {
 
 
 
-uint64_t readCanData(CANData * datahandle, uint8_t * CANRxData ){
-	uint64_t messaga;
-	uint16_t data = 0;
-	for (int i = 0; i < datahandle->dlcsize; i++) {
-		messaga |= CANRxData[i] << (i * 8);
-	}
-	for (int i = datahandle->bitpos; i < datahandle->length; i++) {
-		data |= (messaga >> i) & 1;
-	}
-	return data;
-}
-
 // process an incoming CAN data packet.
 void processCANData(CANData *datahandle, uint8_t *CANRxData,
 		uint32_t DataLength) {
@@ -844,7 +832,7 @@ void processCANData(CANData *datahandle, uint8_t *CANRxData,
 		if (datahandle->getData(CANRxData, DataLength, datahandle)) {
 			datahandle->receiveerr = 0;
 			*datahandle->devicestate = OPERATIONAL;
-			readCanData(datahandle, CANRxData);
+
 		} else
 			baddata = true;
 	}

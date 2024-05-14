@@ -1,62 +1,43 @@
 cmake_minimum_required(VERSION 3.20)
-project("ECU" LANGUAGES C CXX ASM)
 
-# Specify the path to the toolchain file
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/cmake/gcc-arm-none-eabi.cmake)
+# Set the project name and specify the languages used
+project("ECU" C CXX ASM)
 
+# Include custom CMake scripts
 include(cmake/st-project.cmake)
 
-# Define the executable
-add_executable(${PROJECT_NAME}.elf)
-
-# Include directories
-target_include_directories(${PROJECT_NAME}.elf PRIVATE
-  Core/Inc
-  Drivers/STM32H7xx_HAL_Driver/Inc
-  Drivers/STM32H7xx_HAL_Driver/Inc/Legacy
-  Drivers/CMSIS/Device/ST/STM32H7xx/Include
-  Drivers/CMSIS/Include
-  Middlewares/Third_Party/FreeRTOS/Source/include
-  Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
-  Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
-  Src
-  Inc
+# Glob all header files in the Inc directories
+file(GLOB_RECURSE USER_INC
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Inc/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Inc/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/Device/ST/STM32H7xx/Include/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Inc/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/include/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/*.h
 )
 
-# Source files
-file(GLOB_RECURSE SOURCES
-  "Core/Src/*.c"
-  "Drivers/STM32H7xx_HAL_Driver/Src/*.c"
-  "Middlewares/Third_Party/FreeRTOS/Source/*.c"
-  "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/*.c"
-  "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/*.c"
-  "Src/*.c"
+# Glob all source files in the Src directories
+file(GLOB_RECURSE USER_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/*.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/startup/*.s  # Assembly files
 )
 
-file(GLOB_RECURSE HEADERS
-  "Core/Inc/*.h"
-  "Drivers/STM32H7xx_HAL_Driver/Inc/*.h"
-  "Drivers/STM32H7xx_HAL_Driver/Inc/Legacy/*.h"
-  "Drivers/CMSIS/Device/ST/STM32H7xx/Include/*.h"
-  "Drivers/CMSIS/Include/*.h"
-  "Middlewares/Third_Party/FreeRTOS/Source/include/*.h"
-  "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/*.h"
-  "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/*.h"
-  "Inc/*.h"
+# Add executable target
+add_executable(${PROJECT_NAME} ${USER_INC} ${USER_SRC})
+
+# Add properties and target-specific configurations
+add_st_target_properties(${PROJECT_NAME})
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/Device/ST/STM32H7xx/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
 )
-
-target_sources(${PROJECT_NAME}.elf PRIVATE ${SOURCES})
-
-# ASM startup file
-set(ASM_SOURCES startup/startup_stm32h743xx.s)
-target_sources(${PROJECT_NAME}.elf PRIVATE ${ASM_SOURCES})
-
-# Post-build commands
-add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
-  COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_NAME}.hex
-  COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_NAME}.bin
-)
-
-# Compiler options, linker scripts, etc, should be specified too
-# Example: target_compile_options, target_link_libraries, etc.
-
