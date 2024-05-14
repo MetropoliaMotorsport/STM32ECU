@@ -79,39 +79,6 @@ devicepowerreq DevicePowerList[] = {
 
 #else
 
-// TODO this list should be sanity checked for duplicates at tune time.
-devicepowerreq DevicePowerList[] =
-{
-		{ Telemetry, 33, 4 },
-		{ Front1, 33, 5 },
-
-		{ Inverters, 34, 3 },
-		{ ECU, 34, 4, true, 0, true }, // ECU has to have power or we aren't booted.. so just assume it.
-		{ Front2, 34, 5 },
-
-		{ LeftFans, 35, 2 },
-		{ RightFans, 35, 3 },
-		{ LeftPump, 35, 4 },
-		{ RightPump, 35, 5 },
-
-//		{ Brake, 36, 1 },
-//		{ Buzzer, 36, 2 },
-		{ IVT, 36, 3 },
-		{ Accu, 36, 4 }, // TODO make sure this channel cannot be reset for latching rules.
-		{ AccuFan, 36, 5},
-
-
-		{ Current, 37, 1 },
-		{ Buzzer, 37, 2 },
-		{ Brake, 37, 3 },
-		{ Back1, 37, 4 },
-		{ TSAL, 37, 5, true, 0, true }, // essential to be powered, else not compliant.
-
-		{ None }
-};
-
-#endif
-
 devicepowerreq DevicePowerList[] = { //TODO update power distribution
 				{ Front1, 1, 5 },
 
@@ -132,7 +99,7 @@ devicepowerreq DevicePowerList[] = { //TODO update power distribution
 
 				{ None }
 };
-
+#endif
 nodepowerreq PowerRequests[] = { //TODO How does it work?
 
 

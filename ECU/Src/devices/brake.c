@@ -33,7 +33,7 @@ uint8_t getBrakeRTDM(void) {
 }
 
 void resetBrake(void) {
-	DeviceState.BrakeLight = Offline;
+	DeviceState.BrakeLight = OFFLINE;
 }
 
 int initBrake(void) {
