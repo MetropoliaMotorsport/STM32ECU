@@ -104,11 +104,8 @@ void InputTask(void *argument) {
 			bool curstate = HAL_GPIO_ReadPin(Input[i].port, Input[i].pin);
 
 //#define BUTTONPULLUP
-#ifndef BUTTONPULLUP
 			curstate = !curstate;
-#else
 
-#endif
 			if (curstate != Input[i].state) // current state of button has changed reset duration count.
 					{
 				Input[i].statecount = 0;
@@ -159,78 +156,6 @@ void InputTask(void *argument) {
 	vTaskDelete(NULL);
 }
 
-int initPWM(void) {
-
-#ifdef PWMSTEERING
-	MX_TIM8_Init(); // pwm
-#endif
-
-	if (HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_2) != HAL_OK) {
-		Error_Handler();
-	}
-
-	if (HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_1) != HAL_OK) {
-		Error_Handler();
-	}
-	PWMtime = gettimer();
-
-	DeviceState.PWM = OPERATIONAL;
-	return 0;
-}
-
-/**
- * @brief  Input Capture callback in non blocking mode
- * @param  htim: TIM IC handle
- * @retval None
- */
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
-	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) // only get one update per loop?
-			{
-		PWMtime = gettimer(); // use for timing out if interrupt not getting triggered.
-
-		if (reading == 0) {
-			// this should be called ~ 8 times per loop
-			/* Get the Input Capture value */
-			uwIC2Value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
-
-			if (uwIC2Value != 0) {
-				/* Duty cycle computation */
-				uwDutyCycle = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2)
-						* 10000 / uwIC2Value;
-				/* uwFrequency computation
-				 TIM4 counter clock = (RCC_Clocks.HCLK_Frequency) */
-				uwFrequency = (HAL_RCC_GetHCLKFreq()) / uwIC2Value / 5;
-
-				if (uwFrequency > 860 || uwFrequency < 830) // was 850
-					DeviceState.PWM = INERROR;
-				// ensure that frequenc is within expected range
-				else {
-					reading = 1;
-					DeviceState.PWM = OPERATIONAL;
-				}
-			} else {
-				uwDutyCycle = 0;
-				uwFrequency = 0;
-			}
-		}
-	}
-}
-
-bool receivePWM(void) {
-	return (PWMtime > gettimer() - MS1 * CYCLETIME) ? true : false;
-}
-
-int getPWMDuty(void) // returns duty cycle as %*100
-{
-	reading = 0;
-	return uwDutyCycle;
-}
-
-int getPWMFreq(void) // returns duty cycle as %*100
-{
-	reading = 0;
-	return uwFrequency;
-}
 
 int checkReset(void) {
 	if (checkConfigReset()) {

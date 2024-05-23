@@ -19,25 +19,31 @@
 #define TORQUE_TCSENABLEDBIT		(6)
 
 
-typedef struct ADCInterpolationTables { // pointers to array data for linear interpolation values, use elements field to know how large arrays are.
-		struct ADCTable Steering;
-		struct ADCTable SteeringAngle;
+struct Table {
+	uint16_t *Input;
+	int16_t *Output;
+	uint16_t Elements;
+};
 
-		struct ADCTable BrakeF;
-		struct ADCTable BrakeR;
+typedef struct InterpolationTables { // pointers to array data for linear interpolation values, use elements field to know how large arrays are.
+		struct Table Steering;
+		struct Table SteeringAngle;
 
-		struct ADCTable Regen;
+		struct Table BrakeF;
+		struct Table BrakeR;
 
-		struct ADCTable AccelL;
-		struct ADCTable AccelR;
+		struct Table Regen;
 
-		struct ADCTable TorqueCurve;
+		struct Table AccelL;
+		struct Table AccelR;
 
-		struct ADCTable Coolant;
+		struct Table TorqueCurve;
 
-		struct ADCTable ModeSelector;
+		struct Table Coolant;
+
+		struct Table ModeSelector;
 #ifdef TORQUEVECTOR
-		struct ADCTable TorqueVector;
+		struct Table TorqueVector;
 #endif
 } InterpolationTables_t;
 
@@ -68,7 +74,7 @@ int getTorqueReqPercR( int16_t pedalreq );
 float PedalTorqueRequest( int16_t *used_pedal_percent );
 
 void SetupTorque( uint8_t pedal );
-boo; SetupInterpolationTables( eepromdata* eepromdatahandle );
+bool SetupInterpolationTables( eepromdata* eepromdatahandle );
 
 
 

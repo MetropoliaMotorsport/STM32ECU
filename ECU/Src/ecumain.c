@@ -187,14 +187,6 @@ static int HardwareInit(void) {
 //	SCB_InvalidateICache();
 	SCB_EnableICache();
 
-#ifdef CACHE
-	/* Enable D-Cache---------------------------------------------------------*/
-	SCB_EnableDCache();
-#endif
-	//  SCB_CleanInvalidateDCache_by_Addr	(	uint32_t * 	addr,
-	//int32_t 	dsize
-//	)	 DMA
-
 	MX_DMA_Init();
 
 	static int enteredcount = 0;
@@ -217,7 +209,7 @@ static int HardwareInit(void) {
 	initDebug();
 
 	// startup LCD first
-#ifdef HPF20
+
 	ShutdownCircuitSet( false); // ensure shutdown circuit is closed at start
 
 	initOutput(); // set default led states and start life indicator LED blinking. needed for LCD powering.
@@ -227,14 +219,6 @@ static int HardwareInit(void) {
 	}
 
 	initTimer();
-
-#ifdef PWMSTEERING
-	initPWM();
-#endif
-
-#elif
-	DeviceState.LCD = DISABLED;
-#endif
 
 	initCAN();
 	initRTC();
@@ -250,16 +234,14 @@ static int HardwareInit(void) {
 
 #endif
 #ifdef ANALOGNODES
-	initNodeDevices;
+	initNodeDevices();
 #endif
 
-
-#ifdef EEPROMSTORAGE
 	initEEPROM();
-#endif
+
 
 	initConfig(); // config relies on eeprom data, was too early in process!
-
+/*
 	eepromdata *data = getEEPROMBlock(0);
 
 	DebugPrintf("Apps Calib L: %5d - %5d ( %5d %5d )\r\n",
@@ -274,19 +256,11 @@ static int HardwareInit(void) {
 			data->ADCBrakeTravelInput[0], data->ADCBrakeTravelInput[1],
 			data->ADCBrakeTravelInput[2], data->ADCBrakeTravelInput[3]);
 
-	for (int i = 0; i < 100; i += 10) {
-
-		//	int range =
-
-		//	100/(data->ADCTorqueReqLInput[1] - data->ADCTorqueReqLInput[0]) * ;
-
-		//	DebugPrintf(getTorqueReqPercR();
-	}
-
+*/
 	// Moved inverters after eeprom so that config value can be used.
 
 	initInv();
-
+/*
 	if (getEEPROMBlock(0)->alwaysHV) {
 		DebugMsg("Shutdowncircuit Closed");
 		ShutdownCircuitSet(true);
@@ -294,26 +268,11 @@ static int HardwareInit(void) {
 		DebugMsg("Shutdowncircuit Open");
 		ShutdownCircuitSet(false);
 	}
-
+*/
 	// after cubemx hardware inits, run our own initialisations to start up essential function.
 
 	// should also read in defaults for calibrations, power levels etc.
 
-// initButtons was here moved later, during startup sequence inputs were being triggered early
-
-#ifdef SCROLLTEST
-	char str[20];
-	int i = 0;
-	for ( i=0;i<10;i++ ){
-		vTaskDelay(100);
-		sprintf(str,"%.8d", i);
-	}
-
-	while ( 1 )
-	{
-		vTaskDelay(50);
-	}
-#endif
 
 	vTaskDelay(200);
 

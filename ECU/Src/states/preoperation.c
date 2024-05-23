@@ -73,7 +73,6 @@ static uint16_t DevicesOnline(uint16_t returnvalue) {
 }
 
 static volatile bool testmotors = false;
-static bool testmotorslast = false;
 
 void setTestMotors( bool state) {
 	testmotors = state;
@@ -127,9 +126,7 @@ int PreOperationState(uint32_t OperationLoops) {
 		//   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
 		// send to individual devices rather than reset everything if needed.
 	}
-#ifndef everyloop
-	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
-#endif
+
 	{
 		CAN_SendStatus(1, PreOperationalState, preoperationstate);
 
@@ -172,10 +169,10 @@ int PreOperationState(uint32_t OperationLoops) {
 #endif
 
 			if (preoperationstate & (0x1 << InverterReceived)) {
-				if (getEEPROMBlock(0)->InvEnabled)
+				/*if (getEEPROMBlock(0)->InvEnabled)
 					strcat(str, "INV ");
 				else
-					strcat(str, "INVDIS ");
+					strcat(str, "INVDIS ");*/
 			}
 
 			if (preoperationstate & (0x1 << BMSReceived)) {

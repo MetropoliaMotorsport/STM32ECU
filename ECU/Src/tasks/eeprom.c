@@ -864,6 +864,8 @@ bool clearEEPROM(void) {
 }
 
 bool initEEPROM(void) {
+
+#if EEPROMSTORAGE
 	bool EEPROMInitok = true;
 
 	MX_I2C2_Init();
@@ -900,5 +902,10 @@ bool initEEPROM(void) {
 	EEPROMTASKPRIORITY, xEEPROMStack, &xEEPROMTaskBuffer);
 
 	return EEPROMInitok;
+
+#endif
+	DeviceState.EEPROM = DISABLED;
+	return false;
+
 }
 

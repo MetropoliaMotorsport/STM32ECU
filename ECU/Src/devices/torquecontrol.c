@@ -24,7 +24,7 @@
 #include <time.h>
 #include "eeprom.h"
 
-volatile InterpolationTables_t InterpolationTable;
+volatile InterpolationTables_t InterpolationTables;
 
 int initVectoring(void) {
 #ifdef MATLAB
@@ -385,7 +385,7 @@ float PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm requ
 bool SetupInterpolationTables(eepromdata* eepromdatahandle) {
  // calibrated input range for steering, from left lock to center to right lock.
     // check if this can be simplified?
-
+/*
 	if ( checkversion(data->VersionString) )
 	{
 
@@ -554,12 +554,14 @@ bool SetupInterpolationTables(eepromdata* eepromdatahandle) {
 		InterpolationTables.ModeSelector.Elements = DriveModeSize;
 
     	return true;
-	} else return false;
+	} else*/
+	 return false;
 }
 
 void SetupTorque(uint8_t pedal) {
 	//TODO implement
-	InterpolationTable.TorqueCurve.Input = TorqueInputs[pedal];
-	InterpolationTable.TorqueCurve.Output = TorqueOutputs[pedal];
-	InterpolationTable.TorqueCurve.Elements = TorqueCurveSize[pedal];
+/*	InterpolationTables.TorqueCurve.Input = TorqueInputs[pedal];
+	InterpolationTables.TorqueCurve.Output = TorqueOutputs[pedal];
+	InterpolationTables.TorqueCurve.Elements = TorqueCurveSize[pedal];
+*/
 }

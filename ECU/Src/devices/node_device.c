@@ -32,6 +32,7 @@ CANData APPS1 = { &DeviceState.APPS1, APPS1_ID, 8, processNodeDevice, NULL, 0 };
 CANData APPS2 = { &DeviceState.APPS2, APPS2_ID, 8, processNodeDevice, NULL, 0 };
 CANData SteeringAngle = { &DeviceState.SteeringAngle, SteeringAngle_ID, 8, processNodeDevice, NULL, 0 };
 CANData WaterLevel = { &DeviceState.WaterLevel, WaterLevel_ID, 8, processNodeDevice, NULL, 0 };
+CANData HeavesRear = { &DeviceState.HeavesRear, HeavesRear_ID, 8, processNodeDevice, NULL, 0 };
 CANData HeavesFront = { &DeviceState.HeavesFront, HeavesFront_ID, 8, processNodeDevice, NULL, 0 };
 CANData Rolls1 = { &DeviceState.Rolls1, Rolls1_ID, 8, processNodeDevice, NULL, 0 };
 CANData Rolls2 = { &DeviceState.Rolls2, Rolls2_ID, 8, processNodeDevice, NULL, 0 };

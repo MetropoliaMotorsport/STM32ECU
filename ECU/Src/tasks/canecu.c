@@ -1303,11 +1303,7 @@ int CheckCanError(void) {
 }
 
 void resetCAN(void) {
-#ifdef LOGGINGON
-	DeviceState.LoggingEnabled = ENABLED;
-#else
-	DeviceState.LoggingEnabled = DISABLED;
-#endif
+
 
 	DeviceState.CAN1 = OPERATIONAL;
 	DeviceState.CAN0 = OPERATIONAL;

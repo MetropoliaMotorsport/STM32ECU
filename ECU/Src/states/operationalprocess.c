@@ -64,21 +64,10 @@ void ResetStateData(void) // set default startup values for global state values.
 	CarState.FanPowered = 1;
 #endif
 
-#ifdef FRONTSPEED
-	DeviceState.FrontSpeedSensors = ENABLED;
-	DeviceState.FLSpeed = OFFLINE;
-	DeviceState.FRSpeed = OFFLINE;
-#else
 	DeviceState.FrontSpeedSensors = DISABLED;
 	DeviceState.FLSpeed = OPERATIONAL;
 	DeviceState.FRSpeed = OPERATIONAL;
-#endif
 
-#ifdef LOGGINGON
-	DeviceState.LoggingEnabled = ENABLED;
-#else
-	DeviceState.LoggingEnabled = DISABLED;
-#endif
 
 
 	CarState.Torque_Req_Max = 0;
@@ -98,9 +87,7 @@ void ResetStateData(void) // set default startup values for global state values.
 }
 
 int Startup(uint32_t OperationLoops) {
-#ifndef everyloop
-	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
-#endif
+
 	{
 		//CarState.allowtsactivation = true;
 		DebugMsg("Entering Startup State");
@@ -128,10 +115,6 @@ int Startup(uint32_t OperationLoops) {
 	//timeOutput(IMDLED, 2000);
 	//timeOutput(BSPDLED, 2000);
 
-#ifdef FRONTSPEED
-	CAN_NMT(0x81,FLSpeed_COBID);
-	CAN_NMT(0x81,FRSpeed_COBID);
-#endif
 
 	vTaskDelay(5);
 
@@ -165,7 +148,6 @@ int OperationalProcess(void) {
 		loopoverrun = 0; // reset over run counter.
 	}
 
-	DeviceState.LoggingEnabled = true;
 
 	uint32_t currenttimer = gettimer();
 
@@ -238,21 +220,12 @@ int OperationalProcess(void) {
 	}
 #endif
 
-#ifndef everyloop
-	if ( ( loopcount % LOGLOOPCOUNTFAST ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
-#endif
-
-
 
 	if ((loopcount % LOGLOOPCOUNTSLOW) == 0) // only send status message every 5'th loop to not flood, but keep update on where executing
 			{
 		CAN_SendLED(); // send LED statuses for debug, make toggleable.
-#ifndef ANALOGNODES
-		// no point in sending raw adc state if using nodes.
-		if ( Errors.OperationalReceiveError == 0) CAN_SendADC(ADC_Data, 0);
-#endif
 
-	}
+}
 
 	loopcount++;
 	totalloopcount++;

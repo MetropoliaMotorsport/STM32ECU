@@ -247,31 +247,7 @@ void PowerTask(void *argument) {
 			powernodesOnlineSince = 0;
 			curpowernodesOnline = powernodesOnline;
 			lastseenall = looptime;
-		} else if (looptime - lastseenall > PDMTIMEOUT) // only update status to rest of code every timeout val.
-		{
-			lastseenall = looptime;
-			setPowerNodeStr(powernodesOnlineSince);
-			strcpy(PNodeWaitStr, getPNodeStr());
-
-			// update the currently available nodes
-			curpowernodesOnline = powernodesOnlineSince;
-
-			if (powernodesOnlineSince == 0) {
-				if (DeviceState.PowerNode1 != OFFLINE && DeviceState.PowerNode2 != OFFLINE) {
-					DebugMsg("Power node timeout");
-				}
-				DeviceState.PowerNode1 = OFFLINE; // can't see any nodes, so offline.
-				DeviceState.PowerNode2 = OFFLINE;
-			} else {
-				if (DeviceState.PowerNode1 != INERROR || DeviceState.PowerNode2 != INERROR) {
-					DebugMsg("Power nodes partially online");
-				}
-				//DeviceState.PowerNodes = INERROR; // haven't seen all needed, so in error. //TODO
-			}
-
-			powernodesOnlineSince = 0;
-		}
-
+		} else
 		if (CarState.VoltageINV > TSACTIVEV) {
 			lastseenHV = looptime;
 		}

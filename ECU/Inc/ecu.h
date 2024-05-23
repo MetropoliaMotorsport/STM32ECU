@@ -62,7 +62,7 @@
 // HPF 20 doesn't use any local ADC, all via analogue nodes, and PWM.
 #ifdef HPF20
 #define RTOS
-#define EEPROMSTORAGE
+#define EEPROMSTORAGE	0
 #define SCREEN
 #define POWERNODES
 #define ANALOGNODES
@@ -245,17 +245,6 @@
 
 // const TickType_t CYCLETIME = 10;
 
-//#define SIM
-#ifdef SIM
-#define PDMTIMEOUT				500
-#define BMSTIMEOUT				500
-#define IVTTIMEOUT				500
-#define IVTTIMEOUTLONG			500
-#define IVTTIMEOUTWATTS			500
-#define PROCESSLOOPTIME 		200
-#define INVERTERTIMEOUT			500
-#else
-#define PDMTIMEOUT				450 // 450ms to be rules compliant
 //#define PROCESSLOOPTIME 		10   // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
 #define BMSTIMEOUT				450 // was 5 seconds as bodge
 #define IVTTIMEOUT				450  // < 500ms for rules compliance on Power reading.
@@ -263,10 +252,8 @@
 #define IMUTIMEOUT				30 // needs to be uptodate to be useful.
 #define INVERTERTIMEOUT			100 // 10 cycles, 100ms.
 #define SICKTIMEOUT             20 // 2 cycles, then set speeds to zero.
-#endif
-#ifdef MEMORATOR
-#define MEMORATORTIMEOUT		2000 // 2 seconds, should be sending one message a second.
-#endif
+
+
 
 #ifdef HPF20
 #define NODETIMEOUT				200
@@ -456,19 +443,16 @@ typedef struct {
 	bool FrontSpeedSensors;
 	bool IVTEnabled;
 	bool BMSEnabled;
-	bool LoggingEnabled;
 
 	DeviceStatus Sensors;
 	DeviceStatus CriticalSensors;
 	DeviceStatus CriticalPower;
-	DeviceStatus PWM;
 	DeviceStatus Inverter;
 	DeviceStatus BMS;
 	DeviceStatus IMU;
 	DeviceStatus FLSpeed;
 	DeviceStatus FRSpeed;
 	DeviceStatus IVT;
-	DeviceStatus LCD;
 	DeviceStatus EEPROM;
 	DeviceStatus BrakeLight;
 
