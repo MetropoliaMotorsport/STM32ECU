@@ -12,6 +12,7 @@
 #include "power.h"
 #include "timerecu.h"
 #include "brake.h"
+
 #include "torquecontrol.h"
 #include "adcecu.h"
 #include "input.h"
@@ -21,6 +22,63 @@
 #include "debug.h"
 
 #include "imu.h"
+
+uint16_t PrintRunning( char *title )
+{
+	char str[80] = "";
+
+	sprintf(str, "%-6s %8s %3liv", title, getCurTimeStr(), CarState.VoltageBMS); // lcd_geterrors());
+
+	lcd_send_stringline(0,str, 255);
+
+	int Torque = ADCState.Torque_Req_R_Percent/10;
+	if ( Torque > 99 ) Torque = 99;
+
+	sprintf(str,"%2linm(%2d%%) APPS:%c%c",
+			(int16_t)CarState.Torque_Req, // *1000+15384-1)/15384,
+			Torque, //CarState.Torque_Req,
+			(CarState.APPSstatus > 0)?'_':'A',
+			getBrakeHigh() ?' ':'H');
+	lcd_send_stringline(1,str, 255);
+
+	int32_t ActualSpeed = IMUReceived.VelBodyX*0.01*3.6;
+	
+	//InverterGetSpeed();
+
+	char angdir = ' ';
+
+	if ( ADCState.SteeringAngle < 0) angdir = 'L';
+	if ( ADCState.SteeringAngle > 0) angdir = 'R';
+
+	sprintf(str,"Spd:%3likmh Ang:%3d%c", (ActualSpeed), abs(ADCState.SteeringAngle), angdir);
+	lcd_send_stringline(2,str, 255);
+
+	return 0;
+}
+
+uint16_t PrintBrakeBalance( void )
+{
+	char str[255];
+
+	if ( CarState.brake_balance < 255 )
+	{
+		sprintf(str,"Bal: %.3dF %.3dR (%.2d%%)", ADCState.BrakeF, ADCState.BrakeR, CarState.brake_balance );
+	} else
+	{
+#ifdef STMADC
+		if ( DeviceState.ADC == OPERATIONAL )
+#endif
+			sprintf(str, "Bal: Press Brakes");
+#ifdef STMADC
+		else
+			sprintf(str, "Bal: No Data");
+#endif
+	}
+
+	lcd_send_stringline(0,str, 255);
+	return 0;
+}
+
 
 int RunningProcess( uint32_t OperationLoops, uint32_t targettime )
 {
