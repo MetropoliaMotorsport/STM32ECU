@@ -299,11 +299,6 @@ void Error_Handler(void)
 	setOutputNOW(LED2,On);
 	setOutputNOW(LED3,On);
 
-#ifdef PDM
-	CANSendPDM(0,0); // send high voltage off request to PDM.
-#else
-
-#endif
 	CAN_NMT(2, 0x0 ); // send stop command to all nodes, should disable inverter power output.
 
 //	NVIC_DisableIRQ(TIM3_IRQn); // stop the timebase irq to stop blinking led and show hung for error.

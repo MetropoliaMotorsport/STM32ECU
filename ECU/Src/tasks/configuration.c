@@ -18,9 +18,6 @@
 #include "debug.h"
 #include "canecu.h"
 #include "torquecontrol.h"
-////////////////////////////////////////
-
-////////////////////////////////////////
 
 // ADC conversion buffer, should be aligned in memory for faster DMA?
 typedef struct {
@@ -62,13 +59,6 @@ bool debugconfig;
 
 bool checkConfigReset(void) {
 	if (configReset) {
-		/*
-		 CanState.ECU.newdata = 0; // we've seen message in error state loop.
-		 if ( ( CanState.ECU.data[0] == 0x99 ) && ( CanState.ECU.data[1] == 0x99 ))
-		 {
-		 return true;
-		 }
-		 */
 		configReset = false;
 		return true;
 	} else
@@ -491,13 +481,6 @@ bool DoMenu(uint16_t input) {
 
 		if (regenon != getEEPROMBlock(0)->Regen) {
 			getEEPROMBlock(0)->Regen = regenon;
-#if 0
-		for ( int i=0; i<MOTORCOUNT;i++)
-		{
-				InverterState_t * invs = getInvState(i);
-				invs->AllowRegen = getEEPROMBlock(0)->Regen>0?true:false;
-		}
-#endif
 		}
 
 		uint8_t regenmax = getEEPROMBlock(0)->regenMax;
@@ -660,11 +643,6 @@ bool initConfig(void) {
 			&ConfigInputStaticQueue);
 
 	vQueueAddToRegistry(ConfigInputQueue, "Config Input");
-
-	if (!SetupInterpolationTables(getEEPROMBlock(0))) {
-		// bad config, fall back to some kind of of default, force recalibration of pedal?
-//		doPedalCalibration();
-	}
 
 	xInConfig = xSemaphoreCreateBinaryStatic(&xInConfigBuffer);
 

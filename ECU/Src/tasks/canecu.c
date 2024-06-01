@@ -175,14 +175,6 @@ void CANTxTask(void *argument) {
 			waittick = cycletick - curtick + CYCLETIME;
 		}
 
-//		UART_CANBufferTransmit();
-
-		// ensure we can actually send a message -- bad, would leave messages potentially in buffer when no longer relevant.
-//		while ( HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1) < 2 && HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2) < 2 )
-//		{
-//			DebugMsg("waiting free can spot.");
-//		}
-
 		if (xQueueReceive(CANTxQueue, &msg, waittick)) {
 //			UART_CANBufferAdd(&msg);
 
@@ -287,71 +279,6 @@ void CANRxTask(void *argument) {
 
 		// move uart can to own task? add an init state to wait for a go command for syncing at startup.
 		// r1xxxDbbbbbbbb
-
-#if 0
-		switch ( uartrxstate )
-		{
-		case 0 :
-			// try and setup receive of header
-			if ( UART_Receive( UART1, uartin, 6) )
-			{
-				uartrxstate = 1;
-			} else
-				uartrxstate = 99;
-			break;
-
-		case 1 :
-			// wait for header
-			if ( UART_WaitRXDone( UART1, 0 ) )
-			{
-				if ( uartin[0] == 't' )
-				{
-					if ( uartin[1] == '1' )
-						uartmsg.bus = 1;
-					else if ( uartin[1] == '2' )
-						uartmsg.bus = 2;
-					else
-					{
-						uartrxstate = 99;
-						break;
-						// tx error of some sort to reset.
-					}
-
-					// convert the last number first, then set to zero so strtoul can be used on the id.
-					uartmsg.dlc = strtoul((char *)&uartin[5], NULL, 10);
-					uartin[5] = 0;
-
-					uartmsg.id = strtoul((char *)&uartin[2], NULL, 16);
-
-					if ( UART_Receive( UART1, uartmsg.data, uartmsg.dlc) )
-					{
-						uartrxstate = 2; // we've got header, wait for data.
-					} else
-						uartrxstate = 99; // error
-
-				} else if ( uartin[0] == 's' )
-				{
-					// sync message.
-					uartrxstate = 0;
-				}
-
-			}
-			break;
-		case 2 : // wait for data
-			if ( UART_WaitRXDone( UART1, 0 ) )
-			{
-				// got packet, throw it out onto the bus?, and into RX queue
-				xQueueSend( CANRxQueue, &uartmsg, 0 );
-				if ( transmitUARTCan )
-					xQueueSend( CANTxQueue, &uartmsg, 0 ); // also send uart received packet out onto real bus.
-				uartrxstate = 0;
-			}
-		case 99 : // error.
-		default :
-			// cancel any receive, reset state
-			uartrxstate = 0;
-		}
-#endif
 
 		if (xQueueReceive(CANRxQueue, &msg, waittick)) {
 			FDCAN_RxHeaderTypeDef RxHeader;
@@ -553,40 +480,6 @@ char CAN_NMTSyncRequest(void) {
 	// send to both buses.
 }
 
-#ifdef ALTSDO
-uint8_t CANSendSDO( uint16_t cod_id, uint16_t  idx,  uint8_t sub, uint32_t data )
-{
-	uint8_t CANTxData[8] = { 0x2, idx, idx >> 8, sub, data, data >>8, data>>16, data>>24 };
-
-	CAN2Send( cob_id, 8, CANTxData ); // return values.
-}
-#endif
-
-uint8_t CANSendPDM(uint8_t highvoltage, uint8_t buzz) {
-#ifndef PDMSECONDMESSAGE
-	#ifdef FANCONTROL
-	uint8_t DataLength = 3; // only two bytes defined in send protocol, check this
-	uint8_t CANTxData[3] = { highvoltage, buzz, CarState.FanPowered };
-	#else
-	uint8_t DataLength = 2; // only two bytes defined in send protocol, check this
-	uint8_t CANTxData[2] = { highvoltage, buzz };
-	#endif
-#else
-	uint8_t DataLength = 2;
-	; // only two bytes defined in send protocol, check this
-	uint8_t CANTxData[2] = { highvoltage, buzz };
-#endif
-
-	return CAN1Send(0x118, DataLength, CANTxData);
-}
-
-#ifdef PDMSECONDMESSAGE
-uint8_t CANSendPDMFAN(void) {
-	uint8_t CANTxData[1] = { CarState.FanPowered };
-	return CAN1Send(0x118, 1, CANTxData);
-}
-#endif
-
 char CAN_SendTimeBase(void) // sends how long since power up and primary inverter status.
 {
 	// TODO check time being sent.
@@ -594,16 +487,11 @@ char CAN_SendTimeBase(void) // sends how long since power up and primary inverte
 
 	uint32_t time = gettimer();
 	uint8_t CANTxData[8] = {
-	//CarState.Inverters[RearLeftInverter].InvState,
+
 			Errors.CANSendError1,
-			//CarState.Inverters[RearRightInverter].InvState,
 			Errors.CANSendError2,
-			//CarState.Inverters[FrontLeftInverter].InvState,
-			//CarState.Inverters[FrontRightInverter].InvState,
+			
 			getByte(time, 2), getByte(time, 3) };
-#ifdef CAN2ERRORSTATUS
-	CAN2Send(0x101, 8, CANTxData);
-#endif
 
 	return CAN1Send(0x101, 8, CANTxData);
 }
@@ -630,9 +518,7 @@ char CAN_SendStatus(char state, char substate, uint32_t errorcode) {
 			HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1),
 			(ShutdownCircuitState() << 7)
 					+ HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan2) }; // HAL_FDCAN_GetxFifoFillLevel(&hfdcan1, FDCAN_RX_FIFO0)
-#ifdef CAN2ERRORSTATUS
-	CAN2Send( ECU_CAN_ID, 8, CANTxData);
-#endif
+
 	return CAN1Send( ECU_CAN_ID, 8, CANTxData);
 }
 
@@ -658,83 +544,9 @@ char CAN_SendErrorStatus(char state, char substate, uint32_t errorcode) {
 			getByte(errorcode, 1), getByte(errorcode, 2), getByte(errorcode, 3),
 			HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1),
 			HAL_FDCAN_GetTxFifoFreeLevel(hfdcan2p) };
-#ifdef CAN2ERRORSTATUS
-	CAN2Send( ECU_CAN_ID + 1, 8, CANTxData);
-#endif
+
 	return CAN1Send( ECU_CAN_ID + 1, 8, CANTxData);
 }
-
-char CAN_SendLED(void) {
-#ifdef __RTOS
-    uint8_t CANTxData[8] = { 10, LEDs[TSLED_Output].state, LEDs[RTDMLED_Output].state, LEDs[TSOFFLED_Output].state,
-							LEDs[IMDLED_Output].state, LEDs[BMSLED_Output].state, LEDs[BSPDLED_Output].state, ShutdownCircuitState()};
-
-    if ( LEDs[TSLED_Output].blinkingrate )
-    	CANTxData[1] = LEDs[TSLED_Output].blinkingrate;
-    if ( LEDs[RTDMLED_Output].blinkingrate )
-    	CANTxData[2] = LEDs[RTDMLED_Output].blinkingrate;
-    if ( LEDs[TSOFFLED_Output].blinkingrate )
-    	CANTxData[3] = LEDs[TSOFFLED_Output].blinkingrate;
-    if ( LEDs[IMDLED_Output].blinkingrate )
-    	CANTxData[4] = LEDs[IMDLED_Output].blinkingrate;
-    if ( LEDs[BMSLED_Output].blinkingrate )
-    	CANTxData[5] = LEDs[BMSLED_Output].blinkingrate;
-    if ( LEDs[BSPDLED_Output].blinkingrate )
-    {
-    	CANTxData[6] = LEDs[BSPDLED_Output].blinkingrate;
-    }
-#ifdef CAN2ERRORSTATUS
-	CAN2Send( ECU_CAN_ID+2, 8, CANTxData );
-#endif
-	return CAN1Send( ECU_CAN_ID+2, 8, CANTxData );
-#else
-	return 0;
-#endif
-}
-
-char CAN_SENDINVERTERERRORS(void) {
-
-	uint8_t CANTxData[8] = { 0, 0,
-	// TODO get inverter state.
-	//CarState.Inverters[RearLeftInverter].InvState,
-	//CarState.Inverters[RearRightInverter].InvState,
-
-			0, 0,
-
-			0,
-			//CarState.Inverters[FrontRightInverter].InvState,
-
-			0, 0
-
-			};
-
-#ifdef CAN2ERRORSTATUS
-	CAN2Send(0xEE, 8, CANTxData);
-#endif
-	CAN1Send(0xEE, 8, CANTxData);
-
-	for (int j = 0; j < Errors.InverterErrorHistoryPosition; j++) {
-		for (int i = 0; i < 8; i++) {
-			CANTxData[i] = Errors.InverterErrorHistory[j][i];
-		}
-#ifdef CAN2ERRORSTATUS
-		CAN2Send(0xEE, 8, CANTxData);
-		DWT_Delay(100);
-#endif
-		CAN1Send(0xEE, 8, CANTxData);
-		DWT_Delay(100);
-	}
-
-	return 0;
-}
-
-char CAN_SendADCValue(uint16_t adcdata, uint8_t index) {
-	uint8_t CANTxData[4] =
-			{ 20, index, getByte(adcdata, 0), getByte(adcdata, 1) };
-	return CAN1Send(ECU_CAN_ID, 4, CANTxData);
-}
-
-
 
 // send nmt command to all nodes.
 
@@ -765,22 +577,11 @@ char CAN_SendErrors(void) {
 	// TODO get inverer state.
 	//CarState.Inverters[RearLeftInverter].InvState,
 	//CarState.Inverters[RearRightInverter].InvState,
-			0, 0,
-#ifndef HPF20
-			0,0,0,0
-#else
-			0,
-			//CarState.Inverters[FrontRightInverter].InvState,
-			0, 0
-#endif
+			0, 0, 0,
+			0, 0, 0
 			};
-//  old message
-//	uint8_t CANTxData[8] = {0,0,0,0,CarState.RearLeftInvState,CarState.RearRightInvState,CarState.RearLeftInvStateCheck,CarState.RearRightInvStateCheck}; // 0 sends command to all nodes.
-	storeBEint16(Errors.ErrorPlace, &CANTxData[0]);
+
 	storeBEint16(Errors.ErrorReason, &CANTxData[2]);
-#ifdef CAN2ERRORSTATUS
-	CAN2Send(0x66, 8, CANTxData);
-#endif
 	CAN1Send(0x66, 8, CANTxData); // send command to both buses.
 	return 1;
 }
@@ -803,16 +604,6 @@ char CAN_Send4vals(uint16_t id, uint16_t val1, uint16_t val2, uint16_t val3,
 			val4, 0), getByte(val4, 1) };
 	return CAN1Send(id, 8, CANTxData);
 }
-
-char CAN_SendTorq2(int16_t val1, uint16_t val2, uint16_t val3, int16_t val4) {
-	uint8_t CANTxData[8] = { getByte(val1, 0), getByte(val1, 1), getByte(val2,
-			0), getByte(val2, 1), getByte(val3, 0), getByte(val3, 1), getByte(
-			val4, 0), getByte(val4, 1) };
-	return CAN1Send(0x7CE, 8, CANTxData);
-}
-
-
-
 // process an incoming CAN data packet.
 void processCANData(CANData *datahandle, uint8_t *CANRxData,
 		uint32_t DataLength) {
@@ -846,9 +637,7 @@ void processCANData(CANData *datahandle, uint8_t *CANRxData,
 #ifdef SENDBADDATAERROR
 		CAN_SendErrorStatus(ReceiveErr, 0, datahandle->id);
 #endif
-#ifdef RETRANSMITBADDATAERROR
-		reTransmitError(99,CANRxData, DataLength);
-#endif
+
 	}
 
 }
@@ -858,14 +647,6 @@ int receivedCANData(CANData *datahandle) {
 		return -1; // no device state associated.
 	}
 	uint32_t time = gettimer();
-
-#ifdef NOTIMEOUT
-		if ( datahandle->devicestate == OPERATIONAL )
-		{
-			datahandle->errorsent = false;
-			return 1;
-		} else return 0;
-#endif
 
 	if (datahandle->timeout > 0) {
 		if (time - datahandle->time <= datahandle->timeout
@@ -977,14 +758,6 @@ void processCanTimeouts(void) {
 	for (int i = 0; i < CanTimeoutListCount; i++) {
 		receivedCANData(CanTimeoutList[i]);
 	}
-//	receiveAnalogNodes();
-//	receivePowerNodes();
-//	receiveIMU();
-//	receiveIVT();
-//	receiveBMS();
-#ifdef PDM
-//	receivePDM();
-#endif
 }
 
 /**

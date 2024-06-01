@@ -220,13 +220,6 @@ int OperationalProcess(void) {
 	}
 #endif
 
-
-	if ((loopcount % LOGLOOPCOUNTSLOW) == 0) // only send status message every 5'th loop to not flood, but keep update on where executing
-			{
-		CAN_SendLED(); // send LED statuses for debug, make toggleable.
-
-}
-
 	loopcount++;
 	totalloopcount++;
 

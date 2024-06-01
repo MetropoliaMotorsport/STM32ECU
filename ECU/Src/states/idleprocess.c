@@ -107,12 +107,12 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 	uint32_t curtime = gettimer();
 
 	if (CarState.allowtsactivation){
-		PrintRunning("TS:Off");
-		//Can_SendDebug(TSO_ID);	//TODO add can bus msg
+
+		CAN_SendDebug(TSO_ID);	//TODO add can bus msg
 	}
 	else{
-		PrintRunning("TS:BAD");
-		//Can_SendDebug(TSB_ID); 	//TODO add can bus msg
+
+		CAN_SendDebug(TSB_ID); 	//TODO add can bus msg
 
 		}
 

@@ -22,47 +22,6 @@
 #include "imu.h"
 #include "eeprom.h"
 
-uint16_t PrintRunning(char *title) {
-	char str[80] = "";
-
-	sprintf(str, "%-6s %8s %3liv", title, getCurTimeStr(), CarState.VoltageBMS);
-
-	int Torque = APPS1.data / 10;
-	if (Torque > 99)
-		Torque = 99;
-
-	sprintf(str, "%2linm(%2d%%) APPS:%c%c", (int16_t) CarState.Torque_Req, // *1000+15384-1)/15384,
-			Torque, //CarState.Torque_Req,
-			(CarState.APPSstatus > 0) ? '_' : 'A', getBrakeHigh() ? ' ' : 'H');
-
-	int32_t ActualSpeed = IMUReceived.VelBodyX * 0.01 * 3.6;
-
-	//InverterGetSpeed();
-
-	char angdir = ' ';
-
-	if (SteeringAngle.data < 0)
-		angdir = 'L';
-	if (SteeringAngle.data > 0)
-		angdir = 'R';
-
-	sprintf(str, "Spd:%3likmh Ang:%3d%c", (ActualSpeed),
-			abs(SteeringAngle.data), angdir);
-	return 0;
-}
-
-uint16_t PrintBrakeBalance(void) {
-	char str[255];
-
-	if (CarState.brake_balance < 255) {
-		sprintf(str, "Bal: %.3dF %.3dR (%.2d%%)", BrakeFront.data,
-				BrakeRear.data, CarState.brake_balance);
-	} else {
-		sprintf(str, "Bal: Press Brakes");
-	}
-	return 0;
-}
-
 int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 	// EV4.11.3 RTDM Check
 	// Closing the shutdown circuit by any part defined in EV 6.1.2 must not (re-)activate the TS.
@@ -106,7 +65,6 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 
 	uint32_t curtick = gettimer();
 
-	PrintRunning("RTDM:TA");
 	CAN_SendDebug(RDTMTA_ID);
 
 	invRequestState(OPERATIONAL);

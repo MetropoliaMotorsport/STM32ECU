@@ -192,7 +192,7 @@ void PowerTask(void *argument) {
 
 		// clear command queue
 		while (xQueueReceive(PowerQueue, &msg, 0)) {
-#ifdef POWERNODES
+
 			switch (msg.cmd) {
 			case PowerErrorReset:
 				setNodeDevicePower(msg.power, msg.enabled, true);
@@ -222,10 +222,6 @@ void PowerTask(void *argument) {
 			default:
 				break;
 			}
-#else
- // on PDM only fans and HV are controlled.
-
-#endif
 		}
 
 		// check if powernodes received.
@@ -251,17 +247,6 @@ void PowerTask(void *argument) {
 		if (CarState.VoltageINV > TSACTIVEV) {
 			lastseenHV = looptime;
 		}
-
-#if 0
-		if ( looptime - lastseenHV > PDMTIMEOUT )
-		{
-			if ( HVactive )
-			{
-				HVactive = false;
-				SetHVLost();
-			}
-		}
-#endif
 
 		if ((curpowernodesOnline & PNODECRITICALBITS) == PNODECRITICALBITS) {
 			DeviceState.CriticalPower = OPERATIONAL;
@@ -560,17 +545,6 @@ void FanPWMControl(uint8_t leftduty, uint8_t rightduty) {
 	msg.PWMRight = rightduty;
 	xQueueSend(PowerQueue, &msg, 0);
 
-	/*	if(ADCState.Torque_Req_R_Percent > TORQUEFANLATCHPERCENTAGE*10) // if APPS position over requested% trigger fan latched on.
-	 {
-	 if ( !getNodeDevicePower(LeftFans ) )
-	 setDevicePower( LeftFans, true );
-
-	 if ( !getNodeDevicePower(RightFans ) )
-	 setDevicePower( RightFans, true );
-
-	 CarState.FanPowered = 1;
-	 }
-	 */
 }
 
 char* getDevicePowerNameLong(DevicePower device) {

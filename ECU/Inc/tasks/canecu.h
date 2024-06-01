@@ -114,13 +114,6 @@ char CAN_NMTSyncRequest( void );
 
 char CAN_Send4vals( uint16_t id, uint16_t val1, uint16_t val2, uint16_t val3, uint16_t val4 );
 
-char CAN_SendLED( void );
-
-char CAN_SENDINVERTERERRORS( void );
-
-void ResetCanData(volatile CANData *data );
-
-
 char CAN_SendErrors( void );
 char CAN_SendDebug(uint16_t id);
 

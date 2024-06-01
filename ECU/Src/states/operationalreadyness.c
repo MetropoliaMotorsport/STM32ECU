@@ -58,14 +58,6 @@ uint16_t ReadyReceive(uint16_t returnvalue) {
 		}
 	}
 
-#ifndef POWERNODES
-	if ( DeviceState.PDM != OFFLINE )
-	{
-		returnvalue &= ~(0x1 << PDMReceived);
-// ensure in communication with PDM.
-
-	}
-#else
 	if (DeviceState.CriticalPower == OPERATIONAL) {
 		returnvalue &= ~(0x1 << PNodeReceived);
 	} else {
@@ -78,10 +70,6 @@ uint16_t ReadyReceive(uint16_t returnvalue) {
 			
 		}
 	}
-
-#endif
-
-
 
 	return returnvalue;
 }

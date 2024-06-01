@@ -59,11 +59,9 @@ int TSActiveProcess(uint32_t OperationLoops) {
 	}
 
 	if (CarState.VoltageINV < TSACTIVEV){
-		PrintRunning("TS:LoV");
 		CAN_SendDebug(TSLOV);
 	}
 	else{
-		PrintRunning("TS:On");
 		CAN_SendDebug(TSON);
 	}
 

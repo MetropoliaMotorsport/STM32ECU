@@ -83,7 +83,7 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 
 	if (OperationLoops == 0) // reset state on entering/rentering.
 			{
-		DebugMsg("Entering Error State");
+		CAN_SendDebug(EES_ID);
 		char str[MAXERRORMSGLENGTH + 1]; // Nam: Replacing LCDCOLUMNS with MAXERRORMSGLENGTH to remove lcd.h TODO: Figure out a proper value to use
 
 		sprintf(str, "Loc:%.2X Code:%.4X", Errors.ErrorPlace,
@@ -97,10 +97,6 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 		ClearHVLost();
 
 		ClearCriticalError();
-
-#ifdef PDM
-        sendPDM( 0 ); //disable high voltage on error state;
-#endif
 
 		CAN_SendTimeBase();
 
@@ -122,10 +118,6 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 
 	}
 
-	if (Errors.InverterError) {
-		CAN_SENDINVERTERERRORS();
-	}
-
 	if (Errors.ErrorPlace) {
 		CAN_SendErrors();
 	}
@@ -135,9 +127,7 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 		sprintf(statusstr, "ERROR State BMS %d", Shutdown.BMSReason);
 	}
 
-#ifdef PDM
-	receivePDM();
-#endif
+
 
 	if (!CheckShutdown()) // indicate shutdown switch status with blinking rate.
 	{

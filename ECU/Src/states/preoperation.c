@@ -97,19 +97,13 @@ int PreOperationState(uint32_t OperationLoops) {
 
 	char str[80] = "";
 
-#ifdef PRINTDEBUGRUNNING
-	PrintRunning( "Boot" );
-#else
-	sprintf(str, "Boot   %8.8s %.3liv", getCurTimeStr(), CarState.VoltageBMS); // TODO add can bus msg
-#endif
 	if (OperationLoops == 0) {
 		TSLEDstate = false;
 		ledtimer = gettimer();
-		//   	setOutput(LED2,On);
-		DebugMsg("Entering Pre Operation State");
+
 		CAN_SendDebug(EPOS_ID);
-		// pre operation state is to allow hardware to get ready etc, no point in logging errors at this point.
-		// the user can see operational state.
+		//DebugMsg("Entering Pre Operation State");
+
 		SetErrorLogging( false);
 		preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
 		InverterAllowTorqueAll(false);
@@ -277,7 +271,8 @@ int PreOperationState(uint32_t OperationLoops) {
 		}
 
 		if (showbrakebal)
-			PrintBrakeBalance();
+
+				//Print brake balance
 
 		if (showadc) {
 			sprintf(str, "L%3d%% R%3d%% B%3d%% ",

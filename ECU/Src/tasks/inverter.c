@@ -260,35 +260,7 @@ void InvTask(void *argument) {
 	setDevicePower(Inverters, false);
 
 	TickType_t lastseen[MOTORCOUNT];
-
-#if 0
-	// inverters should be shutdown at startup.
-	if ( getDevicePower(Inverters) )
-	{
-		if ( !setDevicePower( Inverters, false ) )
-			DebugMsg("Error requesting power off for inverters to reset.");
-	}
-
-	while ( !getDevicePower(Inverters) )
-	{
-		vTaskDelay(CYCLETIME);
-		setWatchdogBit(watchdogBit);
-	}
-
-
-	for ( int i=0;i<10;i++ )
-	{
-		vTaskDelay(CYCLETIME); // wait a few cycles for power to be off.
-		setWatchdogBit(watchdogBit);
-	}
-
-
-	if (!setDevicePower( Inverters, true ) )
-	{
-			DebugMsg("Error requesting power on for inverters.");
-	}
-#endif
-
+	
 	DebugMsg("Inv Waiting setup");
 	CAN_SendErrorStatus(8, 0, 0);
 

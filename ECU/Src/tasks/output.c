@@ -236,41 +236,6 @@ void OutputTask(void *argument) {
 		updateOutput(i);
 	}
 
-#if 0
-	for ( int i=0;i<10;i++)
-	{
-		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), On);
-		vTaskDelay(1000);
-		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), Off);
-	}
-
-	vTaskDelay(1000);
-
-	HAL_GPIO_WritePin(getGpioPort(3), getGpioPin(3), On); // ok white button
-	HAL_GPIO_WritePin(getGpioPort(4), getGpioPin(4), On); // ok red button
-
-	HAL_GPIO_WritePin(getGpioPort(6), getGpioPin(6), On); // ok middle left
-
-	HAL_GPIO_WritePin(getGpioPort(7), getGpioPin(7), On); // left left
-
-	HAL_GPIO_WritePin(getGpioPort(8), getGpioPin(8), On); // right left
-
-	vTaskDelay(5000);
-
-	HAL_GPIO_WritePin(getGpioPort(3), getGpioPin(3), Off);
-
-	HAL_GPIO_WritePin(getGpioPort(4), getGpioPin(4), Off);
-
-	HAL_GPIO_WritePin(getGpioPort(6), getGpioPin(6), Off);
-
-	HAL_GPIO_WritePin(getGpioPort(7), getGpioPin(7), Off);
-
-	HAL_GPIO_WritePin(getGpioPort(8), getGpioPin(8), Off);
-#endif
-
-//	blinkOutput(IMDLED, Timed, 2000);
-//	blinkOutput(BMSLED, Timed, 2000);
-
 	TickType_t xLastWakeTime;
 
 	// Initialise the xLastWakeTime variable with the current time.

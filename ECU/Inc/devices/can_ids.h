@@ -100,6 +100,7 @@
 #define RTDMAC_ID               (0x0B9) //"RTDM activation attempt with no braking"
 #define WFP_ID                  (0x0BA) //"Waiting for precharge"
 #define RTIS_ID                 (0x0BB) //"Returning to idle state at request."
+#define EES_ID                  (0x0BC) //"Entering Error State"    
 
 ////////////////////////////////////////
 #endif

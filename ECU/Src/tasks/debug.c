@@ -73,10 +73,6 @@ int UARTprintf(const char *format, ...) {
 	n = vsnprintf((char*) buffer, 128, format, ap);
 	va_end(ap);
 
-#ifdef RTTDEBUG
-	SEGGER_RTT_Write(0, buffer, n);
-#endif
-
 	if (!UART_Transmit(DEBUGUART, (uint8_t*) buffer, n)) {
 		return 0;
 	}
@@ -85,9 +81,7 @@ int UARTprintf(const char *format, ...) {
 }
 
 int UARTwritech(const char ch) {
-#ifdef RTTDEBUG
-	SEGGER_RTT_Write(0, &ch, 1);
-#endif
+
 	if (!UART_Transmit(DEBUGUART, (uint8_t*) &ch, 1)) {
 		return 0;
 	}
@@ -100,9 +94,7 @@ void UARTwrite(const char *str) {
 }
 
 void UARTwriteRaw(const char *str) {
-#ifdef RTTDEBUG
-	SEGGER_RTT_printf(0, str);
-#endif
+
 	if (!UART_Transmit(DEBUGUART, (uint8_t*) str, strlen(str))) {
 		return;
 	}
@@ -111,11 +103,7 @@ void UARTwriteRaw(const char *str) {
 }
 
 void UARTwritetwoline(const char *str, const char *str2) {
-#ifdef RTTDEBUG
-	SEGGER_RTT_printf(0, str);
-	SEGGER_RTT_printf(0, str2);
-	SEGGER_RTT_printf(0, "\r\n");
-#endif
+
 	UARTprintf(str);
 	UARTprintf(str2);
 	UARTprintf("\r\n");
@@ -179,12 +167,6 @@ uint8_t uartWait(char *ch) {
 		}
 	}
 }
-
-#ifdef configSUPPORT_DYNAMIC_ALLOCATION
-
-#else
-
-#endif
 
 static char str[40 * 50] = { 0 };
 
@@ -431,12 +413,6 @@ static void debugMotor(const char *tkn2, const char *tkn3, const int32_t value1,
 					oldrequest = requestRaw;
 					lasttime = gettimer();
 					uint32_t percR = requestRaw;
-
-//					if ( requestRaw > 300 )
-//						percR = ( (100000/( 2100-300 )) * requestRaw-300) / 100;
-
-//					if ( percR > 1000 )
-//						percR = 1000;
 
 					float requestNm = (percR * maxNm) / 1000; //*0x4000)/1000; // speed is 0x4000 scaling.
 
@@ -736,82 +712,6 @@ static void debugShutdown(const char *tkn2, const char *tkn3) {
 
 		showShutdown("TS OFF", Shutdown.TS_OFF, true);
 	}
-}
-
-static void debugSensors(const char *tkn2) {
-	/*{
-		xEventGroupSync(xCycleSync, 0, 1, portMAX_DELAY); // wait for cycle to sync readings.
-
-		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline();
-
-		bool force = true;
-
-		uint32_t adctimes[19] = { 0 };
-
-		adctimes[1] = AnalogNode1.time;
-#ifndef HPF2023
-		adctimes[9] = AnalogNode9.time;
-#endif
-		adctimes[10] = AnalogNode10.time;
-		adctimes[11] = AnalogNode11.time;
-
-		ADCState_t ADCStateDebug;
-
-		xSemaphoreTake(ADCUpdate, portMAX_DELAY);
-		memcpy(&ADCStateDebug, &ADCState, sizeof(ADCState));
-		xSemaphoreGive(ADCUpdate);
-
-		uint32_t curtime = gettimer();
-
-		CAN_SendErrorStatus(10, 0, gettimer());
-
-		UARTprintf(
-				"Current Analog nodes not seen[%s] ( %4X ), Oldest data (%lu) at (%lu):\r\n",
-				getADCWait(), AnalogueNodesOnline, ADCStateDebug.Oldest,
-				gettimer());
-
-		UARTprintf("Steering Angle %d Duty %d Freq %d State %s\r\n",
-				SteeringAngle.data, ADCState.SteeringDuty,
-				ADCState.SteeringFreq, getDeviceStatusStr(DeviceState.PWM));
-
-		// anode 1
-		if (force || AnalogueNodesOnline & (0x1 << ANode1Bit)) {
-			UARTprintf(
-					"Anode1: Torque Req L %3d%% (raw:%lu)   Regen %3d%% (raw:%lu) Last at (%lu)\r\n",
-					ADCStateDebug.Torque_Req_L_Percent / 10,
-					ADCStateDebug.APPSL, ADCStateDebug.Regen_Percent / 10,
-					ADCStateDebug.Regen, adctimes[1]);
-		}
-#ifndef HPF2023
-		if ( force || AnalogueNodesOnline & ( 0x1 << ANode9Bit ) )
-		{
-			UARTprintf("Anode9: BrakeTemp1 %dc   OilTemp1 %dc   WaterTemp1 %dc   Last at (%lu)\r\n",
-					ADCStateSensors.BrakeTemp1,
-					ADCStateSensors.OilTemp1,
-					ADCStateSensors.WaterTemp1,
-					adctimes[9]);
-		}
-#endif
-		if (force || AnalogueNodesOnline & (0x1 << ANode10Bit)) {
-			UARTprintf(
-					"Anode10: Susp1: %lu Susp2: %lu OilTemp2: %dc   WaterTempe2 %dc   Last at (%lu)\r\n",
-					ADCStateSensors.Susp1, ADCStateSensors.susp2,
-					ADCStateSensors.OilTemp2, ADCStateSensors.WaterTemp2,
-					AnalogNode10.time);
-		}
-
-		if (force || AnalogueNodesOnline & (0x1 << ANode11Bit)) {
-			UARTprintf(
-					"Anode11: BrakeTemp2 %dc   BrakeF Pres %dPa   BrakeF Pres %dPa   Torque Req R %3d%% (raw:%lu)   Last at (%lu)\r\n",
-
-					ADCStateSensors.BrakeTemp2, ADCStateDebug.BrakeF,
-					ADCStateDebug.BrakeR,
-					ADCStateDebug.Torque_Req_R_Percent / 10,
-					ADCStateDebug.APPSR, adctimes[11]);
-		}
-
-
-	}*/
 }
 
 static void debugPower(const char *tkn2, const char *tkn3) {
@@ -1337,8 +1237,6 @@ static void DebugTask(void *pvParameters) {
 					debugPower(tkn2, tkn3);
 				} else if (streql(tkn1, "current")) {
 					debugCurrent(tkn2);
-				} else if (streql(tkn1, "sensors")) {
-					debugSensors(tkn2);
 				} else if (streql(tkn1, "eeprom")) {
 					resetEEPROM();
 				} else if (streql(tkn1, "zeroeeprom")) {
