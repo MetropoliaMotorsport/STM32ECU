@@ -19,7 +19,7 @@
 #include "canecu.h"
 #include "torquecontrol.h"
 
-// ADC conversion buffer, should be aligned in memory for faster DMA?
+//  conversion buffer, should be aligned in memory for faster DMA?
 typedef struct {
 	uint32_t msgval;
 } ConfigInput_msg;
@@ -133,10 +133,10 @@ uint16_t APPSR_max;
 uint16_t REG_min;
 uint16_t REG_max;
 
-// values to define sane input range on APPS ADC's
+// values to define sane input range on APPS 's
 
-#define ADCMAXTHRESH (0.95)
-#define ADCMINTHRESH (0.5)
+#define MAXTHRESH (0.95)
+#define MINTHRESH (0.5)
 
 void setMin(uint16_t *min, uint16_t minval) {
 	if (minval < *min)
@@ -161,17 +161,17 @@ bool doPedalCalibration(uint16_t input) {
 	bool baddata = false;
 
 	//TODO implement
-	if (APPS1.data > (UINT16_MAX * ADCMAXTHRESH) || APPS1.data < 0 // (UINT16_MAX*ADCMINTHRESH)
+	if (APPS1.data > (UINT16_MAX * MAXTHRESH) || APPS1.data < 0 // (UINT16_MAX*MINTHRESH)
 			) {
 		baddata = true;
 	}
 
-	if (APPS2.data > (UINT16_MAX * ADCMAXTHRESH) || APPS2.data < 0 //  (UINT16_MAX*ADCMINTHRESH)
+	if (APPS2.data > (UINT16_MAX * MAXTHRESH) || APPS2.data < 0 //  (UINT16_MAX*MINTHRESH)
 			) {
 		baddata = true;
 	}
 
-	if (BPPS.data > (UINT16_MAX * ADCMAXTHRESH) || BPPS.data < 0 //(UINT16_MAX*ADCMINTHRESH)
+	if (BPPS.data > (UINT16_MAX * MAXTHRESH) || BPPS.data < 0 //(UINT16_MAX*MINTHRESH)
 			) {
 		baddata = true;
 	}
@@ -242,15 +242,15 @@ bool doPedalCalibration(uint16_t input) {
 		if (APPSL_max == 0 || APPSR_max == 0) {
 
 		} else {
-			data->ADCTorqueReqLInput[0] = APPSL_min;
-			data->ADCTorqueReqLInput[1] = APPSL_max;
-			data->ADCTorqueReqLInput[2] = 0;
-			data->ADCTorqueReqLInput[3] = 0;
+			data->TorqueReqLInput[0] = APPSL_min;
+			data->TorqueReqLInput[1] = APPSL_max;
+			data->TorqueReqLInput[2] = 0;
+			data->TorqueReqLInput[3] = 0;
 
-			data->ADCTorqueReqRInput[0] = APPSR_min;
-			data->ADCTorqueReqRInput[1] = APPSR_max;
-			data->ADCTorqueReqRInput[2] = 0;
-			data->ADCTorqueReqRInput[3] = 0;
+			data->TorqueReqRInput[0] = APPSR_min;
+			data->TorqueReqRInput[1] = APPSR_max;
+			data->TorqueReqRInput[2] = 0;
+			data->TorqueReqRInput[3] = 0;
 
 			// store new APPS calibration to memory.
 		}
@@ -258,10 +258,10 @@ bool doPedalCalibration(uint16_t input) {
 		if (REG_max == 0) {
 
 		} else {
-			data->ADCBrakeTravelInput[0] = REG_min;
-			data->ADCBrakeTravelInput[1] = REG_max;
-			data->ADCBrakeTravelInput[2] = 0;
-			data->ADCBrakeTravelInput[3] = 0;
+			data->BrakeTravelInput[0] = REG_min;
+			data->BrakeTravelInput[1] = REG_max;
+			data->BrakeTravelInput[2] = 0;
+			data->BrakeTravelInput[3] = 0;
 			// store new Regen calibration to memory.
 		}
 
@@ -408,7 +408,7 @@ bool DoMenu(uint16_t input) {
 				REG_min = UINT16_MAX;
 				REG_max = 0;
 			} else {
-				DebugPrintf("Err: ADC Not ready.");
+				DebugPrintf("Err:  Not ready.");
 				input = 0; // input has been seen, null it.
 			}
 		}
@@ -603,7 +603,7 @@ void ConfigTask(void *argument) {
 				if (ECUConfigdata[0] != 0) {
 					switch (ECUConfigdata[0]) {
 					case 2:
-						//CAN_SendADCminmax();
+						//CAN_Sendminmax();
 						break;
 					case 3:
 						// toggle HV.

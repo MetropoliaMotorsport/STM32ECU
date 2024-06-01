@@ -717,7 +717,7 @@ static void debugShutdown(const char *tkn2, const char *tkn3) {
 static void debugPower(const char *tkn2, const char *tkn3) {
 	DevicePower device = None;
 	bool state = false;
-	bool badcmd = false;
+	bool bmd = false;
 
 	if (strlen(tkn2) == 0) // we need some sub commands, otherwise show help
 			{
@@ -753,10 +753,10 @@ static void debugPower(const char *tkn2, const char *tkn3) {
 			} else if (checkOff(tkn3)) {
 				state = false;
 			} else {
-				badcmd = true;
+				bmd = true;
 			}
 
-			if (!badcmd) {
+			if (!bmd) {
 				UARTwrite("Manual power request for all power set ");
 				UARTwrite(state ? "on" : "off");
 				UARTwrite("\r\n");
@@ -765,7 +765,7 @@ static void debugPower(const char *tkn2, const char *tkn3) {
 					setDevicePower(i, state);
 
 			} else {
-				badcmd = true;
+				bmd = true;
 			}
 		}
 	} else {
@@ -828,12 +828,12 @@ static void debugPower(const char *tkn2, const char *tkn3) {
 				UARTwrite("\r\n");
 				setDevicePower(device, state);
 			} else {
-				badcmd = true;
+				bmd = true;
 			}
 		}
 	}
 
-	if (badcmd) {
+	if (bmd) {
 		UARTwrite("Invalid power request given: Help\r\n");
 	}
 }
@@ -1203,22 +1203,22 @@ static void DebugTask(void *pvParameters) {
 				if (streql(tkn1, "calibinfo")) {
 					eepromdata *data = getEEPROMBlock(0);
 					DebugPrintf("Apps Calib L: %5d - %5d ( %5d %5d )\r\n",
-							data->ADCTorqueReqLInput[0],
-							data->ADCTorqueReqLInput[1],
-							data->ADCTorqueReqLInput[2],
-							data->ADCTorqueReqLInput[3]);
+							data->TorqueReqLInput[0],
+							data->TorqueReqLInput[1],
+							data->TorqueReqLInput[2],
+							data->TorqueReqLInput[3]);
 
 					DebugPrintf("Apps Calib R: %5d - %5d ( %5d %5d )\r\n",
-							data->ADCTorqueReqRInput[0],
-							data->ADCTorqueReqRInput[1],
-							data->ADCTorqueReqRInput[2],
-							data->ADCTorqueReqRInput[3]);
+							data->TorqueReqRInput[0],
+							data->TorqueReqRInput[1],
+							data->TorqueReqRInput[2],
+							data->TorqueReqRInput[3]);
 
 					DebugPrintf("Regen Calib:  %5d - %5d ( %5d %5d )\r\n",
-							data->ADCBrakeTravelInput[0],
-							data->ADCBrakeTravelInput[1],
-							data->ADCBrakeTravelInput[2],
-							data->ADCBrakeTravelInput[3]);
+							data->BrakeTravelInput[0],
+							data->BrakeTravelInput[1],
+							data->BrakeTravelInput[2],
+							data->BrakeTravelInput[3]);
 				} else
 
 				if (streql(tkn1, "config")) {
@@ -1287,7 +1287,7 @@ static void DebugTask(void *pvParameters) {
 						UARTwrite("Error saving config.\r\n");
 
 					SetupInterpolationTables(getEEPROMBlock(0));
-				} else if (streql(tkn1, "adcval")) {
+				} else if (streql(tkn1, "val")) {
 					debugCurve(tokens, tkn2, val2);
 				} else if (streql(tkn1, "eepromfix")) {
 					UARTwrite("Fixing eeprom header.\r\n");
@@ -1311,19 +1311,19 @@ static void DebugTask(void *pvParameters) {
 
 					snprintf(data->VersionString, "%s", EEPROMVERSIONSTR);
 
-					data->ADCTorqueReqLInput[0] = 423;
-					data->ADCTorqueReqLInput[1] = 1831;
-					data->ADCTorqueReqLInput[2] = 0;
-					data->ADCTorqueReqLInput[3] = 0;
+					data->TorqueReqLInput[0] = 423;
+					data->TorqueReqLInput[1] = 1831;
+					data->TorqueReqLInput[2] = 0;
+					data->TorqueReqLInput[3] = 0;
 
-					data->ADCTorqueReqRInput[0] = 386;
-					data->ADCTorqueReqRInput[1] = 1749;
-					data->ADCTorqueReqRInput[2] = 0;
-					data->ADCTorqueReqRInput[3] = 0;
-					data->ADCBrakeTravelInput[0] = 144;
-					data->ADCBrakeTravelInput[1] = 971;
-					data->ADCBrakeTravelInput[2] = 0;
-					data->ADCBrakeTravelInput[3] = 0;
+					data->TorqueReqRInput[0] = 386;
+					data->TorqueReqRInput[1] = 1749;
+					data->TorqueReqRInput[2] = 0;
+					data->TorqueReqRInput[3] = 0;
+					data->BrakeTravelInput[0] = 144;
+					data->BrakeTravelInput[1] = 971;
+					data->BrakeTravelInput[2] = 0;
+					data->BrakeTravelInput[3] = 0;
 
 					if (writeFullConfigEEPROM()) // enqueue write the data to eeprom.
 					{

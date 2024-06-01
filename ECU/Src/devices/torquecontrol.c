@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <time.h>
 #include "eeprom.h"
+#include "pedal_setup.h"
+
 
 volatile InterpolationTables_t InterpolationTables;
 
@@ -374,10 +376,10 @@ float PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm requ
 	}
 }
 
-bool SetupInterpolationTables(eepromdata* eepromdatahandle) {
+bool SetupInterpolationTables(eepromdata* data) {
  // calibrated input range for steering, from left lock to center to right lock.
     // check if this can be simplified?
-/*
+
 	if ( checkversion(data->VersionString) )
 	{
 
@@ -385,14 +387,14 @@ bool SetupInterpolationTables(eepromdata* eepromdatahandle) {
 		BrakeRInput[2] = data->BrakeRPresInput[0];
 		BrakeRInput[3] = data->BrakeRPresInput[1];
 
-		BrakeROutput[2] = data->ADCBrakeRPresOutput[0];
-		BrakeROutput[3] = data->ADCBrakeRPresOutput[1];
+		BrakeROutput[2] = data->BrakeRPresOutput[0];
+		BrakeROutput[3] = data->BrakeRPresOutput[1];
 
-		BrakeFInput[2] = data->ADCBrakeFPresInput[0];
-		BrakeFInput[3] = data->ADCBrakeFPresInput[1];
+		BrakeFInput[2] = data->BrakeFPresInput[0];
+		BrakeFInput[3] = data->BrakeFPresInput[1];
 
-		BrakeFOutput[2] = data->ADCBrakeFPresOutput[0];
-		BrakeFOutput[3] = data->ADCBrakeFPresOutput[1];
+		BrakeFOutput[2] = data->BrakeFPresOutput[0];
+		BrakeFOutput[3] = data->BrakeFPresOutput[1];
 
 
 		i = 0;
@@ -416,15 +418,6 @@ bool SetupInterpolationTables(eepromdata* eepromdatahandle) {
 		TorqueReqLInput[2] = (TravMax-TravMin)/100*TravMinOffset+TravMin;
 		TorqueReqLInput[3] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
 
-#ifdef TORQUEERRORCHECK
-		uint32_t absolutemax = TravMax*1.1;
-		if ( absolutemax > 0xFFFF )
-			absolutemax + 64000;
-
-		TorqueReqLInput[4] = absolutemax;
-		TorqueReqLInput[5] = TorqueReqLInput[4]+1;
-#endif
-
 		TravMin = data->TorqueReqRInput[0];
 		TravMax = data->TorqueReqRInput[1];
 		if ( TravMax == 0 )
@@ -443,16 +436,6 @@ bool SetupInterpolationTables(eepromdata* eepromdatahandle) {
 
 		TorqueReqRInput[2] = (TravMax-TravMin)/100*TravMinOffset+TravMin;
 		TorqueReqRInput[3] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
-
-#ifdef TORQUEERRORCHECK
-		absolutemax = TravMax*1.1;
-		if ( absolutemax > 0xFFFF )
-			absolutemax + 64000;
-
-
-		TorqueReqRInput[4] = absolutemax;
-		TorqueReqRInput[5] = TorqueReqRInput[4]+1;
-#endif
 
 		TravMin = data->BrakeTravelInput[0];
 		TravMax = data->BrakeTravelInput[1];
@@ -473,15 +456,6 @@ bool SetupInterpolationTables(eepromdata* eepromdatahandle) {
 	// regen
 		BrakeTravelInput[2] = (TravMax-TravMin)/100*TravMinOffset+TravMin;
 		BrakeTravelInput[3] = (TravMax-TravMin)/100*TravMaxOffset+TravMin;
-
-#ifdef TORQUEERRORCHECK
-		absolutemax = TravMax*1.1;
-		if ( absolutemax > 0xFFFF )
-			absolutemax + 64000;
-
-		BrakeTravelInput[4] = absolutemax;
-		BrakeTravelInput[5] = BrakeTravelInput[4]+1;
-#endif
 
 		if (data->pedalcurves[i].PedalCurveInput[1] != 0)
 		{
@@ -546,14 +520,14 @@ bool SetupInterpolationTables(eepromdata* eepromdatahandle) {
 		InterpolationTables.ModeSelector.Elements = DriveModeSize;
 
     	return true;
-	} else*/
+	} else
 	 return false;
 }
 
 void SetupTorque(uint8_t pedal) {
 	//TODO implement
-/*	InterpolationTables.TorqueCurve.Input = TorqueInputs[pedal];
+	InterpolationTables.TorqueCurve.Input = TorqueInputs[pedal];
 	InterpolationTables.TorqueCurve.Output = TorqueOutputs[pedal];
 	InterpolationTables.TorqueCurve.Elements = TorqueCurveSize[pedal];
-*/
+
 }

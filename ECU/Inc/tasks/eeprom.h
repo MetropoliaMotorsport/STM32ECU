@@ -71,20 +71,20 @@ typedef struct eepromdatastruct {
 		uint8_t BlockStart;
 	};
 
-	uint16_t ADCSteeringInput[10]; // HPF19 compatibility, potential future use
-	int16_t ADCSteeringOutput[10]; // min/max possible, further reaches, mid point. 40 bytes
+	uint16_t SteeringInput[10]; // HPF19 compatibility, potential future use
+	int16_t SteeringOutput[10]; // min/max possible, further reaches, mid point. 40 bytes
 
-	uint16_t ADCBrakeRPresInput[2]; // hpf19 compatibility, potential future use.
-	uint16_t ADCBrakeRPresOutput[2]; // 8 bytes
+	uint16_t BrakeRPresInput[2]; // hpf19 compatibility, potential future use.
+	uint16_t BrakeRPresOutput[2]; // 8 bytes
 
-	uint16_t ADCBrakeFPresInput[2]; // hpf19 compatibility, potential future use. linear scale Need more if non linear.
-	uint16_t ADCBrakeFPresOutput[2]; // 8 bytes // 57 bytes.
+	uint16_t BrakeFPresInput[2]; // hpf19 compatibility, potential future use. linear scale Need more if non linear.
+	uint16_t BrakeFPresOutput[2]; // 8 bytes // 57 bytes.
 
-	uint16_t ADCBrakeTravelInput[4]; // will always map to 0-100%.. min valid, zero value, 100% val, max val. // 8 bytes.
+	uint16_t BrakeTravelInput[4]; // will always map to 0-100%.. min valid, zero value, 100% val, max val. // 8 bytes.
 
-	uint16_t ADCTorqueReqLInput[4]; // min, zero reading, 100% reading[98%], max. // 8 bytes
+	uint16_t TorqueReqLInput[4]; // min, zero reading, 100% reading[98%], max. // 8 bytes
 
-	uint16_t ADCTorqueReqRInput[4]; // min, zero reading, 100% reading[98%], max. // 8 bytes
+	uint16_t TorqueReqRInput[4]; // min, zero reading, 100% reading[98%], max. // 8 bytes
 
 	pedalcurve pedalcurves[5];
 
