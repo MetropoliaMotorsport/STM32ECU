@@ -97,9 +97,7 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 		HVEnableTimer = gettimer();
 		TSRequested = 0;
 	}
-#ifndef everyloop
-	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
-#endif
+
 	{
 		CAN_SendStatus(1, IdleState, readystate);
 	}
@@ -107,13 +105,10 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 	uint32_t curtime = gettimer();
 
 	if (CarState.allowtsactivation){
-
 		CAN_SendDebug(TSO_ID);	//TODO add can bus msg
 	}
 	else{
-
 		CAN_SendDebug(TSB_ID); 	//TODO add can bus msg
-
 		}
 
 
@@ -151,14 +146,7 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 
 	if (invcount == MOTORCOUNT // invertersStateCheck(STOPPED) // returns true if all inverters match state
 	&& CarState.VoltageBMS > MINHV
-#ifdef IVTEnable
-#ifndef NOTSAL
-	  && CarState.VoltageINV > -5 // 18
-	#endif
-#endif
-#ifdef SHUTDOWNSWITCHCHECK
-//	  && CheckShutdown() // only allow TS enabling if shutdown switches are all closed, as it would otherwise fail
-#endif
+
 	) // minimum accumulator voltage to allow TS, set a little above BMS limit, so we can
 	{
 		static bool first = false;

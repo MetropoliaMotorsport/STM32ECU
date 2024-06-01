@@ -163,10 +163,10 @@ int PreOperationState(uint32_t OperationLoops) {
 #endif
 
 			if (preoperationstate & (0x1 << InverterReceived)) {
-				/*if (getEEPROMBlock(0)->InvEnabled)
+				if (getEEPROMBlock(0)->InvEnabled)
 					strcat(str, "INV ");
 				else
-					strcat(str, "INVDIS ");*/
+					strcat(str, "INVDIS ");
 			}
 
 			if (preoperationstate & (0x1 << BMSReceived)) {
@@ -379,11 +379,6 @@ int PreOperationState(uint32_t OperationLoops) {
 		}
 
 	}
-
-
-//	if ( DeviceState.CriticalSensors != OPERATIONAL ) { ReadyToStart |= (1<<READYTESTING); }
-
-//	if ( errorPower() ) { ReadyToStart += 1; }
 
 	if (preoperationstate != 0) {
 		ReadyToStart |= (1 << READYDEVBIT);

@@ -178,10 +178,6 @@ bool doPedalCalibration(uint16_t input) {
 
 	if (baddata) {
 		return input != KEY_ENTER;
-//		if (input == KEY_ENTER)
-//			return false;
-//		else
-//			return true;
 	}
 
 	setMin(&APPSL_min, APPS1.data);

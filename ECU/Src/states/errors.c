@@ -41,12 +41,6 @@ uint8_t critcalerrorcode;
 
 bool logerrors = false;
 
-
-#ifdef Can_bus logging
-void LogError(int error_code) {
-	
-}
-#else
 void LogError(char *message) {
 	if (logerrors) {
 		struct error_msg error;
@@ -138,18 +132,6 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 		blinkOutput(RTDMLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
 	}
 
-#ifdef AUTORESET
-	bool allowautoreset = true;
-	bool invertererror = false;
-
-	if ( GetInverterState() == INERROR ) invertererror = true;
-
-	for ( int i=0;i<MOTORCOUNT;i++)
-	{
-		if ( !Errors.InvAllowReset[i] ) allowautoreset = false;
-	}
-#endif
-
 	int allowreset = 0; // allow reset if this is still 0 after checks.
 
 	char str[80] = "ERROR: ";
@@ -160,25 +142,9 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 		strcat(str, "");
 	}
 
-	if (0) // getPowerErrors() ) // inverter error checked in next step.
-	{
-//		allowreset += 2;
-		strcat(str, "PDM ");
-	}
-
 	if (DeviceState.timeout) {
 		strcat(str, "NTO ");
 	}
-
-
-
-#ifdef SHUTDOWNSWITCHCHECK
-    if ( !CheckShutdown() )
-    {
-    	allowreset +=8;  // only allow exiting error state if shutdown switches closed. - maybe move to only for auto
-    	strcat(str, "SDC " );
-    }
-#endif
 
 	// wait for restart request if allowed by error state.
 	if (allowreset == 0 && (checkReset() == 1 // manual reset
@@ -220,4 +186,3 @@ int initERRORState(void) {
 
 	return 0;
 }
-#endif

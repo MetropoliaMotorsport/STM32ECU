@@ -56,9 +56,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 			CarState.Torque_Req_CurrentMax = LIMPNM;
 
 	}
-#ifndef everyloop
-	if ( ( OperationLoops % STATUSLOOPCOUNT ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
-#endif
+
 	{
 		CAN_SendStatus(1, RunningState, readystate);
 	}
@@ -171,7 +169,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 					&& getEEPROMBlock(0)->Regen > 0) // no torque request, but we do have a regen request, return that.
 							{
 				//if ( getEEPROMBlock(0)->Regen == 2 )
-				//	doRegen(BPPS.data_Percent, SteeringAngle.data, &adj);
+					//doRegen(BPPS.data, SteeringAngle.data, &adj);	 //TODO Fix this
 				//else
 				{
 					torque_req = -(((getEEPROMBlock(0)->regenMax

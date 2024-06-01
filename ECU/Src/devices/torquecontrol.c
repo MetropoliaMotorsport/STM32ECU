@@ -154,14 +154,6 @@ void doVectoring(float Torque_Req, vectoradjust *adj, speedadjust *spd,
 
 	Regeneration_step();
 
-#if 0
-	/* External outputs (root outports fed by signals with default storage) */
-	typedef struct {
-	  real_T MotorRegenPowerLimNegkW;      /* '<Root>/MotorRegenPowerLimNegkW' */
-	  real_T SOC;                          /* '<Root>/SOC' */
-	} Regeneration_ExtY;
-#endif
-
 	CarState.SOC = Regeneration_Y.SOC;
 
 	adj->FL += Regeneration_Y.regenFL - TractionControl_Y.TC_FL
