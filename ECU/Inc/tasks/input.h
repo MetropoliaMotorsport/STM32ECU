@@ -122,8 +122,6 @@ typedef struct input_msg {
 
 extern QueueHandle_t InputQueue;
 
-//extern CANData CANButtonInput;
-
 int initPWM(void);
 bool receivePWM(void);
 int getPWMDuty(void); // returns duty cycle as %*10

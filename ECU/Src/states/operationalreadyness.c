@@ -24,10 +24,9 @@ uint16_t ReadyReceive(uint16_t returnvalue) {
 #ifndef POWERNODES
 					(0x1 << PDMReceived)+
 #else
-				(0x1 << PNodeReceived) +
+				(0x1 << PowerNode1Received) +
 #endif
-						(0x1 << BMSReceived) + (0x1 << IVTReceived)
-						+ (0x1 << PedalReceived);
+						(0x1 << BMSReceived) + (0x1 << IVTReceived); //TODO update it
 
 		//(0x1 << YAWOnlineBit);
 	}
@@ -59,7 +58,7 @@ uint16_t ReadyReceive(uint16_t returnvalue) {
 	}
 
 	if (DeviceState.CriticalPower == OPERATIONAL) {
-		returnvalue &= ~(0x1 << PNodeReceived);
+		returnvalue &= ~(0x1 << PowerNode1Received);
 	} else {
 //		static bool first = false;
 //		if ( !first )

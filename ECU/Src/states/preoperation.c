@@ -27,48 +27,10 @@
 //#define PRINTDEBUGRUNNING
 
 static uint16_t DevicesOnline(uint16_t returnvalue) {
-	if (returnvalue == 0xFFFF) // first loop, set what devices expecting.
-			{
-		returnvalue = (0x1 << InverterReceived) + (0x1 << BMSReceived) +
-#ifndef POWERNODES
-						  (0x1 << PDMReceived) +
-#endif
-				(0x1 << PedalReceived) + (0x1 << IVTReceived);
-	}
 
-	if (DeviceState.APPS1 == 0)
-		returnvalue &= ~(0x1 << PedalReceived); // ensures even if analogue nodes online, input needs to be sane for bootup.
-	else
-		returnvalue |= 0x1 << PedalReceived;
+	//TODO update function
 
-	static bool first = false;
-	if (1) //DeviceState.Inverter != OFFLINE ) // && GetInverterState() != INERROR )
-	{
-		if (!first) {
-			first = true;
-//			DebugMsg("Inverters online in startup.");
-		}
-		returnvalue &= ~(0x1 << InverterReceived);
-	} else
-		returnvalue |= 0x1 << InverterReceived;
-
-
-	if (receiveBMS()) // ensure heard from BMS
-	{
-		returnvalue &= ~(0x1 << BMSReceived);
-	} else {
-		returnvalue |= 0x1 << BMSReceived;
-	}
-
-	if (receiveIVT()) // ensure heard from IVT
-	{
-		returnvalue &= ~(0x1 << IVTReceived);
-	} else {
-		returnvalue |= 0x1 << IVTReceived; // why was this commented out?
-	}
-
-	// check datalogger response?   --
-
+	returnvalue = 0;
 	return returnvalue; // should be 0 when everything ready.
 }
 
@@ -171,9 +133,6 @@ int PreOperationState(uint32_t OperationLoops) {
 
 			if (preoperationstate & (0x1 << BMSReceived)) {
 				strcat(str, "BMS ");
-			}
-			if (preoperationstate & (0x1 << PedalReceived)) {
-				strcat(str, "ADC ");
 			}
 			if (preoperationstate & (0x1 << IVTReceived)) {
 				strcat(str, "IVT ");

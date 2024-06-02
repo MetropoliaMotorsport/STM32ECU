@@ -66,9 +66,6 @@ QueueHandle_t InputQueue;
 bool receiveCANInput(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle);
 
-CANData CANButtonInput =
-		{ 0, AdcSimInput_ID + 2, 8, receiveCANInput, NULL, 0, 0 };
-
 // PWM Code.
 
 /* Captured Value */
@@ -334,55 +331,6 @@ void clearButtons(void) {
 	}
 }
 
-bool receiveCANInput(const uint8_t CANRxData[8], const uint32_t DataLength,
-		const CANData *datahandle) {
-	if (CANRxData[0] == 1) {
-		Input[StartStop_Input].pressed = 1;  // StartStop_Switch
-		Input[StartStop_Input].lastpressed = gettimer();
-	}
-	if (CANRxData[1] == 1) {
-		Input[TS_Input].pressed = 1; // TS_Switch
-		Input[TS_Input].lastpressed = gettimer();
-	}
-	if (CANRxData[2] == 1) {
-		Input[RTDM_Input].pressed = 1; // TS_Switch
-		Input[RTDM_Input].lastpressed = gettimer();
-	}
-
-	switch (CANRxData[3]) {
-	case 1:
-		Input[Center_Input].pressed = 1;
-		Input[Center_Input].lastpressed = gettimer();
-		break;
-	case 2:
-		Input[Left_Input].pressed = 1;
-		Input[Left_Input].lastpressed = gettimer();
-		break;
-	case 4:
-		Input[Right_Input].pressed = 1;
-		Input[Right_Input].lastpressed = gettimer();
-		break;
-	case 8:
-		Input[Up_Input].pressed = 1;
-		Input[Up_Input].lastpressed = gettimer();
-		break;
-	case 16:
-		Input[Down_Input].pressed = 1;
-		Input[Down_Input].lastpressed = gettimer();
-		break;
-	}
-
-#ifdef debug
-//REMOVE FROM LIVE CODE.
-	if(CANRxData[6] == 0xFE){
-// debug id to induce a hang state, for testing watchdog.
-		while ( 1 ){
-			// do nothing, don't return.
-		}
-	}
-#endif
-	return true;
-}
 #ifdef HPF2023
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == WHLINT_Pin) {
@@ -416,8 +364,6 @@ int initInput(void) {
 	RegisterResetCommand(resetInput);
 
 	resetInput();
-
-	RegisterCan1Message(&CANButtonInput);
 
 	InputTaskHandle = xTaskCreateStatic(InputTask,
 	INPUTTASKNAME,

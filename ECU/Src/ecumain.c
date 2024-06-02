@@ -241,34 +241,34 @@ static int HardwareInit(void) {
 
 
 	initConfig(); // config relies on eeprom data, was too early in process!
-/*
+
 	eepromdata *data = getEEPROMBlock(0);
 
-	DebugPrintf("Apps Calib L: %5d - %5d ( %5d %5d )\r\n",
-			data->ADCTorqueReqLInput[0], data->ADCTorqueReqLInput[1],
-			data->ADCTorqueReqLInput[2], data->ADCTorqueReqLInput[3]);
+	DebugPrintf("Apps Calib L: %5d - %5d ( %5d %5d )\r\n", //TODO make can message
+			data->TorqueReqLInput[0], data->TorqueReqLInput[1],
+			data->TorqueReqLInput[2], data->TorqueReqLInput[3]);
 
-	DebugPrintf("Apps Calib R: %5d - %5d ( %5d %5d )\r\n",
-			data->ADCTorqueReqRInput[0], data->ADCTorqueReqRInput[1],
-			data->ADCTorqueReqRInput[2], data->ADCTorqueReqRInput[3]);
+	DebugPrintf("Apps Calib R: %5d - %5d ( %5d %5d )\r\n", //TODO make can message
+			data->TorqueReqRInput[0], data->TorqueReqRInput[1],
+			data->TorqueReqRInput[2], data->TorqueReqRInput[3]);
 
-	DebugPrintf("Regen Calib:  %5d - %5d ( %5d %5d )\r\n",
-			data->ADCBrakeTravelInput[0], data->ADCBrakeTravelInput[1],
-			data->ADCBrakeTravelInput[2], data->ADCBrakeTravelInput[3]);
+	DebugPrintf("Regen Calib:  %5d - %5d ( %5d %5d )\r\n", //TODO make can message
+			data->BrakeTravelInput[0], data->BrakeTravelInput[1],
+			data->BrakeTravelInput[2], data->BrakeTravelInput[3]);
 
-*/
+
 	// Moved inverters after eeprom so that config value can be used.
 
 	initInv();
-/*
+
 	if (getEEPROMBlock(0)->alwaysHV) {
-		DebugMsg("Shutdowncircuit Closed");
+		//DebugMsg("Shutdowncircuit Closed"); //TODO make can message
 		ShutdownCircuitSet(true);
 	} else {
-		DebugMsg("Shutdowncircuit Open");
+		//DebugMsg("Shutdowncircuit Open"); //TODO make can message
 		ShutdownCircuitSet(false);
 	}
-*/
+
 	// after cubemx hardware inits, run our own initialisations to start up essential function.
 
 	// should also read in defaults for calibrations, power levels etc.

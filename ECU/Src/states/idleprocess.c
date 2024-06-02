@@ -22,27 +22,25 @@
 
 uint32_t OperationalReceive(void) {
 uint32_t returnvalue = 0;
-#ifdef HPF24
+
 if( DeviceState.BMS == OPERATIONAL )
 	returnvalue |= (0x1 << BMSReceived);
 if( DeviceState.IVT == OPERATIONAL )
 	returnvalue |= (0x1 << IVTReceived);
-if( DeviceState.Inverters == OPERATIONAL )
+if( DeviceState.Inverter == OPERATIONAL )
 	returnvalue |= (0x1 << InverterReceived);
-if( DeviceState.PWR_Node == OPERATIONAL )
-	returnvalue |= (0x1 << PWR_Nodereceived);
+if( DeviceState.PowerNode1 == OPERATIONAL )
+	returnvalue |= (0x1 << PowerNode1Received);
 
 
-#else
-	
-	if (returnvalue == 0xFF) {
+	/*if (returnvalue == 0xFF) {
 		returnvalue = (0x1 << BMSReceived) + (0x1 << IVTReceived) +
 
 				(0x1 << InverterReceived) + // TODO inverter receive
 				(0x1 << PedalReceived);
 
 	}
-
+*/
 	// check all inverters are present.
 	int invcount = 0;
 	for (int i = 0; i < MOTORCOUNT; i++) {
@@ -50,21 +48,6 @@ if( DeviceState.PWR_Node == OPERATIONAL )
 			invcount++;
 		}
 	}
-
-	if (invcount == MOTORCOUNT)
-		returnvalue &= ~(0x1 << (InverterReceived));
-
-
-	if (DeviceState.BMS == OPERATIONAL)
-		returnvalue &= ~(0x1 << BMSReceived);
-
-	if (DeviceState.IVT == OPERATIONAL)
-		returnvalue &= ~(0x1 << IVTReceived);
-
-	// need new function to check for ADC input, so that more workable with a CAN node.
-	if (DeviceState.APPS1 == 0)
-		returnvalue &= ~(0x1 << PedalReceived); // change this to just indicate ADC received in some form.
-#endif
 	return returnvalue;
 }
 

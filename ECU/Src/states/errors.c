@@ -66,9 +66,6 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 
 	static uint32_t errorstatetime = 0;
 
-#ifndef everyloop
-	if ( ( OperationLoops % LOGLOOPCOUNTSLOW ) == 0 ) // only send status message every 5'th loop to not flood, but keep update on where executing
-#endif
 	{
 		// TODO get a better way to indicate error state.
 		CAN_SendStatus(1, OperationalErrorState,
