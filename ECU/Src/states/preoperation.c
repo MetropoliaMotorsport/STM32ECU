@@ -23,6 +23,7 @@
 #include "debug.h"
 #include "ivt.h"
 #include "eeprom.h"
+#include "canecu.h"
 
 //#define PRINTDEBUGRUNNING
 
