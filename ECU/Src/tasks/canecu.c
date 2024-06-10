@@ -8,7 +8,7 @@
 #include "ecumain.h"
 #include "dwt_delay.h"
 #include "canecu.h"
-
+#include "node_device.h"
 #include "errors.h"
 #include "uartecu.h"
 #include "debug.h"
@@ -403,7 +403,7 @@ uint8_t CAN2Send(uint16_t id, uint8_t dlc, const uint8_t *pTxData) {
 	msg.dlc = dlc;
 	msg.bus = bus0;
 	taskENTER_CRITICAL();
-	memcpy(msg.data, pTxData, 8);
+	memcpy(msg.data, pTxData, dlc);
 	taskEXIT_CRITICAL();
 	if (xPortIsInsideInterrupt()) {
 		if (!xQueueSendFromISR(CANTxQueue, (void* ) &msg, NULL)) {
@@ -620,7 +620,8 @@ void processCANData(CANData *datahandle, uint8_t *CANRxData,
 	bool baddlc = false;
 	bool baddata = false;
 
-	if (datahandle->dlcsize != DataLength >> 16) {
+
+	if (datahandle->dlcsize != DataLength) {
 		baddlc = true;
 	} else {
 		if (datahandle->getData(CANRxData, DataLength, datahandle)) {
@@ -754,6 +755,7 @@ bool processCan2Message(FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]) {
 				RxHeader->DataLength);
 		return true;
 	}
+
 	return false; // ID not registered in handler.
 }
 
@@ -785,7 +787,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 		can_msg msg;
 
-		uint8_t CANRxData[8];
+		volatile uint8_t CANRxData[8];
 
 		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, CANRxData)
 				!= HAL_OK) {
@@ -833,7 +835,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
  */
 void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs) {
 	FDCAN_RxHeaderTypeDef RxHeader;
-	uint8_t CANRxData[8];
+	volatile uint8_t CANRxData[8];
 
 	if (hfdcan->Instance == FDCAN1) {
 		blinkOutput(LED3, BlinkVeryFast, Once);

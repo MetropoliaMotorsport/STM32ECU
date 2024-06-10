@@ -13,24 +13,24 @@
 
 //TODO Keep it updated with the devices you want to use in the car
 bool processNodeDevice(const uint8_t CANRxData[8], const uint32_t DataLength, CANData *datahandle){
-	uint64_t messaga;
-		uint16_t data = 0;
+	volatile uint16_t messaga = 0;
+
 		for (int i = 0; i < datahandle->dlcsize; i++) {
 			messaga |= CANRxData[i] << (i * 8);
 		}
-		for (int i = datahandle->bitpos; i < datahandle->length; i++) {
-			data |= (messaga >> i) & 1;
-		}
-		datahandle->data = data;
+
+		datahandle->data = messaga;
+
+		return 1;
 }
 
 
 
 
-CANData BPPS = { &DeviceState.BPPS, BPPS_ID, 8, processNodeDevice, NULL, 0 };
-CANData APPS1 = { &DeviceState.APPS1, APPS1_ID, 8, processNodeDevice, NULL, 0 };
-CANData APPS2 = { &DeviceState.APPS2, APPS2_ID, 8, processNodeDevice, NULL, 0 };
-CANData SteeringAngle = { &DeviceState.SteeringAngle, SteeringAngle_ID, 8, processNodeDevice, NULL, 0 };
+volatile CANData BPPS = { &DeviceState.BPPS, BPPS_ID, 2, processNodeDevice, NULL, 0, processNodeDevice };
+volatile CANData APPS1 = { &DeviceState.APPS1, APPS1_ID, 2, processNodeDevice, NULL, 0,processNodeDevice };
+volatile CANData APPS2 = { &DeviceState.APPS2, APPS2_ID, 2, processNodeDevice, NULL, 0, processNodeDevice };
+volatile CANData SteeringAngle = { &DeviceState.SteeringAngle, SteeringAngle_ID, 8, processNodeDevice, NULL, 0 };
 CANData WaterLevel = { &DeviceState.WaterLevel, WaterLevel_ID, 8, processNodeDevice, NULL, 0 };
 CANData HeavesRear = { &DeviceState.HeavesRear, HeavesRear_ID, 8, processNodeDevice, NULL, 0 };
 CANData HeavesFront = { &DeviceState.HeavesFront, HeavesFront_ID, 8, processNodeDevice, NULL, 0 };
@@ -38,7 +38,6 @@ CANData Rolls1 = { &DeviceState.Rolls1, Rolls1_ID, 8, processNodeDevice, NULL, 0
 CANData Rolls2 = { &DeviceState.Rolls2, Rolls2_ID, 8, processNodeDevice, NULL, 0 };
 CANData BrakeFront = { &DeviceState.BrakeFront, BrakeFront_ID, 8, processNodeDevice, NULL, 0 };
 CANData BrakeRear = { &DeviceState.BrakeRear, BrakeRear_ID, 8, processNodeDevice, NULL, 0 };
-
 
 
 

@@ -88,7 +88,7 @@ int PreOperationState(uint32_t OperationLoops) {
 		CAN_SendStatus(1, PreOperationalState, preoperationstate);
 
 		// do power request
-
+		volatile uint16_t t = APPS2.data;
 		// test power error checking.
 		if (DeviceState.IVTEnabled && DeviceState.IVT == OFFLINE) {
 			if (!powerErrorOccurred(IVT))

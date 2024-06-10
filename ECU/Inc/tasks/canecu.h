@@ -91,7 +91,10 @@ typedef volatile struct CanDataType {
 	uint8_t dlcsize;
 	DataHandler getData;
 	TimeoutHandler doTimeout;
-	uint32_t data;
+	volatile uint32_t data;
+	//////////////////
+	volatile bool(*process)(const uint8_t *CANRxData, const uint32_t DataLength, CANData *datahandle);
+	/////////////////
 	uint16_t bitpos;
 	uint16_t length;
 	uint32_t timeout;
@@ -100,6 +103,7 @@ typedef volatile struct CanDataType {
 	uint16_t error;
 	uint16_t receiveerr;
 	bool	 errorsent;
+
 } CANData;
 
 uint8_t CAN1Send( uint16_t id, uint8_t dlc, const uint8_t *pTxData );
