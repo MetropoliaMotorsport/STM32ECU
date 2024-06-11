@@ -75,7 +75,7 @@ int PreOperationState(uint32_t OperationLoops) {
 		resetOutput(TSLED, On);
 		resetOutput(RTDMLED, Off);
 
-		ReadyToStart = 0xFFFF;
+		ReadyToStart = 0;
 		// set startup powerstates to bring devices up.
 
 		initVectoring();
@@ -88,7 +88,7 @@ int PreOperationState(uint32_t OperationLoops) {
 		CAN_SendStatus(1, PreOperationalState, preoperationstate);
 
 		// do power request
-		volatile uint16_t t = APPS2.data;
+
 		// test power error checking.
 		if (DeviceState.IVTEnabled && DeviceState.IVT == OFFLINE) {
 			if (!powerErrorOccurred(IVT))
@@ -100,48 +100,20 @@ int PreOperationState(uint32_t OperationLoops) {
 			}
 		}
 
-		// generate device waiting string.
 
-		if (preoperationstate != 0 || ReadyToStart != 0) {
-			// TODO add a checker that if all devices on canbus missing, show this instead of individual.
-
-			strcpy(str, "Wait:");
-
-			char *nodewait = "";
-
-#ifdef POWERNODES
-			nodewait = getPNodeWait();
-			if (nodewait[0] != 0) {
-				sprintf(&str[strlen(str)], "P%s ", nodewait);
-			}
-#endif
-
-#ifdef ANALOGNODES
-			if (DeviceState.Sensors != OPERATIONAL) {
-				nodewait = getNodeWait();
-				if (nodewait[0] != 0) {
-					sprintf(&str[strlen(str)], "A%s ", nodewait);
+/////////////////////////////////////////////////////////////////////////
+			if (InverterReceived) {
+				if (getEEPROMBlock(0)->InvEnabled){
+					strcat(str, "INV ");
+					ReadyToStart = 1; //TODO
+				}
+				else{
+					strcat(str, "INVDIS ");
+					ReadyToStart = 0; //TODO
 				}
 			}
-#endif
-
-			if (preoperationstate & (0x1 << InverterReceived)) {
-				if (getEEPROMBlock(0)->InvEnabled)
-					strcat(str, "INV ");
-				else
-					strcat(str, "INVDIS ");
-			}
-
-			if (preoperationstate & (0x1 << BMSReceived)) {
-				strcat(str, "BMS ");
-			}
-			if (preoperationstate & (0x1 << IVTReceived)) {
-				strcat(str, "IVT ");
-			}
-			if (str[strlen(str)] == 32) {
-				str[strlen(str)] = 0;
-			}
-
+/////////////////////////////////////////////////////////////////////////
+			
 			if (ReadyToStart != 0) {
 				strcpy(str, "Err:");
 
@@ -173,10 +145,8 @@ int PreOperationState(uint32_t OperationLoops) {
 					else
 						strcat(str, "INVDIS ");
 				}
-
-			}
-
-		} else {
+		}
+		 else {
 			// TODO print any non critical warning still.
 			ClearCriticalError(); // clear any pending critical errors from startup procedure.
 		}
@@ -229,10 +199,6 @@ int PreOperationState(uint32_t OperationLoops) {
 			sprintf(str, "1%3dA 2%3dA 3%3dA ", runtimedata_p->maxMotorI[1],
 					runtimedata_p->maxMotorI[2], runtimedata_p->maxMotorI[3]);
 		}
-
-		if (showbrakebal)
-
-				//Print brake balance
 
 		if (showadc) {
 			sprintf(str, "L%3d%% R%3d%% B%3d%% ",
@@ -319,7 +285,7 @@ int PreOperationState(uint32_t OperationLoops) {
 
 	static bool powerset = false;
 
-	if (CheckTSActivationRequest()) {
+	if (CheckTSActiviatonRequest()) {
 		if (!powerset) {
 			invRequestState(BOOTUP);
 			resetDevicePower(Inverters);
@@ -340,25 +306,6 @@ int PreOperationState(uint32_t OperationLoops) {
 
 	}
 
-	if (preoperationstate != 0) {
-		ReadyToStart |= (1 << READYDEVBIT);
-	}
-
-	for (int i = 0; i < MOTORCOUNT; i++) {
-		if (getInvState(i)->Device == OFFLINE) {
-			ReadyToStart |= (1 << READYINVBIT);
-		}
-	}
-
-	if (DeviceState.CriticalSensors != OPERATIONAL) {
-		ReadyToStart |= (1 << READYSENSBIT);
-	} // require critical sensor nodes online for startup.
-	if (DeviceState.PowerNode1 != OPERATIONAL || DeviceState.PowerNode2 != OPERATIONAL) {
-		ReadyToStart |= (1 << READYPOWERBIT);
-	}
-#ifdef CHECKTSALPOWER
-	if ( !getDevicePower(TSAL) ) { ReadyToStart |= (1<<READYTSALBIT); } // require TSAL power to allow startup.
-	#endif
 	if (ReadyToStart == 0) {
 		setOutput(STARTLED, On);
 		// devices are ready and in pre operation state.
@@ -392,16 +339,21 @@ int PreOperationState(uint32_t OperationLoops) {
 		}
 	}
 
-	if (CheckActivationRequest())
+	if (CheckActivationRequest()){
 		DebugPrintf("Start pressedr\n");
 		CAN_SendDebug(STT_ID);
+	}
 
-	if (CheckTSActivationRequest())
-		DebugPrintf("TS pressedr\n");
+	if (CheckTSActivationRequest()) {
+		DebugPrintf("TS pressed\n");
 		CAN_SendDebug(TSP_ID);
+	}
 
-	if (CheckRTDMActivationRequest())
-		DebugPrintf("RTDM pressedr\n");
+	
+	if (CheckRTDMActivationRequest()) {
+		DebugPrintf("RDTM pressed\n");
+		CAN_SendDebug(RDTMP_ID);
+	}
 
 	return PreOperationalState; // nothing caused entry to a different state, continue in current state.
 }

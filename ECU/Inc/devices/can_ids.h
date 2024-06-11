@@ -12,9 +12,10 @@
 #define FLSpeed_COBID			0x71 // 112 // 0x70 orig
 #define FRSpeed_COBID			0x70 // 113 // 0x71 orig
 
-#define APPS1_ID				0x00
-#define APPS2_ID				0x01
-#define BrakeFront_ID			0x02
+#define APPS1_ID				0x01
+#define APPS2_ID				0x02
+#define BPPS_ID					0x05
+#define BrakeFront_ID			0x03
 #define BrakeRear_ID			0x03
 #define SteeringAngle_ID		0x04
 #define BPPS_ID					0x05
@@ -38,14 +39,16 @@
 #define IVTAs_ID		    	IVTBase_ID+6 //0x527
 #define IVTWh_ID				IVTBase_ID+7 //0x528
 
-// Some IDs
+// Power Node IDs
 ////////////////////////////////////////
-
-#define NodeErr_ID        		0x600
-#define NodeCmd_ID				0x602
-#define NodeAck_ID				0x601
-
-#define AdcSimInput_ID			0x608
+#define PNode1_CMD_ID			0x15
+#define PNode2_CMD_ID			0x16
+#define Under_Current_PN1_ID	0x17
+#define Warning_Current_PN1_ID	0x18
+#define Over_Current_PN1_ID		0x19
+#define Under_Current_PN2_ID	0x1A
+#define Warning_Current_PN2_ID	0x1B
+#define Over_Current_PN2_ID		0x1C
 
 //Needs to be change due to new hardware
 
@@ -72,6 +75,7 @@
 
 //Debug Msgs
 ////////////////////////////////////////
+
 #define EIS_ID					(0x0A0) //"Entering Idle State"
 #define TSO_ID					(0x0A1) //"TS:Off"
 #define TSB_ID                  (0x0A2) //"TS:BAD"
