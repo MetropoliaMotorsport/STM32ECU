@@ -1,0 +1,154 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: ECU PowerNode1 PowerNode2 AnalogNode1 AnalogNode2 DashBoard
+
+
+BO_ 3221225472 VECTOR__INDEPENDENT_SIG_MSG: 0 Vector__XXX
+ SG_ Select : 7|8@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ NewSignal_0001 : 15|8@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ NewSignal_0002 : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 25 Over_Current_PN1: 2 PowerNode1
+
+BO_ 23 Under_Current_PN1: 2 PowerNode1
+
+BO_ 24 Warning_Current_PN1: 2 PowerNode1
+
+BO_ 28 Over_Current_PN2: 2 PowerNode2
+
+BO_ 27 Under_Current_PN2: 2 PowerNode2
+
+BO_ 26 Warning_Current_PN2: 2 PowerNode2
+
+BO_ 21 PN1_Command: 3 ECU
+
+BO_ 22 PN2_Command: 3 ECU
+
+BO_ 1 APPS1: 2 AnalogNode1
+ SG_ Value : 0|16@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 2 APPS2: 2 AnalogNode1
+ SG_ Value : 0|16@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 3 BPPS: 2 AnalogNode1
+ SG_ Value : 0|16@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 4 BrakeFront: 2 AnalogNode1
+
+BO_ 5 BrakeRear: 2 AnalogNode2
+
+BO_ 7 WaterLevel: 2 AnalogNode2
+
+BO_ 9 HeavesRear: 2 AnalogNode2
+
+BO_ 10 Rolls1: 2 AnalogNode1
+
+BO_ 11 Rolls2: 2 AnalogNode2
+
+BO_ 8 HeavesFront: 2 AnalogNode1
+
+BO_ 6 Steering_Angle: 2 AnalogNode1
+
+BO_ 160 Entering_Idle_State: 8 ECU
+
+BO_ 161 TS_OFF: 8 ECU
+
+BO_ 162 TS_BAD: 8 ECU
+
+BO_ 163 Critical_Error: 8 ECU
+
+BO_ 164 Ready_to_enable_TS: 8 ECU
+
+BO_ 165 TS_Activation_Req_Ready: 8 ECU
+
+BO_ 166 TS_Activation_Req_NReady: 8 ECU
+
+BO_ 167 Entering_Startup_State: 8 ECU
+
+BO_ 168 BMS_Fail: 8 ECU
+
+BO_ 169 IVT_Fail: 8 ECU
+
+BO_ 170 Readyness_Power_Fail: 8 ECU
+
+BO_ 171 Entering_Readyness_Check_State: 8 ECU
+
+BO_ 172 Errorplace_too_many_loops: 8 ECU
+
+BO_ 173 Entering_PreOperational_State: 8 ECU
+
+BO_ 174 Power_request: 8 ECU
+
+BO_ 175 Power_off_to_inverters_req: 8 ECU
+
+BO_ 176 Start_Pressed: 8 ECU
+
+BO_ 177 RDTM_Pressed: 8 ECU
+
+BO_ 178 Entering_RDTM_State: 8 ECU
+
+BO_ 179 RTDM_TA: 8 ECU
+
+BO_ 180 Dissabling_Regen: 8 ECU
+
+BO_ 181 Entering_TS_Active_State: 8 ECU
+
+BO_ 182 TS_LoV: 8 ECU
+
+BO_ 183 TS_On: 8 ECU
+
+BO_ 184 RDTM_Activation_with_no_braking: 8 ECU
+
+BO_ 185 Waiting_Precharge: 8 ECU
+
+BO_ 186 Idle_State_Req: 8 ECU
+
+BO_ 187 Entering_Error_State: 8 ECU
+
+BO_ 20 Brake_Light: 1 ECU
+
+BO_ 12 BTN1: 2 AnalogNode1
+ SG_ Value : 0|16@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 13 BTN2: 2 AnalogNode1
+ SG_ Value : 0|16@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 14 BTN3: 2 AnalogNode1
+ SG_ Value : 0|16@1+ (1,0) [0|0] "" Vector__XXX
+
+
+
+
