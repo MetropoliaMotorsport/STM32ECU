@@ -105,7 +105,7 @@ int Startup(uint32_t OperationLoops) {
 	resetOutput(LED6, Off);
 
 	// set relay output LED's off
-	//setOutput(BMSLED,Off);
+
 	setOutput(IMDLED, Off);
 	setOutput(BSPDLED, Off);
 

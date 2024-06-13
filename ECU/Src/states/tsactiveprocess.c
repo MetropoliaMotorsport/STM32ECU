@@ -115,38 +115,6 @@ int TSActiveProcess(uint32_t OperationLoops) {
 		return IdleState;
 	}
 
-#if 0
-		&& HVEnableTimer+MS1000*9 < gettimer()
-		&& // make this optional so IVT can be disabled.
-		)
-	{
-        // error enabling high voltage, stop trying and alert.
-		blinkOutput(RTDMLED,LEDBLINK_FOUR, 1);
-		TSRequested = 0;
-
-		// SHOW ERROR.
-
-		DebugMsg("Timeout activating TS, check TSMS & HVD?");
-
-		if ( CheckShutdown() )
-		{
-			// TODO stick shutdown circuit check string here.
-
-		}
-	}
-
-	uint8_t InvHVPresent = 0;
-
-	if ( DeviceState.IVTEnabled )
-	{
-		if ( CarState.VoltageINV > 60 )
-			InvHVPresent = 1;
-	} else InvHVPresent = 1; // just assume HV present after request if IVT not enabled. // TODO read from inverters.
-
-
-
-#endif
-
 	if ( // invertersStateCheck(PREOPERATIONAL)
 	!ReceiveNonCriticalError && prechargedone) // ensure can't enter RTDM till given time for precharge to take place.
 			{

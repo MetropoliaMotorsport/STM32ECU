@@ -49,7 +49,7 @@ extern QueueHandle_t OutputQueue;
 typedef enum output {
 	BMSLED = 8, IMDLED = 6, BSPDLED = 0, TSLED = 2, STARTLED = 4, TSOFFLED = 7, // 0
 	RTDMLED = 3,
-#ifdef HPF2023
+
 	ERRORLED = 17,
 	LED1 = 11,
 	LED2 = 12,
@@ -58,16 +58,6 @@ typedef enum output {
 	LED5 = 15,
 	LED6 = 16,
 	LED7 = 17,
-#else
-	ERRORLED=18,
-	LED1=12,
-	LED2=13,
-	LED3=14,
-	LED4=15,
-	LED5=16,
-	LED6=17,
-	LED7=18,
-#endif
 	Output0 = 0,
 	Output1 = 1,
 	Output2 = 2,

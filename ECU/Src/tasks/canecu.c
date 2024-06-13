@@ -561,8 +561,8 @@ char CAN_SendErrorStatus(char state, char substate, uint32_t errorcode) {
 
 char CAN_NMT(uint8_t command, uint8_t node) {
 
-	uint8_t CANTxData2[2] = { command, node }; // 0 sends command to all nodes.
-	CAN2Send(0, 2, CANTxData2); // return values.
+	//uint8_t CANTxData2[2] = { command, node }; // 0 sends command to all nodes.
+	//CAN2Send(0, 2, CANTxData2); // return values.
 
 //	DWT_Delay(100); // delay of ~ > 80us needed, or messages entangle and error frame somehow if both can outputs are connected. unknown bug.
 	uint8_t CANTxData[2] = { command, node }; // 0 sends command to all nodes.

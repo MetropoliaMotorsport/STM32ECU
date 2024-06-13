@@ -25,6 +25,10 @@
 #define Rolls1_ID				0x08
 #define Rolls2_ID				0x10
 
+#define BTN1_ID					0x0C
+#define BTN2_ID					0x0D
+#define BTN3_ID					0x0E
+
 // IVT IDs
 ////////////////////////////////////////
 #define IVTCmd_ID		    	0x411

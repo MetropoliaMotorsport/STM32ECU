@@ -14,6 +14,10 @@ extern CANData Rolls2;
 extern CANData BrakeFront;
 extern CANData BrakeRear;
 
+extern CANData BTN1;
+extern CANData BTN2;
+extern CANData BTN3;
+
 //TODO finnish this
 
 int getNodeWait( void );

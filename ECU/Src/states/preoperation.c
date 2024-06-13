@@ -53,6 +53,7 @@ void setTestMotors( bool state) {
 // get external hardware upto state to allow entering operational state on request.
 int PreOperationState(uint32_t OperationLoops) {
 //	static int OperationLoops = 0;
+
 	static uint16_t preoperationstate;
 	static uint16_t ReadyToStart;
 	static uint32_t ledtimer;
@@ -67,13 +68,16 @@ int PreOperationState(uint32_t OperationLoops) {
 		CAN_SendDebug(EPOS_ID);
 		//DebugMsg("Entering Pre Operation State");
 
-		SetErrorLogging( false);
+		//SetErrorLogging( false);
 		preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
 		InverterAllowTorqueAll(false);
 
-		resetOutput(STARTLED, Off);
-		resetOutput(TSLED, On);
-		resetOutput(RTDMLED, Off);
+
+		//////////////////////////////TODO Fix LED control
+		//resetOutput(STARTLED, Off);
+		//resetOutput(TSLED, On);
+		//resetOutput(RTDMLED, Off);
+		//////////////////////////////
 
 		ReadyToStart = 0;
 		// set startup powerstates to bring devices up.
@@ -88,18 +92,6 @@ int PreOperationState(uint32_t OperationLoops) {
 		CAN_SendStatus(1, PreOperationalState, preoperationstate);
 
 		// do power request
-
-		// test power error checking.
-		if (DeviceState.IVTEnabled && DeviceState.IVT == OFFLINE) {
-			if (!powerErrorOccurred(IVT))
-				setDevicePower(IVT, true);
-			else {
-				Errors.ErrorPlace = 0xAA;
-				Errors.ErrorReason = 0; //TODO error code for lost power.
-				return OperationalErrorState;
-			}
-		}
-
 
 /////////////////////////////////////////////////////////////////////////
 			if (InverterReceived) {
@@ -154,93 +146,7 @@ int PreOperationState(uint32_t OperationLoops) {
 	}
 
 	ReadyToStart = 0;
-
-	if (!inConfig()) {
-		if (CheckButtonPressed(Config_Input)) {
-			if (!testmotors) {
-				DebugPrintf("Enter Config\r\n");
-				ConfigInput(0xFFFF);
-				ReadyToStart |= (1 << READYCONFIGBIT); // we're probably entering config, don't allow startup this cycle.
-			}
-		}
-
-		static bool showbrakebal = false;
-
-		static bool showadc = false;
-
-		static bool showcurrent = false;
-
-		switch (GetLeftRightPressed()) {
-		case -1:
-			if (!showadc && !showcurrent)
-				showbrakebal = !showbrakebal;
-			break;
-		case 1:
-			if (!showbrakebal && !showcurrent)
-				showadc = !showadc;
-			break;
-		}
-
-		switch (GetUpDownPressed()) {
-		case -1:
-			if (showcurrent) {
-				clearRunningData();
-			}
-			break;
-		case 1:
-			if (!showadc && !showbrakebal)
-				showcurrent = !showcurrent;
-			break;
-		}
-
-		if (showcurrent) {
-			sprintf(str, "IVT %3dA  0%3dA", runtimedata_p->maxIVTI,
-					runtimedata_p->maxMotorI[0]);
-			sprintf(str, "1%3dA 2%3dA 3%3dA ", runtimedata_p->maxMotorI[1],
-					runtimedata_p->maxMotorI[2], runtimedata_p->maxMotorI[3]);
-		}
-
-		if (showadc) {
-			sprintf(str, "L%3d%% R%3d%% B%3d%% ",
-					APPS1.data / 10,
-					APPS2.data / 10,
-					BPPS.data / 10);
-			sprintf(str, "Ang %d", SteeringAngle.data);
-
-		}
-	} else {
-		ReadyToStart |= (1 << READYCONFIGBIT); // being in config means not ready to start.
-		// process config input.
-
-		if (CheckButtonPressed(Config_Input)) {
-			DebugPrintf("Enter\r\n");
-			ConfigInput( KEY_ENTER);
-		}
-
-		switch (GetLeftRightPressed()) {
-		case -1:
-			DebugPrintf("Left\r\n");
-			ConfigInput( KEY_LEFT);
-			break;
-		case 1:
-			DebugPrintf("Right\r\n");
-			ConfigInput( KEY_RIGHT);
-			break;
-		}
-
-		switch (GetUpDownPressed()) {
-		case -1:
-			DebugPrintf("Up\r\n");
-			ConfigInput( KEY_UP);
-			break;
-		case 1:
-			DebugPrintf("Down\r\n");
-			ConfigInput( KEY_DOWN);
-			break;
-		}
-
-	}
-
+	
 	vTaskDelay(5);
 
 	preoperationstate = DevicesOnline(preoperationstate);
@@ -260,12 +166,12 @@ int PreOperationState(uint32_t OperationLoops) {
 
 //	if ( testmotorslast ) InverterSetTorque(&adj, 1000);
 
-#if 1
+#if 0 //TODO Fix LED control
 	if (CarState.APPSstatus)
 		setOutput(RTDMLED, On);
 	else
 		setOutput(RTDMLED, Off);
-#endif
+
 	// Check startup requirements.
 
 	if (!getDevicePower(Front1) || !getDevicePower(Front2)
@@ -282,6 +188,7 @@ int PreOperationState(uint32_t OperationLoops) {
 			TSLEDstate = false;
 		}
 	}
+#endif
 
 	static bool powerset = false;
 

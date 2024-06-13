@@ -271,6 +271,8 @@ typedef struct {
 
 	DeviceStatus PowerNode1;
 	DeviceStatus PowerNode2;
+
+	DeviceStatus Dash_BTNs;
 	
 //	char ;
 

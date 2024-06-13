@@ -522,11 +522,9 @@ int8_t getInverterControlWord(const InverterState_t *Inverter) // returns respon
 		// we are in state 2, process.
 		// process shutdown request here, to move to move to state 1.
 		if (getPowerHVReady()) { // TS enable button pressed and both inverters are marked HV ready proceed to state 3.
-#ifdef LENZE
+
 			TXState = 0b00001111; // Lenze doesn't want to go to pre operational from stopped, have to skip straight to operational.
-#else
-				TXState = 0b00000111; // request Switch on message, State 3..
-#endif
+
 		} else {
 			TXState = 0b00000110; // no change, continue to request State 2.
 		}
