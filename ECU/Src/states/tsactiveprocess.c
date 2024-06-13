@@ -9,7 +9,7 @@
 #include "tsactiveprocess.h"
 #include "runningprocess.h"
 #include "idleprocess.h"
-
+#include "node_device.h"
 #include "inverter.h"
 #include "input.h"
 #include "output.h"
@@ -150,7 +150,7 @@ int TSActiveProcess(uint32_t OperationLoops) {
 	 * One of these actions must include the actuation of the mechanical brakes while ready-to-drive mode is entered.
 	 */
 
-	if (readystate == 0 && CheckRTDMActivationRequest()) // if inverters ready, rtdm pressed, and brake held down.
+	if (readystate == 0 && BTN3.data) // if inverters ready, rtdm pressed, and brake held down.
 			{
 		if (getBrakeRTDM())
 			return RunningState;
@@ -159,17 +159,5 @@ int TSActiveProcess(uint32_t OperationLoops) {
 			CAN_SendDebug(RTDMAC_ID);
 		}
 	}
-
-	if (CheckActivationRequest()) {
-		if (!prechargedone) {
-			DebugPrintf("Wait for Precharge\n");
-			CAN_SendDebug(WFP_ID);
-		} else {
-			DebugPrintf("Returning to idle state at request.");
-			CAN_SendDebug(RTIS_ID);
-			return IdleState;  // if requested disable TS drop state
-		}
-	}
-
 	return TSActiveState;
 }

@@ -109,27 +109,6 @@ int PreOperationState(uint32_t OperationLoops) {
 			if (ReadyToStart != 0) {
 				strcpy(str, "Err:");
 
-
-				if (ReadyToStart & (0x1 << READYTSALBIT)) {
-					strcat(str, "TSAL ");
-				}
-
-				if (ReadyToStart & (0x1 << READYCONFIGBIT)) {
-					strcat(str, "CFG ");
-				}
-
-				if (ReadyToStart & (0x1 << READYDEVBIT)) {
-					strcat(str, "DEV ");
-				}
-
-				if (ReadyToStart & (0x1 << READYSENSBIT)) {
-					strcat(str, "SNS ");
-				}
-
-				if (ReadyToStart & (0x1 << READYPOWERBIT)) {
-					strcat(str, "PWR ");
-				}
-
 				if (ReadyToStart & (0x1 << READYINVBIT)) {
 
 					if (getEEPROMBlock(0)->InvEnabled)
@@ -192,7 +171,7 @@ int PreOperationState(uint32_t OperationLoops) {
 
 	static bool powerset = false;
 
-	if (CheckTSActiviatonRequest()) {
+	if (BTN1.data) {
 		if (!powerset) {
 			invRequestState(BOOTUP);
 			resetDevicePower(Inverters);
@@ -204,6 +183,26 @@ int PreOperationState(uint32_t OperationLoops) {
 			DebugMsg("Power requested.");
 			CAN_SendDebug(PWRR_ID);
 			powerset = true;
+
+			///////////////////////////////
+			vtTaskDelay(2000);
+
+			if (ReadyToStart == 0) {
+				setOutput(STARTLED, On);
+				// devices are ready and in pre operation state.
+				// check for request to move to active state.
+
+				if (testmotors) {
+					return PreOperationalState;
+				}
+
+				if (CheckActivationRequest()) // check if driver has requested activation and if so proceed
+				{
+					OperationLoops = 0;
+					return OperationalReadyState; // normal operational state on request
+				}
+			}
+			//////////////////////////////
 		} else {
 			setDevicePower(Inverters, false);
 			DebugMsg("Power off to inverters requested.");
@@ -212,56 +211,7 @@ int PreOperationState(uint32_t OperationLoops) {
 		}
 
 	}
-
-	if (ReadyToStart == 0) {
-		setOutput(STARTLED, On);
-		// devices are ready and in pre operation state.
-		// check for request to move to active state.
-
-		if (testmotors) {
-			return PreOperationalState;
-		}
-
-		if (CheckActivationRequest()) // check if driver has requested activation and if so proceed
-		{
-			OperationLoops = 0;
-			return OperationalReadyState; // normal operational state on request
-		}
-	} else { // hardware not ready for active state
-			 //setOutput(STARTLED, On);
-		blinkOutput(STARTLED, BlinkSlow, 100);
-		if (OperationLoops == 50) // 0.5 seconds, send reset nmt, try to get inverters online if not online at startup.
-				{
-
-		}
-
-		if (CheckActivationRequest() == 1) {
-			if (1) // calculate this to max time for expecting everything online
-			{
-				// user pressed requesting startup sequence before devices ready
-				blinkOutput(TSLED, BlinkFast, 1000);
-				CAN_SendErrorStatus(1, PowerOnRequestBeforeReady, 0);
-
-			}
-		}
-	}
-
-	if (CheckActivationRequest()){
-		DebugPrintf("Start pressedr\n");
-		CAN_SendDebug(STT_ID);
-	}
-
-	if (CheckTSActivationRequest()) {
-		DebugPrintf("TS pressed\n");
-		CAN_SendDebug(TSP_ID);
-	}
-
 	
-	if (CheckRTDMActivationRequest()) {
-		DebugPrintf("RDTM pressed\n");
-		CAN_SendDebug(RDTMP_ID);
-	}
-
 	return PreOperationalState; // nothing caused entry to a different state, continue in current state.
 }
 

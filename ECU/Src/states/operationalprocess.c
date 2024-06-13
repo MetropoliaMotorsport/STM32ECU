@@ -89,7 +89,6 @@ void ResetStateData(void) // set default startup values for global state values.
 int Startup(uint32_t OperationLoops) {
 
 	{
-		//CarState.allowtsactivation = true;
 		DebugMsg("Entering Startup State");
 		CAN_SendDebug(ESS_ID);
 	}

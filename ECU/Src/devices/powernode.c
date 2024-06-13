@@ -128,7 +128,7 @@ bool processPNodeAckData(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 uint32_t getOldestPNodeData(void) {
 
-	uint32_t time = gettimer();
+	uint32_t time1 = gettimer(); //TODO fix it back
 
 	if (PowerNode1.time < time)
 		time = PowerNode1.time;
@@ -136,7 +136,7 @@ uint32_t getOldestPNodeData(void) {
 	if (PowerNode2.time < time)
 		time = PowerNode2.time;
 
-	return time;
+	return time1;
 }
 
 
@@ -150,6 +150,8 @@ void PNode2Timeout(uint16_t id) {
 
 bool processPNode1Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle) {
+	
+	
 	static bool first = false;
 	if (!first) {
 		DebugMsg("PNode 1 First msg.");

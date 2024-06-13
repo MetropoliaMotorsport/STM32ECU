@@ -88,7 +88,7 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 			{
 		DebugMsg("Entering Readyness check State");
 		CAN_SendDebug(ERCS_ID);
-		SetErrorLogging(true);
+		//SetErrorLogging(true);
 		received = 0xFFFF;
 	}
 
@@ -101,8 +101,6 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 		Errors.ErrorPlace = 0xBA;
 		return OperationalErrorState; // error, too long waiting for data. Go to error state to inform and allow restart of process.
 	}
-
-//	invRequestState(STOPPED); // not working for lenze.
 
 	vTaskDelay(5);
 

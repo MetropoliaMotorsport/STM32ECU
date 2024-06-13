@@ -23,25 +23,9 @@
 uint32_t OperationalReceive(void) {
 uint32_t returnvalue = 0;
 
-if( DeviceState.BMS == OPERATIONAL )
-	returnvalue |= (0x1 << BMSReceived);
-if( DeviceState.IVT == OPERATIONAL )
-	returnvalue |= (0x1 << IVTReceived);
 if( DeviceState.Inverter == OPERATIONAL )
 	returnvalue |= (0x1 << InverterReceived);
-if( DeviceState.PowerNode1 == OPERATIONAL )
-	returnvalue |= (0x1 << PowerNode1Received);
 
-
-	/*if (returnvalue == 0xFF) {
-		returnvalue = (0x1 << BMSReceived) + (0x1 << IVTReceived) +
-
-				(0x1 << InverterReceived) + // TODO inverter receive
-				(0x1 << PedalReceived);
-
-	}
-*/
-	// check all inverters are present.
 	int invcount = 0;
 	for (int i = 0; i < MOTORCOUNT; i++) {
 		if (getInvState(i)->Device == OFFLINE) {
@@ -193,7 +177,7 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 		blinkOutput(TSLED, LEDBLINK_ONE, 100);
 	}
 
-	if (CheckTSActivationRequest()) {
+	if (BTN2.data) {
 		if (readystate == 0 && CarState.allowtsactivation) {
 			DebugMsg("TS Activation requested whilst ready.");
 			CAN_SendDebug(TSR_ID);
