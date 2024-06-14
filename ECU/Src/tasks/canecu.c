@@ -588,9 +588,9 @@ char CAN_SendErrors(void) {
 
 char CAN_SendDebug(uint16_t id){
 
-	uint8_t CANTxData[8] = {0,0,0,0,0,0,0,0};
+	uint8_t CANTxData[1] = {0};
 
-	CAN2Send(id, 8, CANTxData); //TODO add data
+	CAN2Send(id, 1, CANTxData); //TODO add data
 	return 1;
 }
 

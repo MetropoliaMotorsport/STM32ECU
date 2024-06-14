@@ -98,8 +98,6 @@ bool CheckBMS( void );
 bool CheckTSOff( void );
 bool CheckIMD( void );
 bool CheckShutdown( void );
-char * ShutDownOpenStr( void );
-void SetHVLost( void );
 void ClearHVLost( void );
 bool CheckHVLost( void );
 

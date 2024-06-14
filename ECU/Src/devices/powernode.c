@@ -129,13 +129,13 @@ bool processPNodeAckData(const uint8_t CANRxData[8], const uint32_t DataLength,
 uint32_t getOldestPNodeData(void) {
 
 	uint32_t time1 = gettimer(); //TODO fix it back
-
+#if 0
 	if (PowerNode1.time < time)
 		time = PowerNode1.time;
 
 	if (PowerNode2.time < time)
 		time = PowerNode2.time;
-
+#endif
 	return time1;
 }
 

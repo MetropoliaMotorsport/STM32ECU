@@ -8,8 +8,6 @@
 #ifndef IVT_H_
 #define IVT_H_
 
-int requestIVT( void );
-
 int initIVT( void );
 
 #endif /* IVT_H_ */

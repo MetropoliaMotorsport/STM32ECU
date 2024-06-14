@@ -35,7 +35,11 @@
 
 #define Inverter_BUS			CANB2
 
-
+////////////////////////////////////////
+#define NodeErr_ID        		0x600
+#define NodeCmd_ID				0x602
+#define NodeAck_ID				0x601
+///////////////////////////////////////
 
 // brake temp sensors 0x1a - first two bytes.
 

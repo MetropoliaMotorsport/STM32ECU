@@ -67,13 +67,6 @@ char* getPNodeWait(void) {
 	// TODO add a mutex
 }
 
-void SetHVLost(void) {
-	if (!HVLost) {
-		HVLost = true;
-		DebugMsg("Logging HV Lost");
-	}
-}
-
 void ClearHVLost(void) {
 	if (HVLost) {
 		HVLost = false;
@@ -126,8 +119,6 @@ void PowerTask(void *argument) {
 	bool IMDset = false;
 	bool TSOFFset = true;
 	bool BMSset = false;
-
-	//setOutputNOW(BMSLED, Off);
 
 	while (1) {
 		lastpowernodesOnline = powernodesOnline;
@@ -444,7 +435,7 @@ bool CheckTSOff(void) // returns true if shutdown circuit other than ECU is clos
 
 bool CheckIMD(void) // returns true if shutdown circuit other than ECU is closed
 {
-#ifdef HPF2023
+
 	if (HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin)) {
 		DebugMsg("IMD input PIN");
 	}
@@ -453,36 +444,10 @@ bool CheckIMD(void) // returns true if shutdown circuit other than ECU is closed
 	}
 	return (HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin)
 			|| DeviceState.BMS != OPERATIONAL);
-#else
-	return Shutdown.IMD;
-#endif
 }
 
 #define MAXSHUTDOWNSTR	40
 
-char* ShutDownOpenStr(void) {
-	static char str[255] = "";
-
-	// TODO move these into actual order of SDC.
-
-	snprintf(str, 40, "%s%s%s%s%s%s%s%s%s",
-			"", //		(!Shutdown.BSPDBefore)?"BSPDB,":""
-			"", //		(!Shutdown.BSPDAfter)?"BSPDA,":"",
-			"", //		(!Shutdown.BOTS)?"BOTS,":"",
-			(!Shutdown.InertiaSwitch) ? "INRT," : "",
-			(!Shutdown.CockpitButton) ? "DRV," : "",
-			(!Shutdown.RightButton) ? "RGT," : "",
-			(!Shutdown.LeftButton) ? "LFT," : "", (!Shutdown.BMS) ? "BMS," : "",
-			"" //		(!Shutdown.IMD)?"IMD,":"",
-			);
-
-//	int len=strlen(str);
-
-//	if ( len > 0)
-//		str[len-1] = 0;
-
-	return str;
-}
 
 void ShutdownCircuitSet( bool state) {
 	HAL_GPIO_WritePin( DO15_GPIO_Port, DO15_Pin, state);
@@ -519,21 +484,6 @@ bool resetDevicePower(DevicePower device) {
 
 }
 
-// directly set the current power state of device.
-bool setPowerState(DevicePowerState devicestate, bool enabled) {
-	Power_msg msg;
-
-	if (devicestate != DirectPowerCmd && devicestate != PowerError) {
-		msg.cmd = devicestate;
-		msg.enabled = enabled;
-		return xQueueSend(PowerQueue, &msg, 0);
-	}
-	return false;
-}
-
-void resetPower(void) {
-
-}
 
 void FanPWMControl(uint8_t leftduty, uint8_t rightduty) {
 //	for example: [7][2][5][255][128] will set the lowest numbered output (DI3)

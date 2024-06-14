@@ -76,13 +76,6 @@ int TSActiveProcess(uint32_t OperationLoops) {
 		blinkOutput(RTDMLED, LEDBLINK_TWO, 100);
 		prechargedone = 0;
 		// check SDC now, should be powered.
-#if 0
-		strcat(str, "SDC(" );
-
-		strcat(str, ShutDownOpenStr());
-
-		strcat(str, ") " );
-#endif
 	} else {
 		if (CarState.VoltageINV > TSACTIVEV
 				&& (prechargetimer + MS1000 * 6 <= curtime)) // Shutdown.PRE ||
