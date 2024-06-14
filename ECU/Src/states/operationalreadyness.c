@@ -90,7 +90,17 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 		CAN_SendDebug(ERCS_ID);
 		//SetErrorLogging(true);
 		received = 0xFFFF;
+#define TEST_INV 1
+#if TEST_INV
+		ShutdownCircuitSet(true);
+#endif
+		vTaskDelay(6000);
+
+
+
 	}
+
+
 
 	CAN_SendStatus(1, OperationalReadyState, received);
 
@@ -123,6 +133,7 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 		return OperationalErrorState; // something has triggered an unacceptable error ( inverter error state etc ), drop to error state to deal with it.
 
 	}
+
 
 	int invcount = 0;
 

@@ -40,10 +40,6 @@ bool processAPPCStatus(const uint8_t CANRxData[8], const uint32_t DataLength,
 bool processINVRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle);
 
-//bool processAPPCOnline( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-bool processAPPCError(const uint8_t CANRxData[8], const uint32_t DataLength,
-		const CANData *datahandle);
-
 bool getInvSDOSet(void);
 
 //		{ TimeoutFunction, ID, DLC, receivefunction, dotimeout, timeout, index.
@@ -131,13 +127,7 @@ CANData InverterCANAPPCRDO[INVERTERCOUNT] = { // torque
 #endif
 		};
 
-CANData InverterCANAPPCErr[INVERTERCOUNT] = { { NULL, Inverter1_NodeID
-		+ COBERR_ID + LENZE_APPC_OFFSET, 8, processAPPCError, NULL, 0, 0 },
-#if MOTORCOUNT > 2
-		{ NULL, Inverter2_NodeID + COBERR_ID + LENZE_APPC_OFFSET, 8,
-				processAPPCError, NULL, 0, 2 },
-#endif
-		};
+
 
 // two per MC
 void InvResetError(volatile InverterState_t *Inverter) {
@@ -617,11 +607,6 @@ bool processINVValues2(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 	return true;
 
-}
-
-bool processAPPCError(const uint8_t CANRxData[8], const uint32_t DataLength,
-		const CANData *datahandle) {
-	return true;
 }
 
 bool InvStartupState(volatile InverterState_t *Inverter,
