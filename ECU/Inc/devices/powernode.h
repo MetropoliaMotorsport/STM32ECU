@@ -35,14 +35,10 @@ extern CANData PowerNode2;
 void PNode1Timeout( uint16_t id );
 void PNode2Timeout( uint16_t id );
 
-bool processPNodeErr(const uint8_t nodeid, const uint32_t errorcode, const CANData * datahandle );
-bool processPNodeAckData( const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
-
 int sendPowerNodeErrReset(uint8_t id, uint8_t channel);
 
 uint32_t getOldestPNodeData( void );
 
-void setPowerNodeStr( uint32_t nodesonline );
 char * getPNodeStr( void );
 
 uint8_t getDevicePowerListSize( void );

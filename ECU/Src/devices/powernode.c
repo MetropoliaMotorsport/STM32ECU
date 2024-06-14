@@ -117,15 +117,6 @@ bool processPNode1Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 bool processPNode2Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle);
 
-
-//bool processPNodeTimeout(uint8_t CANRxData[8], uint32_t DataLength );
-
-bool processPNodeErr(const uint8_t nodeid, const uint32_t errorcode,
-		const CANData *datahandle);
-bool processPNodeAckData(const uint8_t CANRxData[8], const uint32_t DataLength,
-		const CANData *datahandle);
-
-
 uint32_t getOldestPNodeData(void) {
 
 	uint32_t time1 = gettimer(); //TODO fix it back
@@ -281,56 +272,7 @@ bool setActualDevicePower(uint8_t nodeid, uint8_t channel, bool state) {
 	return false;
 }
 
-bool processPNodeAckData(const uint8_t CANRxData[8], const uint32_t DataLength,
-		const CANData *datahandle) {
 
-	if (CANRxData[1] == 1) // power set ACK
-			{
-		for (int i = 0; PowerRequests[i].nodeid != 0; i++) {
-			if (PowerRequests[i].nodeid == CANRxData[0]) // check for power request change.
-					{
-				PowerRequests[i].output ^= CANRxData[2]; // XOR the input with the request. if the reply is set, this will zero out the request.
-				PowerRequests[i].state ^= CANRxData[3]; // update the status of which outputs are on.
-
-				// update the device power table for current actual reported state.
-				for (int j = 0; j < 6; j++) {
-					if (CANRxData[2] & (1 << j)) {
-						setActualDevicePower(PowerRequests[i].nodeid, j,
-								CANRxData[3] & (1 << j));
-					}
-				}
-
-				return true; // request has been processed, stop iterating.
-			}
-		}
-	} else if (CANRxData[1] == 2) // PWM set ack
-			{
-		if (nodefanpwmreqs[0].nodeid == nodefanpwmreqs[1].nodeid) {
-			if (CANRxData[0] == nodefanpwmreqs[0].nodeid) {
-				queuedfanpwmLeft = false;
-				queuedfanpwmRight = false;
-			}
-		} else if (CANRxData[0] == nodefanpwmreqs[0].nodeid) {
-			queuedfanpwmLeft = false;
-		} else if (CANRxData[0] == nodefanpwmreqs[1].nodeid) {
-			queuedfanpwmRight = false;
-		}
-	} else if (CANRxData[1] == 23) // Error reset
-			{
-		if (nodefanpwmreqs[0].nodeid == nodefanpwmreqs[1].nodeid) {
-			if (CANRxData[0] == nodefanpwmreqs[0].nodeid) {
-				queuedfanpwmLeft = false;
-				queuedfanpwmRight = false;
-			}
-		} else if (CANRxData[0] == nodefanpwmreqs[0].nodeid) {
-			queuedfanpwmLeft = false;
-		} else if (CANRxData[0] == nodefanpwmreqs[1].nodeid) {
-			queuedfanpwmRight = false;
-		}
-	}
-
-	return true;
-}
 
 // ERROR list from powernode main.h
 
@@ -627,54 +569,6 @@ bool PNodeGetErrType(uint32_t error) {
 	}
 }
 
-bool processPNodeErr(const uint8_t nodeid, const uint32_t errorcode,
-		const CANData *datahandle) {
-	uint8_t channel = 255;
-
-	// log error to power queue.
-	PowerLogError(nodeid, errorcode);
-
-	switch (errorcode) // switch off errors, need to be ACK'ed to stop sending error code.
-	{
-	case U5I0_SWITCH_OFF:
-		channel = 0;
-		break; //PO0
-	case U5I1_SWITCH_OFF:
-		channel = 1;
-		break; //PO1
-	case U6I0_SWITCH_OFF:
-		channel = 2;
-		break; //PO2
-	case U6I1_SWITCH_OFF:
-		channel = 3;
-		break; //PO3
-	case U7I0_SWITCH_OFF:
-		channel = 4;
-		break; //PO4
-	case U7I1_SWITCH_OFF:
-		channel = 5;
-		break; //PO5
-	}
-
-	if (channel != 255) // received error was assigned a channel.
-			{
-
-		sendPowerNodeErrReset(nodeid, channel); // clear error to stop node transmitting error state.
-		for (int i = 0; PowerRequests[i].nodeid != 0; i++) { // find the node record where error occurred.
-			if (PowerRequests[i].nodeid == nodeid) {
-				if (PowerRequests[i].error[channel] < 255)
-					PowerRequests[i].error[channel]++;
-				setActualDevicePower(nodeid, channel, false);
-				// keep a count of how many times an error has occurred.
-				//		blinkOutput(LED, blinkingrate, time)
-			}
-		}
-
-		return true; // handled error.
-	}
-
-	return false;
-}
 
 char PNodeStr[10] = "";
 
@@ -684,31 +578,6 @@ char* getPNodeStr(void) {
 	else
 		return PNodeStr;
 }
-
-void setPowerNodeStr(uint32_t nodesonline) { //TODO what is that?
-	PNodeStr[0] = 0;
-
-	uint8_t pos = 0;
-
-	if ( PNodeAllBit & (0x1 << PNode1Bit))				//Need to be understood
-		if (!(nodesonline & (0x1 << PNode1Bit))) {
-			PNodeStr[pos] = '4';
-			PNodeStr[pos + 1] = '\0';
-			pos++;
-		}
-
-	if ( PNodeAllBit & (0x1 << PNode2Bit))				//Need to be understood
-		if (!(nodesonline & (0x1 << PNode2Bit))) {
-			PNodeStr[pos] = '7';
-			PNodeStr[pos + 1] = '\0';
-			pos++;
-		}
-}
-
-int setinitialdevicepower(void) {
-	return 0;
-}
-
 
 bool getNodeDevicePower(DevicePower device) {
 	for (int i = 0; DevicePowerList[i].device != None; i++) {

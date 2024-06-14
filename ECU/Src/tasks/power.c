@@ -571,9 +571,6 @@ bool PowerLogError(uint8_t nodeid, uint32_t errorcode) {
 }
 
 int initPower(void) {
-	RegisterResetCommand(resetPower);
-
-	resetPower();
 
 	HVLost = false;
 

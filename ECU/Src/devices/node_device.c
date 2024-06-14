@@ -50,10 +50,6 @@ volatile CANData BTN1 = { &DeviceState.Dash_BTNs, BTN1_ID, 1, processBTN, NULL, 
 volatile CANData BTN2 = { &DeviceState.Dash_BTNs, BTN2_ID, 1, processBTN, NULL, 0 };
 volatile CANData BTN3 = { &DeviceState.Dash_BTNs, BTN3_ID, 1, processBTN, NULL, 0 };
 
-int getNodeWait(){
-	return 0;
-}
-
 uint32_t getAnalogueNodesOnline(){
     return 0;
 }
@@ -74,7 +70,6 @@ void initNodeDevices( void ){
 
 
     //TODO add more devices
-    return 0;
 
 }
 

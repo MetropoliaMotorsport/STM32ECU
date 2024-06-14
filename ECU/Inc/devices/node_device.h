@@ -19,8 +19,6 @@ extern CANData BTN2;
 extern CANData BTN3;
 
 //TODO finnish this
-
-int getNodeWait( void );
 uint32_t getAnalogueNodesOnline( void );
 
 void initNodeDevices( void );

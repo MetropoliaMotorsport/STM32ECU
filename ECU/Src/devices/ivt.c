@@ -14,18 +14,9 @@
 #include "eeprom.h"
 
 bool processIVTData(const uint8_t *CANRxData, const uint32_t DataLength,
-		const uint16_t field);
+		CANData *datahandle);
 
 void IVTTimeout(uint16_t id);
-
-CANData IVTMsg = { &DeviceState.IVT, IVTMsg_ID, 6, processIVT, NULL, 0 };
-
-uint8_t processIVT(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field) {
-	CANData *datahandle = &IVTCan[field - IVTBase_ID];
-	processCANData(datahandle, CANRxData, DataLength);
-	return 0;
-}
-
 
 CANData IVTCan[8] = { 
 	 { &DeviceState.IVT, IVTBase_ID, 6, processIVTData, IVTTimeout, IVTTIMEOUT },
@@ -37,9 +28,16 @@ CANData IVTCan[8] = {
 	 { &DeviceState.IVT, IVTBase_ID + 6, 6, processIVTData, NULL, 0 },
 	 { &DeviceState.IVT, IVTBase_ID + 7, 6, processIVTData, NULL, 0 } };
 
+uint8_t processIVT(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field) {
+	CANData *datahandle = &IVTCan[field - IVTBase_ID];
+	processCANData(datahandle, CANRxData, DataLength);
+	return 0;
+}
+
+
 // IVTWh = 0x528
 bool processIVTData(const uint8_t CANRxData[8], const uint32_t DataLength, //TODO add safety checks for IVT data
-		const CANData *datahandle) {
+		CANData *datahandle) {
 		
 	datahandle->data = (uint32_t)(CANRxData[5] | (CANRxData[4] << 8) | (CANRxData[3] << 16) | (CANRxData[2] << 24) );
 
@@ -68,7 +66,7 @@ bool processIVTData(const uint8_t CANRxData[8], const uint32_t DataLength, //TOD
 
 	if (DeviceState.IVTEnabled) {
 
-		return processIVTData(CANRxData, DataLength, IVTI_ID);
+		return true;
 	} else
 		return true;
 }
@@ -101,21 +99,6 @@ int receiveIVT(void) {
 	}
 }
 
-
-int IVTstate(void) // not currently being used, not properly functional
-{
-	if (IVTMsg.time > 0) // packet has been received
-			{
-		{
-			DeviceState.IVT = OPERATIONAL;
-		}
-		return 1;
-
-	} else if (gettimer() - IVTCan[IVTBase_ID - IVTU1_ID].time < IVTTIMEOUT) {
-		return 1;
-	} else
-		return 0;
-}
 
 void resetIVT(void) {
 

@@ -85,7 +85,7 @@ extern int cancount;
 
 typedef volatile struct CanDataType CANData;
 
-typedef bool (*DataHandler)(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData * datahandle );
+typedef bool (*DataHandler)(const uint8_t CANRxData[8], const uint32_t DataLength, CANData * datahandle );
 typedef void (*TimeoutHandler)( uint16_t id );
 
 
