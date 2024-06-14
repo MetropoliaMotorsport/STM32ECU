@@ -126,6 +126,12 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 
 	int invcount = 0;
 
+	/////////////////
+	//TODO fixed by adding actual safety checks
+	received = 0;
+	////////////////
+
+
 	if (received != 0) { // activation requested but not everything is in satisfactory condition to continue
 
 		DebugPrintf("Received %d", received);

@@ -14,16 +14,17 @@
 
 #define APPS1_ID				0x01
 #define APPS2_ID				0x02
-#define BPPS_ID					0x05
-#define BrakeFront_ID			0x03
-#define BrakeRear_ID			0x03
-#define SteeringAngle_ID		0x04
-#define BPPS_ID					0x05
-#define WaterLevel_ID			0x06
-#define HeavesFront_ID			0x07
+#define BPPS_ID					0x03
+
+
+#define BrakeFront_ID			0x04
+#define BrakeRear_ID			0x05
+#define SteeringAngle_ID		0x06
+#define WaterLevel_ID			0x07
+#define HeavesFront_ID			0x08
 #define HeavesRear_ID			0x09
-#define Rolls1_ID				0x08
-#define Rolls2_ID				0x10
+#define Rolls1_ID				0x0A
+#define Rolls2_ID				0x0B
 
 #define BTN1_ID					0x0C
 #define BTN2_ID					0x0D

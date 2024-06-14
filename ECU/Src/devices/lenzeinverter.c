@@ -878,7 +878,7 @@ uint32_t getInvExpected(uint8_t inv) {
 
 bool registerInverterCAN(void) {
 	for (int i = 0; i < MOTORCOUNT; i++) {
-		RegisterCan2Message(&InverterCANErr[i]);
+		RegisterCan1Message(&InverterCANErr[i]);
 
 		// TPDO 2 - status from inverter A
 		// TPDO 3 - actual values (1) from motor A
@@ -887,20 +887,20 @@ bool registerInverterCAN(void) {
 		// TPDO 5 - status from inverter B
 		// TPDO 6 - actual values (1) from motor B
 		// TPDO 7 - actual values (2) from motor B
-		RegisterCan2Message(&InverterCANMotorStatus[i]);
-		RegisterCan2Message(&InverterCANMotorValues1[i]);
-		RegisterCan2Message(&InverterCANMotorValues2[i]);
-		RegisterCan2Message(&InverterCANMotorRDO[i]);
+		RegisterCan1Message(&InverterCANMotorStatus[i]);
+		RegisterCan1Message(&InverterCANMotorValues1[i]);
+		RegisterCan1Message(&InverterCANMotorValues2[i]);
+		RegisterCan1Message(&InverterCANMotorRDO[i]);
 	}
 
-	RegisterCan2Message(&InverterCANNMT[0]);
-	RegisterCan2Message(&InverterCANAPPCRDO[0]);
-	RegisterCan2Message(&InverterCANAPPCStatus[0]);
+	RegisterCan1Message(&InverterCANNMT[0]);
+	RegisterCan1Message(&InverterCANAPPCRDO[0]);
+	RegisterCan1Message(&InverterCANAPPCStatus[0]);
 
 #if MOTORCOUNT > 2
-	RegisterCan2Message(&InverterCANNMT[1]);
-	RegisterCan2Message(&InverterCANAPPCRDO[1]);
-	RegisterCan2Message(&InverterCANAPPCStatus[1]);
+	RegisterCan1Message(&InverterCANNMT[1]);
+	RegisterCan1Message(&InverterCANAPPCRDO[1]);
+	RegisterCan1Message(&InverterCANAPPCStatus[1]);
 #endif
 
 	return true;

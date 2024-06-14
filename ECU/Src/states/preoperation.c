@@ -106,6 +106,7 @@ int PreOperationState(uint32_t OperationLoops) {
 			}
 /////////////////////////////////////////////////////////////////////////
 			
+
 			if (ReadyToStart != 0) {
 				strcpy(str, "Err:");
 
@@ -171,7 +172,8 @@ int PreOperationState(uint32_t OperationLoops) {
 
 	static bool powerset = false;
 
-	if (BTN1.data) {
+	if ( BTN1.data) {
+
 		if (!powerset) {
 			invRequestState(BOOTUP);
 			resetDevicePower(Inverters);
@@ -196,11 +198,9 @@ int PreOperationState(uint32_t OperationLoops) {
 					return PreOperationalState;
 				}
 
-				if (CheckActivationRequest()) // check if driver has requested activation and if so proceed
-				{
-					OperationLoops = 0;
-					return OperationalReadyState; // normal operational state on request
-				}
+				OperationLoops = 0;
+				return OperationalReadyState; // normal operational state on request
+
 			}
 			//////////////////////////////
 		} else {

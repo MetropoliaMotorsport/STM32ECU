@@ -193,7 +193,8 @@ void CANTxTask(void *argument) {
 			if (!CANStatus.ErrorPassive) // no point in trying to send if error passive.
 			{
 				TxHeader.Identifier = msg.id; // decide on an ECU ID/
-				TxHeader.DataLength = msg.dlc << 16; // only two bytes defined in send protocol, check this
+				//////////////////////////////////////////////////////TODO figure out what the fuck is happening
+				TxHeader.DataLength = msg.dlc; // only two bytes defined in send protocol, check this
 
 				if (HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) == 0) {
 					DebugMsg("CAN Tx Buffer full, waiting for buffer empty.");
@@ -213,7 +214,7 @@ void CANTxTask(void *argument) {
 						DebugMsg("Buffer empty wait failed.");
 					}
 				}
-
+				/*
 				if (HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) != 0)
 					if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcanp, &TxHeader,
 							msg.data) != HAL_OK) {
@@ -222,6 +223,8 @@ void CANTxTask(void *argument) {
 						if (pCANSendError != NULL)
 							(*pCANSendError)++;
 					}
+
+				*/
 			} else {
 				if (msg.bus == bus1) {
 					static bool busnotact = false;
@@ -398,6 +401,9 @@ uint8_t CAN1Send(uint16_t id, uint8_t dlc, const uint8_t *pTxData) {
 }
 
 uint8_t CAN2Send(uint16_t id, uint8_t dlc, const uint8_t *pTxData) {
+
+	int i = 0;
+
 	can_msg msg;
 	msg.id = id;
 	msg.dlc = dlc;
@@ -407,10 +413,14 @@ uint8_t CAN2Send(uint16_t id, uint8_t dlc, const uint8_t *pTxData) {
 	taskEXIT_CRITICAL();
 	if (xPortIsInsideInterrupt()) {
 		if (!xQueueSendFromISR(CANTxQueue, (void* ) &msg, NULL)) {
+
+			i++;
 			DebugMsg("failed to add canmsg to bus0 queue!");
 		}
 	} else {
 		if (!xQueueSend(CANTxQueue, (void* ) &msg, (TickType_t ) 0)) {
+
+			i += 2;
 			DebugMsg("failed to add canmsg to bus0 queue!");
 		}
 	}
