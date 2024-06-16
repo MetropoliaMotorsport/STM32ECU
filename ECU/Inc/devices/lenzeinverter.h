@@ -14,11 +14,11 @@
 
 #define INVERTERCOUNT				(MOTORCOUNT/2)
 
-#define LENZE_RPDO1_ID				(0x200)
-#define LENZE_RPDO2_ID				(0x300)
-#define LENZE_RPDO3_ID				(0x400)
-#define LENZE_RPDO4_ID				(0x500)
-#define LENZE_RPDO5_ID				(0x540)
+#define LENZE_RPDO1_ID				(0x200) //RxPDO1_InverterASetpoint1_14
+#define LENZE_RPDO2_ID				(0x300) //RxPDO2_InverterASetpoint2_14
+#define LENZE_RPDO3_ID				(0x400) //RxPDO3_InverterBSetpoint1_14
+#define LENZE_RPDO4_ID				(0x500) //RxPDO4_InverterBSetpoint2_14
+#define LENZE_RPDO5_ID				(0x540) //RxPDO5_DeviceSetpoint_6 //RxPDO5_DeviceSetpoint_14
 
 #define LENZE_TPDO1_ID				(0x180)
 #define LENZE_TPDO2_ID				(0x1C0)

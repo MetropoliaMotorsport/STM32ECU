@@ -275,6 +275,7 @@ void InvTask(void *argument) {
 	char str[80];
 
 	while (1) {
+
 		if (xQueueReceive(InvQueue, &msg, 0)) // queue to receive requested operational state.
 				{
 			for (int i = 0; i < MOTORCOUNT; i++) {
