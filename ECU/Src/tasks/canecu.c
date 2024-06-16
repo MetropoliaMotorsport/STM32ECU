@@ -214,7 +214,7 @@ void CANTxTask(void *argument) {
 						DebugMsg("Buffer empty wait failed.");
 					}
 				}
-				/*
+
 				if (HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) != 0)
 					if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcanp, &TxHeader,
 							msg.data) != HAL_OK) {
@@ -224,7 +224,7 @@ void CANTxTask(void *argument) {
 							(*pCANSendError)++;
 					}
 
-				*/
+
 			} else {
 				if (msg.bus == bus1) {
 					static bool busnotact = false;

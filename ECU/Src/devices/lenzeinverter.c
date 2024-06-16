@@ -13,7 +13,7 @@
 #include "inverter.h"
 #include "timerecu.h"
 #include "debug.h"
-
+#include "can_ids.h"
 #ifdef LENZE
 #include "lenzeinverter.h"
 
@@ -804,6 +804,7 @@ bool processINVRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 	if (InverterState[datahandle->index].SetupState > 0
 			&& InverterState[datahandle->index].SetupState < 0xFE) {
+		CAN_SendDebug(inverters_started_unexpected);
 		uint8_t INVREBOOT[8] = { 0x43, 0x56, 0x1F, 0x01 };
 
 		// check if APPC has just restarted
@@ -822,8 +823,18 @@ bool processINVRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 	} else {
 		if (InverterState[datahandle->index].SetupState == 0) {
 			uint8_t RDODone[8] = { 0x43, 0x56, 0x1F, 0x01 }; // ID query only done once at startup.
-
+			CAN_SendDebug(inverters_received);
 			if (memcmp(RDODone, CANRxData, 4) == 0) {
+
+				////////////////////////
+					for (int i = 0; i < MOTORCOUNT; i++) {
+
+						InverterState[i].Device = OPERATIONAL;
+					}
+
+				////////////////////////
+
+
 				if (!InverterState[datahandle->index].MCChannel) {
 					InverterState[datahandle->index].SetupTries = 0;
 					//	if ( CanRxData[] )  // 0x1801

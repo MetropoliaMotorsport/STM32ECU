@@ -819,7 +819,8 @@ bool resetEEPROM(void) {
 	eepromdata *data = &EEPROMdata.block1;
 	EEPROMdata.active = 1;
 
-	data->EnabledMotors = 0b1111;
+	data->EnabledMotors = 0b1100; //for rear motors only
+	data->InvEnabled = 1;
 	snprintf(data->VersionString, "%s", EEPROMVERSIONSTR);
 	data->pedalcurves[0].PedalCurveInput[0] = 50;
 	data->pedalcurves[0].PedalCurveInput[1] = 950;

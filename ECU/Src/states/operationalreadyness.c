@@ -90,13 +90,6 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 		CAN_SendDebug(ERCS_ID);
 		//SetErrorLogging(true);
 		received = 0xFFFF;
-#define TEST_INV 1
-#if TEST_INV
-		ShutdownCircuitSet(true);
-#endif
-		vTaskDelay(6000);
-
-
 
 	}
 

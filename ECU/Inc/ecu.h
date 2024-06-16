@@ -42,6 +42,7 @@
 #define ANALOGNODES
 #define MATLAB
 #define LENZE
+#define TWOWHEELS
 #ifdef TWOWHEELS
 	#define MOTORCOUNT		(2)
 #else

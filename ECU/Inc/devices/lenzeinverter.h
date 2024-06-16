@@ -35,6 +35,8 @@
 #define LENZE_APPC_OFFSET			(31)
 #define LENZE_MOTORB_OFFSET			(63)
 
+
+
 #ifdef TWOWHEELS
     #define Inverter1_NodeID            (0xE)
     #define Inverter2_NodeID			(1)
