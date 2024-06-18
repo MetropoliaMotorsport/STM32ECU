@@ -58,14 +58,6 @@ static SemaphoreHandle_t waitStr = NULL;
 char PNodeWaitStr[20] = "";
 uint32_t curpowernodesOnline = 0;
 
-char* getPNodeWait(void) {
-	static char PowerWaitStrRet[20] = "";
-	xSemaphoreTake(waitStr, portMAX_DELAY);
-	strcpy(PowerWaitStrRet, PNodeWaitStr);
-	xSemaphoreGive(waitStr);
-	return PowerWaitStrRet;
-	// TODO add a mutex
-}
 
 void ClearHVLost(void) {
 	if (HVLost) {
@@ -141,25 +133,6 @@ void PowerTask(void *argument) {
 
 		// find oldest data.
 		count++;
-		while (xQueueReceive(PowerErrorQueue, &errormsg, 0)) {
-			
-				if (PNodeGetErrType(errormsg.error)) // only show full errors for now.
-						{
-					snprintf(str, MAXERROROUTPUT,
-							"Power err: %d %lu %s at (%lu)", errormsg.nodeid,
-							errormsg.error, PNodeGetErrStr(errormsg.error),
-							gettimer());
-					LogError(str);
-				} else {
-					snprintf(str, MAXERROROUTPUT,
-							"Power warn: %d %lu %s at (%lu)", errormsg.nodeid,
-							errormsg.error, PNodeGetErrStr(errormsg.error),
-							gettimer());
-					DebugMsg(str);
-				}
-
-			
-		}
 
 		// clear command queue
 		while (xQueueReceive(PowerQueue, &msg, 0)) {
@@ -263,12 +236,6 @@ void PowerTask(void *argument) {
 	vTaskDelete(NULL);
 }
 
-bool CheckShutdown(void) // returns true if shutdown circuit other than ECU is closed
-{
-
-	return true;
-
-}
 
 bool CheckBMS(void) // returns true if shutdown circuit other than ECU is closed
 {
@@ -353,25 +320,6 @@ void FanPWMControl(uint8_t leftduty, uint8_t rightduty) {
 
 }
 
-char* getDevicePowerNameLong(DevicePower device) {
-	switch (device) {
-	case None:
-		return "None";
-	case Buzzer:
-		return "Buzzer";
-	case Inverters:
-		return "Inverters";
-	case LeftPump:
-		return "LeftPump";
-	case RightPump:
-		return "RightPump";
-	case TSAL:
-		return "TSAL";
-	case Brake:
-		return "Brake";
-	}
-	return "Error";
-}
 
 xTimerHandle timerHndlBuzzer;
 

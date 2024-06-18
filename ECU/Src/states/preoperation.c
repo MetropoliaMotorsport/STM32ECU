@@ -62,7 +62,7 @@ int PreOperationState(uint32_t OperationLoops) {
 	char str[80] = "";
 
 	if (OperationLoops == 0) {
-		resetEEPROM();
+		
 		TSLEDstate = false;
 		ledtimer = gettimer();
 

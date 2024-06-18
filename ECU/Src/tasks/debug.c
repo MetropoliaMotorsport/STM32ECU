@@ -707,6 +707,7 @@ static void debugShutdown(const char *tkn2, const char *tkn3) {
 }
 
 static void debugPower(const char *tkn2, const char *tkn3) {
+#if 0
 	DevicePower device = None;
 	bool state = false;
 	bool bmd = false;
@@ -721,20 +722,7 @@ static void debugPower(const char *tkn2, const char *tkn3) {
 
 		uint8_t listsize = getDevicePowerListSize();
 
-		for (int i = 1; i <= listsize; i++) // i is wrong.
-				{
-			DevicePower device = getDevicePowerFromList(i);
-
-			snprintf(str, 80, "%-12s %-4s%-4s%-4lu\r\n",
-					getDevicePowerNameLong(device),
-					getNodeDeviceExpectedPower(device) ? "On" : "Off",
-					getNodeDevicePower(device) ? "On" : "Off",
-					powerErrorOccurred(device)
-					//    powerErrorOccurred(i)?"Yes":"No"
-							);
-			UARTwrite(str);
-		}
-	} else if (streql(tkn2, "all")) {
+		} else if (streql(tkn2, "all")) {
 		if (streql(tkn3, "reset")) {
 			UARTwrite("Power error reset for all\r\n");
 
@@ -809,6 +797,7 @@ static void debugPower(const char *tkn2, const char *tkn3) {
 	if (bmd) {
 		UARTwrite("Invalid power request given: Help\r\n");
 	}
+#endif
 }
 
 void debugCurrent(const char *tkn2) {

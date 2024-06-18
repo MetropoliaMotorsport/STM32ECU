@@ -97,7 +97,7 @@ int Startup(uint32_t OperationLoops) {
 	// reset all state information.
 
 	ResetStateData(); // set car state settings back to blank state.
-
+	resetEEPROM();
 	resetOutput(RTDMLED, Off);
 	resetOutput(TSOFFLED, Off);
 	resetOutput(TSLED, Off);

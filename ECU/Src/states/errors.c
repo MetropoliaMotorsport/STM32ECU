@@ -118,17 +118,6 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 		sprintf(statusstr, "ERROR State BMS %d", Shutdown.BMSReason);
 	}
 
-
-
-	if (!CheckShutdown()) // indicate shutdown switch status with blinking rate.
-	{
-		blinkOutput(TSLED, LEDBLINK_ONE, LEDBLINKNONSTOP);
-		blinkOutput(RTDMLED, LEDBLINK_ONE, LEDBLINKNONSTOP);
-	} else {
-		blinkOutput(TSLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
-		blinkOutput(RTDMLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
-	}
-
 	int allowreset = 0; // allow reset if this is still 0 after checks.
 
 	char str[80] = "ERROR: ";
