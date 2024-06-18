@@ -442,8 +442,7 @@ bool DoMenu(uint16_t input) {
 		bool curfans = getEEPROMBlock(0)->Fans;
 		if (curfans != getEEPROMBlock(0)->Fans) {
 			getEEPROMBlock(0)->Fans = curfans;
-			setDevicePower(LeftFans, curfans);
-			setDevicePower(RightFans, curfans);
+
 		}
 
 		uint8_t curfanmaxcur = ceil((100.0 / 255 * getEEPROMBlock(0)->FanMax)); // convert to %
@@ -489,11 +488,7 @@ bool DoMenu(uint16_t input) {
 			getEEPROMBlock(0)->regenMaxR = regenmaxR;
 		}
 
-		bool curTM = getEEPROMBlock(0)->Telemetry;
-		if (curTM != getEEPROMBlock(0)->Telemetry) {
-			getEEPROMBlock(0)->Telemetry = curTM;
-			setDevicePower(Telemetry, curTM);
-		}
+
 
 #if (MENU_LAST == MENU_HV)
 		bool curhvState = getEEPROMBlock(0)->alwaysHV;

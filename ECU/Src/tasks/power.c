@@ -142,18 +142,7 @@ void PowerTask(void *argument) {
 		// find oldest data.
 		count++;
 		while (xQueueReceive(PowerErrorQueue, &errormsg, 0)) {
-			if (errormsg.error == 0xFFFF) {
-				snprintf(str, MAXERROROUTPUT, "Power err: LV Down at (%lu)",
-						gettimer());
-
-				LogError(str);
-				LVdown = true;
-				LVdowntime = gettimer();
-
-				setAllPowerActualOff();
-				CAN_SendErrorStatus(7, 0, 0);
-			} else {
-
+			
 				if (PNodeGetErrType(errormsg.error)) // only show full errors for now.
 						{
 					snprintf(str, MAXERROROUTPUT,
@@ -169,16 +158,7 @@ void PowerTask(void *argument) {
 					DebugMsg(str);
 				}
 
-			}
-		}
-
-		if (LVdown && gettimer() - LVdowntime > 500) {
-			// check if we have voltage back.
-			if (checkPowerState()) {
-				LVdown = false;
-				resetPowerLost();
-				DebugPrintf("LV Power restored at (%lu)", curtime);
-			}
+			
 		}
 
 		// clear command queue
@@ -188,10 +168,6 @@ void PowerTask(void *argument) {
 			case PowerErrorReset:
 				setNodeDevicePower(msg.power, msg.enabled, true);
 				break;
-
-			case PowerError:
-				break;
-
 			case DirectPowerCmd:
 				if (msg.power == LeftPump) {
 					if (msg.enabled)
@@ -207,9 +183,6 @@ void PowerTask(void *argument) {
 
 				setNodeDevicePower(msg.power, msg.enabled, false);
 				break;
-			case FanPowerCmd:
-				sendFanPWM(msg.PWMLeft, msg.PWMRight);
-				break;
 			default:
 				break;
 			}
@@ -223,56 +196,39 @@ void PowerTask(void *argument) {
 
 		powernodesOnlineSince |= powernodesOnline; // cumulatively add
 
-		if ((powernodesOnline & PNodeAllBit) == PNodeAllBit) // all expected power nodes reported in. // TODO automate
-		{
-			if (DeviceState.PowerNode1 == OPERATIONAL && DeviceState.PowerNode2 == OPERATIONAL) {
-				DebugMsg("Power nodes all online");
-			}
-			DeviceState.PowerNode1 = OPERATIONAL;
-			DeviceState.PowerNode2 = OPERATIONAL;
-			PNodeWaitStr[0] = 0;
-			powernodesOnlineSince = 0;
-			curpowernodesOnline = powernodesOnline;
-			lastseenall = looptime;
-		} else
+	//////////////////////////////////////////////
+		DeviceState.PowerNode1 = OPERATIONAL;
+		DeviceState.PowerNode2 = OPERATIONAL;
+		PNodeWaitStr[0] = 0;
+		powernodesOnlineSince = 0;
+		curpowernodesOnline = powernodesOnline;
+		lastseenall = looptime;
+
 		if (CarState.VoltageINV > TSACTIVEV) {
 			lastseenHV = looptime;
 		}
 
-		if ((curpowernodesOnline & PNODECRITICALBITS) == PNODECRITICALBITS) {
-			DeviceState.CriticalPower = OPERATIONAL;
-			// we've received all the SCS data
-		} else {
-			DeviceState.CriticalPower = INERROR;
-		}
+		DeviceState.CriticalPower = OPERATIONAL;
+	/////////////////////////////////////////////
 
-		if (lastpowernodesOnline != powernodesOnline) {
-			char str[40];
-			snprintf(str, 40, "Powernodes diff %lu", count);
-			//		DebugMsg(str);
-		}
 
 		xSemaphoreGive(waitStr);
-#if 1
-		if (!CheckBMS()) {
-#ifndef BENCH
 
-#endif
+		if (!CheckBMS()) {
 			if (!BMSset) {
 				SetCriticalError(CRITERBMS); // keep flagging BMS error whilst on.
 				setOutputNOW(BMSLED, On);
 				BMSset = true;
 			}
 		}
-#endif
-#if 1 // allow AMS light to go out when normal operation is resumed. Light merely shows state of timeout of error.
+ 				// allow AMS light to go out when normal operation is resumed. Light merely shows state of timeout of error.
 		else {
 			if (BMSset) {
 				//setOutputNOW(BMSLED, Off);
 				BMSset = false;
 			}
 		}
-#endif
+
 		if (CheckTSOff()) {
 			if (!TSOFFset) {
 				DebugMsg("TSOff on");
@@ -287,37 +243,6 @@ void PowerTask(void *argument) {
 			}
 		}
 
-#ifdef TSALP
-		static uint32_t nexttsal = 0;
-		static bool tsalset;
-		static bool tsalgset = true;
-
-		if (CarState.VoltageINV > 60) {
-			if (tsalgset) {
-				tsalgset = false;
-				setDevicePower(TSALG, false);
-			}
-		} else {
-			if (!tsalgset) {
-				tsalgset = true;
-				setDevicePower(TSALG, true);
-			}
-		}
-
-		if (CarState.VoltageINV > 50) {
-			if (curtime > nexttsal) {
-				tsalset = !tsalset;
-				setDevicePower(TSAL, tsalset);
-				nexttsal = curtime + 200;
-			}
-		} else {
-			if (tsalset)
-				setDevicePower(TSAL, false);
-			tsalset = false;
-			nexttsal = 0;
-		}
-#endif
-
 		if (CheckIMD()) {
 			if (!IMDset) {
 #ifndef BENCH
@@ -329,62 +254,10 @@ void PowerTask(void *argument) {
 			}
 		} else {
 			if (IMDset) {
-				//setOutputNOW(IMDLED, Off);
-				//setOutputNOW(LED6, Off);
 				IMDset = false;
 			}
 		}
-
-#ifdef PUMPMINIMUM_I
-		if (lastseenpumpL) // pump should be on if this is not 0., assume that both pumps should be running if one is.
-		{
-			if (CarState.I_LeftPump > PUMPMINIMUM_I) {
-				lastseenpumpL = curtime; // update we've seen OK value.
-			} else if (curtime > lastseenpumpL + 2000) {
-				// two seconds since saw an acceptable current from PUMP. reset it.
-				lastseenpumpL = curtime;
-				resetDevicePower(LeftPump);
-				setDevicePower(LeftPump, false);
-				restartpumpL = curtime + 2000;
-			}
-
-			if (restartpumpL && curtime > restartpumpL) {
-				setDevicePower(LeftPump, true);
-				restartpumpL = 0;
-			}
-
-			if (CarState.I_RightPump > PUMPMINIMUM_I) {
-				restartpumpL = 0;
-				lastseenpumpR = curtime;
-			} else if (curtime > lastseenpumpR + 2000) {
-				// two seconds since saw an acceptable current from PUMP. reset it.
-				lastseenpumpL = curtime;
-				resetDevicePower(RightPump);
-				setDevicePower(RightPump, false);
-				restartpumpR = curtime + 2000;
-				setDevicePower(RightPump, true);
-			}
-
-			if (restartpumpR && curtime > restartpumpR) {
-				setDevicePower(RightPump, true);
-				restartpumpR = 0;
-			}
-		}
-#endif
-
-		// set the fan PWM speed when seen fan power node online.
-		if (!fanssent && powernodesOnline & (1 << POWERNODE_FAN_BIT)) {
-			sendFanPWM(getEEPROMBlock(0)->FanMax, getEEPROMBlock(0)->FanMax);
-			fanssent = true;
-
-			// if fans are set on in menu, put them on at startup.
-			if (getEEPROMBlock(0)->Fans) {
-				setDevicePower(LeftFans, true); // queue up enabling fans.
-				setDevicePower(RightFans, true);
-			}
-		} else {
-			sendPowerNodeReq(); // process pending power requests, but not if also sent fan PWM request this cycle.
-		}
+		
 	}
 
 	vTaskDelete(NULL);
@@ -392,29 +265,14 @@ void PowerTask(void *argument) {
 
 bool CheckShutdown(void) // returns true if shutdown circuit other than ECU is closed
 {
-#ifdef HPF2023
+
 	return true;
-#endif
-#ifdef HPF20
-//	if ( !Shutdown.BSPDBefore ) return false;
-//	if ( !Shutdown.BSPDAfter ) return false;
-//	if ( !Shutdown.BOTS ) return false;
-//	if ( !Shutdown.InertiaSwitch ) return false;
-// ECU is here.
-//	if ( !Shutdown.CockpitButton ) return false;
-//	if ( !Shutdown.RightButton ) return false;
-//	if ( !Shutdown.LeftButton ) return false;
-#
-	if (!Shutdown.BMS)
-		return false;
-//	if ( !Shutdown.IMD ) return false;
-#endif
-	return true;
+
 }
 
 bool CheckBMS(void) // returns true if shutdown circuit other than ECU is closed
 {
-#ifdef HPF2023
+
 	if (HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin)) {
 		DebugMsg("BMS input PIN");
 	}
@@ -423,9 +281,7 @@ bool CheckBMS(void) // returns true if shutdown circuit other than ECU is closed
 	}
 	return (!(HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin)
 			|| DeviceState.BMS != OPERATIONAL));
-#else
-	return Shutdown.BMS;
-#endif
+
 }
 
 bool CheckTSOff(void) // returns true if shutdown circuit other than ECU is closed
@@ -503,38 +359,16 @@ char* getDevicePowerNameLong(DevicePower device) {
 		return "None";
 	case Buzzer:
 		return "Buzzer";
-	case Telemetry:
-		return "Telemetry";
-	case Front1:
-		return "Front1";
 	case Inverters:
 		return "Inverters";
-	case ECU:
-		return "ECU";
-	case Front2:
-		return "Front2";
-	case LeftFans:
-		return "LeftFans";
-	case RightFans:
-		return "RightFans";
 	case LeftPump:
 		return "LeftPump";
 	case RightPump:
 		return "RightPump";
-	case IVT:
-		return "IVT";
-	case Current:
-		return "Current";
 	case TSAL:
 		return "TSAL";
 	case Brake:
 		return "Brake";
-	case Accu:
-		return "Accu";
-	case AccuFan:
-		return "AccuFan";
-	case Back1:
-		return "Back1";
 	}
 	return "Error";
 }

@@ -14,7 +14,7 @@
 #define PNode1Bit  0
 #define PNode2Bit  1
 
-
+enum PNoutput {OUT0_1, OUT1_1, OUT2_1, OUT3_1, OUT0_2, OUT1_2, OUT2_2, OUT3_2};
 
 #define PNodeAllBit ( (0x1 << PNode1Bit) \
 					+ (0x1 << PNode2Bit) \

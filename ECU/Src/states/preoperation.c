@@ -179,10 +179,6 @@ int PreOperationState(uint32_t OperationLoops) {
 			invRequestState(BOOTUP);
 			resetDevicePower(Inverters);
 			setDevicePower(Inverters, true);
-			setDevicePower(RightPump, true);
-			setDevicePower(LeftPump, true);
-			setDevicePower(RightFans, true);
-			setDevicePower(LeftFans, true);
 			DebugMsg("Power requested.");
 			CAN_SendDebug(PWRR_ID);
 			powerset = true;

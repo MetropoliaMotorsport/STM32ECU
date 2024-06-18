@@ -15,23 +15,13 @@
 typedef enum DevicePowertype {
 	None, // ensure 0 is not an actual device.
 	Buzzer,
-	Telemetry,
-	Back1,
-	Front1,
 	Inverters,
-	ECU,
-	Front2,
-	LeftFans,
-	RightFans,
+	RearFans,
+	SideFans,
 	LeftPump,
 	RightPump,
-	IVT,
-	Current,
 	TSAL,
-	Brake,
-	Accu,
-	AccuFan,
-	TSALG,
+	Brake
 
 } DevicePower;
 

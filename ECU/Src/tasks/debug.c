@@ -341,15 +341,7 @@ static void debugMotor(const char *tkn2, const char *tkn3, const int32_t value1,
 		UARTwrite("Power wait.\r\n");
 		vTaskDelay(6000);
 		setDevicePower(Inverters, true);
-		if (!getNodeDevicePower(Front1)) {
-			UARTwrite("Front1 not powered.\r\n");
-			return;
-		}
 
-		if (!getNodeDevicePower(Front2)) {
-			UARTwrite("Front2 not powered.\r\n");
-			return;
-		}
 
 		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline();
 		// anode 1
@@ -745,8 +737,12 @@ static void debugPower(const char *tkn2, const char *tkn3) {
 	} else if (streql(tkn2, "all")) {
 		if (streql(tkn3, "reset")) {
 			UARTwrite("Power error reset for all\r\n");
-			for (int i = 1; i <= AccuFan; i++)
+
+			/*
+			for (int i = 1; i <= BRAKE; i++)
 				resetDevicePower(i);
+			*/
+
 		} else {
 			if (checkOn(tkn3)) {
 				state = true;
@@ -761,9 +757,10 @@ static void debugPower(const char *tkn2, const char *tkn3) {
 				UARTwrite(state ? "on" : "off");
 				UARTwrite("\r\n");
 
+				/*
 				for (int i = 1; i <= AccuFan; i++)
 					setDevicePower(i, state);
-
+				*/
 			} else {
 				bmd = true;
 			}
@@ -773,38 +770,14 @@ static void debugPower(const char *tkn2, const char *tkn3) {
 			device = None;
 		else if (streql(tkn2, "buzzer"))
 			device = Buzzer;
-		else if (streql(tkn2, "back1"))
-			device = Back1;
-		else if (streql(tkn2, "telemetry"))
-			device = Telemetry;
-		else if (streql(tkn2, "front1"))
-			device = Front1;
-		else if (streql(tkn2, "inverters"))
-			device = Inverters;
-		else if (streql(tkn2, "ecu"))
-			device = ECU;
-		else if (streql(tkn2, "front2"))
-			device = Front2;
-		else if (streql(tkn2, "leftfans"))
-			device = LeftFans;
-		else if (streql(tkn2, "rightfans"))
-			device = RightFans;
 		else if (streql(tkn2, "leftpump"))
 			device = LeftPump;
 		else if (streql(tkn2, "rightpump"))
 			device = RightPump;
-		else if (streql(tkn2, "ivt"))
-			device = IVT;
-		else if (streql(tkn2, "current"))
-			device = Current;
 		else if (streql(tkn2, "tsal"))
 			device = TSAL;
 		else if (streql(tkn2, "brake"))
 			device = Brake;
-		else if (streql(tkn2, "accu"))
-			device = Accu;
-		else if (streql(tkn2, "accufan"))
-			device = AccuFan;
 
 		if (streql(tkn3, "reset")) {
 			UARTwrite("Power error reset for ");

@@ -52,54 +52,15 @@ typedef struct devicepowerreqstruct {
 
 static uint32_t devicecount = 0;
 
-#ifdef HPF2023
-
 // TODO this list should be sanity checked for duplicates at tune time.
 devicepowerreq DevicePowerList[] = {
 
-//		{ Telemetry, 33, 4 },
-//		{ Front1, 33, 5 },
-
-		{ ECU, 34, 4, true, 0, true }, // ECU has to have power or we aren't booted.. so just assume it.
-		{ Front2, 34, 5 },
-
-//		{ LeftFans, 35, 0 },
-//		{ RightFans, 35, 1 },
-//		{ LeftPump, 35, 4 },
-//		{ RightPump, 35, 5 },
-
-		{ IVT, 36, 4 }, { Accu, 36, 2 }, // TODO make sure this channel cannot be reset for latching rules.
-		{ AccuFan, 36, 5 },
-
-		{ Brake, 37, 4 }, { Buzzer, 37, 1 }, { Inverters, 37, 2 },
-		//{ TSAL, 37, 3, true, 0, true }, // essential to be powered, else not compliant.
-		//{ Back1, 37, 4 },
-		{ TSALG, 37, 5, true, 0, true }, // TSAL getting constant power from this FSG2023
+		{ Buzzer, PNode2_ID, OUT0_2 },
+		{ Inverters, PNode2_ID, OUT2_1 },
+		{Brake, PNode2_ID, OUT3_1},
 		{ None } };
 
-#else
 
-devicepowerreq DevicePowerList[] = { //TODO update power distribution
-				{ Front1, 1, 5 },
-
-				{ Inverters, 2, 3 },
-				{ ECU, 1, 4, true, 0, true }, // ECU has to have power or we aren't booted.. so just assume it.
-				{ Front2, 1, 5 },
-
-				{ LeftFans, 2, 2 },
-				{ RightFans, 2, 3 },
-				{ LeftPump, 2, 4 },
-				{ RightPump, 2, 5 },
-
-				{ Current, 2, 1 },
-				{ Buzzer, 2, 2 },
-				{ Brake, 2, 3 },
-				{ Back1, 2, 4 },
-				{ TSAL, 2, 5, true, 0, true }, // essential to be powered, else not compliant.
-
-				{ None }
-};
-#endif
 nodepowerreq PowerRequests[] = { //TODO How does it work?
 
 
@@ -194,52 +155,7 @@ bool processPNode2Data(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle) // Rear
 {
 
-	static bool first = false;
-	if (!first) {
-		DebugMsg("PNode 2 First msg.");
-		first = true;
-	}
-
-	if (DataLength >> 16 == PowerNode2.dlcsize
-			&& (CANRxData[0] >= 0 && CANRxData[0] <= 10)
-			&& (CANRxData[1] >= 0 && CANRxData[1] <= 10)
-			&& (CANRxData[2] >= 0 && CANRxData[2] <= 10)
-			&& (CANRxData[3] >= 0 && CANRxData[3] <= 10)
-			&& (CANRxData[4] >= 0 && CANRxData[4] <= 10)
-			&& (CANRxData[5] >= 0 && CANRxData[5] <= 255)
-			&& (CANRxData[6] >= 0 && CANRxData[6] <= 100)) {
-		xTaskNotify(PowerTaskHandle, ( 0x1 << PNode2Bit ), eSetBits);
-
-//		CarState.I_BrakeLight = CANRxData[0];
-//		CarState.I_Buzzers = CANRxData[1];
-		CarState.I_IVT = CANRxData[2];
-		CarState.I_AccuPCBs = CANRxData[3];
-		CarState.I_AccuFans = CANRxData[4];
-		CarState.Freq_IMD = CANRxData[5]; // IMD Shutdown.
-
-#if 0
-		// normal operational status, else assume error.
-		if ( CarState.Freq_IMD >= 5 && CarState.Freq_IMD < 15 )
-			Shutdown.IMD = true;
-		else
-			Shutdown.IMD = false;
-#endif
-		DeviceState.BrakeLight = OPERATIONAL;
-
-//		should be 10 Hz in normal situation (I think duty cycle was based on measured resistance or something)
-//		and then 50 Hz for fault state (50% duty cycle),
-//		40 Hz is internal error,
-//		20 Hz we should never see, then not sure what 30 Hz is
-//		it also wasn't 10 Hz on power up,
-//		I dont' remember what it was on power up though, might have been 30 Hz
-
-		CarState.DC_IMD = CANRxData[6];
-
-		return true;
-	} else // bad data.
-	{
-		return false;
-	}
+	return true;
 }
 
 CANData PowerNode1;
@@ -250,12 +166,11 @@ CANData PowerNode2;
 
 void setAllPowerActualOff(void) {
 	for (int i = 0; DevicePowerList[i].device != None; i++) {
-		if (DevicePowerList[i].device != ECU) {
+
 			if (DevicePowerList[i].actualstate == true)
 				;
-			//		DevicePowerList[i].waiting = false;
 			DevicePowerList[i].actualstate = false;
-		}
+
 	}
 }
 
@@ -674,42 +589,6 @@ bool setNodeDevicePower(DevicePower device, bool state, bool reset) {
 bool sendFanPWM(uint8_t leftduty, uint8_t rightduty) {
 	// minimum useful duty is 18/255
 
-	// ensure we don't end up in a stall state
-	if (leftduty < 20 && leftduty > 0)
-		leftduty = 20;
-	if (rightduty < 20 && rightduty > 0)
-		rightduty = 20;
-
-	if (nodefanpwmreqs[0].nodeid == 0) // nodeid not yet set, find and assign it.
-			{
-		uint8_t index = getPowerDeviceIndex(LeftFans);
-
-		for (int j = 0; PowerRequests[j].nodeid != 0; j++) {
-			if (PowerRequests[j].nodeid == nodefanpwmreqs[0].nodeid) {
-				nodefanpwmreqs[0].bus = PowerRequests[j].bus;
-			}
-		}
-
-		nodefanpwmreqs[0].nodeid = DevicePowerList[index].nodeid;
-		nodefanpwmreqs[0].output = DevicePowerList[index].output;
-
-		index = getPowerDeviceIndex(RightFans);
-
-		for (int j = 0; PowerRequests[j].nodeid != 0; j++) {
-			if (PowerRequests[j].nodeid == nodefanpwmreqs[0].nodeid) {
-				nodefanpwmreqs[1].bus = PowerRequests[j].bus;
-			}
-		}
-
-		nodefanpwmreqs[1].nodeid = DevicePowerList[index].nodeid;
-		nodefanpwmreqs[1].output = DevicePowerList[index].output;
-	}
-	nodefanpwmreqs[0].dutycycle = leftduty;
-
-	nodefanpwmreqs[1].dutycycle = rightduty;
-
-	queuedfanpwmLeft = true;
-	queuedfanpwmRight = true;
 	return true;
 }
 
@@ -859,8 +738,7 @@ void resetPowerNodes(void) {
 	Shutdown.AIRm = false;
 	Shutdown.AIRp = false;
 	Shutdown.PRE = false;
-
-// reset errors
+	// reset errors
 
 	PowerNodeErrorCount = 0;
 
