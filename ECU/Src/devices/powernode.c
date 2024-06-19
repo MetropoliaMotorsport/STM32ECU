@@ -54,7 +54,7 @@ static uint32_t devicecount = 0;
 
 // TODO this list should be sanity checked for duplicates at tune time.
 devicepowerreq DevicePowerList[] = {
-
+		{None},
 		{ Buzzer, PNode2_ID, OUT0_2 },
 		{ Inverters, PNode2_ID, OUT2_1 },
 		{Brake, PNode2_ID, OUT3_1},
@@ -138,6 +138,11 @@ bool getNodeDevicePower(DevicePower device) {
 
 	// device not found
 	return false;
+}
+
+int SendPwrCMD(uint8_t device, bool state) {
+	uint8_t data[3] = {2, DevicePowerList[device].output, state};
+	CAN2Send(DevicePowerList[device].nodeid, 3, data);
 }
 
 // Queue up power node requests to be sent.

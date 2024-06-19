@@ -83,69 +83,7 @@ StackType_t xINPUTStack[INPUTSTACK_SIZE];
 TaskHandle_t InputTaskHandle;
 
 void InputTask(void *argument) {
-	xEventGroupSync(xStartupSync, 0, 1, portMAX_DELAY);
 
-	TickType_t xLastWakeTime;
-
-	// Initialise the xLastWakeTime variable with the current time.
-	xLastWakeTime = xTaskGetTickCount();
-
-	while (1) {
-		for (int i = 0; i < NO_INPUTS; i++) {
-			if (Input[i].port == NULL)
-				continue; // don't bother processing an input being used for PWM
-
-			bool curstate = HAL_GPIO_ReadPin(Input[i].port, Input[i].pin);
-
-//#define BUTTONPULLUP
-			curstate = !curstate;
-
-			if (curstate != Input[i].state) // current state of button has changed reset duration count.
-					{
-				Input[i].statecount = 0;
-				Input[i].held = 0;
-				Input[i].state = curstate;
-			}
-
-			Input[i].statecount++;
-
-			if (Input[i].statecount == 0)
-				Input[i].statecount = 0xFFFFFFFF; // don't allow wrap;
-			else if (Input[i].statecount == 3) // button held for long enough to count as a change of state, register it.
-					{
-				if (Input[i].first == true) {
-					Input[i].first = false;
-				} else {
-					char str[40];
-					if (curstate) {
-						snprintf(str, 40, "Button %d pressed (%lu)", i,
-								gettimer());
-						DebugMsg(str);
-
-						Input[i].pressed = true;
-						Input[i].lastpressed = gettimer();
-						Input[i].count++;
-						// add button press to queue here.
-
-					} else {
-						snprintf(str, 40, "Button %d released (%lu)", i,
-								gettimer());
-						DebugMsg(str);
-						Input[i].lastreleased = gettimer();
-					}
-				}
-			} else if (Input[i].statecount > 3) {
-				if (curstate) {
-					Input[i].held += 1; // add one for each cycle held.
-				}
-			}
-
-		}
-
-		// TODO add a reset procedure via long button press as another last resort.
-
-		vTaskDelayUntil(&xLastWakeTime, CYCLETIME);
-	}
 
 	vTaskDelete(NULL);
 }

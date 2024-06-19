@@ -125,22 +125,6 @@ volatile bool invertersinerror = false;
 //DeviceStatus RequestedState[MOTORCOUNT];
 uint16_t command;
 
-bool checkStatusCode(uint8_t status) {
-	switch (status) {
-	case 49: // ready to switch on.
-	case 51: // on
-	case 55: // operation
-	case 64: // startup
-	case 96: //
-	case 104: // error
-	case 200: // very error // c0   c8     192-200 errors.
-		return true;
-		break;
-	default:
-		return false;
-	}
-}
-
 DeviceStatus InverterStates[MOTORCOUNT];
 
 void HandleInverter(InverterState_t *Inverter) {

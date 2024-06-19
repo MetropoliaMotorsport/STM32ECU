@@ -73,36 +73,6 @@ StackType_t xStack[OUTPUTCount][BLINKSTACK_SIZE];
 void BlinkTask(void *pvParameters) {
 	OutputType *params = &Output[(uint32_t) pvParameters]; // parameter is int indicating which output this thread controls.
 
-	while (1) {
-		bool Suspend = false;
-		if (params->duration > 0) {
-			HAL_GPIO_WritePin(params->port, params->pin, On);
-			vTaskDelay(params->ontime);
-			if (params->offtime > 0) {
-				HAL_GPIO_WritePin(params->port, params->pin, Off);
-				vTaskDelay(params->offtime);
-			}
-			if (params->duration == 1) // if duration set to 1, only do blink cycle once.
-					{
-				Suspend = true;
-			} else if (params->duration != 0xFFFF) {
-				if (gettimer() - params->start > params->duration) {
-					Suspend = true;
-				}
-			}
-		} else {
-			HAL_GPIO_WritePin(params->port, params->pin, params->state); // stopping blinking, set state.
-			Suspend = true;
-		}
-
-		// if determined this is the last blink cycle then suspend the task to wait for next blink.
-		if (Suspend) {
-			HAL_GPIO_WritePin(params->port, params->pin, params->state);
-			params->duration = 0;
-			//osThreadTerminate(NULL); // bug? apparently this does nothing in heap model 1.
-			vTaskSuspend(NULL);
-		}
-	}
 
 	vTaskDelete(NULL);
 }
@@ -243,11 +213,7 @@ void OutputTask(void *argument) {
 
 //	unsigned long counter;
 	while (1) {
-		for (int i = 0; i < OUTPUTCount; i++) {
-			if (Output[i].updated)
-				updateOutput(i);
-		}
-		vTaskDelayUntil(&xLastWakeTime, CYCLETIME);
+		
 // change to not use que, just check data every 20ms and update states
 	}
 

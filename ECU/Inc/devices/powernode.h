@@ -26,7 +26,7 @@ uint32_t getOldestPNodeData( void );
 bool getNodeDevicePower(DevicePower device );
 bool setNodeDevicePower( DevicePower device, bool state, bool reset );
 int getPowerDeviceIndex( DevicePower device );
-
+int SendPwrCMD(uint8_t device, bool state);
 int initPowerNodes( void );
 
 #endif /* POWERNODE_H_ */

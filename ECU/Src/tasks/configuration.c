@@ -569,57 +569,7 @@ void ConfigTask(void *argument) {
 	ConfigInput_msg confinp;
 
 	while (1) {
-		// config menu does not need to run very real time.
-		if (xQueueReceive(ConfigInputQueue, &confinp, 20)) {
-			if (confinp.msgval == 0xFFFF) {
-				xSemaphoreTake(xInConfig, 0);
-				configstate = 1;
-			}
-		} else {
-			confinp.msgval = 0;
-		}
-
-		switch (configstate) {
-		case 0:
-			break;
-
-		case 1:
-			if (!EEPROMBusy()) {
-				if (!DoMenu(confinp.msgval)) {
-					configstate = 0;
-					xSemaphoreGive(xInConfig);
-				}
-			}
-
-			// check if new can data received.
-			if (ECUConfignewdata) {
-				ECUConfignewdata = false;
-
-				if (ECUConfigdata[0] != 0) {
-					switch (ECUConfigdata[0]) {
-					case 2:
-						//CAN_Sendminmax();
-						break;
-					case 3:
-						// toggle HV.
-						break;
-
-					default: // unknown request.
-						break;
-					}
-				} else {
-					// deal with local data.
-				}
-			}
-
-			break;
-		}
-
-		snprintf(ConfStr, 40, "Conf: %dnm %s %c %s", CarState.Torque_Req_Max,
-				GetPedalProfile(CarState.PedalProfile, true),
-				(!CarState.LimpDisable) ? 'T' : 'F',
-				(CarState.FanPowered) ? "Fan" : "");
-
+		
 	}
 
 	// clean up if we somehow get here.

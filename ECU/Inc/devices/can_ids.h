@@ -64,15 +64,6 @@
 #define COBNMT_ID				(0x700)
 
 #define COBTPDO1_ID				(0x180)
-#define COBTPDO2_ID				(0x280)
-#define COBTPDO3_ID				(0x380)
-#define COBTPDO4_ID				(0x480)
-
-#define COBRPDO1_ID				(0x200)
-#define COBRPDO2_ID				(0x300)
-#define COBRPDO3_ID				(0x400)
-#define COBRPDO4_ID				(0x500)
-#define COBRPDO5_ID				(0x540)
 
 #define COBSDOS_ID				(0x600)
 

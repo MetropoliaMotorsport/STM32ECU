@@ -447,7 +447,7 @@ uint8_t CANSendSDO(enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub,
 	DebugMsg(str);
 #endif
 	if (bus == bus0) {
-		CAN2Send( COBSDOS_ID + id, 8, msg);
+		CAN1Send( COBSDOS_ID + id, 8, msg);
 	} else {
 		CAN1Send( COBSDOS_ID + id, 8, msg);
 	}
@@ -484,7 +484,6 @@ char CAN_NMTSyncRequest(void) {
 
 	uint8_t CANTxData[1] = { 1 };
 	CAN1Send(0x80, 0, CANTxData); // return values.
-	CAN2Send(0x80, 0, CANTxData); // return values.
 
 	return 1;
 	// send to both buses.

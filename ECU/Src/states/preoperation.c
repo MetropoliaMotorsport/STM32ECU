@@ -61,6 +61,15 @@ int PreOperationState(uint32_t OperationLoops) {
 
 	char str[80] = "";
 
+	
+	ShutdownCircuitSet(true); // set shutdown circuit to allow TS to be active.
+	vTaskDelay(6000); // wait for shutdown circuit to be set.
+	while (1)
+	{
+		/* code */
+		vTaskDelay(5);
+	}
+
 	if (OperationLoops == 0) {
 		
 		TSLEDstate = false;
@@ -108,21 +117,7 @@ int PreOperationState(uint32_t OperationLoops) {
 /////////////////////////////////////////////////////////////////////////
 			
 
-			if (ReadyToStart != 0) {
-				strcpy(str, "Err:");
-
-				if (ReadyToStart & (0x1 << READYINVBIT)) {
-
-					if (getEEPROMBlock(0)->InvEnabled)
-						strcat(str, "INV ");
-					else
-						strcat(str, "INVDIS ");
-				}
-		}
-		 else {
-			// TODO print any non critical warning still.
 			ClearCriticalError(); // clear any pending critical errors from startup procedure.
-		}
 
 	}
 
@@ -179,14 +174,13 @@ int PreOperationState(uint32_t OperationLoops) {
 			invRequestState(BOOTUP);
 			resetDevicePower(Inverters);
 			setDevicePower(Inverters, true);
+			SendPwrCMD(Inverters, true);
 			DebugMsg("Power requested.");
 			CAN_SendDebug(PWRR_ID);
 			powerset = true;
 
 			///////////////////////////////
-			vTaskDelay(2000);
-
-			if (ReadyToStart == 0) {
+				if (ReadyToStart == 0) {
 				setOutput(STARTLED, On);
 				// devices are ready and in pre operation state.
 				// check for request to move to active state.

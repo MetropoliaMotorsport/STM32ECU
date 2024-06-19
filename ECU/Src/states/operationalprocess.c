@@ -88,33 +88,8 @@ void ResetStateData(void) // set default startup values for global state values.
 
 int Startup(uint32_t OperationLoops) {
 
-	{
-		DebugMsg("Entering Startup State");
-		CAN_SendDebug(ESS_ID);
-	}
-
-	// send startup state message here.
-	// reset all state information.
-
-	ResetStateData(); // set car state settings back to blank state.
-	resetEEPROM();
-	resetOutput(RTDMLED, Off);
-	resetOutput(TSOFFLED, Off);
-	resetOutput(TSLED, Off);
-	resetOutput(LED6, Off);
-
-	// set relay output LED's off
-
-	setOutput(IMDLED, Off);
-	setOutput(BSPDLED, Off);
-
-	// Show status LED's for 2 seconds for rules compliance.
-
-	//timeOutput(BMSLED, 2000);
-	//timeOutput(IMDLED, 2000);
-	//timeOutput(BSPDLED, 2000);
-
-
+	ShutdownCircuitSet( false);
+	SendPwrCMD(Inverters, 0); // turn off inverters
 	vTaskDelay(5);
 
 	return PreOperationalState;

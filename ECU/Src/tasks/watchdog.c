@@ -148,36 +148,7 @@ static void WatchdogTask(void *pvParameters) {
 
 	vTaskDelay(CYCLETIME * 2);
 
-	while (1) {
-		count++;
-
-		volatile EventBits_t activeBits = xEventGroupGetBits(xWatchdogActive);
-
-		volatile EventBits_t uxBits = xEventGroupGetBits(xWatchdog);
-
-		if ((uxBits & activeBits) == (activeBits)) {
-			// only kick the watchdog if all expected bits are set.
-#ifdef WATCHDOG
-			HAL_WWDG_Refresh(&hwwdg1);
-#endif
-		} else {
-			if (activeBits > 0) {
-				volatile int watchdognotkicked = 1;
-				char str[40] = "";
-				snprintf(str, 40, "Watchdog kicked bits: %4X",
-						(uint32_t) uxBits);
-#ifdef WATCHDOG
-				UART_Transmit(DEBUGUART, str, strlen(str));
-#else
-				DebugMsg(str);
-#endif
-			}
-		}
-
-		xEventGroupClearBits(xWatchdog, 0xFF);
-
-		vTaskDelay(CYCLETIME * 2);
-	}
+	vTaskDelete(NULL);
 }
 
 int initWatchdog(void) {
