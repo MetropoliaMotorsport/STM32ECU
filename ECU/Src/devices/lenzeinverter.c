@@ -14,7 +14,6 @@
 #include "timerecu.h"
 #include "debug.h"
 #include "can_ids.h"
-#ifdef LENZE
 #include "lenzeinverter.h"
 
 extern volatile InverterState_t InverterState[MOTORCOUNT];
@@ -661,8 +660,10 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 						; // sets TPDO's to sync mode.
 					Inverter->SetupState++;
 				} else {
-					if (InvSendSDO(Inverter->COBID + 31, 0x4004, 1, 1234)) // sets private can.
+					if (InvSendSDO(Inverter->COBID + 31, 0x4004, 1, 1234)){ // sets private can.
 						Inverter->SetupState++;
+						CAN_SendDebug(inverters_received);
+					}
 				}
 				break;
 			}
@@ -716,6 +717,7 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 						100);
 
 				Inverter->SetupState = 0xFF; // Done!
+				CAN_SendDebug(inverter_setup_done);
 				InverterState[Inverter->Motor + 1].SetupState = 0xFF; // set the other inverter as configured too.
 			}
 			break;
@@ -762,6 +764,10 @@ bool processAPPCRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 bool processINVRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle) {
 //	uint32_t bitset=(0x1 << datahandle->index);
+	InverterState[datahandle->index].rdo_ctnr++;
+	InverterState[datahandle->index].rdo_time = gettimer();
+
+
 
 	if (InverterState[datahandle->index].SetupState > 0
 			&& InverterState[datahandle->index].SetupState < 0xFE) {
@@ -856,5 +862,3 @@ bool registerInverterCAN(void) {
 
 	return true;
 }
-
-#endif

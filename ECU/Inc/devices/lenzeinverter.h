@@ -73,5 +73,7 @@
 #define NMSCALING					(90)
 #define SPEEDSCALING				(0x4000)
 
+extern CANData InverterCANMotorRDO[MOTORCOUNT];
+
 #endif /* LENZEINVERTER_H_ */
 

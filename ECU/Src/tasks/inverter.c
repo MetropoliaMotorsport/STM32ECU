@@ -20,10 +20,8 @@
 #include "power.h"
 #include "taskpriorities.h"
 #include "timerecu.h"
-
-#ifdef LENZE
+#include "can_ids.h"
 #include "lenzeinverter.h"
-#endif
 
 DeviceStatus GetInverterState(void);
 int8_t getInverterControlWord(const InverterState_t *Inverter);
@@ -124,6 +122,22 @@ volatile bool invertersinerror = false;
 
 //DeviceStatus RequestedState[MOTORCOUNT];
 uint16_t command;
+
+bool checkStatusCode(uint8_t status) {
+	switch (status) {
+	case 49: // ready to switch on.
+	case 51: // on
+	case 55: // operation
+	case 64: // startup
+	case 96: //
+	case 104: // error
+	case 200: // very error // c0   c8     192-200 errors.
+		return true;
+		break;
+	default:
+		return false;
+	}
+}
 
 DeviceStatus InverterStates[MOTORCOUNT];
 
@@ -256,177 +270,17 @@ void InvTask(void *argument) {
 
 	CarState.AllowTorque = true; // hack for now, this should be controlled somewhere.
 
-	char str[80];
+	bool appc_on = true;
 
 	while (1) {
 
-		if (xQueueReceive(InvQueue, &msg, 0)) // queue to receive requested operational state.
-				{
-			for (int i = 0; i < MOTORCOUNT; i++) {
-				InverterState[i].InvRequested = msg.state;
-#ifdef TIMEINVSTATECHANGE
-				if (msg.state == OPERATIONAL
-						&& InverterState[i].InvState != msg.state) {
-					if (InverterState[i].Changetime == 0) {
-						InverterState[i].Changetime = gettimer()
-								+ i * TIMEINVSTATECHANGE + 1; // delay each change to operational by half a second.
-						snprintf(str, 80,
-								"Inverter %d req OPER after %lu at (%lu)", i,
-								InverterState[i].Changetime, gettimer());
-						DebugMsg(str);
-					}
-				} else {
-					if (InverterState[i].InvState != msg.state)
-						InverterState[i].Changetime = 1;
-					else
-						InverterState[i].Changetime = 0;
-				}
-#endif
-			}
-		}
+			
+			
 
-		InvCfg_msg cfgmsg;
-		if (xQueueReceive(InvCfgQueue, &cfgmsg, 0)) // queue of pending inverter cfg commands, to send them at a controlled pace.
-				{
-			CANSendSDO(bus0, cfgmsg.id, cfgmsg.idx, cfgmsg.sub, cfgmsg.data);
-		}
-
-		vTaskDelay(6); // wait a bit so not right at sync point.
-
-		int online = 0;
-		DeviceStatus lowest = OPERATIONAL;
-
-		for (int i = 0; i < MOTORCOUNT; i++) // speed is received
-				{
-			if (InverterState[i].SetupState == 0xFF) {
-				if (!firstactive[i]) {
-					firstactive[i] = true;
-					snprintf(str, 60, "Inv[%d] first active cycle at (%lu)", i,
-							gettimer());
-					DebugMsg(str);
-					CAN_SendErrorStatus(9, i, 0);
-				}
-
-				if ((InvReceived & invexpected[i]) == invexpected[i]) // everything received for inverter i
-						{
-					if (i == 0 && !firstreceive[i]) {
-						firstreceive[i] = true;
-						snprintf(str, 60, "Inv[%d] first received ok at (%lu)",
-								i, gettimer());
-						DebugMsg(str);
-					}
-					lastseen[i] = gettimer();
-					InverterState[i].Device = OPERATIONAL;
-					HandleInverter(&InverterState[i]);
-				} else {
-					if (i == 0 && !firstbad[i]) {
-						firstbad[i] = true;
-						snprintf(str, 60,
-								"Inv[%d] not received, got %lu, expected %lu at (%lu)",
-								i, InvReceived & invexpected[i], invexpected[i],
-								gettimer());
-						DebugMsg(str);
-
-						CAN_SendErrorStatus(9, i, 1);
-
-					}
-
-					// should always be sending PDO if we're configured to stop timeouts.
-					HandleInverter(&InverterState[i]);
-
-					if (gettimer() - lastseen[i] > INVERTERTIMEOUT
-							&& InverterState[i].Device != OFFLINE) //
-									{
-						firstbad[i] = false;
-						if (InverterState[i].Device != OFFLINE) {
-							snprintf(str, 40, "Inverter %d Timeout (%lu)", i,
-									gettimer());
-							DebugMsg(str);
-							InverterState[i].Device = OFFLINE;
-							// prevent automatically putting back online for now.
-							InverterState[i].SetupState = 0;
-							CAN_SendErrorStatus(9, i, 2);
-
-							firstbad[i] = false;
-							firstactive[i] = false;
-							firstreceive[i] = false;
-						}
-					}
-				}
-
-				if (InverterState[i].Device != OFFLINE) {
-					online++;
-					if (InverterState[i].Device < lowest
-							|| ((1 << i) & getEEPROMBlock(0)->EnabledMotors))
-						lowest = InverterState[i].Device;
-				}
-
-			} else {
-				// state 1 should be triggered automatically by inverter startup right now, not attempting to force it.
-				if (!InverterState[i].MCChannel) // if we've not configured inverters, only deal with APPC channel.
-				{
-					static uint8_t dummyCAN[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-
-					// don't do anything if setup state 0, or 0xFF. Or if less then 1s since SetupLastSeenTime
-					if (InverterState[i].SetupState == 1
-							&& gettimer() - InverterState[i].SetupLastSeenTime
-									> 1000) {
-						snprintf(str, 80,
-								"Starting Inverter %d private CFG after APPC setup (last %lu) (%lu)",
-								i, InverterState[i].SetupLastSeenTime,
-								gettimer());
-						DebugMsg(str);
-						// no messages for a second, APPC has finished setting up MC's, carry on with state machine.
-						InverterState[i].SetupState = 2; // start the setup state machine
-						CAN_SendErrorStatus(9, i, 3);
-
-						InvStartupState(&InverterState[i], dummyCAN, false);
-						snprintf(str, 80,
-								"Starting Inverter %d StartupState called. (last %lu) (%lu)",
-								i, InverterState[i].SetupLastSeenTime,
-								gettimer());
-						DebugMsg(str);
-					} else if (InverterState[i].SetupState < 0xFE
-							&& InverterState[i].SetupState > 1
-							&& gettimer() - InverterState[i].SetupLastSeenTime
-									> 100) {
-						// check if inverters are drawing any current, if so, keep trying.
-
-						if (InverterState[i].SetupTries < 10) {
-							snprintf(str, 80,
-									"\nTimeout during Inverter %d private CFG setup at state %d, resending (%lu)\n",
-									i, InverterState[i].SetupState, gettimer());
-							DebugMsg(str);
-							CAN_SendErrorStatus(9, i, 4);
-							InverterState[i].SetupTries++;
-							InvStartupState(&InverterState[i], dummyCAN, true);
-						} else {
-							if (InverterState[i].SetupState != 0xFE) {
-								snprintf(str, 80,
-										"Giving up on Inverter %d private CFG setup in state %d (%lu)\n",
-										i, InverterState[i].SetupState,
-										gettimer());
-								DebugMsg(str);
-							}
-							InverterState[i].SetupState = 0xFE;
-						}
-					} else {
-						// not seen inverters yet.
-					}
-				}
-			}
-
-			invertersonline = online;
-
-			if (online == MOTORCOUNT)
-				DeviceState.Inverter = lowest; // set current lowest state as operational state
-			else
-				DeviceState.Inverter = OFFLINE;
 
 			vTaskDelay(1);
-		}
+		
 
-		setWatchdogBit(watchdogBit);
 		// only allow one command per cycle. Switch to syncing with main task to not go out of sync?
 
 		xEventGroupSync(xCycleSync, 0, 1, portMAX_DELAY); // wait for main cycle.
@@ -602,6 +456,8 @@ void resetInv(void) {
 		InverterState[i].AllowTorque = false;
 
 		Errors.InvAllowReset[i] = 1;
+
+		InverterState[i].rdo_ctnr = 0;
 	}
 
 	InverterState[0].COBID = Inverter1_NodeID;
@@ -629,24 +485,12 @@ int initNoInv(void) {
 int initInv(void) {
 	resetInv(); // sets up InverterState, id's, etc, so that CAN functions will not be called till setup.
 
-	if (getEEPROMBlock(0)->InvEnabled) {
-		char str[120];
-		snprintf(str, 120,
-				"Inverters Handling enabled, with MC enabled on Motors [%s] at max %dNm, %dRPM, %dRPM/s accel Torqueslope %d",
-				getMotorsEnabledStr(), getEEPROMBlock(0)->MaxTorque,
-				getEEPROMBlock(0)->maxRpm, getEEPROMBlock(0)->AccelRpms,
-				getEEPROMBlock(0)->TorqueSlope);
-		DebugMsg(str);
+	RegisterResetCommand(resetInv);
 
-		RegisterResetCommand(resetInv);
+	registerInverterCAN();
 
-		registerInverterCAN();
-
-		InvUpdating = xSemaphoreCreateMutex();
-	} else {
-		DebugMsg("Inverters disabled.");
-		initNoInv();
-	}
+	InvUpdating = xSemaphoreCreateMutex();
+	
 
 	InvQueue = xQueueCreateStatic(InvQUEUE_LENGTH, InvITEMSIZE,
 			InvQueueStorageArea, &InvStaticQueue);
@@ -658,11 +502,11 @@ int initInv(void) {
 
 	vQueueAddToRegistry(InvQueue, "InverterCfgQueue");
 
-	if (getEEPROMBlock(0)->InvEnabled)
-		InvTaskHandle = xTaskCreateStatic(InvTask,
-		INVTASKNAME,
-		INVSTACK_SIZE, (void*) 1,
-		INVTASKPRIORITY, xINVStack, &xINVTaskBuffer);
+	//if (getEEPROMBlock(0)->InvEnabled)
+	InvTaskHandle = xTaskCreateStatic(InvTask,
+	INVTASKNAME,
+	INVSTACK_SIZE, (void*) 1,
+	INVTASKPRIORITY, xINVStack, &xINVTaskBuffer);
 
 	return 0;
 }

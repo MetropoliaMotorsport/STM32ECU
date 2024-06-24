@@ -82,7 +82,7 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 	uint32_t received = OperationalReceive();
 
 	// check what not received here, only error for inverters
-
+/*
 	if (received != 0) // not all expected data received in window.
 			{
 		DebugMsg("Errorplace 0x9A not received data");
@@ -101,7 +101,7 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 				| (CheckCriticalError() << 8);
 		return OperationalErrorState;
 	}
-
+*/
 	// at this state, everything is ready to be powered up.
 
 	int invcount = 0;
@@ -177,21 +177,15 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 		blinkOutput(TSLED, LEDBLINK_ONE, 100);
 	}
 
-	if (BTN2.data) {
+
 		if (readystate == 0 && CarState.allowtsactivation) {
 			DebugMsg("TS Activation requested whilst ready.");
 			CAN_SendDebug(TSR_ID);
 			TSRequested = 1;
 			HVEnableTimer = gettimer();
 			return TSActiveState;
-		} else {
-			// user pressed requesting startup sequence before devices ready
-			blinkOutput(TSLED, BlinkFast, 1000);
-			CAN_SendErrorStatus(1, PowerOnRequestBeforeReady, 0);
-			DebugMsg("TS Activation requested whilst not ready.");
-			CAN_SendDebug(TSSNR_ID);
 		}
-	}
+
 
 	return IdleState;
 }

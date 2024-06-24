@@ -103,6 +103,7 @@
 #define EES_ID                  (0x0BC) //"Entering Error State"
 #define inverters_received      (0x0BD) //"Inverters received"
 #define inverters_started_unexpected (0x0BE) //"Inverters started unexpectedly"
-
+#define inverter_setup_done      (0x0BF) //"Inverter setup done"
+#define inverter_operational    (0x0C0) //"Inverter operational"
 ////////////////////////////////////////
 #endif

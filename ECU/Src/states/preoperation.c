@@ -61,14 +61,6 @@ int PreOperationState(uint32_t OperationLoops) {
 
 	char str[80] = "";
 
-	
-	ShutdownCircuitSet(true); // set shutdown circuit to allow TS to be active.
-	vTaskDelay(6000); // wait for shutdown circuit to be set.
-	while (1)
-	{
-		/* code */
-		vTaskDelay(5);
-	}
 
 	if (OperationLoops == 0) {
 		
@@ -168,7 +160,7 @@ int PreOperationState(uint32_t OperationLoops) {
 
 	static bool powerset = false;
 
-	if ( BTN1.data) {
+
 
 		if (!powerset) {
 			invRequestState(BOOTUP);
@@ -201,8 +193,8 @@ int PreOperationState(uint32_t OperationLoops) {
 			powerset = false;
 		}
 
-	}
 	
+
 	return PreOperationalState; // nothing caused entry to a different state, continue in current state.
 }
 
