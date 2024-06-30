@@ -50,6 +50,7 @@ void setTestMotors( bool state) {
 #define READYTSALBIT		6
 #define READYTESTING		7
 
+uint8_t buz_timer = 0;
 // get external hardware upto state to allow entering operational state on request.
 int PreOperationState(uint32_t OperationLoops) {
 //	static int OperationLoops = 0;
@@ -68,11 +69,12 @@ int PreOperationState(uint32_t OperationLoops) {
 		ledtimer = gettimer();
 
 		CAN_SendDebug(EPOS_ID);
+
 		//DebugMsg("Entering Pre Operation State");
 
 		//SetErrorLogging( false);
 		preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
-		InverterAllowTorqueAll(false);
+		//InverterAllowTorqueAll(false);
 
 
 		//////////////////////////////TODO Fix LED control
@@ -86,33 +88,26 @@ int PreOperationState(uint32_t OperationLoops) {
 
 		initVectoring();
 
+		
+
 		//   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
 		// send to individual devices rather than reset everything if needed.
 	}
+
+
+	SendPwrCMD(Inverters, true);
+	vTaskDelay(1);
+
+	SendPwrCMD(RightPump, true);
+	SendPwrCMD(LeftPump, true);
 
 	{
 		CAN_SendStatus(1, PreOperationalState, preoperationstate);
 
 		// do power request
 
-/////////////////////////////////////////////////////////////////////////
-			if (InverterReceived) {
-				if (getEEPROMBlock(0)->InvEnabled){
-					strcat(str, "INV ");
-					ReadyToStart = 1; //TODO
-				}
-				else{
-					strcat(str, "INVDIS ");
-					ReadyToStart = 0; //TODO
-				}
-			}
-/////////////////////////////////////////////////////////////////////////
-			
-
-			ClearCriticalError(); // clear any pending critical errors from startup procedure.
-
 	}
-
+/*
 	ReadyToStart = 0;
 	
 	vTaskDelay(5);
@@ -131,69 +126,16 @@ int PreOperationState(uint32_t OperationLoops) {
 	speedadjust spd;
 
 	doVectoring(Torque_Req, &adj, &spd, pedalreq);
-
-//	if ( testmotorslast ) InverterSetTorque(&adj, 1000);
-
-#if 0 //TODO Fix LED control
-	if (CarState.APPSstatus)
-		setOutput(RTDMLED, On);
-	else
-		setOutput(RTDMLED, Off);
-
-	// Check startup requirements.
-
-	if (!getDevicePower(Front1) || !getDevicePower(Front2)
-			|| !getDevicePower(Inverters)) {
-		if (!TSLEDstate) {
-			setOutput(TSLED, On);
-			TSLEDstate = true;
-		}
-	}
-	if (getDevicePower(Front1) && getDevicePower(Front2)
-			&& getDevicePower(Inverters)) {
-		if (TSLEDstate) {
-			setOutput(TSLED, Off);
-			TSLEDstate = false;
-		}
-	}
-#endif
-
-	static bool powerset = false;
-
-
-
-		if (!powerset) {
-			invRequestState(BOOTUP);
-			resetDevicePower(Inverters);
-			setDevicePower(Inverters, true);
-			SendPwrCMD(Inverters, true);
-			DebugMsg("Power requested.");
-			CAN_SendDebug(PWRR_ID);
-			powerset = true;
-
-			///////////////////////////////
-				if (ReadyToStart == 0) {
-				setOutput(STARTLED, On);
-				// devices are ready and in pre operation state.
-				// check for request to move to active state.
-
-				if (testmotors) {
-					return PreOperationalState;
-				}
-
-				OperationLoops = 0;
-				return OperationalReadyState; // normal operational state on request
-
-			}
-			//////////////////////////////
-		} else {
-			setDevicePower(Inverters, false);
-			DebugMsg("Power off to inverters requested.");
-			CAN_SendDebug(PWRINV_ID);
-			powerset = false;
-		}
-
+*/
+	ShutdownCircuitSet(true);
 	
+	PedalTorqueRequest(NULL);
+
+	if(CarState.PRE_Done && buz_timer < 58)
+	{		buz_timer++;
+		SendPwrCMD(Buzzer, (buz_timer < 56 ? true : false));		
+	}
+		
 
 	return PreOperationalState; // nothing caused entry to a different state, continue in current state.
 }

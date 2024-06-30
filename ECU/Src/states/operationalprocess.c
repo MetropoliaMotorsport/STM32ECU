@@ -89,8 +89,9 @@ void ResetStateData(void) // set default startup values for global state values.
 int Startup(uint32_t OperationLoops) {
 
 	ShutdownCircuitSet( false);
-	SendPwrCMD(Inverters, 0); // turn off inverters
-	vTaskDelay(5);
+	SendPwrCMD(Inverters, false); // turn off inverters
+	CarState.MaxTorque = 5;
+	vTaskDelay(10);
 
 	return PreOperationalState;
 }

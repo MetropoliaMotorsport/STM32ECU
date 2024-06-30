@@ -42,7 +42,7 @@
 #define ANALOGNODES
 #define MATLAB
 #define LENZE
-#define TWOWHEELS
+//#define TWOWHEELS
 #ifdef TWOWHEELS
 	#define MOTORCOUNT		(2)
 #else
@@ -205,6 +205,7 @@ typedef struct {
 	int32_t VoltageIVTAccu;
 	int32_t Power;
 	int32_t Wh;
+
 	float SOC;
 
 	uint8_t I_BrakeLight;
@@ -218,7 +219,12 @@ typedef struct {
 	uint8_t I_LeftPump;
 	uint8_t I_RightPump;
 
+	bool HV_on;
 	bool allowtsactivation;
+	bool PRE_Done;
+
+	float pedalreq;
+	float MaxTorque;
 
 } CarStateType;
 

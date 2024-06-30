@@ -57,6 +57,9 @@
 
 //Needs to be change due to new hardware
 
+//BMS IDs
+////////////////////////////////////////
+#define BMS_PRE_Done_ID         0x99
 ////////////////////////////////////////
 
 
@@ -101,9 +104,13 @@
 #define WFP_ID                  (0x0BA) //"Waiting for precharge"
 #define RTIS_ID                 (0x0BB) //"Returning to idle state at request."
 #define EES_ID                  (0x0BC) //"Entering Error State"
-#define inverters_received      (0x0BD) //"Inverters received"
+#define inverters_received       (0x0BD) //"Inverters received"
 #define inverters_started_unexpected (0x0BE) //"Inverters started unexpectedly"
 #define inverter_setup_done      (0x0BF) //"Inverter setup done"
 #define inverter_operational    (0x0C0) //"Inverter operational"
+#define inverter_error_rst       (0x0C1) //"Inverter error"
+#define inverter_cmd_rd_to_switch_on (0x0C2) //"Inverter command read to switch on" 
+#define inverter_cmd_sw_on      (0x0C3) //"Inverter command switch on"
+#define inverter_cmd_en_op      (0x0C4) //"Inverter command enable operation"
 ////////////////////////////////////////
 #endif

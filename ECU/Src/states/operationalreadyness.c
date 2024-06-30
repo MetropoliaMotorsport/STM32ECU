@@ -13,11 +13,6 @@
 #include "errors.h"
 #include "debug.h"
 
-int AllowLimp(void) // function to determine if limp mode is allowable
-{
-	return 0;
-}
-
 uint16_t ReadyReceive(uint16_t returnvalue) {
 	if (returnvalue == 0xFFFF) {
 		returnvalue =

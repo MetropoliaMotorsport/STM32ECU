@@ -474,6 +474,13 @@ bool processINVStatus(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 	uint16_t status = CANRxData[0];
 
+	InverterState[inv].rdo_state = status;
+	InverterState[inv].rdo_ctnr++;
+	InverterState[inv].InvState = InternalInverterState(status);;
+
+
+/*
+
 //	uint16_t statusword = getLEint16(&CANRxData[0]);
 	uint32_t latchedStatus1 = getLEint32(&CANRxData[2]);
 	uint16_t latchedStatus2 = getLEint16(&CANRxData[6]);
@@ -539,7 +546,7 @@ bool processINVStatus(const uint8_t CANRxData[8], const uint32_t DataLength,
 				eSetBits);
 
 		return true;
-	} else // bad data.
+	} else // bad data.*/
 	{
 		return true;
 	}

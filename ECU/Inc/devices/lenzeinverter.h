@@ -68,10 +68,13 @@
 
 #endif
 
+#define MAXInverterTorque			(24.6)
 
 #define TORQUESLOPESCALING			(90)
 #define NMSCALING					(90)
 #define SPEEDSCALING				(0x4000)
+#define TORQUESCALING				(10)
+
 
 extern CANData InverterCANMotorRDO[MOTORCOUNT];
 

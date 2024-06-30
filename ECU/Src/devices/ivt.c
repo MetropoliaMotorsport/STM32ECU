@@ -18,21 +18,12 @@ bool processIVTData(const uint8_t *CANRxData, const uint32_t DataLength,
 
 void IVTTimeout(uint16_t id);
 
-CANData IVTCan[8] = { 
-	 { &DeviceState.IVT, IVTBase_ID, 6, processIVTData, IVTTimeout, IVTTIMEOUT },
-	 { &DeviceState.IVT, IVTBase_ID + 1, 6,	processIVTData, NULL, 0 },
-	 { &DeviceState.IVT, IVTBase_ID + 2, 6, processIVTData, NULL, 0 },
-	 { &DeviceState.IVT, IVTBase_ID + 3, 6, processIVTData, NULL, 0 },
-	 { &DeviceState.IVT, IVTBase_ID + 4, 6, processIVTData, NULL, 0 },
-	 { &DeviceState.IVT, IVTBase_ID + 5, 6, processIVTData, NULL, 0 },
-	 { &DeviceState.IVT, IVTBase_ID + 6, 6, processIVTData, NULL, 0 },
-	 { &DeviceState.IVT, IVTBase_ID + 7, 6, processIVTData, NULL, 0 } };
 
-uint8_t processIVT(uint8_t CANRxData[8], uint32_t DataLength, uint16_t field) {
-	CANData *datahandle = &IVTCan[field - IVTBase_ID];
-	processCANData(datahandle, CANRxData, DataLength);
-	return 0;
-}
+CANData IVT_I = { &DeviceState.IVT, IVTI_ID, 6, processIVTData, IVTTimeout, IVTTIMEOUT };
+CANData IVT_U1 = { &DeviceState.IVT, IVTU1_ID, 6, processIVTData, IVTTimeout, IVTTIMEOUT };
+CANData IVT_U2 = { &DeviceState.IVT, IVTU2_ID, 6, processIVTData, IVTTimeout, IVTTIMEOUT };
+CANData IVT_W = { &DeviceState.IVT, IVTW_ID, 6, processIVTData, IVTTimeout, IVTTIMEOUT };
+CANData IVT_Wh = { &DeviceState.IVT, IVTWh_ID, 6, processIVTData, IVTTimeout, IVTTIMEOUT };
 
 
 // IVTWh = 0x528
@@ -51,6 +42,9 @@ bool processIVTData(const uint8_t CANRxData[8], const uint32_t DataLength, //TOD
 		break;
 	case IVTU2_ID:
 		CarState.VoltageINV = datahandle->data;
+
+		((CarState.VoltageINV > 450000) ? (CarState.HV_on = true) : (CarState.HV_on = false)); // if voltage is greater than 450V, set HV_on to true (1
+		
 		break;
 	case IVTW_ID:
 		CarState.Power = datahandle->data;
@@ -85,12 +79,12 @@ void IVTTimeout(uint16_t id) {
 int receiveIVT(void) {
 	if (DeviceState.IVTEnabled) {
 
-		int returnval = receivedCANData(&IVTCan[0]);
+		int returnval = 1;
 
 		return returnval;
 	} else // IVT reading disabled, set 'default' values to allow operation regardless.
 	{
-		*IVTCan[0].devicestate = OPERATIONAL;
+
 		CarState.VoltageINV = 540; // set an assumed voltage that forces TSOFF indicator to go out on timeout for SCS.
 		CarState.VoltageIVTAccu = 540;
 		CarState.Power = 0;
@@ -113,8 +107,11 @@ int initIVT(void) {
 
 	resetIVT();
 
-	for (int i = 0; i < 8; i++)
-		RegisterCan1Message(&IVTCan[i]);
+	RegisterCan1Message(&IVT_I);
+	RegisterCan1Message(&IVT_U1);
+	RegisterCan1Message(&IVT_U2);
+	RegisterCan1Message(&IVT_W);
+	RegisterCan1Message(&IVT_Wh);
 
 	return 0;
 }

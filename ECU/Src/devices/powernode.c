@@ -55,6 +55,8 @@ static uint32_t devicecount = 0;
 // TODO this list should be sanity checked for duplicates at tune time.
 devicepowerreq DevicePowerList[] = {
 		{None},
+		{LeftPump, PNode2_ID, OUT2_2},
+		{RightPump, PNode2_ID, OUT1_2},
 		{ Buzzer, PNode2_ID, OUT0_2 },
 		{ Inverters, PNode2_ID, OUT2_1 },
 		{Brake, PNode2_ID, OUT3_1},

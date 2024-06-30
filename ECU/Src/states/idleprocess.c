@@ -139,7 +139,7 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 	float lastreq = CarState.Torque_Req;
 
 	int16_t pedalreq;
-	CarState.Torque_Req = PedalTorqueRequest(&pedalreq); // calculate request from APPS
+	 // calculate request from APPS
 
 	if (abs(lastreq - CarState.Torque_Req) > 10) {
 		DebugPrintf("Torquereq %d for Curve adj %d Act %d\r\n", //TODO add can bus msg

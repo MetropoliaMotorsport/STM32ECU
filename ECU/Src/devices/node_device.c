@@ -33,19 +33,19 @@ bool processBPPS(const uint8_t CANRxData[8], const uint32_t DataLength, CANData 
 
 		datahandle->data = message;
 
-		uint8_t bData[2] = {0, 0};
-		bData[0] = 4;
+
+
 
 		if(datahandle->data > 10){
 
-			bData[1] = 1;
+			//SendPwrCMD(Brake, 1);
 		}
 		else{
 
-			bData[1] = 0;
+			//SendPwrCMD(Brake, 0);
 		}
 
-		CAN2Send(PNode2_CMD_ID, 2, bData);
+
 
 		return 1;
 }
@@ -62,18 +62,18 @@ bool processBTN(const uint8_t CANRxData[8], const uint32_t DataLength, CANData *
 
 
 
-volatile CANData BPPS = { &DeviceState.BPPS, BPPS_ID, 2, processBPPS, NULL, 0, processBPPS };
-volatile CANData APPS1 = { &DeviceState.APPS1, APPS1_ID, 2, processNodeDevice, NULL, 0,processNodeDevice };
-volatile CANData APPS2 = { &DeviceState.APPS2, APPS2_ID, 2, processNodeDevice, NULL, 0, processNodeDevice };
+volatile CANData BPPS = { &DeviceState.BPPS, BPPS_ID, 2, processBPPS, NULL, 0 };
+volatile CANData APPS1 = { &DeviceState.APPS1, APPS1_ID, 2, processNodeDevice, NULL, 0 };
+volatile CANData APPS2 = { &DeviceState.APPS2, APPS2_ID, 2, processNodeDevice, NULL, 0 };
 
-volatile CANData SteeringAngle = { &DeviceState.SteeringAngle, SteeringAngle_ID, 8, processNodeDevice, NULL, 0 };
-volatile CANData WaterLevel = { &DeviceState.WaterLevel, WaterLevel_ID, 8, processNodeDevice, NULL, 0 };
-volatile CANData HeavesRear = { &DeviceState.HeavesRear, HeavesRear_ID, 8, processNodeDevice, NULL, 0 };
-volatile CANData HeavesFront = { &DeviceState.HeavesFront, HeavesFront_ID, 8, processNodeDevice, NULL, 0 };
-volatile CANData Rolls1 = { &DeviceState.Rolls1, Rolls1_ID, 8, processNodeDevice, NULL, 0 };
-volatile CANData Rolls2 = { &DeviceState.Rolls2, Rolls2_ID, 8, processNodeDevice, NULL, 0 };
-volatile CANData BrakeFront = { &DeviceState.BrakeFront, BrakeFront_ID, 8, processNodeDevice, NULL, 0 };
-volatile CANData BrakeRear = { &DeviceState.BrakeRear, BrakeRear_ID, 8, processNodeDevice, NULL, 0 };
+volatile CANData SteeringAngle = { &DeviceState.SteeringAngle, SteeringAngle_ID, 8, NULL, 0 };
+volatile CANData WaterLevel = { &DeviceState.WaterLevel, WaterLevel_ID, 8, NULL, 0 };
+volatile CANData HeavesRear = { &DeviceState.HeavesRear, HeavesRear_ID, 8, NULL, 0 };
+volatile CANData HeavesFront = { &DeviceState.HeavesFront, HeavesFront_ID, 8, NULL, 0 };
+volatile CANData Rolls1 = { &DeviceState.Rolls1, Rolls1_ID, 8, NULL, 0 };
+volatile CANData Rolls2 = { &DeviceState.Rolls2, Rolls2_ID, 8, NULL, 0 };
+volatile CANData BrakeFront = { &DeviceState.BrakeFront, BrakeFront_ID, 8, NULL, 0 };
+volatile CANData BrakeRear = { &DeviceState.BrakeRear, BrakeRear_ID, 8, NULL, 0 };
 
 volatile CANData BTN1 = { &DeviceState.Dash_BTNs, BTN1_ID, 2, processBTN, NULL, 0 };
 volatile CANData BTN2 = { &DeviceState.Dash_BTNs, BTN2_ID, 2, processBTN, NULL, 0 };

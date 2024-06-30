@@ -22,6 +22,7 @@
 #include "timerecu.h"
 #include "can_ids.h"
 #include "lenzeinverter.h"
+#include "node_device.h"
 
 DeviceStatus GetInverterState(void);
 int8_t getInverterControlWord(const InverterState_t *Inverter);
@@ -242,6 +243,8 @@ int getInvOnlineCount(void) {
 void InvTask(void *argument) {
 	xEventGroupSync(xStartupSync, 0, 1, portMAX_DELAY); // ensure that tasks don't start before all initialisation done.
 
+	resetInv();
+
 	uint8_t watchdogBit = registerWatchdogBit("InvTask");
 
 	Inv_msg msg;
@@ -270,14 +273,55 @@ void InvTask(void *argument) {
 
 	CarState.AllowTorque = true; // hack for now, this should be controlled somewhere.
 
-	bool appc_on = true;
+	for (int i = 0; i < MOTORCOUNT; i++)
+		InverterState[i].appc_on = true;
+
+
+	uint8_t state_test = 1;
 
 	while (1) {
 
-			
-			
+		for(int i = 0; i < MOTORCOUNT; i++)
+		{			
+			if(!InverterState[i].appc_on){					
+					uint8_t msg[8] = { 0 };
+					uint8_t msg2[8] = {0};
+					
+					CAN1Send(LENZE_RPDO5_ID + 0xE, 8, msg);
+
+					msg[0] = getInverterControlWord(&InverterState[i]);
+
+				if(InverterState[i].InvState == OPERATIONAL && CarState.PRE_Done)
+					{					
+
+						int32_t vel = 3000 * SPEEDSCALING;
+						int16_t torque = CarState.pedalreq * TORQUESCALING * (CarState.MaxTorque / MAXInverterTorque);
+
+						storeLEint32(vel, &msg[2]);
+						storeLEint16(torque, &msg[6]);
+
+						storeLEint16(620*16, &msg2[0]); //max DC voltage
+						storeLEint16(400*16, &msg2[2]); // min DC voltage.
+						storeLEint16(20*16, &msg2[4]); // max power
+						storeLEint16(0, &msg2[6]); // max regeneration
+											
+					}
+
+					CAN1Send(LENZE_RPDO3_ID + InverterState[i].COBID, 8, msg);
+					CAN1Send(LENZE_RPDO1_ID + InverterState[i].COBID, 8, msg);
 
 
+					CAN1Send(LENZE_RPDO4_ID + InverterState[i].COBID, 8, msg2);
+					CAN1Send(LENZE_RPDO2_ID + InverterState[i].COBID, 8, msg2);
+
+			}
+
+			if((gettimer() - InverterState[i].rdo_time > 2000) && InverterState[i].appc_on && InverterState[i].rdo_ctnr != 0){
+				InverterState[i].appc_on = false;
+				CAN_SendDebug(inverters_received);
+				CANSendSDO(bus0, 0xE + 31, 0x4004, 1, 1234);
+			}
+		}
 			vTaskDelay(1);
 		
 
@@ -360,7 +404,7 @@ int8_t getInverterControlWord(const InverterState_t *Inverter) // returns respon
 		// We are ready to turn on, so allow high voltage.
 		// we are in state 2, process.
 		// process shutdown request here, to move to move to state 1.
-		if (getPowerHVReady()) { // TS enable button pressed and both inverters are marked HV ready proceed to state 3.
+		if (CarState.PRE_Done) { // TS enable button pressed and both inverters are marked HV ready proceed to state 3.
 
 			TXState = 0b00001111; // Lenze doesn't want to go to pre operational from stopped, have to skip straight to operational.
 
@@ -371,11 +415,11 @@ int8_t getInverterControlWord(const InverterState_t *Inverter) // returns respon
 
 	case PREOPERATIONAL: // State 3: Switched on   <---- check this case.
 		// we are powered on, so allow high voltage if available
-		if (getPowerHVReady())			  // IdleState ) <-
+		if (CarState.PRE_Done)			  // IdleState ) <-
 		{ // TS enable button has been pressed, proceed to request power on if all inverters on.
 			TXState = 0b00001111; // Request Enable operation, State 4.
-		} else if (!getPowerHVReady()) { // return to switched on state.
-			TXState = 0b00000110; // 0b00000000; // request Disable Voltage, drop to ready state.
+		} else if (!CarState.PRE_Done) { // return to switched on state.
+			TXState = 0b00000111; // 0b00000000; // request Disable Voltage, drop to ready state.
 		} else {  // no change, continue to request State 3.
 			TXState = 0b00000111;
 		}
@@ -383,6 +427,13 @@ int8_t getInverterControlWord(const InverterState_t *Inverter) // returns respon
 
 	case OPERATIONAL: // State 4: Operation Enable
 		// we are powered on, so allow high voltage.
+		if(CarState.PRE_Done){
+			TXState = 0b00001111;
+		}
+		else{
+			TXState = 0b00000111;
+		}
+		/*
 		if (getPowerHVReady() && !Inverter->AllowTorque) { // no longer in RTDM mode, but still got HV, so drop to idle.
 			TXState = 0b00000111; // request state 3: Switched on.
 		} else if (!getPowerHVReady()) {   // full motor stop has been requested
@@ -391,6 +442,7 @@ int8_t getInverterControlWord(const InverterState_t *Inverter) // returns respon
 		} else { // no change, continue to request operation.
 			TXState = 0b00001111;
 		}
+		*/
 		break;
 
 		//	case -1 : //5 Quick Stop Active - Fall through to default to reset state.
