@@ -21,6 +21,18 @@
 bool processBMSSOC(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
 	return true;
 }
+
+
+
+bool processBMS_PRE_Done(const uint8_t CANRxData[8], const uint32_t DataLength, CANData *datahandle){
+	
+	CarState.PRE_Done = true;
+	return true;
+}
+
+CANData BMS_PRE_Done = { &DeviceState.BMS, BMS_PRE_Done_ID, 8, processBMS_PRE_Done, NULL, 0 };
+
+
 void BMSTimeout(uint16_t id);
 
 CANData BMSSOC = { &DeviceState.BMS, BMSSOC_ID, 8, processBMSSOC, BMSTimeout,
@@ -66,7 +78,8 @@ void resetBMS() {
 int initBMS(void) {
 	RegisterResetCommand(resetBMS);
 	resetBMS();
-	RegisterCan2Message(&BMSSOC);
+	//RegisterCan2Message(&BMSSOC);
+	RegisterCan1Message(&BMS_PRE_Done);
 
 	return 0;
 }

@@ -355,8 +355,8 @@ static void debugMotor(const char *tkn2, const char *tkn3, const int32_t value1,
 		UARTwrite("Setting inverters operational.\r\n");
 
 		int16_t pedalreq;
-		float curreq = PedalTorqueRequest(&pedalreq);
-		if (curreq == 0) {
+		
+		if (pedalreq == 0) {
 			vTaskDelay(100);
 			invRequestState(OPERATIONAL);
 			UARTwrite("1.\r\n");
@@ -433,7 +433,7 @@ static void debugMotor(const char *tkn2, const char *tkn3, const int32_t value1,
 		} else {
 			UARTprintf(
 					"APPS request not 0, not enabling test [curreq %dnm, ped pos l%d r%d , brakes r%d f%d].\r\n",
-					curreq, APPS1.data,
+					pedalreq, APPS1.data,
 					APPS1.data, APPS2.data,
 					BrakeFront.data);
 		}

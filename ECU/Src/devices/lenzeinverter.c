@@ -14,7 +14,6 @@
 #include "timerecu.h"
 #include "debug.h"
 #include "can_ids.h"
-#ifdef LENZE
 #include "lenzeinverter.h"
 
 extern volatile InverterState_t InverterState[MOTORCOUNT];
@@ -134,7 +133,7 @@ void InvResetError(volatile InverterState_t *Inverter) {
 	uint8_t msg[8] = { 0 };
 	msg[0] = 0x80;
 
-	CAN2Send(LENZE_RPDO1_ID + Inverter->COBID + (Inverter->MCChannel * 0x200),
+	CAN1Send(LENZE_RPDO1_ID + Inverter->COBID + (Inverter->MCChannel * 0x200),
 			8, msg);
 }
 
@@ -143,7 +142,7 @@ void InvReset(volatile InverterState_t *Inverter) {
 	msg[0] = 0x81;
 	msg[0] = Inverter->COBID;
 
-	CAN2Send(0x0, 2, msg);
+	CAN1Send(0x0, 2, msg);
 }
 
 uint8_t InvSend(volatile InverterState_t *Inverter, bool reset) {
@@ -185,13 +184,13 @@ uint8_t InvSend(volatile InverterState_t *Inverter, bool reset) {
 #endif
 
 	if (Inverter->MCChannel == false) {
-		CAN2Send(Inverter->COBID + LENZE_RPDO5_ID, 8, msgblank); // this should probably be disabled, not needed?
+		CAN1Send(Inverter->COBID + LENZE_RPDO5_ID, 8, msgblank); // this should probably be disabled, not needed?
 
-		CAN2Send(Inverter->COBID + LENZE_RPDO1_ID, 8, msg1);
-		CAN2Send(Inverter->COBID + LENZE_RPDO2_ID, 8, msg2);
+		CAN1Send(Inverter->COBID + LENZE_RPDO1_ID, 8, msg1);
+		CAN1Send(Inverter->COBID + LENZE_RPDO2_ID, 8, msg2);
 	} else {
-		CAN2Send(Inverter->COBID + LENZE_RPDO3_ID, 8, msg1);
-		CAN2Send(Inverter->COBID + LENZE_RPDO4_ID, 8, msg2);
+		CAN1Send(Inverter->COBID + LENZE_RPDO3_ID, 8, msg1);
+		CAN1Send(Inverter->COBID + LENZE_RPDO4_ID, 8, msg2);
 	}
 
 	return 0;
@@ -475,6 +474,13 @@ bool processINVStatus(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 	uint16_t status = CANRxData[0];
 
+	InverterState[inv].rdo_state = status;
+	InverterState[inv].rdo_ctnr++;
+	InverterState[inv].InvState = InternalInverterState(status);;
+
+
+/*
+
 //	uint16_t statusword = getLEint16(&CANRxData[0]);
 	uint32_t latchedStatus1 = getLEint32(&CANRxData[2]);
 	uint16_t latchedStatus2 = getLEint16(&CANRxData[6]);
@@ -540,7 +546,7 @@ bool processINVStatus(const uint8_t CANRxData[8], const uint32_t DataLength,
 				eSetBits);
 
 		return true;
-	} else // bad data.
+	} else // bad data.*/
 	{
 		return true;
 	}
@@ -625,16 +631,6 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 		DebugMsg(str);
 	}
 
-#if 0
-	if (Inverter->SetupState > 1 )
-	{
-		snprintf(str, 60, "Inv %d [%2X %2X %2X %2X state %d] (last %lu) (%lu)",
-				Inverter->Motor, CANRxData[0], CANRxData[1], CANRxData[2], CANRxData[3],
-				Inverter->SetupState,Inverter->SetupLastSeenTime, time);
-		DebugMsg(str);
-	}
-#endif
-
 	// PDO timeout set in lenze software right now.
 	// set SDO's to sync   0x1800-1806  = lenze TPDO 1 through 7
 	if (Inverter->MCChannel == false) {
@@ -649,25 +645,6 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 			Inverter->SetupLastSeenTime = time;
 			InverterState[Inverter->Motor + 1].SetupLastSeenTime = time;
 			break;
-
-		case 2:
-#if 0
-			snprintf(str, 60, "Inv %d state 2: COBID %d from channel %d (%lu)",
-					Inverter->Motor, Inverter->COBID, Inverter->MCChannel, time);
-			DebugMsg(str);
-
-			Inverter->SetupLastSeenTime = time;
-			InverterState[Inverter->Motor+1].SetupLastSeenTime = time;
-			Inverter->SetupState++; // start the setup state machine
-			InvSendSDO(Inverter->COBID, 0x1800, 2, 1);
-			break;
-#endif
-		case 3:
-		case 4:
-		case 5:
-		case 6:
-		case 7:
-		case 8:
 		case 9: {
 			uint8_t RDODone[8] = { 0x60, Inverter->SetupState - 3, 0x18, 0x02 };
 
@@ -684,22 +661,16 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 					|| memcmp(RDODone, CANRxData, 8) == 0) {
 				Inverter->SetupLastSeenTime = time;
 				InverterState[Inverter->Motor + 1].SetupLastSeenTime = time;
-#if 0
-				snprintf(str, 80, "Lenze inverter %d rcv SDO in state %d at (%lu)", Inverter->Motor,  Inverter->SetupState, time );
-				DebugMsg(str);
-#endif
 				if (Inverter->SetupState < 9) {
 					if (InvSendSDO(Inverter->COBID,
 							0x1800 + Inverter->SetupState - 2, 2, 1))
 						; // sets TPDO's to sync mode.
 					Inverter->SetupState++;
 				} else {
-#if 0
-					snprintf(str, 60, "Lenze inverter %d set to sync, setting MC private at (%lu)", Inverter->Motor, gettimer());
-					DebugMsg(str);
-#endif
-					if (InvSendSDO(Inverter->COBID + 31, 0x4004, 1, 1234)) // sets private can.
+					if (InvSendSDO(Inverter->COBID + 31, 0x4004, 1, 1234)){ // sets private can.
 						Inverter->SetupState++;
+						CAN_SendDebug(inverters_received);
+					}
 				}
 				break;
 			}
@@ -753,6 +724,7 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 						100);
 
 				Inverter->SetupState = 0xFF; // Done!
+				CAN_SendDebug(inverter_setup_done);
 				InverterState[Inverter->Motor + 1].SetupState = 0xFF; // set the other inverter as configured too.
 			}
 			break;
@@ -774,9 +746,7 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 }
 
 bool InvStartupCfg(volatile InverterState_t *Inverter) {
-	// forcibly start the setup state machine.
-//	Inverter->SetupState = 1;
-//	InvStartupState( Inverter, (uint8_t[8]){0,0,0,0,0,0,0,0} );
+
 	return true;
 }
 
@@ -801,6 +771,10 @@ bool processAPPCRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 bool processINVRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle) {
 //	uint32_t bitset=(0x1 << datahandle->index);
+	InverterState[datahandle->index].rdo_ctnr++;
+	InverterState[datahandle->index].rdo_time = gettimer();
+
+
 
 	if (InverterState[datahandle->index].SetupState > 0
 			&& InverterState[datahandle->index].SetupState < 0xFE) {
@@ -838,13 +812,7 @@ bool processINVRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 				if (!InverterState[datahandle->index].MCChannel) {
 					InverterState[datahandle->index].SetupTries = 0;
 					//	if ( CanRxData[] )  // 0x1801
-#ifdef DEBUGAPPCSDO
-					char str[80];
-					snprintf(str, 80,
-							"Lenze inverter %d starting APPC setup, waiting at (%lu)",
-							datahandle->index, gettimer());
-					DebugMsg(str);
-#endif
+					//"Lenze inverter starting APPC setup, waiting for APPC",
 					InverterState[datahandle->index].SetupLastSeenTime =
 							gettimer();
 					InverterState[InverterState[datahandle->index].Motor + 1].SetupLastSeenTime =
@@ -901,5 +869,3 @@ bool registerInverterCAN(void) {
 
 	return true;
 }
-
-#endif

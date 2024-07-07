@@ -61,13 +61,19 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	uint16_t latchedStatus2;
 
 	int32_t Speed;
-	uint8_t COBID;
+	uint8_t COBID; // COBID for inverter.
 	bool MCChannel;
 
 	int16_t AmbTemp;
 	int16_t InvVolt;
 	int16_t InvTemp;
 	int16_t MotorTemp;
+
+	uint16_t rdo_ctnr;
+	uint32_t rdo_time;
+	uint16_t rdo_state;
+
+	bool appc_on;
 
 } InverterState_t;  // define external into realmain?
 
@@ -93,7 +99,6 @@ void resetInv( void );
 int initInv( void );
 
 int initNoInv( void );
-int getInvOnlineCount( void );
 
 char * getMotorsEnabledStr( void );
 
