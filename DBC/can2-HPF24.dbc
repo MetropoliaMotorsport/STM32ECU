@@ -161,6 +161,10 @@ BO_ 13 BTN2: 1 AnalogNode1
 BO_ 14 BTN3: 1 AnalogNode1
  SG_ Value : 0|16@1+ (1,0) [0|0] "" Vector__XXX
 
+BO_ 29 PN1_Device_Status: 1 PowerNode1
+
+BO_ 30 PN2_Device_Status: 1 PowerNode2
+
 
 
 

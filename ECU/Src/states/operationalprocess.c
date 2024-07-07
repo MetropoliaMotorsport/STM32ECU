@@ -90,9 +90,11 @@ int Startup(uint32_t OperationLoops) {
 
 	ShutdownCircuitSet( false);
 	SendPwrCMD(Inverters, false); // turn off inverters
-	CarState.MaxTorque = 5;
-	vTaskDelay(10);
-
+	CarState.MaxTorque = 15;
+	vTaskDelay(5);
+	SendPwrCMD(LeftPump, true); 
+	vTaskDelay(5);
+	SendPwrCMD(RightPump, true); 
 	return PreOperationalState;
 }
 

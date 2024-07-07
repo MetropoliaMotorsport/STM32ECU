@@ -88,25 +88,16 @@ int PreOperationState(uint32_t OperationLoops) {
 
 		initVectoring();
 
-		
+		SendPwrCMD(Inverters, true);
+		vTaskDelay(5);
 
-		//   	NMTReset(); //send NMT reset when first enter state to catch any missed boot messages, see if needed or not.
-		// send to individual devices rather than reset everything if needed.
+		SendPwrCMD(RightPump, true);
+		SendPwrCMD(LeftPump, true);
+	
 	}
-
-
 	SendPwrCMD(Inverters, true);
-	vTaskDelay(1);
-
-	SendPwrCMD(RightPump, true);
+	vTaskDelay(2);
 	SendPwrCMD(LeftPump, true);
-
-	{
-		CAN_SendStatus(1, PreOperationalState, preoperationstate);
-
-		// do power request
-
-	}
 /*
 	ReadyToStart = 0;
 	
