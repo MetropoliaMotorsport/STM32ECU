@@ -88,16 +88,16 @@ int PreOperationState(uint32_t OperationLoops) {
 
 		initVectoring();
 
-		SendPwrCMD(Inverters, true);
+		setNodeDevicePower(Inverters, true, 0);
 		vTaskDelay(5);
 
-		SendPwrCMD(RightPump, true);
-		SendPwrCMD(LeftPump, true);
+		setNodeDevicePower(RightPump, true, 0);
+		setNodeDevicePower(LeftPump, true, 0);
 	
 	}
-	SendPwrCMD(Inverters, true);
+	setNodeDevicePower(Inverters, true, 0);
 	vTaskDelay(2);
-	SendPwrCMD(LeftPump, true);
+	setNodeDevicePower(LeftPump, true, 0);
 /*
 	ReadyToStart = 0;
 	
@@ -124,7 +124,7 @@ int PreOperationState(uint32_t OperationLoops) {
 
 	if(CarState.PRE_Done && buz_timer < 58)
 	{		buz_timer++;
-		SendPwrCMD(Buzzer, (buz_timer < 56 ? true : false));		
+		setNodeDevicePower(Buzzer, (buz_timer < 56 ? true : false), 0);		
 	}
 		
 

@@ -21,12 +21,11 @@ extern CANData PowerNodeErr;
 extern CANData PowerNode1; // [BOTS, inertia switch, BSPD.], Telemetry, front power
 extern CANData PowerNode2;
 
-uint32_t getOldestPNodeData( void );
+extern CANData PowerNode1HeartBeat;
+extern CANData PowerNode2HeartBeat;
 
-bool getNodeDevicePower(DevicePower device );
 bool setNodeDevicePower( DevicePower device, bool state, bool reset );
-int getPowerDeviceIndex( DevicePower device );
-int SendPwrCMD(uint8_t device, bool state);
+
 int initPowerNodes( void );
 
 #endif /* POWERNODE_H_ */

@@ -44,8 +44,6 @@ uint8_t PowerErrorQueueStorageArea[PowerErrorQUEUE_LENGTH * PowerErrorITEMSIZE];
 
 QueueHandle_t PowerQueue, PowerErrorQueue;
 
-ShutdownState Shutdown;
-
 bool HVLost;
 
 // task shall take power handling request, and forward them to nodes.
@@ -173,9 +171,6 @@ bool setDevicePower(DevicePower device, bool state) {
 
 }
 
-bool getDevicePower(DevicePower device) {
-	return getNodeDevicePower(device);
-}
 
 // reset a device's power channel
 bool resetDevicePower(DevicePower device) {

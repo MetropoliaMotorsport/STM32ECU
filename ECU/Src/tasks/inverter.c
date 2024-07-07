@@ -258,8 +258,6 @@ void InvTask(void *argument) {
 
 	}
 
-	setDevicePower(Inverters, false);
-
 	TickType_t lastseen[MOTORCOUNT];
 	
 	DebugMsg("Inv Waiting setup");

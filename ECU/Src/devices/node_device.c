@@ -38,11 +38,11 @@ bool processBPPS(const uint8_t CANRxData[8], const uint32_t DataLength, CANData 
 
 		if(datahandle->data > 10){
 
-			SendPwrCMD(Brake, 1);
+			setNodeDevicePower(Brake, 1, 0);
 		}
 		else{
 
-			SendPwrCMD(Brake, 0);
+			setNodeDevicePower(Brake, 0, 0);
 		}
 
 

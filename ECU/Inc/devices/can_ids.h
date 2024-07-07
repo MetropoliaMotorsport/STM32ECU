@@ -30,6 +30,8 @@
 #define BTN2_ID					0x0D
 #define BTN3_ID					0x0E
 
+#define Pnode1_Hearbeat_ID		0x1D
+#define Pnode2_Hearbeat_ID		0x1E
 // IVT IDs
 ////////////////////////////////////////
 #define IVTCmd_ID		    	0x411

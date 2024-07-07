@@ -22,8 +22,6 @@ typedef enum DevicePowertype {
 	LeftPump,
 	RightPump,
 	TSAL
-
-
 } DevicePower;
 
 typedef struct {
@@ -87,7 +85,6 @@ bool CheckIMD( void );
 void ClearHVLost( void );
 bool CheckHVLost( void );
 
-bool getDevicePower( DevicePower device );
 bool setDevicePower( DevicePower device, bool enabled );
 bool resetDevicePower( DevicePower device );
 
