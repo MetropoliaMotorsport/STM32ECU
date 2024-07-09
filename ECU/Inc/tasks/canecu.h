@@ -81,8 +81,6 @@ typedef struct can_msg {
 
 extern QueueHandle_t CanTxQueue;
 
-extern int cancount;
-
 typedef volatile struct CanDataType CANData;
 
 typedef bool (*DataHandler)(const uint8_t CANRxData[8], const uint32_t DataLength, CANData * datahandle );
@@ -96,10 +94,10 @@ typedef volatile struct CanDataType {
 	DataHandler getData;
 	TimeoutHandler doTimeout;
 	volatile uint32_t data;
+	uint8_t  index;
 	uint16_t bitpos;
 	uint16_t length;
 	uint32_t timeout;
-	uint8_t  index;
 	uint32_t time;
 	uint16_t error;
 	uint16_t receiveerr;

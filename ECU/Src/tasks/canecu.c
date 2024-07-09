@@ -27,8 +27,6 @@ FDCAN_HandleTypeDef *hfdcan2p = NULL;
 
 //variables that need to be accessible in ISR's
 
-int cancount;
-
 SemaphoreHandle_t CANBufferUpdating, bus0TXDone, bus1TXDone;
 
 #define CANTXSTACK_SIZE 128*8
@@ -90,6 +88,7 @@ uint8_t canload2;
 
 bool processCan1Message(FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
 bool processCan2Message(FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
+
 void processCanTimeouts(void);
 
 void UART_CANBufferAdd(const can_msg *msg) {

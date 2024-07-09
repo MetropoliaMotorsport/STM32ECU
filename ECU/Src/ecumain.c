@@ -218,7 +218,6 @@ static int HardwareInit(void) {
 	initTimer();
 
 	initCAN();
-	initRTC();
 	initPower();
 	initIMU();
 	initIVT();

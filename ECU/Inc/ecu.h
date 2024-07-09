@@ -225,6 +225,7 @@ typedef struct {
 
 	float pedalreq;
 	float MaxTorque;
+	int32_t MaxSpeed;
 
 } CarStateType;
 

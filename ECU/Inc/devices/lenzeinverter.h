@@ -20,7 +20,8 @@
 #define LENZE_RPDO4_ID				(0x500) //RxPDO4_InverterBSetpoint2_14
 #define LENZE_RPDO5_ID				(0x540) //RxPDO5_DeviceSetpoint_6 //RxPDO5_DeviceSetpoint_14
 
-#define LENZE_TPDO2_ID				(0x1C0)
+#define LENZE_TPDO1_ID				(0x180) //Inverter Device Actual values
+#define LENZE_TPDO2_ID				(0x1C0) 
 #define LENZE_TPDO3_ID				(0x240)
 #define LENZE_TPDO4_ID				(0x280)
 
@@ -46,27 +47,10 @@
 
 #ifdef HPF2023
 
-#ifdef TWOWHEELS
 #define invFL						(2)
 #define invFR						(3)
 #define invRL						(0)
 #define invRR						(1)
-#else
-
-#define invFL						(0)
-#define invFR						(1)
-#define invRL						(2)
-#define invRR						(3)
-#endif
-
-#else
-
-#define invFL						(2)
-#define invFR						(0)
-#define invRL						(3)
-#define invRR						(1)
-
-#endif
 
 #define MAXInverterTorque			(24.6)
 
@@ -75,8 +59,10 @@
 #define SPEEDSCALING				(0x4000)
 #define TORQUESCALING				(10)
 
-
+extern InverterValues_t InverterValues[INVERTERCOUNT];
 extern CANData InverterCANMotorRDO[MOTORCOUNT];
+
+
 
 #endif /* LENZEINVERTER_H_ */
 

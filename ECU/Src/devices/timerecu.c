@@ -24,18 +24,6 @@ uint32_t gettimer(void) {
 	return stTick;
 }
 
-int setRTC(time_t time) {
-	rtctime = time;
-	return 1;
-}
-
-bool isRTCSet(void) {
-	if (rtctime == 0)
-		return true;
-	else
-		return false;
-}
-
 void HAL_IncTick(void) {
 //  timerticks++; // 10khz timer base.
 //  if ( timerticks % 10 == 0)
@@ -75,44 +63,10 @@ void TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	}
 }
 
-char* getCurTimeStr(void) {
-//	static char timestr[9] = "00:00:00";
-//	static time_t lasttime = 0;
-	if (rtctime != 0) {
-//		if (lasttime != rtctime )
-		{
-			return getTimeStr(rtctime);
-		}
-	} else {
-		return getTimeStr(gettimer() / 1000);
-		//sprintf(timestr,"%.7lis", gettimer()/1000);
-	}
-}
-
-char* getTimeStr(time_t time) {
-	static char timestr[9] = "00:00:00";
-
-	if (rtctime != 0) {
-		struct tm curtime;
-		curtime = *localtime(&time);
-		strftime(timestr, sizeof(timestr), "%H:%M:%S", &curtime);
-	} else {
-		sprintf(timestr, "%.7lis", (uint32_t) time);
-	}
-	return timestr;
-}
-
 time_t getTime(void) {
-	if (rtctime != 0) {
-		return rtctime;
-	} else
-		return gettimer() / 1000;
+	return gettimer() / 1000;
 }
 
-int initRTC(void) {
-	rtctime = 0;
-
-}
 
 int initTimer(void) {
 	MX_TIM7_Init();

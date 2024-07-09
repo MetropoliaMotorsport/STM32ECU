@@ -93,6 +93,8 @@ void FanPWMControl( uint8_t leftduty, uint8_t rightduty );
 
 bool soundBuzzer( void );
 
+void CheckDeviceState();
+
 int initPower( void );
 
 extern TaskHandle_t PowerTaskHandle;

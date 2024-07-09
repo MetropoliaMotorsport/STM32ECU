@@ -68,8 +68,6 @@
 #define COBERR_ID				(0x080)
 #define COBNMT_ID				(0x700)
 
-#define COBTPDO1_ID				(0x180)
-
 #define COBSDOS_ID				(0x600)
 
 #define ECU_CAN_ID				(0x020) // send +1

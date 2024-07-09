@@ -15,15 +15,7 @@ uint32_t gettimer(void);
 
 void TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 
-bool isRTCSet( void );
-int setRTC( time_t time );
-
-char * getCurTimeStr( void );
-char * getTimeStr( time_t time );
-
 time_t getTime( void );
-
-int initRTC( void );
 
 int initTimer( void );
 

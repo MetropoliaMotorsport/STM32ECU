@@ -71,6 +71,27 @@ bool CheckHVLost(void) {
 	}
 	return false;
 }
+void Water_Cooling_Ctl(){
+
+}
+
+
+/*
+Function makes sure that devices are in the state they are expected to be in.
+*/
+void CheckDeviceState(){
+	for(int i = 0; i < devicecount; i++) {
+		if (DevicePowerList[i] != None){
+			if (DevicePowerList[i].expectedstate != DevicePowerList[i].actualstate) {
+				setNodeDevicePower(DevicePowerList[i].device, DevicePowerList[i].expectedstate, false);
+				vTaskDelay(1)
+			}
+		}
+	}
+}
+
+
+uint32_t PowerReceived = 0
 
 void PowerTask(void *argument) {
 	xEventGroupSync(xStartupSync, 0, 1, portMAX_DELAY);
@@ -80,8 +101,6 @@ void PowerTask(void *argument) {
 
 	Power_msg msg;
 	Power_Error_msg errormsg;
-
-	char str[MAXERROROUTPUT];
 
 	resetPowerLost();
 	xQueueReset(PowerErrorQueue);
@@ -110,6 +129,17 @@ void PowerTask(void *argument) {
 	bool TSOFFset = true;
 	bool BMSset = false;
 
+	while(1){
+
+		CheckDeviceState();
+
+
+
+
+		xEventGroupSync(xCycleSync, 0, 1, portMAX_DELAY); // wait for main cycle.
+		// after synced, send current state for next cycle. Higher priority task, so should be received first.
+		xTaskNotifyWait( pdFALSE, ULONG_MAX, &PowerReceived, 0);
+	}
 
 
 	vTaskDelete(NULL);

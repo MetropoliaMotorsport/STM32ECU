@@ -68,6 +68,7 @@ typedef struct { // new structure for inverter related data, so that it can be u
 	int16_t InvVolt;
 	int16_t InvTemp;
 	int16_t MotorTemp;
+	int16_t InvPower;
 
 	uint16_t rdo_ctnr;
 	uint32_t rdo_time;

@@ -114,8 +114,6 @@ int OperationalProcess(void) {
 
 	static uint16_t loopoverrun = 0;
 
-	cancount = 0;
-
 	if (NewOperationalState != OperationalState) // state has changed.
 			{
 		LastOperationalState = OperationalState;
