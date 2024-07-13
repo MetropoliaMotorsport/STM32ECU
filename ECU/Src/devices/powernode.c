@@ -80,6 +80,14 @@ bool setNodeDevicePower(DevicePower device, bool state, bool reset) {
 	return false; // return if device was found and request set.
 }
 
+bool setNodeDevicePWM(DevicePower device, uint8_t dutycycle) {
+
+	DevicePowerList[device].dutycycle = dutycycle;
+	uint8_t data[3] = {1, DevicePowerList[device].output, dutycycle};
+	CAN2Send(DevicePowerList[device].nodeid, 3, data);
+	
+	return false; // return if device was found and request set.
+}
 
 int initPowerNodes(void) {
 

@@ -320,6 +320,8 @@ bool processTPDO1(const uint8_t CANRxData[8], const uint32_t DataLength,
 	InverterState[inv].InvVolt = InvInputVoltage;
 	InverterState[inv].MotorPower = InvPower;
 
+	CarState.InvTemp = InvTemperature;
+
 	if (!InverterState[inv].MCChannel) {
 		InverterState[inv + 1].AmbTemp = InvTemperature;
 		InverterState[inv + 1].InvVolt = InvInputVoltage;

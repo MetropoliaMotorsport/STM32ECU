@@ -412,16 +412,7 @@ int8_t getInverterControlWord(const InverterState_t *Inverter) // returns respon
 		else{
 			TXState = 0b00000111;
 		}
-		/*
-		if (getPowerHVReady() && !Inverter->AllowTorque) { // no longer in RTDM mode, but still got HV, so drop to idle.
-			TXState = 0b00000111; // request state 3: Switched on.
-		} else if (!getPowerHVReady()) {   // full motor stop has been requested
-										   // drop back to ready to switch on.
-			TXState = 0b00000110;//0b00000000; // request Disable Voltage., alternately Quick Stop 0b00000010 - test to see if any difference in behaviour.
-		} else { // no change, continue to request operation.
-			TXState = 0b00001111;
-		}
-		*/
+		
 		break;
 
 		//	case -1 : //5 Quick Stop Active - Fall through to default to reset state.

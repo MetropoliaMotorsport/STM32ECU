@@ -85,8 +85,6 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 
 		ShutdownCircuitSet( false);
 
-		ClearHVLost();
-
 		ClearCriticalError();
 
 		CAN_SendTimeBase();

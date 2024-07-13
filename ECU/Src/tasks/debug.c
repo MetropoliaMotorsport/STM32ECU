@@ -201,7 +201,6 @@ static void debugFanPWM(const int tokens, const int val1, const int val2) {
 					val1, val2);
 			UARTwrite(str);
 
-			FanPWMControl(val1, val2);
 		}
 	}
 }
@@ -333,14 +332,10 @@ static void debugMotor(const char *tkn2, const char *tkn3, const int32_t value1,
 		UARTwrite("Setting front power enabled.\r\n");
 
 		ShutdownCircuitSet(true);
-#ifndef HPF2023
-		setDevicePower( Front1, true );
-		setDevicePower( Front2, true );
-		setDevicePower( TSAL, true );
-#endif
+
 		UARTwrite("Power wait.\r\n");
 		vTaskDelay(6000);
-		setDevicePower(Inverters, true);
+
 
 
 		uint32_t AnalogueNodesOnline = getAnalogueNodesOnline();
@@ -704,100 +699,6 @@ static void debugShutdown(const char *tkn2, const char *tkn3) {
 
 		showShutdown("TS OFF", Shutdown.TS_OFF, true);
 	}
-}
-
-static void debugPower(const char *tkn2, const char *tkn3) {
-#if 0
-	DevicePower device = None;
-	bool state = false;
-	bool bmd = false;
-
-	if (strlen(tkn2) == 0) // we need some sub commands, otherwise show help
-			{
-		UARTwrite("Power command: Help\r\n");
-	} else if (streql(tkn2, "status") || streql(tkn2, "state")) {
-		UARTwrite("------------------------\r\n");
-		UARTwrite("Power        Exp Act Err\r\n");
-		UARTwrite("------------------------\r\n");
-
-		uint8_t listsize = getDevicePowerListSize();
-
-		} else if (streql(tkn2, "all")) {
-		if (streql(tkn3, "reset")) {
-			UARTwrite("Power error reset for all\r\n");
-
-			/*
-			for (int i = 1; i <= BRAKE; i++)
-				resetDevicePower(i);
-			*/
-
-		} else {
-			if (checkOn(tkn3)) {
-				state = true;
-			} else if (checkOff(tkn3)) {
-				state = false;
-			} else {
-				bmd = true;
-			}
-
-			if (!bmd) {
-				UARTwrite("Manual power request for all power set ");
-				UARTwrite(state ? "on" : "off");
-				UARTwrite("\r\n");
-
-				/*
-				for (int i = 1; i <= AccuFan; i++)
-					setDevicePower(i, state);
-				*/
-			} else {
-				bmd = true;
-			}
-		}
-	} else {
-		if (streql(tkn2, "none"))
-			device = None;
-		else if (streql(tkn2, "buzzer"))
-			device = Buzzer;
-		else if (streql(tkn2, "leftpump"))
-			device = LeftPump;
-		else if (streql(tkn2, "rightpump"))
-			device = RightPump;
-		else if (streql(tkn2, "tsal"))
-			device = TSAL;
-		else if (streql(tkn2, "brake"))
-			device = Brake;
-
-		if (streql(tkn3, "reset")) {
-			UARTwrite("Power error reset for ");
-			UARTwrite(getDevicePowerNameLong(device));
-			UARTwrite("\r\n");
-			resetDevicePower(device);
-		} else {
-			if (checkOn(tkn3)) {
-				state = true;
-			} else if (checkOff(tkn3)) {
-				state = false;
-			} else {
-				device = None;
-			}
-
-			if (device != None) {
-				UARTwrite("Manual power request for ");
-				UARTwrite(getDevicePowerNameLong(device));
-				UARTwrite(" set ");
-				UARTwrite(state ? "on" : "off");
-				UARTwrite("\r\n");
-				setDevicePower(device, state);
-			} else {
-				bmd = true;
-			}
-		}
-	}
-
-	if (bmd) {
-		UARTwrite("Invalid power request given: Help\r\n");
-	}
-#endif
 }
 
 void debugCurrent(const char *tkn2) {
@@ -1195,8 +1096,6 @@ static void DebugTask(void *pvParameters) {
 					debugShutdown(tkn2, tkn3);
 				} else if (streql(tkn1, "fanpwm")) {
 					debugFanPWM(tokens, val1, val2);
-				} else if (streql(tkn1, "power")) {
-					debugPower(tkn2, tkn3);
 				} else if (streql(tkn1, "current")) {
 					debugCurrent(tkn2);
 				} else if (streql(tkn1, "eeprom")) {

@@ -227,6 +227,8 @@ typedef struct {
 	float MaxTorque;
 	int32_t MaxSpeed;
 
+	uint16_t InvTemp;
+
 } CarStateType;
 
 // How frequently to send status messages in loops

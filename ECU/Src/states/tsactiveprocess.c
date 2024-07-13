@@ -33,7 +33,6 @@ int TSActiveProcess(uint32_t OperationLoops) {
 
 	if (OperationLoops == 0) // reset state on entering/rentering.
 			{
-		CheckHVLost();
 		DebugMsg("Entering TS Active State");
 		CAN_SendDebug(ETSAS_ID);
 

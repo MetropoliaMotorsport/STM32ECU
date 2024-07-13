@@ -27,8 +27,6 @@ bool checkPowerState(void) {
 
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp) {
 	timeOutput(LED2, 1000);
-	if (!powerlost)
-		PowerLogError(0, 0xFFFF);
 	powerlost = true;
 }
 

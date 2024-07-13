@@ -450,7 +450,6 @@ bool DoMenu(uint16_t input) {
 		uint8_t curfanmax = curfanmaxcur;
 		if (curfanmax != curfanmaxcur) { // value changed.
 			getEEPROMBlock(0)->FanMax = floor(curfanmax * 2.55);
-			FanPWMControl(getEEPROMBlock(0)->FanMax, getEEPROMBlock(0)->FanMax);
 		}
 
 		snprintf(MenuLines[1 + MENU_CALIB], sizeof(MenuLines[0]),
