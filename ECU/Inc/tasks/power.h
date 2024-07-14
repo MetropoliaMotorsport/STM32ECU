@@ -37,6 +37,18 @@ typedef struct Power_Error_msg {
 	uint32_t	error;
 } Power_Error_msg;
 
+typedef struct Power_msg {
+	DevicePowerState cmd;
+	union {
+	DevicePower power;
+	uint8_t PWMLeft;
+	};
+	union {
+	bool    enabled;
+	uint8_t PWMRight;
+	};
+} Power_msg;
+
 // shutdown circuit commands
 void ShutdownCircuitSet( bool state );
 int ShutdownCircuitState( void );

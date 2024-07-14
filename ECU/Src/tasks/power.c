@@ -24,6 +24,7 @@
 TaskHandle_t PowerTaskHandle = NULL;
 
 #define POWERSTACK_SIZE 128*6
+#define PowerITEMSIZE		sizeof( Power_msg )
 #define POWERTASKNAME  "PowerTask"
 StaticTask_t xPOWERTaskBuffer;
 StackType_t xPOWERStack[POWERSTACK_SIZE];
@@ -58,11 +59,11 @@ uint32_t curpowernodesOnline = 0;
 Function makes sure that devices are in the state they are expected to be in.
 */
 void CheckDeviceState(){
-	for(int i = 0; i < devicecount; i++) {
-		if (DevicePowerList[i] != None){
+	for(int i = 0; i < DEVICE_COUNT; i++) {
+		if (&DevicePowerList[i] != NULL){
 			if (DevicePowerList[i].expectedstate != DevicePowerList[i].actualstate) {
 				setNodeDevicePower(DevicePowerList[i].device, DevicePowerList[i].expectedstate, false);
-				vTaskDelay(1)
+				vTaskDelay(1);
 			}
 		}
 	}
@@ -83,7 +84,7 @@ void temp_ctl(){
 }
 	
 
-uint32_t PowerReceived = 0
+uint32_t PowerReceived = 0;
 
 void PowerTask(void *argument) {
 	xEventGroupSync(xStartupSync, 0, 1, portMAX_DELAY);
@@ -152,7 +153,7 @@ bool CheckBMS(void) // returns true if shutdown circuit other than ECU is closed
 
 bool CheckTSOff(void) // returns true if shutdown circuit other than ECU is closed
 {
-	return Shutdown.TS_OFF;
+	//return Shutdown.TS_OFF;
 }
 
 bool CheckIMD(void) // returns true if shutdown circuit other than ECU is closed

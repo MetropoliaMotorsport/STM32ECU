@@ -22,19 +22,6 @@
 #define MAXFANCURRENT		20
 #define MAXPUMPCURRENT		20
 
-typedef struct devicepowerreqstruct {
-	DevicePower device; //
-	uint8_t nodeid;
-	uint8_t output; // which bit of enable request is this device on
-	bool pwm;
-	bool expectedstate; // what state are we requesting.
-	bool waiting;
-	bool actualstate;
-	uint8_t dutycycle;
-} devicepowerreq;
-
-static uint32_t devicecount = 9; //length of DevicePowerList
-
 // TODO this list should be sanity checked for duplicates at tune time.
 //Need to be added into araraay accorfing to the device number. Kinda sucks, so needs to be fixed.
 devicepowerreq DevicePowerList[] = {
@@ -53,8 +40,8 @@ bool processPNodeHeartBeat(const uint8_t CANRxData[8], const uint32_t DataLength
 
 			int8_t Pnode = datahandle->id == PNode1_ID ? 29 : 30; 
 	
-			for(int i = 0; i < devicecount; i++) {
-				if (DevicePowerList[i] != None && DevicePowerList[i].nodeid == Pnode){
+			for(int i = 0; i < DEVICE_COUNT; i++) {
+				if (&DevicePowerList[i] != NULL && DevicePowerList[i].nodeid == Pnode){
 						
 					DevicePowerList[i].actualstate = CANRxData[0] & (1 << DevicePowerList[i].output);
 				}

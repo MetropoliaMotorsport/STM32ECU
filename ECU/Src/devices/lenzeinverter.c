@@ -37,8 +37,7 @@ bool processAPPCRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle);
 bool processINVRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle);
-bool processINVTPDO1(const uint8_t CANRxData[8], const uint32_t DataLength,
-		CANData *datahandle);
+
 
 
 
@@ -125,15 +124,6 @@ CANData InverterCANAPPCRDO[INVERTERCOUNT] = { // torque
 						processAPPCRDO, NULL, 0, 2 }
 #endif
 		};
-
-CANData InverterCANMotorTPDO1[INVERTERCOUNT] = { // torque
-		{ NULL, Inverter1_NodeID + LENZE_TPDO1_ID, 8, processINVTPDO1, NULL, 0,
-				0 },
-#if INVERTERCOUNT > 1
-		{ NULL, Inverter2_NodeID + LENZE_TPDO1_ID, 8, processINVTPDO1,
-		NULL, 0, 2 }};
-#endif
-
 
 // two per MC
 void InvResetError(volatile InverterState_t *Inverter) {
@@ -314,11 +304,11 @@ bool processTPDO1(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 	int16_t InvInputVoltage = getLEint16(&CANRxData[0]) / 16;
 	int16_t InvTemperature = getLEint16(&CANRxData[2]) / 16;
-	int16_t InvPower = getLEint16(&CANRxData[4]) / * 0.016;
+	int16_t InvPower = getLEint16(&CANRxData[4]) * 0.016;
 
 	InverterState[inv].AmbTemp = InvTemperature;
 	InverterState[inv].InvVolt = InvInputVoltage;
-	InverterState[inv].MotorPower = InvPower;
+	InverterState[inv].InvPower = InvPower;
 
 	CarState.InvTemp = InvTemperature;
 
@@ -546,16 +536,6 @@ bool processTPDO4(const uint8_t CANRxData[8], const uint32_t DataLength,
 	}
 
 	return true;
-
-}
-
-bool processINVTPDO1(const uint8_t CANRxData[8], const uint32_t DataLength,
-		CANData *datahandle){
-	int8_t inv = datahandle->index;
-
-	InverterValues[inv].Dc_Link_V = (float)(CANRxData[0] + (CANRxData[1] << 8)) * 0.0625;
-	InverterValues[inv].Motor_Temp = (float)(CANRxData[2] + (CANRxData[3] << 8)) * 0.0625;
-	InverterValues[inv].Power_Module_Temp = (float)(CANRxData[4] + (CANRxData[5] << 8)) * 0.016;
 
 }
 
@@ -798,8 +778,6 @@ bool registerInverterCAN(void) {
 	RegisterCan1Message(&InverterCANNMT[0]);
 	RegisterCan1Message(&InverterCANAPPCRDO[0]);
 	RegisterCan1Message(&InverterCANAPPCStatus[0]);
-
-	RegisterCan1Message(&InverterCANMotorTPDO1[0]);
 
 #if MOTORCOUNT > 2
 	RegisterCan1Message(&InverterCANNMT[1]);

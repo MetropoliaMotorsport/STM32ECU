@@ -151,12 +151,6 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 
 		vectoradjust adj = { 0 };
 		speedadjust spd = { 0 };
-#ifdef REQUIRETS
-		if ( CheckTSOff() || Shutdown.AIRp )
-		{
-			CarState.Torque_Req = 0;
-		}
-#endif
 
 		if (CarState.AllowRegen && CarState.LimpActive == 0) // only check for regen if alowed and not in limp.
 				{

@@ -677,27 +677,6 @@ static void debugShutdown(const char *tkn2, const char *tkn3) {
 		ShutdownCircuitSet(false);
 	} else {
 		UARTwrite("Current state of shutdown switches:\r\n");
-
-		bool last = true;
-		last = showShutdown("BSPD Before", Shutdown.BSPDBefore, true);
-		last = showShutdown("BSPD After", Shutdown.BSPDAfter, true);
-		last = showShutdown("BOTS", Shutdown.BOTS, true);
-		last = showShutdown("Inertia", Shutdown.InertiaSwitch, true);
-
-		last = showShutdown("ECU", ShutdownCircuitState(), true);
-
-		last = showShutdown("Cockpit", Shutdown.CockpitButton, last);
-		last = showShutdown("Right", Shutdown.RightButton, last);
-		last = showShutdown("Left", Shutdown.LeftButton, last);
-
-		showShutdown("BMS", Shutdown.BMS, true);
-		showShutdown("IMD", Shutdown.IMD, true);
-
-		showShutdown("AIRm", Shutdown.AIRm, true);
-		showShutdown("AIRp", Shutdown.AIRp, true);
-		showShutdown("Pre", Shutdown.PRE, true);
-
-		showShutdown("TS OFF", Shutdown.TS_OFF, true);
 	}
 }
 

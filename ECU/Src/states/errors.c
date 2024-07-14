@@ -111,10 +111,6 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 		CAN_SendErrors();
 	}
 
-	if (Shutdown.BMSReason != 0) {
-		char statusstr[32];
-		sprintf(statusstr, "ERROR State BMS %d", Shutdown.BMSReason);
-	}
 
 	int allowreset = 0; // allow reset if this is still 0 after checks.
 

@@ -198,10 +198,6 @@ void OutputTask(void *argument) {
 
 	setOutputNOW(TSOFFLED, On);
 
-	if (!CheckTSOff()) {
-		setOutputNOW(TSOFFLED, Off);
-	}
-
 	for (int i = 0; i < OUTPUTCount; i++) {
 		updateOutput(i);
 	}

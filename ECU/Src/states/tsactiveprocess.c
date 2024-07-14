@@ -83,10 +83,7 @@ int TSActiveProcess(uint32_t OperationLoops) {
 			prechargedone = 1;
 			invRequestState(OPERATIONAL);
 		} else {
-			DebugPrintf(
-					"TS Activation failure at %lu invV:%d Shutdown.Pre:%d, prechargetimer:%d",
-					gettimer(), CarState.VoltageINV, Shutdown.PRE,
-					prechargetimer); // TODO make CAN message.
+
 			prechargedone = 0;
 			return IdleState;
 		}
@@ -100,9 +97,6 @@ int TSActiveProcess(uint32_t OperationLoops) {
 	}
 
 	if (prechargedone && CarState.VoltageINV <= TSACTIVEV) {
-		DebugPrintf(	
-				"TS failure at %lu invV:%d Shutdown.Pre:%d, prechargetimer:%d",	// TODO make CAN message.
-				gettimer(), CarState.VoltageINV, Shutdown.PRE, prechargetimer);
 		prechargedone = 0;
 		return IdleState;
 	}
