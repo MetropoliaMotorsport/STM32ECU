@@ -70,7 +70,7 @@ bool setNodeDevicePower(DevicePower device, bool state, bool reset) {
 bool setNodeDevicePWM(DevicePower device, uint8_t dutycycle) {
 
 	DevicePowerList[device].dutycycle = dutycycle;
-	uint8_t data[3] = {1, DevicePowerList[device].output, dutycycle};
+	uint8_t data[3] = {1, DevicePowerList[device].pwm - 1, dutycycle};
 	CAN2Send(DevicePowerList[device].nodeid, 3, data);
 	
 	return false; // return if device was found and request set.

@@ -75,14 +75,24 @@ void temp_ctl(){
 
 	if (CarState.InvTemp < GoalTemp) 
 	{
-		SetPWM = 15;
+		SetPWM = 10;
+
+		setNodeDevicePWM(SideFans, SetPWM);
+		setNodeDevicePWM(RightPump, SetPWM * 3 );
+		setNodeDevicePWM(LeftPump, SetPWM * 3) ;
 	}
 	else
 	{
 		SetPWM = (CarState.InvTemp - GoalTemp) * 5;
 		SetPWM = SetPWM > 100 ? 100 : SetPWM;
+
+		setNodeDevicePWM(SideFans, SetPWM);
+		
+		SetPWM = SetPWM + 15 > 100 ? 100 : SetPWM;
+		setNodeDevicePWM(RightPump, SetPWM);
+		setNodeDevicePWM(LeftPump, SetPWM) ;
 	}
-	setNodeDevicePWM(SideFans, SetPWM);
+	
 }
 	
 
