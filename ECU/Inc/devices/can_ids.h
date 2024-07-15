@@ -112,5 +112,6 @@
 #define inverter_cmd_rd_to_switch_on (0x0C2) //"Inverter command read to switch on" 
 #define inverter_cmd_sw_on      (0x0C3) //"Inverter command switch on"
 #define inverter_cmd_en_op      (0x0C4) //"Inverter command enable operation"
+#define Too_Long_Loop           (0x0C5) //"Too long loop"
 ////////////////////////////////////////
 #endif

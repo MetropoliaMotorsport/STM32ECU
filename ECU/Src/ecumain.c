@@ -152,7 +152,9 @@ void MainTask(void *argument) {
 		CAN_NMTSyncRequest();
 
 		if (xLastWakeTime - startloop > CYCLETIME)
-			DebugMsg("Long process loop!");
+			CAN_SendDebug(Too_Long_Loop);
+			//DebugMsg("Long process loop!");
+			
 	}
 	// shouldn't get here, but terminate thread gracefully if do somehow.
 	vTaskDelete(NULL);

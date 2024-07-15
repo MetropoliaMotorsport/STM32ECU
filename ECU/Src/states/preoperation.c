@@ -122,11 +122,13 @@ int PreOperationState(uint32_t OperationLoops) {
 	
 	PedalTorqueRequest(NULL);
 
+
 	if(CarState.PRE_Done && buz_timer < 58)
 	{		buz_timer++;
 		setNodeDevicePower(Buzzer, (buz_timer < 56 ? true : false), 0);		
 	}
-		
+
+	//soundBuzzer();
 
 	return PreOperationalState; // nothing caused entry to a different state, continue in current state.
 }

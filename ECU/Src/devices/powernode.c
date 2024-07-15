@@ -26,14 +26,14 @@
 //Need to be added into araraay accorfing to the device number. Kinda sucks, so needs to be fixed.
 devicepowerreq DevicePowerList[] = {
 		{None},
-		{Buzzer, PNode2_ID, OUT0_2 },
+		{Buzzer, PNode2_ID, OUT0_2, },
 		{Inverters, PNode2_ID, OUT2_1 },
 		{Brake, PNode2_ID, OUT3_1},
+		{SideFans, PNode2_ID, OUT1_2, 2},//////////////TODO put right output value
 		{None},
-		{None},
-		{LeftPump, PNode2_ID, OUT2_2},
-		{RightPump, PNode2_ID, OUT1_2},
-		{ None } };
+		{LeftPump, PNode2_ID, OUT2_2, 1},
+		{RightPump, PNode2_ID, OUT1_2, 1},
+		{None} };
 
 bool processPNodeHeartBeat(const uint8_t CANRxData[8], const uint32_t DataLength,
 		 CANData *datahandle) {

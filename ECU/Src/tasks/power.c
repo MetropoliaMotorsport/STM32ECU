@@ -71,16 +71,18 @@ void CheckDeviceState(){
 
 void temp_ctl(){
 	uint16_t GoalTemp = 30;
+	uint8_t SetPWM = 0;
+
 	if (CarState.InvTemp < GoalTemp) 
 	{
-		uint8_t SetPWM = 0;
+		SetPWM = 15;
 	}
 	else
 	{
-		uint8_t SetPWM = (CarState.InvTemp - GoalTemp) * 5;
+		SetPWM = (CarState.InvTemp - GoalTemp) * 5;
 		SetPWM = SetPWM > 100 ? 100 : SetPWM;
 	}
-	//setNodeDevicePWM(adasdasd);
+	setNodeDevicePWM(SideFans, SetPWM);
 }
 	
 
@@ -124,7 +126,7 @@ void PowerTask(void *argument) {
 
 		CheckDeviceState();
 
-
+		temp_ctl();
 
 
 		xEventGroupSync(xCycleSync, 0, 1, portMAX_DELAY); // wait for main cycle.

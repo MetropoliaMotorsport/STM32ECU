@@ -19,7 +19,7 @@ typedef struct devicepowerreqstruct {
 	DevicePower device; //
 	uint8_t nodeid;
 	uint8_t output; // which bit of enable request is this device on
-	bool pwm;
+	uint8_t pwm;
 	bool expectedstate; // what state are we requesting.
 	bool waiting;
 	bool actualstate;
@@ -38,6 +38,7 @@ extern CANData PowerNode2HeartBeat;
 
 extern devicepowerreq DevicePowerList[];
 bool setNodeDevicePower( DevicePower device, bool state, bool reset );
+bool setNodeDevicePWM(DevicePower device, uint8_t dutycycle);
 
 int initPowerNodes( void );
 

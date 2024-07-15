@@ -17,11 +17,9 @@ typedef enum DevicePowertype {
 	Buzzer,
 	Inverters,
 	Brake,
-	RearFans,
 	SideFans,
 	LeftPump,
-	RightPump,
-	TSAL
+	RightPump
 } DevicePower;
 typedef enum DevicePowerStatetype {
 	DirectPowerCmd,

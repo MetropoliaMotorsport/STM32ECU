@@ -282,17 +282,31 @@ void InvTask(void *argument) {
 					
 					CAN1Send(LENZE_RPDO5_ID + 0xE, 8, msg);
 
-					InverterState[i].InvCommand = getInverterControlWord(&InverterState[i]);
+					msg[0] = getInverterControlWord(&InverterState[i]);
 
 				if(InverterState[i].InvState == OPERATIONAL && CarState.PRE_Done)
-					{						
-						InverterState[i].Torque_Req = CarState.pedalreq;
+					{					
+
+						int32_t vel = 20000 * SPEEDSCALING;
+						int16_t torque = CarState.pedalreq * TORQUESCALING * (CarState.MaxTorque / MAXInverterTorque);
+
+						storeLEint32(vel, &msg[2]);
+						storeLEint16(torque, &msg[6]);
+
+						storeLEint16(620*16, &msg2[0]); //max DC voltage
+						storeLEint16(400*16, &msg2[2]); // min DC voltage.
+						storeLEint16(20*16, &msg2[4]); // max power
+						storeLEint16(0, &msg2[6]); // max regeneration
+											
 					}
-					else{
-						InverterState[i].Torque_Req = 0;
-					}
-					
-				InvSend(&InverterState[i], false);
+
+					CAN1Send(LENZE_RPDO3_ID + InverterState[i].COBID, 8, msg);
+					CAN1Send(LENZE_RPDO1_ID + InverterState[i].COBID, 8, msg);
+
+
+					CAN1Send(LENZE_RPDO4_ID + InverterState[i].COBID, 8, msg2);
+					CAN1Send(LENZE_RPDO2_ID + InverterState[i].COBID, 8, msg2);
+
 			}
 
 			if((gettimer() - InverterState[i].rdo_time > 2000) && InverterState[i].appc_on && InverterState[i].rdo_ctnr != 0){
