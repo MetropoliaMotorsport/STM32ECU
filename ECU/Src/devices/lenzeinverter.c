@@ -783,7 +783,7 @@ bool registerInverterCAN(void) {
 	RegisterCan1Message(&InverterCANNMT[1]);
 	RegisterCan1Message(&InverterCANAPPCRDO[1]);
 	RegisterCan1Message(&InverterCANAPPCStatus[1]);
-	RegisterCan1Message(&InverterCANMotorTPDO1[1]);
+	//RegisterCan1Message(&InverterCANMotorTPDO1[1]);
 #endif
 
 	return true;

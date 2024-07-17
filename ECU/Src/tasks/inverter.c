@@ -300,13 +300,13 @@ void InvTask(void *argument) {
 											
 					}
 
+				if(!InverterState[i].MCChannel){
 					CAN1Send(LENZE_RPDO3_ID + InverterState[i].COBID, 8, msg);
 					CAN1Send(LENZE_RPDO1_ID + InverterState[i].COBID, 8, msg);
-
-
+				}else{
 					CAN1Send(LENZE_RPDO4_ID + InverterState[i].COBID, 8, msg2);
 					CAN1Send(LENZE_RPDO2_ID + InverterState[i].COBID, 8, msg2);
-
+				}
 			}
 
 			if((gettimer() - InverterState[i].rdo_time > 2000) && InverterState[i].appc_on && InverterState[i].rdo_ctnr != 0){
