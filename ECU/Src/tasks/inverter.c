@@ -280,7 +280,7 @@ void InvTask(void *argument) {
 					uint8_t msg[8] = { 0 };
 					uint8_t msg2[8] = {0};
 					
-					CAN1Send(LENZE_RPDO5_ID + 0xE, 8, msg);
+					CAN1Send(LENZE_RPDO5_ID +  InverterState[i].COBID, 8, msg);
 
 					msg[0] = getInverterControlWord(&InverterState[i]);
 
@@ -312,7 +312,7 @@ void InvTask(void *argument) {
 			if((gettimer() - InverterState[i].rdo_time > 2000) && InverterState[i].appc_on && InverterState[i].rdo_ctnr != 0){
 				InverterState[i].appc_on = false;
 				CAN_SendDebug(inverters_received);
-				CANSendSDO(bus0, 0xE + 31, 0x4004, 1, 1234);
+				CANSendSDO(bus0, InverterState[i].COBID + 31, 0x4004, 1, 1234);
 			}
 		}
 			vTaskDelay(1);
