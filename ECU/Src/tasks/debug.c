@@ -638,7 +638,6 @@ static bool showShutdown(char *str, bool state, bool prev) {
 }
 
 static void debugShutdown(const char *tkn2, const char *tkn3) {
-	uint8_t shutdownstate = 0;
 
 	if (streql(tkn2, "help")) {
 		UARTprintf(

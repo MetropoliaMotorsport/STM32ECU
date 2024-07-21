@@ -90,7 +90,6 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 		sprintf(str, "Errorstate: %.4X", 0);
 		// send cause of error state.
 
-		ConfigReset();
 		blinkOutput(TSLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
 		blinkOutput(RTDMLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
 		errorstatetime = gettimer();

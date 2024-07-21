@@ -113,7 +113,6 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 
 	}
 
-#ifdef SETDRIVEMODEINIDLE
 	float lastreq = CarState.Torque_Req;
 
 	int16_t pedalreq;
