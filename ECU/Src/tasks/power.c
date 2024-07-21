@@ -95,7 +95,6 @@ void temp_ctl(){
 	
 }
 	
-
 uint32_t PowerReceived = 0;
 
 void PowerTask(void *argument) {

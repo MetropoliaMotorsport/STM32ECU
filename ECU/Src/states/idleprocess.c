@@ -82,26 +82,7 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 	uint32_t received = OperationalReceive();
 
 	// check what not received here, only error for inverters
-/*
-	if (received != 0) // not all expected data received in window.
-			{
-		DebugMsg("Errorplace 0x9A not received data");
-		CAN_SendErrorStatus(1, OperationalState, received);
-		Errors.ErrorPlace = 0x9A;
-		Errors.OperationalReceiveError = received;
-		Errors.State = OperationalState;
-		return OperationalErrorState;
-	}
-
-	if (CheckCriticalError()) {
-		DebugMsg("Errorplace 0xCA Critical error.");
-		CAN_SendDebug(CRT_ID);
-		Errors.ErrorPlace = 0xCA;
-		Errors.ErrorReason = ReceivedCriticalError
-				| (CheckCriticalError() << 8);
-		return OperationalErrorState;
-	}
-*/
+	
 	// at this state, everything is ready to be powered up.
 
 	int invcount = 0;

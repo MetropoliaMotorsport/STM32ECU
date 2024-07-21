@@ -41,7 +41,6 @@ CANData BMSSOC = { &DeviceState.BMS, BMSSOC_ID, 8, processBMSSOC, BMSTimeout,
 void BMSTimeout(uint16_t id) {
 	//setOutputNOW(BMSLED, On);
 	DebugMsg("BMS Timeout");
-	CAN_SendErrorStatus(199, 0, 0);
 	if (DeviceState.BMS != OFFLINE) {
 		CarState.VoltageBMS = 0;
 		SetCriticalError(CRITERRBMSTIMEOUT);

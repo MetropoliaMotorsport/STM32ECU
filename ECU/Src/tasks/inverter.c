@@ -256,7 +256,6 @@ void InvTask(void *argument) {
 	TickType_t lastseen[MOTORCOUNT];
 	
 	DebugMsg("Inv Waiting setup");
-	CAN_SendErrorStatus(8, 0, 0);
 
 	uint32_t InvReceived = 0;
 

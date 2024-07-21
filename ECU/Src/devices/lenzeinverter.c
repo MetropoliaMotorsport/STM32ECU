@@ -45,8 +45,8 @@ bool getInvSDOSet(void);
 
 //		{ TimeoutFunction, ID, DLC, receivefunction, dotimeout, timeout, index.
 CANData InverterCANErr[MOTORCOUNT] = { { NULL, Inverter1_NodeID + COBERR_ID, 8,
-		processINVError, NULL, 0, 0 }, { NULL, Inverter1_NodeID + COBERR_ID
-		+ LENZE_MOTORB_OFFSET, 8, processINVError, NULL, 0, 1 },
+		processINVError, 0, 0 }, { NULL, Inverter1_NodeID + COBERR_ID
+		+ LENZE_MOTORB_OFFSET, 8, processINVError, 0, 1 },
 #if MOTORCOUNT > 2
 		{ NULL, Inverter2_NodeID + COBERR_ID, 8, processINVError, NULL, 0, 2 },
 		{ NULL, Inverter2_NodeID + COBERR_ID + LENZE_MOTORB_OFFSET, 8,
@@ -657,7 +657,6 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 
 		case 0xFE: // error state.
 		default:
-			CAN_SendErrorStatus(9, Inverter->Motor, 10);
 			//Inverter->SetupState = 0;
 			//InverterState[Inverter->Motor+1].SetupState = 0;
 		}

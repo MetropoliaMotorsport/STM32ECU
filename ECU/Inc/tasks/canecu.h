@@ -84,55 +84,37 @@ extern QueueHandle_t CanTxQueue;
 typedef volatile struct CanDataType CANData;
 
 typedef bool (*DataHandler)(const uint8_t CANRxData[8], const uint32_t DataLength, CANData * datahandle );
-typedef void (*TimeoutHandler)( uint16_t id );
-
-
 typedef volatile struct CanDataType {
 	volatile uint8_t *devicestate;
 	uint16_t id;
 	uint8_t dlcsize;
 	DataHandler getData;
-	TimeoutHandler doTimeout;
 	volatile uint32_t data;
 	uint8_t  index;
-	uint16_t bitpos;
-	uint16_t length;
-	uint32_t timeout;
 	uint32_t time;
 	uint16_t error;
 	uint16_t receiveerr;
-	bool	 errorsent;
-
+	TimerHandle_t timeout;
 } CANData;
 
 uint8_t CAN1Send( uint16_t id, uint8_t dlc, const uint8_t *pTxData );
 uint8_t CAN2Send( uint16_t id, uint8_t dlc, const uint8_t *pTxData );
 uint8_t CANSendSDO( enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub, uint32_t data);
-char CAN_NMT( uint8_t, uint8_t );
 
-char CAN_SendErrorStatus( char state, char substate, uint32_t errorcode );
 char CAN_SendStatus( char state, char substate, uint32_t errorcode );
 
 char CAN_NMTSyncRequest( void );
 
 char CAN_Send4vals( uint16_t id, uint16_t val1, uint16_t val2, uint16_t val3, uint16_t val4 );
 
-char CAN_SendErrors( void );
 char CAN_SendDebug(uint16_t id);
-
-char reTransmitError(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength );
-char reTransmitOnCan1(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength );
-
-char CAN_SendTimeBase( void );
 
 int CheckCanError( void );
 
 void processCANData(CANData * datahandle, uint8_t * CANRxData, uint32_t DataLength );
-int receivedCANData( CANData * datahandle );
 
 int RegisterCan1Message(CANData * CanMessage);
 int RegisterCan2Message(CANData * CanMessage);
-
 // initialisation
 
 int initCAN( void );

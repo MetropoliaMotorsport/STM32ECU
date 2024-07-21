@@ -133,7 +133,6 @@ int OperationalProcess(void) {
 
 	// check loop timing.
 	if (lastlooplength > CYCLETIME * 1.1) {
-		CAN_SendErrorStatus(1, OperationalStateOverrun, lastlooplength);
 
 		loopoverrun++; // bms
 

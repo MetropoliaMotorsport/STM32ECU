@@ -137,8 +137,6 @@ extern CANData IMUVelAcc;  //0x00000138
 extern CANData IMUGPS;	   //0x00000177
 extern CANData IMUAuto;    //0x00000220
 
-int receiveIMU( void );
-
 int returnCounter( void );
 
 int initIMU( void );

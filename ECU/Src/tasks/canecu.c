@@ -83,51 +83,8 @@ static uint32_t CANTxLastsend;
 uint32_t rxcount1 = 0;
 uint32_t rxcount2 = 0;
 
-uint8_t canload1;
-uint8_t canload2;
-
 bool processCan1Message(FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
 bool processCan2Message(FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
-
-void processCanTimeouts(void);
-
-void UART_CANBufferAdd(const can_msg *msg) {
-	xSemaphoreTake(CANBufferUpdating, portMAX_DELAY);
-
-	// r1xxxDbbbbbbbb
-
-	if (CANTxBuffer - CurCANTxBuffer < 1000) {
-		CANTxBuffer += snprintf((char*) CANTxBuffer, 15, "t%1d%03X%1lu",
-				msg->bus, msg->id, msg->dlc);
-		memcpy(CANTxBuffer, msg->data, msg->dlc);
-		CANTxBuffer += msg->dlc;
-		CANTxBuffer[0] = '\n';
-		CANTxBuffer += 1;
-	}
-
-	xSemaphoreGive(CANBufferUpdating);
-//	UART_Transmit(UART2, canstr, len+msg.dlc+1);
-}
-
-void UART_CANBufferTransmit(void) {
-	if (CANTxBuffer - CurCANTxBuffer > 1000 || gettimer() != CANTxLastsend) // buffer is nearly full or 1ms has ticked over
-			{
-		CANTxLastsend = gettimer();
-
-		if (CANTxBuffer - CurCANTxBuffer > 0) {
-			UART_Transmit(UART1, CurCANTxBuffer, CANTxBuffer - CurCANTxBuffer);
-
-			if (CurCANTxBuffer == CANTxBuffer1) {
-				CANTxBuffer = CANTxBuffer2;
-				CurCANTxBuffer = CANTxBuffer2;
-			} else {
-				CANTxBuffer = CANTxBuffer1;
-				CurCANTxBuffer = CANTxBuffer1;
-			}
-		}
-
-	}
-}
 
 void CANTxTask(void *argument) {
 
@@ -273,8 +230,6 @@ void CANRxTask(void *argument) {
 			cycletick = curtick;
 			waittick = CYCLETIME;
 			setWatchdogBit(watchdogBit);
-
-			processCanTimeouts();
 		} else {
 			waittick = cycletick - curtick + CYCLETIME;
 		}
@@ -291,18 +246,12 @@ void CANRxTask(void *argument) {
 				if (!processCan1Message(&RxHeader, msg.data))
 					switch (msg.id) {
 					default:
-#ifdef HPF20
-						blinkOutput(LED7, BlinkVeryFast, 1);
-#endif
 						break;
 					}
 			} else {
 				if (!processCan2Message(&RxHeader, msg.data))
 					switch (msg.id) {
 					default:
-#ifdef HPF20
-						blinkOutput(LED7, BlinkVeryFast, 1);
-#endif
 						break;
 					}
 
@@ -437,14 +386,6 @@ uint8_t CANSendSDO(enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub,
 	msg[3] = sub;
 	storeLEint32(data, &msg[4]);
 
-#if 1
-	static char str[60];
-	snprintf(str, 60,
-			"InvSDOsend Id 0x%3X on %s [%2X %2X %2X %2X data %lu] (%lu)",
-			COBSDOS_ID + id, bus == bus0 ? "bus0" : "bus1", msg[0], msg[1],
-			msg[2], msg[3], data, gettimer());
-	DebugMsg(str);
-#endif
 	if (bus == bus0) {
 		CAN1Send( COBSDOS_ID + id, 8, msg);
 	} else {
@@ -453,55 +394,14 @@ uint8_t CANSendSDO(enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub,
 	return 0;
 }
 
-//canReceiveData
-
-char reTransmitError(uint32_t canid, const uint8_t *CANRxData,
-		uint32_t DataLength) {
-#ifndef RETRANSMITBADDATA
-	return 0;
-#endif
-
-#ifdef CAN2ERRORSTATUS
-	CAN2Send(canid, DataLength >> 16, CANRxData);
-#endif
-	CAN1Send(canid, DataLength >> 16, CANRxData); // return values.
-
-	return 0;
-}
-
-char reTransmitOnCan1(uint32_t canid, const uint8_t *CANRxData,
-		uint32_t DataLength) {
-// only retransmit if can1 and can2 are not sharing lines.
-	CAN1Send(canid, DataLength >> 16, CANRxData); // return values.
-	return 0;
-}
-
 char CAN_NMTSyncRequest(void) {
 	// NMT sync request message.
-
 	// send can id 0x80 to can 0 value 1. Call once per update loop.
-
 	uint8_t CANTxData[1] = { 1 };
 	CAN1Send(0x80, 0, CANTxData); // return values.
 
 	return 1;
 	// send to both buses.
-}
-
-char CAN_SendTimeBase(void) // sends how long since power up and primary inverter status.
-{
-	// TODO check time being sent.
-	// TODO get inverter states.
-
-	uint32_t time = gettimer();
-	uint8_t CANTxData[8] = {
-
-			Errors.CANSendError1,
-			Errors.CANSendError2,
-			
-			getByte(time, 2), getByte(time, 3) };
-
-	return CAN1Send(0x101, 8, CANTxData);
 }
 
 char CAN_SendStatus(char state, char substate, uint32_t errorcode) {
@@ -530,69 +430,6 @@ char CAN_SendStatus(char state, char substate, uint32_t errorcode) {
 	return CAN1Send( ECU_CAN_ID, 8, CANTxData);
 }
 
-char CAN_SendErrorStatus(char state, char substate, uint32_t errorcode) {
-
-	uint8_t stateless = 0;
-	if (state == 3) {
-		stateless = state;
-	} else
-		stateless = state;
-
-	if (state == 4) {
-		stateless = state;
-	} else
-		stateless = state;
-
-	if (state == 5) {
-		stateless = state;
-	} else
-		stateless = state;
-
-	uint8_t CANTxData[8] = { stateless, substate, getByte(errorcode, 0),
-			getByte(errorcode, 1), getByte(errorcode, 2), getByte(errorcode, 3),
-			HAL_FDCAN_GetTxFifoFreeLevel(&hfdcan1),
-			HAL_FDCAN_GetTxFifoFreeLevel(hfdcan2p) };
-
-	return CAN1Send( ECU_CAN_ID + 1, 8, CANTxData);
-}
-
-// send nmt command to all nodes.
-
-/*
- Start						cs = 1 (01hex) 		Node ID
- Stop  						cs = 2 (02hex) 		Node ID
- Enter Pre-Operational		cs = 128 (80hex)	Node ID
- Reset Node					cs = 129 (81hex)	Node ID
- Reset Communication			cs = 130 (82hex)	Node ID
-
- */
-
-char CAN_NMT(uint8_t command, uint8_t node) {
-
-	//uint8_t CANTxData2[2] = { command, node }; // 0 sends command to all nodes.
-	//CAN2Send(0, 2, CANTxData2); // return values.
-
-//	DWT_Delay(100); // delay of ~ > 80us needed, or messages entangle and error frame somehow if both can outputs are connected. unknown bug.
-	uint8_t CANTxData[2] = { command, node }; // 0 sends command to all nodes.
-	CAN1Send(0, 2, CANTxData); // send command to both buses.
-	return 1;
-}
-
-
-char CAN_SendErrors(void) {
-
-	uint8_t CANTxData[8] = { 0, 0,
-	// TODO get inverer state.
-	//CarState.Inverters[RearLeftInverter].InvState,
-	//CarState.Inverters[RearRightInverter].InvState,
-			0, 0, 0,
-			0, 0, 0
-			};
-
-	storeBEint16(Errors.ErrorReason, &CANTxData[2]);
-	CAN1Send(0x66, 8, CANTxData); // send command to both buses.
-	return 1;
-}
 
 char CAN_SendDebug(uint16_t id){
 
@@ -646,44 +483,8 @@ void processCANData(CANData *datahandle, uint8_t *CANRxData,
 			{
 		Errors.CANError++;
 		datahandle->receiveerr++;
-#ifdef SENDBADDATAERROR
-		CAN_SendErrorStatus(ReceiveErr, 0, datahandle->id);
-#endif
-
 	}
 
-}
-
-int receivedCANData(CANData *datahandle) {
-	if (datahandle->devicestate == NULL) {
-		return -1; // no device state associated.
-	}
-	uint32_t time = gettimer();
-
-	if (datahandle->timeout > 0) {
-		if (time - datahandle->time <= datahandle->timeout
-				&& *datahandle->devicestate == OPERATIONAL) {
-			datahandle->errorsent = false;
-			return 1;
-		} else {
-			if (*datahandle->devicestate != OFFLINE) {
-				if (datahandle->doTimeout != NULL)
-					datahandle->doTimeout(datahandle->id);
-
-				if (!datahandle->errorsent) {
-					CAN_SendErrorStatus(ReceiveTimeout, 0,
-							(time - datahandle->time) / 10); // TODO assign a better ID
-					datahandle->errorsent = true;
-					Errors.CANTimeout++;
-					*datahandle->devicestate = OFFLINE;
-				}
-				return 0;
-			}
-			return 0;
-		}
-
-	} else
-		return 1; // set to never time out.
 }
 
 CANData *CanBUS1Messages[2048]; // every possible id, so that can do a direct ID lookup.
@@ -697,18 +498,6 @@ uint32_t CANBUS2MessageCount;
 CANData *CanTimeoutList[MAXTIMEOUTLIST];
 uint32_t CanTimeoutListCount;
 
-bool RegisterCanTimeout(CANData *CanMessage) {
-	if (CanTimeoutListCount < MAXTIMEOUTLIST) // if there's a timeout, register timeout handler.
-	{
-		if (CanMessage->timeout > 0) {
-			CanTimeoutList[CanTimeoutListCount] = CanMessage;
-			CanTimeoutListCount++;
-		}
-		return true;
-	} else
-		return false;
-}
-
 int RegisterCan1Message(CANData *CanMessage) {
 	char str[80];
 	if (CanMessage != NULL && CanMessage->id != 0) {
@@ -717,8 +506,6 @@ int RegisterCan1Message(CANData *CanMessage) {
 					CanMessage->id);
 			DebugMsg(str);
 		} else {
-			if (!RegisterCanTimeout(CanMessage))
-				return 1;
 
 			CanBUS1Messages[CanMessage->id] = CanMessage;
 			CANBUS1MessageCount++;
@@ -737,8 +524,6 @@ int RegisterCan2Message(CANData *CanMessage) {
 					CanMessage->id);
 			DebugMsg(str);
 		} else {
-			if (!RegisterCanTimeout(CanMessage))
-				return 1;
 
 			CanBUS2Messages[CanMessage->id] = CanMessage;
 			CANBUS2MessageCount++;
@@ -765,12 +550,6 @@ bool processCan2Message(FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]) {
 	}
 
 	return false; // ID not registered in handler.
-}
-
-void processCanTimeouts(void) {
-	for (int i = 0; i < CanTimeoutListCount; i++) {
-		receivedCANData(CanTimeoutList[i]);
-	}
 }
 
 /**
@@ -820,7 +599,6 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 		if (bufferlevel > 25) // buffer shouldn't fill up under normal use, not sending >30 messages per cycle.
 				{
 			// return error, can fifo full.
-//			CAN_SendErrorStatus( 111, 0, bufferlevel );
 			bufferlevel++;
 		}
 
@@ -885,7 +663,6 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 		if (bufferlevel > 25) // buffer shouldn't fill up under normal use, not sending >30 messages per cycle.
 				{
 			// return error, can fifo full.
-//			CAN_SendErrorStatus( 111, 0, bufferlevel );
 			bufferlevel++;
 		}
 
@@ -993,7 +770,6 @@ int CheckCanError(void) {
 		//	Errors.ErrorPlace = 0xAA;
 		//	  blinkOutput(TSOFFLED, LEDBLINK_FOUR, 1);
 		HAL_FDCAN_Stop(&hfdcan1);
-		CAN_SendErrorStatus(255, 0, 0);
 
 		if (offcan1 == 0) {
 #ifdef RECOVERCAN
@@ -1024,8 +800,6 @@ int CheckCanError(void) {
 		} else {
 			offcan1 = 2;
 			Errors.ErrorPlace = 0xF1;
-
-			CAN_SendErrorStatus(254, 0, 0);
 		}
 	}
 
@@ -1043,7 +817,6 @@ int CheckCanError(void) {
 		//	Errors.ErrorPlace = 0xAA;
 		//blinkOutput(BMSLED, LEDBLINK_FOUR, 1);
 		HAL_FDCAN_Stop(&hfdcan2);
-		CAN_SendErrorStatus(255, 0, 0);
 		DeviceState.CAN0 = OFFLINE;
 
 		if (offcan2 == 0) {
@@ -1073,7 +846,7 @@ int CheckCanError(void) {
 		} else {
 			offcan2 = 2;
 			DeviceState.CAN0 = OPERATIONAL;
-			CAN_SendErrorStatus(254, 0, 0);
+
 		}
 	}
 

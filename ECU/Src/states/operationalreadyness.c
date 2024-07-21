@@ -111,8 +111,6 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 	// process data.
 
 	if (CheckCriticalError()) {
-		//	CAN_SendErrorStatus(5, OperationalReadyState, received);
-		//	Errors.State = OperationalReadyState;
 		DebugMsg("Errorplace 0xBB critical error.");
 		CAN_SendDebug(CRT_ID);
 		Errors.ErrorReason = ReceivedCriticalError

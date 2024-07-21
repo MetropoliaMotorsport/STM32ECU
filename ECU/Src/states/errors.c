@@ -87,14 +87,11 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 
 		ClearCriticalError();
 
-		CAN_SendTimeBase();
-
 		sprintf(str, "Errorstate: %.4X", 0);
 		// send cause of error state.
 
 		ConfigReset();
 
-//		CAN_NMT( 2, 0x0 ); // send stop command to all nodes.  /// verify that this stops inverters.
 		blinkOutput(TSLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
 		blinkOutput(RTDMLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
 		errorstatetime = gettimer();
@@ -106,11 +103,6 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 		xQueueReceive(ERRORQueue, &error, 0);
 
 	}
-
-	if (Errors.ErrorPlace) {
-		CAN_SendErrors();
-	}
-
 
 	int allowreset = 0; // allow reset if this is still 0 after checks.
 
