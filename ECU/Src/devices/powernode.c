@@ -50,8 +50,8 @@ bool processPNodeHeartBeat(const uint8_t CANRxData[8], const uint32_t DataLength
 	return true;
 }
 
-CANData PowerNode1HeartBeat = {&DeviceState.PowerNode1, Pnode1_Hearbeat_ID, 1, processPNodeHeartBeat};
-CANData PowerNode2HeartBeat = {&DeviceState.PowerNode2, Pnode2_Hearbeat_ID, 1, processPNodeHeartBeat};
+CANData PowerNode1HeartBeat = {&DeviceState.PowerNode1, Pnode1_Hearbeat_ID, 1, processPNodeHeartBeat, NULL, 0};
+CANData PowerNode2HeartBeat = {&DeviceState.PowerNode2, Pnode2_Hearbeat_ID, 1, processPNodeHeartBeat, NULL, 0};
 
 
 

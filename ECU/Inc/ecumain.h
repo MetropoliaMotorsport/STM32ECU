@@ -38,8 +38,6 @@
       __attribute__((section(".dma_buffer")))
 #endif
 
-extern CANData ECUCAN;
-
 extern volatile CarStateType CarState;
 
 extern volatile DeviceStateType DeviceState;

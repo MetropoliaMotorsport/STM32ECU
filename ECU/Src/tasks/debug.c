@@ -645,30 +645,7 @@ static void debugShutdown(const char *tkn2, const char *tkn3) {
 				"shutdown boot off|on to change startup state of ECU HV switch.\r\n");
 		UARTprintf("shutdown off|on to change current state.\r\n");
 	} else if (streql(tkn2, "boot")) {
-		if (checkOn(tkn3)) {
-			shutdownstate = 1;
-		} else if (checkOff(tkn3)) {
-			shutdownstate = 0;
-		} else
-			shutdownstate = 2;
-
-		if (shutdownstate < 2) {
-			UARTprintf("Setting shutdown circuit at power on to: %s\r\n",
-					shutdownstate ? "Open" : "Closed");
-			getEEPROMBlock(0)->alwaysHV = 1;
-			if (writeEEPROMCurConf()) // enqueue write the data to eeprom.
-			{
-				vTaskDelay(20);
-				while (EEPROMBusy()) {
-					vTaskDelay(20);
-				}
-				UARTwrite("Saved.\r\n");
-			} else {
-				UARTwrite("Error saving config.\r\n");
-			}
-		} else {
-			UARTprintf("Invalid value given.\r\n");
-		}
+		
 	} else if (checkOn(tkn2)) {
 		UARTwrite("Setting shutdown circuit closed.\r\n");
 		ShutdownCircuitSet(true);
@@ -677,6 +654,9 @@ static void debugShutdown(const char *tkn2, const char *tkn3) {
 		ShutdownCircuitSet(false);
 	} else {
 		UARTwrite("Current state of shutdown switches:\r\n");
+
+		bool last = true;
+		
 	}
 }
 
@@ -768,77 +748,6 @@ uint16_t processUARTchar(const uint8_t ch, uint8_t *state) {
 
 	return ch;
 
-}
-
-void debugConfig( bool menu) {
-	bool quit = false;
-
-	uint8_t state = 0;
-	uint16_t ch = 0;
-
-	UARTwrite("Running debug interactive input.\r\n\r\n");
-	UARTwrite("q: quit\r\n");
-	UARTwrite("s: Start/Stop button\r\n");
-	UARTwrite("t: Tractive System on button\r\n");
-	UARTwrite("r: RTDM on button\r\n");
-	UARTwrite("Arrow keys & Enter, joystick. Or ijkl and p.\r\n");
-
-	debugconfig = menu;
-
-	while (!quit) {
-		// just to be on safe side then.
-		volatile uint16_t read = uartWait((char*) &ch);
-
-		read = processUARTchar((uint8_t) ch, &state);
-
-		if (read == 0)
-			continue;
-
-		if (read == 'q')
-			quit = true;
-		else if (read == KEY_LEFT || read == 'j') {
-			UARTprintf("Left\r\n");
-			setInput(Left_Input);
-		} else if (read == KEY_RIGHT || read == 'l') {
-			UARTprintf("Right\r\n");
-			setInput(Right_Input);
-		} else if (read == KEY_UP || read == 'i') {
-			UARTprintf("Up\r\n");
-			setInput(Up_Input);
-		} else if (read == KEY_DOWN || read == 'k') {
-			UARTprintf("Down\r\n");
-			setInput(Down_Input);
-		} else if (read == KEY_ENTER) {
-			UARTprintf("Enter\r\n");
-			setInput(Center_Input);
-		} else if (read == 'c') {
-			//ConfigInput( 0xFFFF );
-			read = 0;
-		} else if (read == 's') {
-			UARTprintf("Start/Stop\r\n");
-			setInput(StartStop_Input);
-		} else if (read == 't') {
-			UARTprintf("TS\r\n");
-			setInput(TS_Input);
-		} else if (read == 'r') {
-			UARTprintf("RTDM\r\n");
-			setInput(RTDM_Input);
-		}
-#if 0
-		else if ( read == 'i' )
-		{
-			UARTprintf("Test save of I\r\n");
-			runtimedata_p->maxIVTI = 100;
-			runtimedata_p->time = getTime();
-		}
-		#endif
-		else
-			UARTwritech(ch);
-	}
-
-	debugconfig = false;
-
-	UARTwrite("Config done.\r\n");
 }
 
 void debugESCCodeInput(void) {
@@ -1064,9 +973,9 @@ static void DebugTask(void *pvParameters) {
 				} else
 
 				if (streql(tkn1, "config")) {
-					debugConfig(true);
+					//debugConfig(true);
 				} else if (streql(tkn1, "input")) {
-					debugConfig(false);
+					//debugConfig(false);
 				} else if (streql(tkn1, "inverter")) {
 					debugInverter(tkn2, tkn3, val2);
 				} else if (streql(tkn1, "motor")) {

@@ -85,6 +85,7 @@ void InverterSetTorque(vectoradjust *adj, speedadjust *spd) {
 	InverterState[invFL].Torque_Req = adj->FL;
 	InverterState[invRR].Torque_Req = adj->RR;
 	InverterState[invFR].Torque_Req = adj->FR;
+
 	InverterState[invRL].MaxSpeed = spd->RL; // convert to right value as needed.
 	InverterState[invFL].MaxSpeed = spd->FL;
 	InverterState[invRR].MaxSpeed = spd->RR;
@@ -287,7 +288,19 @@ void InvTask(void *argument) {
 					{					
 
 						int32_t vel = 20000 * SPEEDSCALING;
-						int16_t torque = CarState.pedalreq * TORQUESCALING * (CarState.MaxTorque / MAXInverterTorque);
+						int16_t torque;
+
+						if(MOTORCOUNT > 2){
+							if(i < 2){
+								torque = ((CarState.MaxTorque / 100 * CarState.PowerBalance / 2) / MAXInverterTorque);
+							}
+							else{
+								torque = ((CarState.MaxTorque / 100 * (100 - CarState.PowerBalance) / 2) / MAXInverterTorque);
+							}
+						}
+						else{
+							torque = CarState.pedalreq * TORQUESCALING * torque;
+						}
 
 						storeLEint32(vel, &msg[2]);
 						storeLEint16(torque, &msg[6]);

@@ -7,8 +7,6 @@
 
 #include "ecumain.h"
 
-CANData ECUCAN = { NULL, 21, 8, NULL, NULL, 0 };
-
 inline uint32_t getLEint32(const uint8_t data[4]) {
 	return (data[3] << 24) + (data[2] << 16) + (data[1] << 8) + data[0];
 }
@@ -78,6 +76,6 @@ char* getDeviceStatusStr(const DeviceStatus status) {
 }
 
 int initECU(void) {
-	RegisterCan1Message(&ECUCAN);
+
 	return 0;
 }

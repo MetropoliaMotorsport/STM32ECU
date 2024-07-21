@@ -62,22 +62,22 @@ bool processBTN(const uint8_t CANRxData[8], const uint32_t DataLength, CANData *
 
 
 
-volatile CANData BPPS = { &DeviceState.BPPS, BPPS_ID, 2, processBPPS};
-volatile CANData APPS1 = { &DeviceState.APPS1, APPS1_ID, 2, processNodeDevice};
-volatile CANData APPS2 = { &DeviceState.APPS2, APPS2_ID, 2, processNodeDevice};
+volatile CANData BPPS = { &DeviceState.BPPS, BPPS_ID, 2, processBPPS, NULL, 200};
+volatile CANData APPS1 = { &DeviceState.APPS1, APPS1_ID, 2, processNodeDevice, NULL, 200};
+volatile CANData APPS2 = { &DeviceState.APPS2, APPS2_ID, 2, processNodeDevice, NULL, 200};
 
-volatile CANData SteeringAngle = { &DeviceState.SteeringAngle, SteeringAngle_ID, 8};
-volatile CANData WaterLevel = { &DeviceState.WaterLevel, WaterLevel_ID, 8};
-volatile CANData HeavesRear = { &DeviceState.HeavesRear, HeavesRear_ID, 8};
-volatile CANData HeavesFront = { &DeviceState.HeavesFront, HeavesFront_ID, 8};
-volatile CANData Rolls1 = { &DeviceState.Rolls1, Rolls1_ID, 8};
-volatile CANData Rolls2 = { &DeviceState.Rolls2, Rolls2_ID, 8};
-volatile CANData BrakeFront = { &DeviceState.BrakeFront, BrakeFront_ID, 8};
-volatile CANData BrakeRear = { &DeviceState.BrakeRear, BrakeRear_ID, 8};
+volatile CANData SteeringAngle = { &DeviceState.SteeringAngle, SteeringAngle_ID, 8, NULL, NULL, 0};
+volatile CANData WaterLevel = { &DeviceState.WaterLevel, WaterLevel_ID, 8, NULL, NULL, 0};
+volatile CANData HeavesRear = { &DeviceState.HeavesRear, HeavesRear_ID, 8, NULL, NULL, 0};
+volatile CANData HeavesFront = { &DeviceState.HeavesFront, HeavesFront_ID, 8, NULL, NULL, 0};
+volatile CANData Rolls1 = { &DeviceState.Rolls1, Rolls1_ID, 8, NULL, NULL, 0};
+volatile CANData Rolls2 = { &DeviceState.Rolls2, Rolls2_ID, 8, NULL, NULL, 0};
+volatile CANData BrakeFront = { &DeviceState.BrakeFront, BrakeFront_ID, 8, NULL, NULL, 0};
+volatile CANData BrakeRear = { &DeviceState.BrakeRear, BrakeRear_ID, 8, NULL, NULL, 0};
 
-volatile CANData BTN1 = { &DeviceState.Dash_BTNs, BTN1_ID, 2, processBTN};
-volatile CANData BTN2 = { &DeviceState.Dash_BTNs, BTN2_ID, 2, processBTN};
-volatile CANData BTN3 = { &DeviceState.Dash_BTNs, BTN3_ID, 2, processBTN};
+volatile CANData BTN1 = { &DeviceState.Dash_BTNs, BTN1_ID, 2, processBTN, NULL, 0};
+volatile CANData BTN2 = { &DeviceState.Dash_BTNs, BTN2_ID, 2, processBTN, NULL, 0};
+volatile CANData BTN3 = { &DeviceState.Dash_BTNs, BTN3_ID, 2, processBTN, NULL, 0};
 
 uint32_t getAnalogueNodesOnline(){
     return 0;
@@ -92,8 +92,6 @@ void initNodeDevices( void ){
     RegisterCan2Message( &BTN1 );
     RegisterCan2Message( &BTN2 );
     RegisterCan2Message( &BTN3 );
-
-
 
     RegisterCan2Message( &SteeringAngle );
     RegisterCan2Message( &WaterLevel );

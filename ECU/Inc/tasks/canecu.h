@@ -89,13 +89,17 @@ typedef volatile struct CanDataType {
 	uint16_t id;
 	uint8_t dlcsize;
 	DataHandler getData;
-	volatile uint32_t data;
+	TimerHandle_t timer;
+	uint8_t timeout;
 	uint8_t  index;
 	uint32_t time;
 	uint16_t error;
 	uint16_t receiveerr;
-	TimerHandle_t timeout;
+	
+	volatile uint32_t data;
 } CANData;
+
+void vCanTimerCallback( TimerHandle_t xTimer );
 
 uint8_t CAN1Send( uint16_t id, uint8_t dlc, const uint8_t *pTxData );
 uint8_t CAN2Send( uint16_t id, uint8_t dlc, const uint8_t *pTxData );

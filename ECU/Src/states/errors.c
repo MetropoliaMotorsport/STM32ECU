@@ -91,7 +91,6 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 		// send cause of error state.
 
 		ConfigReset();
-
 		blinkOutput(TSLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
 		blinkOutput(RTDMLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
 		errorstatetime = gettimer();

@@ -83,6 +83,8 @@ static uint32_t CANTxLastsend;
 uint32_t rxcount1 = 0;
 uint32_t rxcount2 = 0;
 
+TimerHandle_t xTimers[10];
+
 bool processCan1Message(FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
 bool processCan2Message(FDCAN_RxHeaderTypeDef *RxHeader, uint8_t CANRxData[8]);
 
@@ -477,6 +479,13 @@ void processCANData(CANData *datahandle, uint8_t *CANRxData,
 			baddata = true;
 	}
 
+	//////////////////////////////////////
+	if (datahandle->timeout > 0) {
+		if(xTimerStart(datahandle->timer, 0) != pdPASS){
+			DebugMsg("Failed to start timer");
+		}
+	}
+	//////////////////////////////////////
 	datahandle->time = gettimer();
 
 	if (baddata || baddlc) // bad data.
@@ -485,6 +494,15 @@ void processCANData(CANData *datahandle, uint8_t *CANRxData,
 		datahandle->receiveerr++;
 	}
 
+}
+
+void vCanTimerCallback(TimerHandle_t xTimer) {
+	// timeout for CAN message, set error state.
+	// set error state for device, and increment error count.
+	// set error state for device, and increment error count.
+
+	CarState.AllowTorque = false;
+	Errors.CANTimeout++;
 }
 
 CANData *CanBUS1Messages[2048]; // every possible id, so that can do a direct ID lookup.
@@ -499,16 +517,24 @@ CANData *CanTimeoutList[MAXTIMEOUTLIST];
 uint32_t CanTimeoutListCount;
 
 int RegisterCan1Message(CANData *CanMessage) {
-	char str[80];
+
 	if (CanMessage != NULL && CanMessage->id != 0) {
 		if (CanBUS1Messages[CanMessage->id] != NULL) {
-			snprintf(str, 80, "Tried to add a duplicate CAN id %3X on bus1!",
-					CanMessage->id);
-			DebugMsg(str);
+
 		} else {
 
 			CanBUS1Messages[CanMessage->id] = CanMessage;
 			CANBUS1MessageCount++;
+
+			if(CanMessage->timeout > 0){
+				CanMessage->timer = xTimerCreate(
+					"CAN1Timer", 
+					pdMS_TO_TICKS(CanMessage->timeout),
+					pdFALSE,
+					(void*)0,
+					vCanTimerCallback
+				);
+			}
 		}
 		return 0;
 	} else
@@ -516,17 +542,24 @@ int RegisterCan1Message(CANData *CanMessage) {
 }
 
 int RegisterCan2Message(CANData *CanMessage) {
-	char str[80];
 
 	if (CanMessage != NULL && CanMessage->id != 0) {
 		if (CanBUS2Messages[CanMessage->id] != NULL) {
-			snprintf(str, 80, "Tried to add a duplicate CAN id %3X on bus0!",
-					CanMessage->id);
-			DebugMsg(str);
+
 		} else {
 
 			CanBUS2Messages[CanMessage->id] = CanMessage;
 			CANBUS2MessageCount++;
+
+			if(CanMessage->timeout > 0){
+				CanMessage->timer = xTimerCreate(
+					"CAN2Timer", 
+					pdMS_TO_TICKS(CanMessage->timeout),
+					pdFALSE,
+					(void*)0,
+					vCanTimerCallback
+				);
+			}
 		}
 		return 0;
 	} else

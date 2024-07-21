@@ -90,9 +90,6 @@ void InputTask(void *argument) {
 
 
 int checkReset(void) {
-	if (checkConfigReset()) {
-		return 1;
-	}
 
 	if (Input[StartStop_Input].pressed != 0) {
 		Input[StartStop_Input].pressed = 0;
@@ -105,12 +102,6 @@ int checkReset(void) {
 
 int CheckBrakeBalRequest(void) // this should be a push-hold, so not a single toggle read.
 {
-#ifdef ONBOARDBUTTON
-	if(Input[UserBtn].pressed){
-			Input[UserBtn].pressed = 0;
-			return 0;
-	}
-#endif
 
 	if (Input[StartStop_Input].pressed != 0) {
 		Input[StartStop_Input].pressed = 0;
@@ -137,21 +128,6 @@ int GetUpDownPressed(void) {
 		Input[Down_Input].pressed = 0;
 		return 1;
 	}
-#if 0
-	else 	if ( Input[Up_Input].held != 0 ){
-		if (gettimer() - Input[Up_Input].lastpressed > REPEATRATE )
-		{
-			Input[Up_Input].lastpressed = gettimer();
-			return -1;
-		}
-	} else 	if ( Input[Down_Input].held != 0 ){
-		if (gettimer() - Input[Down_Input].lastpressed > REPEATRATE )
-		{
-			Input[Down_Input].lastpressed = gettimer();
-			return 1;
-		}
-	}
-#endif
 
 	return 0;
 }
@@ -172,12 +148,6 @@ int GetLeftRightPressed(void) {
 }
 
 int CheckActivationRequest(void) {
-#ifdef ONBOARDBUTTON
-	if(Input[UserBtn].pressed){
-			Input[UserBtn].pressed = 0;
-			return 0;
-	}
-#endif
 
 	if (Input[StartStop_Input].pressed != 0) { //StartStop_Switch
 		Input[StartStop_Input].pressed = 0;
@@ -189,12 +159,7 @@ int CheckActivationRequest(void) {
 }
 
 int CheckLimpActivationRequest(void) {
-#ifdef ONBOARDBUTTON
-	if(Input[UserBtn].pressed){
-			Input[UserBtn].pressed = 0;
-			return 0;
-	}
-#endif
+
 
 	// driven by BMS.
 
@@ -206,12 +171,7 @@ int CheckLimpActivationRequest(void) {
 }
 
 int CheckTSActivationRequest(void) {
-#ifdef ONBOARDBUTTON
-	if(Input[UserBtn].pressed){
-			Input[UserBtn].pressed = 0;
-			return 0;
-	}
-#endif
+
 
 	if (Input[TS_Input].pressed) {
 		Input[TS_Input].pressed = 0;
@@ -228,12 +188,7 @@ int CheckTSActivationRequest(void) {
 }
 
 int CheckRTDMActivationRequest(void) {
-#ifdef ONBOARDBUTTON
-	if(Input[UserBtn].pressed){
-			Input[UserBtn].pressed = 0;
-			return 0;
-	}
-#endif
+
 	if (Input[RTDM_Input].pressed) {
 		Input[RTDM_Input].pressed = 0;
 		//		blinkOutput(RTDMLED_Output,LEDBLINK_FOUR,1);

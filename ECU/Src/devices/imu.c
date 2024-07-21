@@ -37,41 +37,40 @@ bool processIMUGPS(const uint8_t CANRxData[8], const uint32_t DataLength,
 bool processIMUGPSVel(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle);
 
-void IMUTimeout(uint16_t id);
 
 // System
 CANData IMUStatus = { &DeviceState.IMU, IMUBase_ID, 6, processIMUStatus,
-		IMUTimeout, IMUTIMEOUT };
-CANData IMUUTC = { &DeviceState.IMU, IMUUTC_ID, 8, processIMUUTC, IMUTimeout,
-IMUTIMEOUT };
+		NULL, 0 };
+CANData IMUUTC = { &DeviceState.IMU, IMUUTC_ID, 8, processIMUUTC, NULL,
+0 };
 
 //IMU:
-CANData IMUInfo = { &DeviceState.IMU, IMUInfo_ID, 8, processIMUInfo, IMUTimeout,
-IMUTIMEOUT };
+CANData IMUInfo = { &DeviceState.IMU, IMUInfo_ID, 8, processIMUInfo, NULL,
+0 };
 CANData IMUAccel = { &DeviceState.IMU, IMUAccel_ID, 6, processIMUAccel,
-		IMUTimeout, IMUTIMEOUT };
-CANData IMUGyro = { &DeviceState.IMU, IMUGyro_ID, 6, processIMUGyro, IMUTimeout,
-IMUTIMEOUT };
+		NULL, 0 };
+CANData IMUGyro = { &DeviceState.IMU, IMUGyro_ID, 6, processIMUGyro, NULL,
+0 };
 CANData IMUDeltaV = { &DeviceState.IMU, IMUDeltaV_ID, 6, processIMUDeltaV,
-		IMUTimeout, IMUTIMEOUT };
+		NULL, 0 };
 CANData IMUDeltaA = { &DeviceState.IMU, IMUDeltaA_ID, 6, processIMUDeltaA,
-		IMUTimeout, IMUTIMEOUT };
+		NULL, 0 };
 
 //EKF:
 
 CANData IMUEuler = { &DeviceState.IMU, IMUEuler_ID, 6, processIMUEuler,
-		IMUTimeout, IMUTIMEOUT };
-CANData IMUVel = { &DeviceState.IMU, IMUVel_ID, 6, processIMUVel, IMUTimeout,
-IMUTIMEOUT };
-//CANData IMUVelAcc = { &DeviceState.IMU, IMUVelAcc_ID, 6, processIMUVelAcc, IMUTimeout, IMUTIMEOUT };
+		NULL, 0 };
+CANData IMUVel = { &DeviceState.IMU, IMUVel_ID, 6, processIMUVel, NULL,
+0 };
+//CANData IMUVelAcc = { &DeviceState.IMU, IMUVelAcc_ID, 6, processIMUVelAcc, NULL, NULL };
 CANData IMUVelBody = { &DeviceState.IMU, IMUVELBody_ID, 6, processIMUVelBody,
-		IMUTimeout, IMUTIMEOUT };
+		NULL, 0 };
 CANData IMUGPSVel = { &DeviceState.IMU, IMUGPSVel_ID, 6, processIMUGPSVel,
-		IMUTimeout, IMUTIMEOUT };
-CANData IMUGPS = { &DeviceState.IMU, IMUGPS_ID, 8, processIMUGPS, IMUTimeout,
-IMUTIMEOUT };
+		NULL, 0 };
+CANData IMUGPS = { &DeviceState.IMU, IMUGPS_ID, 8, processIMUGPS, NULL,
+0 };
 // gps retursn all FF when no lock.
-//CANData IMUAUTO = { &DeviceState.IMU, IMUAUTO_ID, 8, processIMUAUTO, IMUTimeout, IMUTIMEOUT };
+//CANData IMUAUTO = { &DeviceState.IMU, IMUAUTO_ID, 8, processIMUAUTO, NULL, NULL };
 
 enum {
 	COUNTER_BASE = __COUNTER__
@@ -321,10 +320,6 @@ bool processIMUAUTO(const uint8_t CANRxData[8], const uint32_t DataLength,
 		return true;
 	} else
 		return false;
-}
-
-void IMUTimeout(uint16_t id) {
-
 }
 
 int requestIMU(int nodeid) {

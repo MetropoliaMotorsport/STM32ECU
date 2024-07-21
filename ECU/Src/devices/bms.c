@@ -76,7 +76,6 @@ void resetBMS() {
 int initBMS(void) {
 	RegisterResetCommand(resetBMS);
 	resetBMS();
-	//RegisterCan2Message(&BMSSOC);
 	RegisterCan1Message(&BMS_PRE_Done);
 
 	return 0;

@@ -112,7 +112,6 @@ void HardFault_Handler(void)
 	ShutdownCircuitSet( false ); // ensure shutdown circuit is open if we end up in a hard fault.
 
 	// send cause of error state.
-	ConfigReset();
 
 	blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);
   //blinkOutput(TSOFFLED,LEDBLINK_FOUR,LEDBLINKNONSTOP);

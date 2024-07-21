@@ -16,14 +16,12 @@
 bool processIVTData(const uint8_t *CANRxData, const uint32_t DataLength,
 		CANData *datahandle);
 
-void IVTTimeout(uint16_t id);
 
-
-CANData IVT_I = { &DeviceState.IVT, IVTI_ID, 6, processIVTData, IVTTimeout, IVTTIMEOUT };
-CANData IVT_U1 = { &DeviceState.IVT, IVTU1_ID, 6, processIVTData, IVTTimeout, IVTTIMEOUT };
-CANData IVT_U2 = { &DeviceState.IVT, IVTU2_ID, 6, processIVTData, IVTTimeout, IVTTIMEOUT };
-CANData IVT_W = { &DeviceState.IVT, IVTW_ID, 6, processIVTData, IVTTimeout, IVTTIMEOUT };
-CANData IVT_Wh = { &DeviceState.IVT, IVTWh_ID, 6, processIVTData, IVTTimeout, IVTTIMEOUT };
+CANData IVT_I = { &DeviceState.IVT, IVTI_ID, 6, processIVTData, NULL, IVTTIMEOUT };
+CANData IVT_U1 = { &DeviceState.IVT, IVTU1_ID, 6, processIVTData, NULL, IVTTIMEOUT };
+CANData IVT_U2 = { &DeviceState.IVT, IVTU2_ID, 6, processIVTData, NULL, IVTTIMEOUT };
+CANData IVT_W = { &DeviceState.IVT, IVTW_ID, 6, processIVTData, NULL, IVTTIMEOUT };
+CANData IVT_Wh = { &DeviceState.IVT, IVTWh_ID, 6, processIVTData, NULL, IVTTIMEOUT };
 
 
 // IVTWh = 0x528
@@ -65,16 +63,6 @@ bool processIVTData(const uint8_t CANRxData[8], const uint32_t DataLength, //TOD
 		return true;
 }
 
-
-
-void IVTTimeout(uint16_t id) {
-
-	CarState.Power = 0;
-	CarState.Current = 0;
-	CarState.VoltageINV = 0;
-
-	SetCriticalError(CRITERIVT);
-}
 
 int receiveIVT(void) {
 	if (DeviceState.IVTEnabled) {

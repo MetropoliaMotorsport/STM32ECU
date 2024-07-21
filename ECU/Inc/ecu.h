@@ -123,10 +123,10 @@
 // const TickType_t CYCLETIME = 10;
 
 //#define PROCESSLOOPTIME 		10   // should be 100 for 10ms in normal operation, bigger number for slower main loop in testing. - 50?
-#define BMSTIMEOUT				450 // was 5 seconds as bodge
-#define IVTTIMEOUT				450  // < 500ms for rules compliance on Power reading.
-#define IMUTIMEOUT				30 // needs to be uptodate to be useful.
-#define INVERTERTIMEOUT			100 // 10 cycles, 100ms.
+#define BMSTIMEOUT				0 // was 5 seconds as bodge
+#define IVTTIMEOUT				0  // < 500ms for rules compliance on Power reading.
+#define IMUTIMEOUT				0 // needs to be uptodate to be useful.
+#define INVERTERTIMEOUT			0 // 10 cycles, 100ms.
 
 
 #define StartupState			(0)
