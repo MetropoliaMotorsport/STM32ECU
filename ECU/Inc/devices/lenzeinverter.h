@@ -33,11 +33,10 @@
 
 
 
-#ifdef TWOWHEELS
+#if TWOWHEELS
     #define Inverter1_NodeID            (0xE)
     #define Inverter2_NodeID			(1)
 #else
-
     #define Inverter1_NodeID			(0xE)    
     #define Inverter2_NodeID			(6)
 #endif

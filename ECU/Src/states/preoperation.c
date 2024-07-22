@@ -125,7 +125,8 @@ int PreOperationState(uint32_t OperationLoops) {
 
 	if(CarState.PRE_Done && buz_timer < 58)
 	{		buz_timer++;
-		setNodeDevicePower(Buzzer, (buz_timer < 56 ? true : false), 0);		
+		setNodeDevicePower(Buzzer, (buz_timer < 56 ? true : false), 0);
+		CarState.AllowTorque = true;	
 	}
 
 	//soundBuzzer();

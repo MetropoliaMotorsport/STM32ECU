@@ -113,5 +113,6 @@
 #define inverter_cmd_sw_on      (0x0C3) //"Inverter command switch on"
 #define inverter_cmd_en_op      (0x0C4) //"Inverter command enable operation"
 #define Too_Long_Loop           (0x0C5) //"Too long loop"
+#define CanMessageTimeout       (0x0C6) //"CAN message timeout"
 ////////////////////////////////////////
 #endif

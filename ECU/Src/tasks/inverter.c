@@ -284,7 +284,7 @@ void InvTask(void *argument) {
 
 					msg[0] = getInverterControlWord(&InverterState[i]);
 
-				if(InverterState[i].InvState == OPERATIONAL && CarState.PRE_Done)
+				if(InverterState[i].InvState == OPERATIONAL && CarState.AllowTorque)
 					{					
 
 						int32_t vel = 20000 * SPEEDSCALING;

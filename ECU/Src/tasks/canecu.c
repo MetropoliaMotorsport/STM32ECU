@@ -500,9 +500,9 @@ void vCanTimerCallback(TimerHandle_t xTimer) {
 	// timeout for CAN message, set error state.
 	// set error state for device, and increment error count.
 	// set error state for device, and increment error count.
-
+	CAN_SendDebug(CanMessageTimeout);
 	CarState.AllowTorque = false;
-	Errors.CANTimeout++;
+	//Errors.CANTimeout++;
 }
 
 CANData *CanBUS1Messages[2048]; // every possible id, so that can do a direct ID lookup.
