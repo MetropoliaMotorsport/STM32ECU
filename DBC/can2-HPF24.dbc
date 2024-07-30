@@ -165,6 +165,19 @@ BO_ 29 PN1_Device_Status: 1 PowerNode1
 
 BO_ 30 PN2_Device_Status: 1 PowerNode2
 
+BO_ 31 Start_Calibration: 2 ECU
+ SG_ Device : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Calib_max_min : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 32 Calibration_Done: 2 AnalogNode1
+ SG_ Device : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Calib_max_min : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 33 Calibration_Results: 5 AnalogNode1
+ SG_ Device : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Raw_0_Value : 8|16@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Raw_100_Value : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+
 
 
 
