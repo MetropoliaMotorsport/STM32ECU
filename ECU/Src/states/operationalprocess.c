@@ -15,7 +15,6 @@
 #include "preoperation.h"
 #include "operationalreadyness.h"
 #include "errors.h"
-#include "input.h"
 #include "output.h"
 #include "timerecu.h"
 #include "power.h"
@@ -121,7 +120,6 @@ int OperationalProcess(void) {
 		LastOperationalState = OperationalState;
 		OperationalState = NewOperationalState;
 		loopcount = 0;
-		clearButtons(); // don't let any user input pass between states
 		loopoverrun = 0; // reset over run counter.
 	}
 

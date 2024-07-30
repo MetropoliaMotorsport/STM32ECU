@@ -11,7 +11,6 @@
 #include "debug.h"
 #include "ecumain.h"
 #include "inverter.h"
-#include "input.h"
 #include "configuration.h"
 #include "freertosstats.h"
 #include "eeprom.h"
@@ -732,10 +731,7 @@ uint16_t processUARTchar(const uint8_t ch, uint8_t *state) {
 
 	case 2:
 		switch (ch << 8) {
-		case KEY_LEFT:
-		case KEY_RIGHT:
-		case KEY_UP:
-		case KEY_DOWN:
+
 			*state = 0;
 			uint16_t retch = ch << 8;
 			return retch;
@@ -768,14 +764,6 @@ void debugESCCodeInput(void) {
 
 		if (read == 'q')
 			quit = true;
-		else if (read == KEY_LEFT)
-			UARTprintf("Left\r\n");
-		else if (read == KEY_RIGHT)
-			UARTprintf("Right\r\n");
-		else if (read == KEY_UP)
-			UARTprintf("Up\r\n");
-		else if (read == KEY_DOWN)
-			UARTprintf("Down\r\n");
 		else
 			UARTwritech(ch);
 	}

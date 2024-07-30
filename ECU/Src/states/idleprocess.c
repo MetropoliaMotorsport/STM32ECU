@@ -11,7 +11,6 @@
 #include "operationalprocess.h"
 #include "configuration.h"
 #include "errors.h"
-#include "input.h"
 #include "inverter.h"
 #include "timerecu.h"
 #include "output.h"

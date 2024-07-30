@@ -9,7 +9,6 @@
 #include "errors.h"
 #include "debug.h"
 #include "inverter.h"
-#include "input.h"
 #include "configuration.h"
 #include "output.h"
 #include "power.h"
@@ -116,16 +115,6 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 		strcat(str, "NTO ");
 	}
 
-	// wait for restart request if allowed by error state.
-	if (allowreset == 0 && (checkReset() == 1 // manual reset
-#ifdef AUTORESET
-        		|| ( invertererror  && allowautoreset ) // or automatic reset if allowed inverter error.
-#endif
-	)) {
-		//loopcount = 0;
-		return StartupState;
-		// try to perform a full reset back to startup state here on user request.
-	}
 
 	// check for restart request. -> pre operation.
 	return OperationalErrorState;

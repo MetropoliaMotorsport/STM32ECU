@@ -15,7 +15,6 @@
 #include "power.h"
 #include "node_device.h"
 #include "bms.h"
-#include "input.h"
 #include "output.h"
 #include "inverter.h"
 #include "powernode.h"

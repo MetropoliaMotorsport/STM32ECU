@@ -19,7 +19,6 @@
 #include "timerecu.h"
 #include "semphr.h"
 #include "output.h"
-#include "input.h"
 
 TaskHandle_t PowerTaskHandle = NULL;
 

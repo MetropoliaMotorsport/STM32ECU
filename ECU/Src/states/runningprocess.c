@@ -14,7 +14,6 @@
 #include "timerecu.h"
 #include "brake.h"
 #include "torquecontrol.h"
-#include "input.h"
 #include "output.h"
 #include "inverter.h"
 #include "debug.h"
@@ -106,18 +105,8 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 		allowstop = 0;
 	}
 
-	if (BPPS.data < (REGENMINIMUM * 10)
-			&& CheckRTDMActivationRequest()) {
-		blinkOutput(RTDMLED, BlinkFast, 1000);
-		DebugMsg("Disalowing regen");
-		CAN_SendDebug(DISRN_ID);
-		CarState.AllowRegen = false;
-	}
 
-	if (allowstop && CheckActivationRequest()) // if requested disable Tractive System, drop state. This should shut off torque control immiedietly.
-			{
-		return IdleState; // check if need to drop HV in a special order.
-	}
+
 
 //	if ( invertersStateCheck(OPERATIONAL) ) // returns true if all inverters match state
 	{

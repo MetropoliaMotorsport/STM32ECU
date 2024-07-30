@@ -23,7 +23,6 @@
 #include "errors.h"
 #include "eeprom.h"
 #include "powernode.h"
-#include "input.h"
 #include "output.h"
 
 #include "ivt.h"
@@ -224,7 +223,6 @@ static int HardwareInit(void) {
 	initIMU();
 	initIVT();
 	initBMS();
-	initInput();
 	initECU();
 
 #ifdef POWERNODES

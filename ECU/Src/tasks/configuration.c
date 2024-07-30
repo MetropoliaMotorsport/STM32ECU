@@ -7,7 +7,6 @@
 
 #include "ecumain.h"
 #include "configuration.h"
-#include "input.h"
 #include "timerecu.h"
 #include "eeprom.h"
 #include "node_device.h"

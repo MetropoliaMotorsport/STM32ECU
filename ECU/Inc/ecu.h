@@ -1,3 +1,4 @@
+
 /*
  * ecu.h
  *
@@ -10,6 +11,17 @@
 
 #include <stdbool.h>
 #include "freertos.h"
+
+#define BMS_Input_Pin DI15_Pin
+#define BMS_Input_Port DI15_GPIO_Port
+#define BMS_Output_Pin DO12_Pin
+#define BMS_Output_Port DO12_GPIO_Port
+
+#define IMD_Input_Pin DI14_Pin
+#define IMD_Input_Port DI14_GPIO_Port
+#define IMD_Output_Pin DO7_Pin
+#define IMD_Output_Port DO7_GPIO_Port
+
 
 #define DEBUG
 

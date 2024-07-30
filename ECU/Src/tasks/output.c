@@ -179,39 +179,21 @@ void OutputTask(void *argument) {
 	}
 
 	vTaskDelay(2000);
-
-	for (int i = 0; i < OUTPUTCount; i++) {
-		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), Off);
-	}
-
-	setOutputNOW(BMSLED, Off);
-
-	if (!CheckBMS()) {
-		setOutputNOW(BMSLED, On);
-	}
-
-	setOutputNOW(IMDLED, Off);
-
-	if (CheckIMD()) {
-		setOutputNOW(IMDLED, On);
-	}
-
-	setOutputNOW(TSOFFLED, On);
-
-	for (int i = 0; i < OUTPUTCount; i++) {
-		updateOutput(i);
-	}
-
-	TickType_t xLastWakeTime;
-
-	// Initialise the xLastWakeTime variable with the current time.
-	xLastWakeTime = xTaskGetTickCount();
-
-//	unsigned long counter;
+	
 	while (1) {
 		
-// change to not use que, just check data every 20ms and update states
+		HAL_GPIO_WritePin(BMS_Input_Pin, BMS_Input_Port,
+				HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin));
+
+		HAL_GPIO_WritePin(IMD_Input_Pin, IMD_Input_Port,
+				HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin));
+
+		xEventGroupSync(xCycleSync, 0, 1, portMAX_DELAY); // wait for main cycle.
 	}
+
+		
+// change to not use que, just check data every 20ms and update states
+	
 
 	vTaskDelete(NULL);
 }

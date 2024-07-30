@@ -11,7 +11,6 @@
 #include "idleprocess.h"
 #include "node_device.h"
 #include "inverter.h"
-#include "input.h"
 #include "output.h"
 #include "timerecu.h"
 #include "power.h"
