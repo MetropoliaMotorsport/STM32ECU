@@ -409,14 +409,7 @@ static void debugMotor(const char *tkn2, const char *tkn3, const int32_t value1,
 							InverterSetTorqueInd(i, 0, speed);
 					}
 
-					UARTprintf(
-							"Pedal: r%d%%, reqNm %d, raw %d, speed %d, maxNm %d, to MC[%s] 0[I%dc M%dc] 1[I%dc M%dc] 2[I%dc M%dc] 3[I%dc M%dc]\r\n ",
-							percR / 10, (int16_t) requestNm, requestNm, speed,
-							maxNm, getMotorsEnabledStr(),
-							getInvState(0)->InvTemp, getInvState(0)->MotorTemp,
-							getInvState(1)->InvTemp, getInvState(1)->MotorTemp,
-							getInvState(2)->InvTemp, getInvState(2)->MotorTemp,
-							getInvState(3)->InvTemp, getInvState(3)->MotorTemp);
+
 				}
 			}
 
@@ -495,7 +488,7 @@ static void debugMotor(const char *tkn2, const char *tkn3, const int32_t value1,
 	} else if (streql(tkn2, "status")) {
 		UARTwrite("Motors control status\r\n\r\n");
 
-		UARTprintf("Motors Enabled: [%s]\r\n", getMotorsEnabledStr());
+
 		UARTprintf("Max speed %dRPM\r\n", speed);
 		UARTprintf("Max accel %dRPM/s\r\n", getEEPROMBlock(0)->AccelRpms);
 		UARTprintf("Max torque %dNm\r\n", maxNm);

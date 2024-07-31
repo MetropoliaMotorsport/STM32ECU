@@ -12,60 +12,21 @@
 #include "power.h"
 #include "errors.h"
 #include "debug.h"
+#include "powernode.h"
 
-uint16_t ReadyReceive(uint16_t returnvalue) {
-	if (returnvalue == 0xFFFF) {
-		returnvalue =
-#ifndef POWERNODES
-					(0x1 << PDMReceived)+
-#else
-				(0x1 << PowerNode1Received) +
-#endif
-						(0x1 << BMSReceived) + (0x1 << IVTReceived); //TODO update it
+bool ReadyReceive() {
+	
+	bool States_Maching = true;
 
-		//(0x1 << YAWOnlineBit);
-	}
-
-	//receiveBMS();
-
-	if (DeviceState.BMS != OFFLINE
-			&& (CarState.VoltageBMS > 460 && CarState.VoltageBMS < 600)) {
-		// check voltages, temperatures.
-		returnvalue &= ~(0x1 << BMSReceived); // return voltage in OK range.
-	} else {
-		static bool first = false;
-		if (!first) {
-			first = true;
-			DebugMsg("Readyness BMS fail");
+	for(int i = 0; i < DEVICE_COUNT; i++) {
+		if (&DevicePowerList[i] != NULL){
+			if (DevicePowerList[i].expectedstate != DevicePowerList[i].actualstate) {
+				States_Maching = false;
+				}
 		}
 	}
 
-	//receiveIVT();
-
-	if (DeviceState.IVT != OFFLINE) {
-		returnvalue &= ~(0x1 << IVTReceived); // check values
-	} else {
-		static bool first = false;
-		if (!first) {
-			first = true;
-			DebugMsg("Readyness IVT fail");
-		}
-	}
-
-	if (DeviceState.CriticalPower == OPERATIONAL) {
-		returnvalue &= ~(0x1 << PowerNode1Received);
-	} else {
-//		static bool first = false;
-//		if ( !first )
-		{
-//			first = true;
-			DebugPrintf("Readyness Power fail: %s",		//TODO: Make a can bus message for this.
-					getDeviceStatusStr(DeviceState.CriticalPower));
-			
-		}
-	}
-
-	return returnvalue;
+	return States_Maching;
 }
 
 // 1.	Testing the functionality/readings from the different sensors
@@ -76,7 +37,7 @@ uint16_t ReadyReceive(uint16_t returnvalue) {
 
 int OperationReadyness(uint32_t OperationLoops) // process function for operation readyness state
 {
-//	static uint16_t sanitystate;
+
 	static uint16_t received;
 
 	if (OperationLoops == 0) // reset state on entering/rentering.
@@ -92,7 +53,7 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 
 	CAN_SendStatus(1, OperationalReadyState, received);
 
-	if (OperationLoops > 5) // 500 )	// how many loops allow to get all data on time?, failure timeout.
+	if (OperationLoops > 50) // 500 )	// how many loops allow to get all data on time?, failure timeout.
 			{
 		DebugMsg("Errorplace 0xBA Too many loops.");
 		CAN_SendDebug(ERRTL_ID);
@@ -100,61 +61,15 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 		return OperationalErrorState; // error, too long waiting for data. Go to error state to inform and allow restart of process.
 	}
 
-	vTaskDelay(5);
+	if(ReadyReceive){
+		
+		return IdleState;
+	}
+
 
 	// this state is just to allow devices to get ready, don't need to check any data.
 
-	received = ReadyReceive(received);
-
-	// check for incoming data, break when all received.
-
-	// process data.
-
-	if (CheckCriticalError()) {
-		DebugMsg("Errorplace 0xBB critical error.");
-		CAN_SendDebug(CRT_ID);
-		Errors.ErrorReason = ReceivedCriticalError
-				| (CheckCriticalError() << 8);
-		Errors.ErrorPlace = 0xBB;
-		return OperationalErrorState; // something has triggered an unacceptable error ( inverter error state etc ), drop to error state to deal with it.
-
-	}
-
-
-	int invcount = 0;
-
-	/////////////////
-	//TODO fixed by adding actual safety checks
-	received = 0;
-	////////////////
-
-
-	if (received != 0) { // activation requested but not everything is in satisfactory condition to continue
-
-		DebugPrintf("Received %d", received);
-		// show error state but allow to continue in some state if non critical sensor fails sanity.
-
-		blinkOutput(TSLED, LEDBLINK_FOUR, 1000); // indicate TS was requested before system ready.
-		return OperationalReadyState; // maintain current state.
-	} else // if ( GetInverterState() >= STOPPED  ) // Ready to switch on
-	{
-		for (int i = 0; i < MOTORCOUNT; i++) {
-			if (getInvState(i)->Device != OFFLINE) {
-				invcount++;
-			}
-		}
-
-		DebugPrintf("Invc: %d %s %s %s %s", invcount,
-				getDeviceStatusStr(getInvState(0)->Device),
-				getDeviceStatusStr(getInvState(1)->Device),
-				getDeviceStatusStr(getInvState(2)->Device),
-				getDeviceStatusStr(getInvState(3)->Device));
-
-		if (invcount == MOTORCOUNT) {
-			// everything is ok to continue.
-			return IdleState; // ready to move onto TS activated but not operational state, idle waiting for RTDM activation.
-		}
-	}
+	
 
 	return OperationalReadyState;
 }

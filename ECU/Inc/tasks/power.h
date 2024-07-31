@@ -55,7 +55,7 @@ bool CheckTSOff( void );
 bool CheckIMD( void );
 
 bool soundBuzzer( void );
-void CheckDeviceState();
+bool CheckDeviceState();
 int initPower( void );
 
 extern TaskHandle_t PowerTaskHandle;

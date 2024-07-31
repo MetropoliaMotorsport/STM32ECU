@@ -52,11 +52,6 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 		CAN_SendDebug(EIS_ID);
 
 		ShutdownCircuitSet( false);
-		//12345678901234567890
-		invRequestState(BOOTUP); // request to go into ready for HV
-
-		resetOutput(STARTLED, Off);
-		resetOutput(RTDMLED, Off);
 
 		InverterAllowTorqueAll(false);
 
@@ -64,104 +59,13 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 		TSRequested = 0;
 	}
 
-	{
-		CAN_SendStatus(1, IdleState, readystate);
+	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+	if(BTN2.data == 1) {
+
+		//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+		ShutdownCircuitSet( true);
+		return TSActiveState;
 	}
-
-	uint32_t curtime = gettimer();
-
-	if (CarState.allowtsactivation){
-		CAN_SendDebug(TSO_ID);	//TODO add can bus msg
-	}
-	else{
-		CAN_SendDebug(TSB_ID); 	//TODO add can bus msg
-		}
-
-
-	uint32_t received = OperationalReceive();
-
-	// check what not received here, only error for inverters
-	
-	// at this state, everything is ready to be powered up.
-
-	int invcount = 0;
-	for (int i = 0; i < MOTORCOUNT; i++) {
-		if (getInvState(i)->Device != OFFLINE) {
-			invcount++;
-		}
-	}
-
-	if (invcount == MOTORCOUNT // invertersStateCheck(STOPPED) // returns true if all inverters match state
-	&& CarState.VoltageBMS > MINHV
-
-	) // minimum accumulator voltage to allow TS, set a little above BMS limit, so we can
-	{
-		static bool first = false;
-
-		if (!first) {
-			first = true;
-			DebugMsg("Ready to enable TS");
-		}
-
-		readystate = 0;
-		if (!TSRequested) {
-			setOutput(TSLED, On); // turn on to indicate ready for action.
-			//blinkOutput(TSLED,LEDBLINK_FOUR,LEDBLINKNONSTOP); // start blinking to indicate ready.
-		}
-	} else {
-
-	}
-
-	float lastreq = CarState.Torque_Req;
-
-	int16_t pedalreq;
-	 // calculate request from APPS
-
-	if (abs(lastreq - CarState.Torque_Req) > 10) {
-		DebugPrintf("Torquereq %d for Curve adj %d Act %d\r\n", //TODO add can bus msg
-				CarState.Torque_Req,
-				getTorqueReqCurve(APPS1.data),
-				APPS1.data);
-	}
-
-// allow APPS checking before RTDM
-	vectoradjust adj;
-	speedadjust spd;
-
-	uint32_t curtick = gettimer();
-
-	if (curtick > nextmsg) {
-		nextmsg = curtick + 1000;
-		DebugPrintf("Current req %f pedals %lu %lu %lu brakes %lu %lu",
-				CarState.Torque_Req, APPS1.data,
-				APPS2.data, BPPS.data,
-				BrakeFront.data, BrakeRear.data);
-	}
-
-	doVectoring(CarState.Torque_Req, &adj, &spd, pedalreq);
-
-	if (CarState.APPSstatus)
-		setOutput(TSLED, On);
-	else
-		setOutput(TSLED, Off);
-
-	InverterSetTorque(&adj, 0);
-
-	if (readystate == 0 && HVEnableTimer + 2000 < curtime) {
-		setOutput(TSLED, On);
-	} else {
-		blinkOutput(TSLED, LEDBLINK_ONE, 100);
-	}
-
-
-		if (readystate == 0 && CarState.allowtsactivation) {
-			DebugMsg("TS Activation requested whilst ready.");
-			CAN_SendDebug(TSR_ID);
-			TSRequested = 1;
-			HVEnableTimer = gettimer();
-			return TSActiveState;
-		}
-
 
 	return IdleState;
-}
+	}

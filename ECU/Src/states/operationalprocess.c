@@ -92,10 +92,9 @@ int Startup(uint32_t OperationLoops) {
 	CarState.MaxTorque = 60;
 	CarState.PowerBalance = 60;
 	CarState.AllowTorque = false;
-	vTaskDelay(5);
-	setNodeDevicePower(LeftPump, true, 0); 
-	vTaskDelay(5);
-	setNodeDevicePower(RightPump, true, 0); 
+	Set_LV_Devices_Off(); // turn off all low voltage devices
+
+ 
 	return PreOperationalState;
 }
 

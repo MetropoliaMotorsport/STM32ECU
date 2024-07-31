@@ -218,16 +218,6 @@ bool InvSendSDO(uint16_t id, uint16_t idx, uint8_t sub, uint32_t data) {
 	}
 }
 
-char* getMotorsEnabledStr(void) {
-	static char enabledstr[MOTORCOUNT + 1];
-	uint8_t motorsenabled = getEEPROMBlock(0)->EnabledMotors;
-	snprintf(enabledstr, MOTORCOUNT + 1, "%s%s%s%s",
-			(1 << 0) & motorsenabled ? "0" : "",
-			(1 << 1) & motorsenabled ? "1" : "",
-			(1 << 2) & motorsenabled ? "2" : "",
-			(1 << 3) & motorsenabled ? "3" : "");
-	return enabledstr;
-}
 
 volatile int invertersonline = 0;
 
@@ -284,7 +274,7 @@ void InvTask(void *argument) {
 
 					msg[0] = getInverterControlWord(&InverterState[i]);
 
-				if(InverterState[i].InvState == OPERATIONAL && CarState.AllowTorque)
+				if(InverterState[i].InvState == OPERATIONAL && InverterState[i].AllowTorque)
 					{					
 
 						int32_t vel = 20000 * SPEEDSCALING;

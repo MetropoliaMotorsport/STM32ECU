@@ -76,6 +76,23 @@ bool setNodeDevicePWM(DevicePower device, uint8_t dutycycle) {
 	return false; // return if device was found and request set.
 }
 
+void Set_LV_Devices_On(){
+
+	setNodeDevicePower(Inverters, true, 0);
+	setNodeDevicePower(SideFans, true, 0);
+	setNodeDevicePower(LeftPump, true, 0);
+	setNodeDevicePower(RightPump, true, 0);
+
+}
+void Set_LV_Devices_Off(){
+
+	setNodeDevicePower(Inverters, false, 0);
+	setNodeDevicePower(SideFans, false, 0);
+	setNodeDevicePower(LeftPump, false, 0);
+	setNodeDevicePower(RightPump, false, 0);
+
+}
+
 int initPowerNodes(void) {
 
 	RegisterCan2Message(&PowerNode1HeartBeat);

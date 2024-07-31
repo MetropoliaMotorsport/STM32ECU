@@ -101,8 +101,6 @@ int initInv( void );
 
 int initNoInv( void );
 
-char * getMotorsEnabledStr( void );
-
 // internal functions.
 uint32_t getInvExpected(  uint8_t inv );
 uint8_t InvSend( volatile InverterState_t *Inverter, bool reset );

@@ -40,6 +40,9 @@ extern devicepowerreq DevicePowerList[];
 bool setNodeDevicePower( DevicePower device, bool state, bool reset );
 bool setNodeDevicePWM(DevicePower device, uint8_t dutycycle);
 
+void Set_LV_Devices_On();
+void Set_LV_Devices_Off();
+
 int initPowerNodes( void );
 
 #endif /* POWERNODE_H_ */

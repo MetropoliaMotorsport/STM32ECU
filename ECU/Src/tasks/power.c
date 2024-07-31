@@ -57,15 +57,21 @@ uint32_t curpowernodesOnline = 0;
 /*
 Function makes sure that devices are in the state they are expected to be in.
 */
-void CheckDeviceState(){
+bool CheckDeviceState(){
+
+	bool States_Maching = true;
+
 	for(int i = 0; i < DEVICE_COUNT; i++) {
 		if (&DevicePowerList[i] != NULL){
 			if (DevicePowerList[i].expectedstate != DevicePowerList[i].actualstate) {
+				States_Maching = false;
 				setNodeDevicePower(DevicePowerList[i].device, DevicePowerList[i].expectedstate, false);
-				vTaskDelay(1);
+
 			}
 		}
 	}
+
+	return States_Maching;
 }
 
 void temp_ctl(){
