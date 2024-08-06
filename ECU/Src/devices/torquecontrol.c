@@ -233,8 +233,6 @@ int PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm reques
 
 	uint16_t APPS1_raw = APPS1.data;
 	uint16_t APPS2_raw = APPS2.data;
-	uint16_t BPPS_raw = BPPS.data;
-
 
 	//T 11.8.8:  If an implausibility occurs between the values of the APPSs and persists for more than 100 ms
 
@@ -257,14 +255,12 @@ int PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm reques
 	int difference = abs(APPS1_raw - APPS2_raw);
 
 	if( difference > TORQUE_DIFFERENCE){
-		CarState.APPSstatus = 0;
 		CarState.AllowTorque = 0;
 		CarState.Torque_Req = 0;
 		CarState.pedalreq = 0;
 	}
 	else{
-		CarState.APPSstatus = 1;
-		
+			
 		float torqueperc = (APPS1_raw + APPS2_raw) / 2;
 		//torqueperc = getTorqueReqCurve(torqueperc); //TODO implement pedal curve
 		/////////////////// quick fix for now

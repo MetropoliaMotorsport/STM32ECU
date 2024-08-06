@@ -7,7 +7,7 @@
 #include "bms.h"
 #include "output.h"
 #include "power.h"
-#include "debug.h"
+
 #include "node_device.h"
 
 

@@ -16,7 +16,7 @@
 #include "torquecontrol.h"
 #include "watchdog.h"
 #include "power.h"
-#include "debug.h"
+
 #include "power.h"
 #include "taskpriorities.h"
 #include "timerecu.h"
@@ -212,8 +212,7 @@ bool InvSendSDO(uint16_t id, uint16_t idx, uint8_t sub, uint32_t data) {
 	if (xQueueSend(InvCfgQueue, &msg, 0))
 		return true;
 	else {
-		DebugPrintf("Failed to add SDO %d %4X to queue at (%lu)", id, idx,
-				gettimer());
+
 		return false;
 	}
 }
@@ -246,7 +245,6 @@ void InvTask(void *argument) {
 
 	TickType_t lastseen[MOTORCOUNT];
 	
-	DebugMsg("Inv Waiting setup");
 
 	uint32_t InvReceived = 0;
 

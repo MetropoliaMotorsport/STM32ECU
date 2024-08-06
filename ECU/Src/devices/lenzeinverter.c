@@ -12,7 +12,7 @@
 #include "errors.h"
 #include "inverter.h"
 #include "timerecu.h"
-#include "debug.h"
+
 #include "can_ids.h"
 #include "lenzeinverter.h"
 
@@ -217,7 +217,6 @@ uint8_t receiveINVNMT(volatile InverterState_t *Inverter) {
 
 bool processINVError(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle) {
-	char str[80];
 	char errorstr[40] = "";
 
 	uint8_t inv = datahandle->index;
@@ -272,9 +271,6 @@ bool processINVError(const uint8_t CANRxData[8], const uint32_t DataLength,
 			AllowReset = 0;
 		}
 
-		snprintf(str, 80, "Inverter %d error %5X %s received.",
-				datahandle->index, ErrorCode, errorstr);
-		DebugMsg(str);
 
 		if (InverterState[inv].InvState >= OFFLINE) //if inverter status not in error yet, put it there.
 				{
@@ -461,8 +457,7 @@ char* LenzeErrorBitTypeStatus2Str(uint8_t bit) {
 
 bool processTPDO2(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle) {
-	char str[80] = "";
-	bool error = false;
+
 	uint8_t inv = datahandle->index;
 
 	uint16_t status = CANRxData[0];
@@ -545,16 +540,6 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 	uint32_t time = gettimer();
 	static char str[80];
 
-	if (Inverter == NULL) {
-		snprintf(str, 60, "Inverter startup called too soon! at (%lu)", time);
-		DebugMsg(str);
-	}
-
-	if (Inverter->Motor > 2) {
-		snprintf(str, 60, "Inverter %d startup invalid motor %d at (%lu)!",
-				Inverter->Motor, Inverter->Motor, time);
-		DebugMsg(str);
-	}
 
 	// PDO timeout set in lenze software right now.
 	// set SDO's to sync   0x1800-1806  = lenze TPDO 1 through 7
@@ -562,7 +547,7 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 		// state gets moved by reply.
 		switch (Inverter->SetupState) {
 		case 0:
-			DebugMsg("called in state 0"); // don't do anything in state 0
+
 			break;
 
 		case 1:
@@ -577,7 +562,7 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 				snprintf(str, 80,
 						"Lenze inverter %d resending SDO in state %d at (%lu)",
 						Inverter->Motor, Inverter->SetupState, time);
-				DebugMsg(str);
+
 				Inverter->SetupLastSeenTime = time;
 				InverterState[Inverter->Motor + 1].SetupLastSeenTime = time;
 				InvSendSDO(Inverter->COBID, 0x1800 + Inverter->SetupState - 3,
@@ -605,18 +590,10 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 			uint8_t RDODone[8] = { 0x60, 0x04, 0x40, 0x01, 0, 0, 0, 0 };
 
 			if (resend) {
-				snprintf(str, 80,
-						"Lenze inverter %d resending SDO in state %d at (%lu)",
-						Inverter->Motor, Inverter->SetupState, time);
-				DebugMsg(str);
+
 				InvSendSDO(Inverter->COBID + 31, 0x4004, 1, 1234);
 			} else if (memcmp(RDODone, CANRxData, 4) == 0) {
-#if 1
-				snprintf(str, 80,
-						"Lenze inverter %d rcv APPC config done, now in private mode at (%lu)",
-						Inverter->Motor, time);
-				DebugMsg(str);
-#endif
+
 				CAN_SendStatus(9, Inverter->Motor, 5);
 				// TODO ack this last SDO.
 
@@ -661,9 +638,7 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 			//InverterState[Inverter->Motor+1].SetupState = 0;
 		}
 	} else {
-		snprintf(str, 80, "Lenze inverter %d called in startup at (%lu)",
-				Inverter->Motor, time);
-		DebugMsg(str);
+
 	}
 
 	return true;
@@ -676,14 +651,6 @@ bool InvStartupCfg(volatile InverterState_t *Inverter) {
 
 bool processAPPCRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle) {
-	char str[80];
-	snprintf(str, 80,
-			"APPCRDO id: %3X inv %d [%2X %2X %2X %2X %2X %2X %2X %2X] state: %d at (%lu)",
-			datahandle->id, datahandle->index,
-			InverterState[datahandle->index].SetupState, CANRxData[0],
-			CANRxData[1], CANRxData[2], CANRxData[3], CANRxData[4],
-			CANRxData[5], CANRxData[6], CANRxData[7], gettimer());
-	DebugMsg(str);
 
 	if (InverterState[datahandle->index].SetupState > 0) {
 		InvStartupState(&InverterState[datahandle->index], CANRxData, false);
@@ -707,11 +674,7 @@ bool processINVRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 		// check if APPC has just restarted
 		if (memcmp(INVREBOOT, CANRxData, 4) == 0) {
-			char str[80];
-			snprintf(str, 80,
-					"Lenze inverter %d starting APPC setup again unexpectedly at (%lu)",
-					datahandle->index, gettimer());
-			DebugMsg(str);
+
 			// set inv offline here.
 			InverterState[datahandle->index].SetupState = 0;
 			return true;

@@ -7,7 +7,7 @@
 
 #include "ecumain.h"
 #include "errors.h"
-#include "debug.h"
+
 #include "inverter.h"
 #include "configuration.h"
 #include "output.h"
@@ -47,7 +47,7 @@ void LogError(char *message) {
 		strncpy(error.msg, message, MAXERRORMSGLENGTH);
 		xQueueSendToBack(ERRORQueue, &error, 0); // send it to error state handler queue for display to user.
 	}
-	DebugMsg(message); // also send it to UART output immediately.
+
 }
 
 void SetErrorLogging( bool log) {
@@ -74,20 +74,12 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 	if (OperationLoops == 0) // reset state on entering/rentering.
 			{
 		CAN_SendDebug(EES_ID);
-		char str[MAXERRORMSGLENGTH + 1]; // Nam: Replacing LCDCOLUMNS with MAXERRORMSGLENGTH to remove lcd.h TODO: Figure out a proper value to use
-
-		sprintf(str, "Loc:%.2X Code:%.4X", Errors.ErrorPlace,
-				Errors.ErrorReason);
-		DebugMsg(str);
 
 		InverterAllowTorqueAll( false); // immedietly stop allowing torque request.
 
 		ShutdownCircuitSet( false);
 
 		ClearCriticalError();
-
-		sprintf(str, "Errorstate: %.4X", 0);
-		// send cause of error state.
 
 		blinkOutput(TSLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);
 		blinkOutput(RTDMLED, LEDBLINK_FOUR, LEDBLINKNONSTOP);

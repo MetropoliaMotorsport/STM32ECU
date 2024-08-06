@@ -8,7 +8,7 @@
 #include "ecumain.h"
 #include "output.h"
 #include "timerecu.h"
-#include "debug.h"
+
 #include "power.h"
 #include "taskpriorities.h"
 #include "queue.h"

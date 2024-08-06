@@ -5,7 +5,7 @@
  *      Author: visa
  */
 
-#include "debug.h"
+
 #include "ecumain.h"
 #include "uartecu.h"
 

@@ -11,7 +11,7 @@
 #include "output.h"
 #include "power.h"
 #include "errors.h"
-#include "debug.h"
+
 #include "powernode.h"
 
 bool ReadyReceive() {
@@ -19,7 +19,7 @@ bool ReadyReceive() {
 	bool States_Maching = true;
 
 	for(int i = 0; i < DEVICE_COUNT; i++) {
-		if (&DevicePowerList[i] != NULL){
+		if (&DevicePowerList[i] != None){
 			if (DevicePowerList[i].expectedstate != DevicePowerList[i].actualstate) {
 				States_Maching = false;
 				}
@@ -41,10 +41,8 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 	static uint16_t received;
 
 	if (OperationLoops == 0) // reset state on entering/rentering.
-			{
-		DebugMsg("Entering Readyness check State");
-		CAN_SendDebug(ERCS_ID);
-		//SetErrorLogging(true);
+	{
+		CAN_SendDebug(ERCS_ID); //Entering Readyness check State
 		received = 0xFFFF;
 
 	}
@@ -54,8 +52,7 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 	CAN_SendStatus(1, OperationalReadyState, received);
 
 	if (OperationLoops > 50) // 500 )	// how many loops allow to get all data on time?, failure timeout.
-			{
-		DebugMsg("Errorplace 0xBA Too many loops.");
+	{
 		CAN_SendDebug(ERRTL_ID);
 		Errors.ErrorPlace = 0xBA;
 		return OperationalErrorState; // error, too long waiting for data. Go to error state to inform and allow restart of process.

@@ -178,36 +178,23 @@
 typedef enum {TEST, MAX, AUTOCROSS, ENDURANCE} MODE;
 
 typedef struct {
+
+
 	uint8_t brake_balance;
 
-	uint8_t TorqueVectoring;
-
 	float Torque_Req;
-	uint32_t PowerLimit;
 	bool AllowTorque;
 	bool AllowRegen;
 	
 	uint8_t PedalProfile;
 	bool RegenLight;
-
-	uint8_t FanPowered;
-
-	uint8_t APPSstatus;
-
 	//////////////////////// Vehicle Mode
 	MODE DrivingMode;					// Vehicle Mode Selection
-	uint8_t Torque_Req_Max; 			// Maximum Torque Requested
-	uint8_t Torque_Req_CurrentMax; 		// Current Maximum Torque Requested
 	//////////////////////// Vehicle Dynamics Control
 	bool AllowTV;						// Allow Torque Vectoring
 	bool AllowTC;						// Allow Traction Control
 	uint8_t PowerBalance; 				// 0-100% power balance between front and rear.
 	////////////////////////
-
-	uint8_t LimpRequest;
-	uint8_t LimpActive;
-	uint8_t LimpNM;
-	bool LimpDisable;
 
 	int32_t Current;
 	int32_t VoltageINV;
@@ -217,24 +204,9 @@ typedef struct {
 	int32_t VoltageIVTAccu;
 	int32_t Power;
 	int32_t Wh;
-
 	float SOC;
-
-	uint8_t I_BrakeLight;
-	uint8_t I_Buzzers;
-	uint8_t I_IVT;
-	uint8_t I_AccuPCBs;
-	uint8_t I_AccuFans;
-	uint8_t Freq_IMD;
-	uint8_t DC_IMD;
-
-	uint8_t I_LeftPump;
-	uint8_t I_RightPump;
-
 	bool HV_on;
-	bool allowtsactivation;
 	bool PRE_Done;
-
 	float pedalreq;
 	float MaxTorque;
 	int32_t MaxSpeed;

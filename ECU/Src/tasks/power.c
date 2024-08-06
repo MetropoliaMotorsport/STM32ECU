@@ -15,7 +15,7 @@
 #include "eeprom.h"
 #include "inverter.h"
 #include "taskpriorities.h"
-#include "debug.h"
+
 #include "timerecu.h"
 #include "semphr.h"
 #include "output.h"
@@ -206,7 +206,7 @@ bool soundBuzzer(void) {
 }
 
 static void stopBuzzer(xTimerHandle pxTimer) {
-	DebugPrintf("Stopping buzzer\n");
+
 	setNodeDevicePower(Buzzer, false, false);
 }
 

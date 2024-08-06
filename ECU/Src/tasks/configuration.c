@@ -14,7 +14,6 @@
 #include "taskpriorities.h"
 #include "power.h"
 #include "inverter.h"
-#include "debug.h"
 #include "canecu.h"
 #include "torquecontrol.h"
 

@@ -16,7 +16,7 @@
 #include "torquecontrol.h"
 #include "output.h"
 #include "inverter.h"
-#include "debug.h"
+
 #include "node_device.h"
 #include "imu.h"
 #include "eeprom.h"
@@ -26,12 +26,6 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 	// EV4.11.3 RTDM Check
 	// Closing the shutdown circuit by any part defined in EV 6.1.2 must not (re-)activate the TS.
 	// Additional action must be required.
-
-	static uint16_t readystate;
-	static uint32_t standstill;
-	static uint8_t allowstop;
-	static uint32_t limpcounter;
-	static uint32_t nextmsg = 0;
 
 	if (OperationLoops == 0) // reset state on entering/rentering.
 	{

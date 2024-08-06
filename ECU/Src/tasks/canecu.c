@@ -11,7 +11,6 @@
 #include "node_device.h"
 #include "errors.h"
 #include "uartecu.h"
-#include "debug.h"
 #include "output.h"
 #include "timerecu.h"
 #include "power.h"
@@ -72,13 +71,11 @@ QueueHandle_t CANTxQueue, CANRxQueue;
 
 // ADC conversion buffer, should be aligned in memory for faster DMA?
 DMA_BUFFER ALIGN_32BYTES (static uint8_t CANTxBuffer1[1024]);
-DMA_BUFFER ALIGN_32BYTES (static uint8_t CANTxBuffer2[1024]);
 
 static uint8_t *CANTxBuffer;
 
 //static uint16_t CANTxBufferPos;
 static uint8_t *CurCANTxBuffer;
-static uint32_t CANTxLastsend;
 
 uint32_t rxcount1 = 0;
 uint32_t rxcount2 = 0;
@@ -155,29 +152,22 @@ void CANTxTask(void *argument) {
 				TxHeader.DataLength = msg.dlc; // only two bytes defined in send protocol, check this
 
 				if (HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) == 0) {
-					DebugMsg("CAN Tx Buffer full, waiting for buffer empty.");
-
-					bool gotsem = false;
 
 					if (msg.bus == bus1) {
 						// reset tx empty semaphore to wait on it.
-						bool clearedsem = xQueueReset(bus1TXDone); // clear fifo done semaphore to wait for it again.
-						gotsem = xSemaphoreTake(bus1TXDone, 5); // a bit of timeout so can't get permanently stuck here.
+						xQueueReset(bus1TXDone); // clear fifo done semaphore to wait for it again.
+						xSemaphoreTake(bus1TXDone, 5); // a bit of timeout so can't get permanently stuck here.
 					} else {
-						bool clearedsem = xQueueReset(bus0TXDone);
-						gotsem = xSemaphoreTake(bus0TXDone, 5);
+						xQueueReset(bus0TXDone);
+						xSemaphoreTake(bus0TXDone, 5);
 					}
 
-					if (!gotsem) {
-						DebugMsg("Buffer empty wait failed.");
-					}
 				}
 
 				if (HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) != 0)
 					if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcanp, &TxHeader,
 							msg.data) != HAL_OK) {
-						DebugPrintf("CAN Tx Send Err code: %d",
-								hfdcanp->ErrorCode);
+
 						if (pCANSendError != NULL)
 							(*pCANSendError)++;
 					}
@@ -187,13 +177,11 @@ void CANTxTask(void *argument) {
 				if (msg.bus == bus1) {
 					static bool busnotact = false;
 					if (!busnotact) {
-						DebugPrintf("CAN Tx Bus1 Down at (%lu)", gettimer());
 						busnotact = true;
 					}
 				} else if (msg.bus == bus0) {
 					static bool busnotact = false;
 					if (!busnotact) {
-						DebugPrintf("CAN Tx Bus0 Down at (%lu)", gettimer());
 						busnotact = true;
 					}
 				}
@@ -211,7 +199,7 @@ void CANRxTask(void *argument) {
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT(CANRxQueue);
 
-	can_msg msg, uartmsg;
+	can_msg msg;
 
 	uint8_t watchdogBit = registerWatchdogBit("CANTxTask");
 
@@ -219,10 +207,6 @@ void CANRxTask(void *argument) {
 
 	portTickType waittick = CYCLETIME;
 
-	bool transmitUARTCan = false;
-
-	uint8_t uartrxstate = 0;
-	uint8_t uartin[7] = { 0 }; // zero out array to ensure it ends in 0, for string termination.
 
 	while (1) {
 		portTickType curtick = xTaskGetTickCount();
@@ -340,11 +324,11 @@ uint8_t CAN1Send(uint16_t id, uint8_t dlc, const uint8_t *pTxData) {
 
 	if (xPortIsInsideInterrupt()) {
 		if (!xQueueSendFromISR(CANTxQueue, (void* ) &msg, NULL)) {
-			DebugMsg("failed to add canmsg to bus1 queue!");
+			//TODO add debug option for that
 		}
 	} else {
 		if (!xQueueSend(CANTxQueue, (void* ) &msg, (TickType_t ) 0)) {
-			DebugMsg("failed to add canmsg to bus1 queue!");
+			//TODO add debug option for that
 		}
 	}
 	return 0;
@@ -365,13 +349,13 @@ uint8_t CAN2Send(uint16_t id, uint8_t dlc, const uint8_t *pTxData) {
 		if (!xQueueSendFromISR(CANTxQueue, (void* ) &msg, NULL)) {
 
 			i++;
-			DebugMsg("failed to add canmsg to bus0 queue!");
+			//TODO add debug point
 		}
 	} else {
 		if (!xQueueSend(CANTxQueue, (void* ) &msg, (TickType_t ) 0)) {
 
 			i += 2;
-			DebugMsg("failed to add canmsg to bus0 queue!");
+			//TODO add debug point
 		}
 	}
 
@@ -482,7 +466,7 @@ void processCANData(CANData *datahandle, uint8_t *CANRxData,
 	//////////////////////////////////////
 	if (datahandle->timeout > 0) {
 		if(xTimerStart(datahandle->timer, 0) != pdPASS){
-			DebugMsg("Failed to start timer");
+			//TODO add can message for this
 		}
 	}
 	//////////////////////////////////////
@@ -728,7 +712,6 @@ void HAL_FDCAN_ErrorCallback(FDCAN_HandleTypeDef *canp) {
 }
 
 void HAL_FDCAN_TimeoutOccurredCallback(FDCAN_HandleTypeDef *hfdcan) {
-	DebugMsg("CanTX Timeout");
 
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -764,15 +747,12 @@ void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan,
 		uint32_t ErrorStatusITs) {
 	if (hfdcan->Instance == FDCAN1) {
 		if (DeviceState.CAN1 == OPERATIONAL) {
-			if (ErrorStatusITs != FDCAN_ELEMENT_MASK_EFC) {
-				DebugPrintf("Can ErrorStatus bus1 %4x", ErrorStatusITs);
-			}
+
 		}
 
 	} else if (hfdcan->Instance == FDCAN2) {
 		if (DeviceState.CAN0 == OPERATIONAL) {
-			if (ErrorStatusITs != FDCAN_ELEMENT_MASK_EFC)
-				DebugPrintf("Can ErrorStatus bus2 %4x", ErrorStatusITs);
+
 		}
 	}
 }

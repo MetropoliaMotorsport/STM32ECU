@@ -19,7 +19,7 @@
 #include "timerecu.h"
 #include "power.h"
 #include "inverter.h"
-#include "debug.h"
+
 
 static int LastOperationalState = 0;
 static int NewOperationalState = 0;
@@ -57,23 +57,10 @@ void ResetStateData(void) // set default startup values for global state values.
 
 	DeviceState.timeout = false;
 
-#ifdef FANCONTROL
-	CarState.FanPowered = 0;
-#else
-	CarState.FanPowered = 1;
-#endif
-
 	DeviceState.FrontSpeedSensors = DISABLED;
 	DeviceState.FLSpeed = OPERATIONAL;
 	DeviceState.FRSpeed = OPERATIONAL;
 
-
-
-	CarState.Torque_Req_Max = 0;
-	CarState.Torque_Req_CurrentMax = 0;
-	CarState.LimpRequest = 0;
-	CarState.LimpActive = 0;
-	CarState.LimpDisable = 0;
 	CarState.PedalProfile = 0;
 	CarState.DrivingMode = 0;
 	CarState.AllowRegen = false;

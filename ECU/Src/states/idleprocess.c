@@ -15,7 +15,7 @@
 #include "timerecu.h"
 #include "output.h"
 #include "power.h"
-#include "debug.h"
+
 #include "node_device.h"
 #include "canecu.h"
 
@@ -48,8 +48,8 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 	if (OperationLoops == 0) // reset state on entering/rentering.
 			{
 		readystate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state to ensure can't proceed yet.
-		DebugMsg("Entering Idle State");
-		CAN_SendDebug(EIS_ID);
+
+		CAN_SendDebug(EIS_ID); // Entering Idle State
 
 		ShutdownCircuitSet( false);
 

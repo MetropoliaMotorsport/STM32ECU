@@ -11,7 +11,7 @@
 #include "bms.h"
 #include "output.h"
 #include "power.h"
-#include "debug.h"
+
 
 // bms operation mode, byte 4   normal mode, data logging.
 // byte 5, cell with min voltage - mv, use to trigger
@@ -35,8 +35,7 @@ CANData BMS_PRE_Done = { &DeviceState.BMS, BMS_PRE_Done_ID, 8, processBMS_PRE_Do
 
 void BMSTimeout(uint16_t id);
 
-CANData BMSSOC = { &DeviceState.BMS, BMSSOC_ID, 8, processBMSSOC, BMSTimeout,
-		6000 };
+CANData BMSSOC = { &DeviceState.BMS, BMSSOC_ID, 8, processBMSSOC, BMSTimeout, 6000 };
 
 void BMSTimeout(uint16_t id) {
 	//setOutputNOW(BMSLED, On);

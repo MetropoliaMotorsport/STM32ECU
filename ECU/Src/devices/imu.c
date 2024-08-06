@@ -9,7 +9,7 @@
 
 #include "ecumain.h"
 #include "imu.h"
-#include "debug.h"
+
 
 bool processIMUStatus(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle);
@@ -141,7 +141,7 @@ bool processIMUAccel(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 		static bool sent = false;
 		if (!sent) {
-			DebugPrintf("First IMU AccelX: %d", IMUReceived.AccelX);
+			//TODO add can message for this
 			sent = true;
 		}
 
@@ -161,7 +161,7 @@ bool processIMUGyro(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 		static bool sent = false;
 		if (!sent) {
-			DebugPrintf("First IMU GyroZ: %d", IMUReceived.GyroZ);
+			//TODO add can message for this
 			sent = true;
 		}
 
@@ -226,7 +226,7 @@ bool processIMUVel(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 		static bool sent = false;
 		if (!sent) {
-			DebugPrintf("First IMU Vel: %d", IMUReceived.VelN);
+			//TODO add can message for this
 			sent = true;
 		}
 
@@ -264,7 +264,7 @@ bool processIMUVelBody(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 		static bool sent = false;
 		if (!sent) {
-			DebugPrintf("First IMU VelBodyX: %d", IMUReceived.VelBodyX);
+			//TODO add can message for this
 			sent = true;
 		}
 		

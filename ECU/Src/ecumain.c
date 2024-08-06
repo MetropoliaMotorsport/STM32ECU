@@ -30,7 +30,7 @@
 #include "timerecu.h"
 #include "imu.h"
 #include "inverter.h"
-#include "debug.h"
+
 #include "configuration.h"
 #include "operationalprocess.h"
 #include "uartecu.h"
@@ -139,8 +139,6 @@ void MainTask(void *argument) {
 
 	xEventGroupSync(xStartupSync, 1, 1, 100);
 
-	CarState.allowtsactivation = true;
-
 	while (1) {
 		TickType_t startloop = xLastWakeTime;
 		OperationalProcess();
@@ -207,14 +205,9 @@ static int HardwareInit(void) {
 
 	initUART();
 
-	initDebug();
 
-	// startup LCD first
 	ShutdownCircuitSet( false); // ensure shutdown circuit is closed at start
 
-	if (watchdogRebooted()) {
-		DebugMsg("Watchdog Rebooted!");
-	}
 
 	initTimer();
 
