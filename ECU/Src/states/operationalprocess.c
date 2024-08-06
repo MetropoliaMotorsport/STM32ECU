@@ -79,6 +79,10 @@ int Startup(uint32_t OperationLoops) {
 	CarState.MaxTorque = 60;
 	CarState.PowerBalance = 60;
 	CarState.AllowTorque = false;
+	HAL_GPIO_WritePin(BMS_Output_Pin, BMS_Output_Port, SET);
+		HAL_GPIO_WritePin(IMD_Output_Pin, IMD_Output_Port, SET);
+
+
 	Set_LV_Devices_Off(); // turn off all low voltage devices
 
  

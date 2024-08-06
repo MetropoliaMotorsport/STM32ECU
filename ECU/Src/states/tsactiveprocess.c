@@ -39,11 +39,6 @@ int TSActiveProcess(uint32_t OperationLoops) {
 		prechargetimer = gettimer();
 		nextprechargemsg = 0;
 		InverterAllowTorqueAll(false);
-
-		CarState.AllowRegen = false;
-
-		resetOutput(TSLED, Off);
-		resetOutput(RTDMLED, Off);
 	}
 
 	// check if all inverters are ready.
@@ -62,7 +57,9 @@ int TSActiveProcess(uint32_t OperationLoops) {
 		
 	////////////////////////////
 	bool waiting_btn = false;
-	if( readystate > 0 && BPPS.data > 20 && gettimer() - prechargetimer > 5000) 	{
+	if( readystate > 0 && BPPS.data > 20 && CarState.PRE_Done) 	{
+
+		CAN_SendDebug(READY_TO_PRESS_RTD); // Ready to press RTDM
 		waiting_btn = true;
 		//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 		// inverters are ready, so allow torque.
@@ -77,7 +74,7 @@ int TSActiveProcess(uint32_t OperationLoops) {
 	 * One of these actions must include the actuation of the mechanical brakes while ready-to-drive mode is entered.
 	 */
 
-	if (waiting_btn && BTN3.data) // if inverters ready, rtdm pressed, and brake held down.
+	if (waiting_btn && BTN2.data) // if inverters ready, rtdm pressed, and brake held down.
 		{
 
 			return RunningState;

@@ -60,8 +60,8 @@ int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 	}
 
 	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-	if(BTN2.data == 1) {
-
+	if(BTN3.data == 1) {
+		
 		//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 		ShutdownCircuitSet( true);
 		return TSActiveState;

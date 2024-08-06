@@ -164,6 +164,13 @@ void updateOutput(output output) {
 	Output[output].updated = false;
 }
 
+/////////////////////
+int BMS_State;
+int IMD_state;
+//////////////////////
+
+
+
 void OutputTask(void *argument) {
 	xEventGroupSync(xStartupSync, 0, 1, portMAX_DELAY);
 
@@ -174,18 +181,18 @@ void OutputTask(void *argument) {
 	// (e.g. absence of failures is not actively indicated) must be illuminated
 	// for 1 s to 3 s for visible check after power cycling the LVMS.
 
-	for (int i = 0; i < OUTPUTCount; i++) {
-		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), On);
-	}
+	HAL_GPIO_WritePin(BMS_Output_Port, BMS_Output_Pin, SET);
+	HAL_GPIO_WritePin(IMD_Output_Port, IMD_Output_Pin, SET);
 
 	vTaskDelay(2000);
 	
 	while (1) {
-		
-		HAL_GPIO_WritePin(BMS_Input_Pin, BMS_Input_Port,
+
+
+		HAL_GPIO_WritePin(BMS_Output_Port, BMS_Output_Pin,
 				HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin));
 
-		HAL_GPIO_WritePin(IMD_Input_Pin, IMD_Input_Port,
+		HAL_GPIO_WritePin(IMD_Output_Port, IMD_Output_Pin,
 				HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin));
 
 		xEventGroupSync(xCycleSync, 0, 1, portMAX_DELAY); // wait for main cycle.

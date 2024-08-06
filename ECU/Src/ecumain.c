@@ -217,6 +217,7 @@ static int HardwareInit(void) {
 	initIVT();
 	initBMS();
 	initECU();
+	initOutput();
 
 #ifdef POWERNODES
 	initPowerNodes();

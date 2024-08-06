@@ -152,13 +152,13 @@ BO_ 186 Idle_State_Req: 1 ECU
 
 BO_ 187 Entering_Error_State: 1 ECU
 
-BO_ 12 BTN1: 1 AnalogNode1
+BO_ 12 BTN1: 2 AnalogNode1
  SG_ Value : 0|16@1+ (1,0) [0|0] "" Vector__XXX
 
-BO_ 13 BTN2: 1 AnalogNode1
+BO_ 13 BTN2: 2 AnalogNode1
  SG_ Value : 0|16@1+ (1,0) [0|0] "" Vector__XXX
 
-BO_ 14 BTN3: 1 AnalogNode1
+BO_ 14 BTN3: 2 AnalogNode1
  SG_ Value : 0|16@1+ (1,0) [0|0] "" Vector__XXX
 
 BO_ 29 PN1_Device_Status: 1 PowerNode1

@@ -138,7 +138,7 @@ void PowerTask(void *argument) {
 
 	while(1){
 
-		CheckDeviceState();
+		//CheckDeviceState();
 
 		temp_ctl();
 

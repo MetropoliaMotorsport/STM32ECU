@@ -48,7 +48,7 @@
 #define invRL						(0)
 #define invRR						(1)
 
-#define MAXInverterTorque			(24.6)
+#define MAXInverterTorque			(32)
 
 #define TORQUESLOPESCALING			(90)
 #define NMSCALING					(90)

@@ -36,21 +36,22 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 		 * The vehicle must make a characteristic sound, continuously for at least one second and a maximum of three seconds when it enters ready-to-drive mode.
 		 */
 		// send buzzer as entering RTDM
-		soundBuzzer();
+		//soundBuzzer();
 		
 		InverterAllowTorqueAll(true);		
 
 	}
 
-	if (OperationLoops < 100){
+	if (OperationLoops < 60){
 		setNodeDevicePower(Buzzer, 1, 0);
 	}
 	else{
 		setNodeDevicePower(Buzzer, 0, 0);
 	}
-	
-	
-	
+
+	if(ShutdownCircuitState == RESET){
+		return IdleState;
+	}
 
 
 
