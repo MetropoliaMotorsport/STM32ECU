@@ -72,6 +72,11 @@
 
 #define ECU_CAN_ID				(0x020) // send +1
 
+//Configuration IDs
+////////////////////////////////////////
+#define CONFIG_ID            0x64
+
+
 //Debug Msgs
 ////////////////////////////////////////
 

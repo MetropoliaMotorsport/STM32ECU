@@ -227,6 +227,7 @@ static int HardwareInit(void) {
 	initNodeDevices();
 #endif
 
+	initConfig();	
 
 	// Moved inverters after eeprom so that config value can be used.
 

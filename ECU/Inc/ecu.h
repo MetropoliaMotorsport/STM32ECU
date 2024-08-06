@@ -184,8 +184,7 @@ typedef struct {
 
 	float Torque_Req;
 	bool AllowTorque;
-	bool AllowRegen;
-	
+		
 	uint8_t PedalProfile;
 	bool RegenLight;
 	//////////////////////// Vehicle Mode
@@ -193,6 +192,7 @@ typedef struct {
 	//////////////////////// Vehicle Dynamics Control
 	bool AllowTV;						// Allow Torque Vectoring
 	bool AllowTC;						// Allow Traction Control
+	bool AllowRegen;					// Allow Regen
 	uint8_t PowerBalance; 				// 0-100% power balance between front and rear.
 	////////////////////////
 

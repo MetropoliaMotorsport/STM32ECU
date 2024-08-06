@@ -85,7 +85,6 @@ extern DeviceStatus Inverter;
 void InverterAllowTorque(uint8_t inv, bool allow );
 void InverterAllowTorqueAll( bool allow );
 InverterState_t * getInvState(uint8_t inv );
-bool invertersStateCheck( DeviceStatus state );
 void InverterSetTorque( vectoradjust *adj, speedadjust *spd );
 int InverterGetSpeed( void );
 void InverterSetTorqueInd( uint8_t inv, float req, int16_t speed );
@@ -99,13 +98,10 @@ uint8_t invRequestState( DeviceStatus state );
 void resetInv( void );
 int initInv( void );
 
-int initNoInv( void );
-
 // internal functions.
 uint32_t getInvExpected(  uint8_t inv );
 uint8_t InvSend( volatile InverterState_t *Inverter, bool reset );
 void InvResetError( volatile InverterState_t *Inverter );
-bool InvStartupCfg( volatile InverterState_t *Inverter );
 void InvReset( volatile InverterState_t *Inverter );
 
 bool InvSendSDO( uint16_t id, uint16_t idx, uint8_t sub, uint32_t data);

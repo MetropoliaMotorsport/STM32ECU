@@ -71,7 +71,7 @@ void InverterAllowTorque(uint8_t inv, bool allow) {
 	if (inv >= 0 && inv < MOTORCOUNT)
 		InverterState[inv].AllowTorque = allow;
 }
-;
+
 
 void InverterAllowTorqueAll( bool allow) {
 	for (int i = 0; i < MOTORCOUNT; i++) {
@@ -155,7 +155,7 @@ void HandleInverter(InverterState_t *Inverter) {
 		// only change command if we're not in wanted state to try and transition towards it.
 		if (Inverter->InvState != Inverter->InvRequested
 				&& Inverter->InvState > INERROR) {
-//			if ( Inverter->Motor == 1 )
+
 			// check if we've got voltage available for moving up states, otherwise stay up.
 			if (Inverter->HighVoltageAvailable
 					&& ((1 << Inverter->Motor)
@@ -172,13 +172,10 @@ void HandleInverter(InverterState_t *Inverter) {
 	}
 #ifdef TIMEINVSTATECHANGE
 	if (Inverter->InvState == Inverter->InvRequested && Inverter->Changetime) {
-		snprintf(str, 80, "Inverter [%d] reached requested state %d (%lu)",
-				Inverter->Motor, Inverter->InvState, gettimer());
-		DebugMsg(str);
 		Inverter->Changetime = 0;
 	}
 #endif
-#define INVDEBUG
+
 	// initial testing, use maximum possible error reset period regardless of error.
 	if (Inverter->InvState == INERROR) {
 		// only reset errors when we've got HV otherwise will always have motor conn error.
@@ -188,11 +185,7 @@ void HandleInverter(InverterState_t *Inverter) {
 			InvResetError(Inverter);
 			Inverter->errortime = gettimer();
 			Inverter->InvRequested = BOOTUP;
-#ifdef INVDEBUG
-			snprintf(str, 80, "Inverter Reset sent to Inv[%d] at (%lu)",
-					Inverter->Motor, gettimer());
-			DebugMsg(str);
-#endif
+
 		} else {
 			InvSend(Inverter, false); // continue sending PDO.
 		}
@@ -215,13 +208,6 @@ bool InvSendSDO(uint16_t id, uint16_t idx, uint8_t sub, uint32_t data) {
 
 		return false;
 	}
-}
-
-
-volatile int invertersonline = 0;
-
-int getInvOnlineCount(void) {
-	return invertersonline;
 }
 
 // task to manage inverter state.
@@ -264,49 +250,9 @@ void InvTask(void *argument) {
 
 		for(int i = 0; i < MOTORCOUNT; i++)
 		{			
-			if(!InverterState[i].appc_on){					
-					uint8_t msg[8] = { 0 };
-					uint8_t msg2[8] = {0};
-					
-					CAN1Send(LENZE_RPDO5_ID +  InverterState[i].COBID, 8, msg);
-
-					msg[0] = getInverterControlWord(&InverterState[i]);
-
-				if(InverterState[i].InvState == OPERATIONAL && InverterState[i].AllowTorque)
-					{					
-
-						int32_t vel = 20000 * SPEEDSCALING;
-						int16_t torque;
-
-						if(MOTORCOUNT > 2){
-							if(i < 2){
-								torque = ((CarState.MaxTorque / 100 * CarState.PowerBalance / 2) / MAXInverterTorque);
-							}
-							else{
-								torque = ((CarState.MaxTorque / 100 * (100 - CarState.PowerBalance) / 2) / MAXInverterTorque);
-							}
-						}
-						else{
-							torque = CarState.pedalreq * TORQUESCALING * torque;
-						}
-
-						storeLEint32(vel, &msg[2]);
-						storeLEint16(torque, &msg[6]);
-
-						storeLEint16(620*16, &msg2[0]); //max DC voltage
-						storeLEint16(400*16, &msg2[2]); // min DC voltage.
-						storeLEint16(20*16, &msg2[4]); // max power
-						storeLEint16(0, &msg2[6]); // max regeneration
-											
-					}
-
-				if(!InverterState[i].MCChannel){
-					CAN1Send(LENZE_RPDO3_ID + InverterState[i].COBID, 8, msg);
-					CAN1Send(LENZE_RPDO1_ID + InverterState[i].COBID, 8, msg);
-				}else{
-					CAN1Send(LENZE_RPDO4_ID + InverterState[i].COBID, 8, msg2);
-					CAN1Send(LENZE_RPDO2_ID + InverterState[i].COBID, 8, msg2);
-				}
+			if(!InverterState[i].appc_on){	
+					InverterState[i].InvCommand = getInverterControlWord(&InverterState[i]);				
+					InvSend(&InverterState[i], false);
 			}
 
 			if((gettimer() - InverterState[i].rdo_time > 2000) && InverterState[i].appc_on && InverterState[i].rdo_ctnr != 0){
@@ -365,13 +311,6 @@ DeviceStatus InternalInverterState(uint16_t Status) // status 104, failed to tur
 
 DeviceStatus GetInverterState(void) {
 	return DeviceState.Inverter;
-}
-
-bool invertersStateCheck(const DeviceStatus state) {
-	if (DeviceState.Inverter == state)
-		return true;
-	else
-		return false;
 }
 
 int8_t getInverterControlWord(const InverterState_t *Inverter) // returns response to send inverter based on current state.
@@ -511,11 +450,6 @@ void resetInv(void) {
 #endif
 
 	Errors.InverterError = 0; // reset logged errors.
-}
-
-int initNoInv(void) {
-	resetInv();
-	return 0;
 }
 
 int initInv(void) {

@@ -178,6 +178,8 @@ BO_ 33 Calibration_Results: 5 AnalogNode1
  SG_ Raw_0_Value : 8|16@1+ (1,0) [0|0] "" Vector__XXX
  SG_ Raw_100_Value : 24|8@1+ (1,0) [0|0] "" Vector__XXX
 
+BO_ 100 Config: 4 Vector__XXX
+
 
 
 

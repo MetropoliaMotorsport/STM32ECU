@@ -143,42 +143,38 @@ void InvReset(volatile InverterState_t *Inverter) {
 }
 
 uint8_t InvSend(volatile InverterState_t *Inverter, bool reset) {
-	uint8_t msg1[8] = { 0 };
-	uint8_t msg2[8] = { 0 };
-	uint8_t msgblank[8] = { 0 };
-
-	int32_t vel = 0;
-	int16_t torque = 0;
-
-	vel = CarState.MaxSpeed * SPEEDSCALING; //*16; // TODO add gear ratio, rpm multiplied out.  div by 16
-	torque = Inverter->Torque_Req  * TORQUESCALING * (CarState.MaxTorque / MAXInverterTorque);
 	
+	uint8_t msg[8] = { 0 };
+	uint8_t msg2[8] = {0};
+					
+	CAN1Send(LENZE_RPDO5_ID +  Inverter->COBID, 8, msg);
 
-	// store values for primary request.
-	if (!reset)
-		storeLEint16(Inverter->InvCommand, &msg1[0]);
-	else
-		storeLEint16(0x80, &msg1[0]);
+	msg[0] = Inverter->InvCommand;
 
-	storeLEint32(vel, &msg1[2]);
-	storeLEint16(torque, &msg1[6]);
+	if(Inverter->InvState == OPERATIONAL && Inverter->AllowTorque){
 
-	// secondary values, what units are these in? they presumably need multiplying up. by 16?
+		int32_t vel = CarState.MaxSpeed * SPEEDSCALING;
+		int16_t torque;
 
-    storeLEint16(620*16, &msg2[0]); //max DC voltage
-    storeLEint16(400*16, &msg2[2]); // min DC voltage.
-    storeLEint16(20*16, &msg2[4]); // max power
-    storeLEint16(0, &msg2[6]); // max regeneration
+		torque = CarState.pedalreq * TORQUESCALING * torque;
 
 
-	if (Inverter->MCChannel == false) {
-		CAN1Send(Inverter->COBID + LENZE_RPDO5_ID, 8, msgblank); // this should probably be disabled, not needed?
+		storeLEint32(vel, &msg[2]);
+		storeLEint16(torque, &msg[6]);
 
-		CAN1Send(Inverter->COBID + LENZE_RPDO1_ID, 8, msg1);
-		CAN1Send(Inverter->COBID + LENZE_RPDO2_ID, 8, msg2);
-	} else {
-		CAN1Send(Inverter->COBID + LENZE_RPDO3_ID, 8, msg1);
-		CAN1Send(Inverter->COBID + LENZE_RPDO4_ID, 8, msg2);
+		storeLEint16(620*16, &msg2[0]); //max DC voltage
+		storeLEint16(400*16, &msg2[2]); // min DC voltage.
+		storeLEint16(20*16, &msg2[4]); // max power
+		storeLEint16(0, &msg2[6]); // max regeneration
+											
+	}
+
+	if(!Inverter->MCChannel){
+		CAN1Send(LENZE_RPDO3_ID + Inverter->COBID, 8, msg);
+		CAN1Send(LENZE_RPDO1_ID + Inverter->COBID, 8, msg);
+	}else{
+		CAN1Send(LENZE_RPDO4_ID + Inverter->COBID, 8, msg2);
+		CAN1Send(LENZE_RPDO2_ID + Inverter->COBID, 8, msg2);
 	}
 
 	return 0;
@@ -289,9 +285,6 @@ bool processINVError(const uint8_t CANRxData[8], const uint32_t DataLength,
 		return false;
 	}
 
-#ifdef errorLED
-			blinkOutput(IMDLED_Output,LEDBLINK_FOUR,255);
-#endif
 }
 
 bool processTPDO1(const uint8_t CANRxData[8], const uint32_t DataLength,
@@ -497,9 +490,6 @@ bool processTPDO3(const uint8_t CANRxData[8], const uint32_t DataLength,
 		return true;
 	} else // bad data.
 	{
-#ifdef errorLED
-		blinkOutput(IMDLED_Output,LEDBLINK_FOUR,255);
-#endif
 		return false;
 	}
 }
@@ -510,8 +500,6 @@ bool processTPDO4(const uint8_t CANRxData[8], const uint32_t DataLength,
 	uint8_t inv = datahandle->index;
 
 	int16_t MotorTemp = getLEint16(&CANRxData[0]) / 16;
-//	int16_t powerActFiltered = getLEint16(&CANRxData[2]);
-//	int16_t volSActFiltered = getLEint16(&CANRxData[4]);
 	int16_t PowerModTemp = getLEint16(&CANRxData[6]) / 16;
 
 	xTaskNotify(InvTaskHandle, (0x1 << (InverterState[inv].Motor * 3 + 2)),
@@ -524,9 +512,6 @@ bool processTPDO4(const uint8_t CANRxData[8], const uint32_t DataLength,
 		InverterState[inv].InvTemp = PowerModTemp;
 	} else // bad data.
 	{
-#ifdef errorLED
-		blinkOutput(IMDLED_Output,LEDBLINK_FOUR,255);
-#endif
 		return false;
 	}
 
@@ -547,9 +532,7 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 		// state gets moved by reply.
 		switch (Inverter->SetupState) {
 		case 0:
-
 			break;
-
 		case 1:
 			// received startup message, start timer on last seen SDO message.
 			Inverter->SetupLastSeenTime = time;
@@ -644,10 +627,6 @@ bool InvStartupState(volatile InverterState_t *Inverter,
 	return true;
 }
 
-bool InvStartupCfg(volatile InverterState_t *Inverter) {
-
-	return true;
-}
 
 bool processAPPCRDO(const uint8_t CANRxData[8], const uint32_t DataLength,
 		const CANData *datahandle) {

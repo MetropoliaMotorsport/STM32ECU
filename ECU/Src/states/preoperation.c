@@ -56,12 +56,11 @@ int PreOperationState(uint32_t OperationLoops) {
 	PedalTorqueRequest(NULL);
 
 	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET); //Set first LED on
-	if(BTN1.data == 1)
-	{
-		Set_LV_Devices_On();
-		//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET); //Set first LED off
-		return OperationalReadyState;
-	}
+
+	Set_LV_Devices_On();
+	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET); //Set first LED off
+	return OperationalReadyState;
+	
 
 
 	return PreOperationalState; // nothing caused entry to a different state, continue in current state.
