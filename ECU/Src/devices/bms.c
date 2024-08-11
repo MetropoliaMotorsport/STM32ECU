@@ -26,7 +26,7 @@ bool processBMSSOC(const uint8_t CANRxData[8], const uint32_t DataLength, const 
 
 bool processBMS_PRE_Done(const uint8_t CANRxData[8], const uint32_t DataLength, CANData *datahandle){
 	
-	CarState.PRE_Done = true;
+	CarState.PRE_Done = CANRxData[0];
 	return true;
 }
 
