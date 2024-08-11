@@ -36,7 +36,7 @@ bool processBPPS(const uint8_t CANRxData[8], const uint32_t DataLength, CANData 
 
 
 
-		if(datahandle->data > 10){
+		if(datahandle->data > 5){
 
 			setNodeDevicePower(Brake, 1, 0);
 		}

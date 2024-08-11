@@ -284,10 +284,10 @@ void InvTask(void *argument) {
 
 					msg[0] = getInverterControlWord(&InverterState[i]);
 
-				if(InverterState[i].InvState == OPERATIONAL && CarState.PRE_Done)
+				if(InverterState[i].InvState == OPERATIONAL && CarState.PRE_Done && CarState.InvRunning)
 					{					
 
-						int32_t vel = 100 * SPEEDSCALING;
+						int32_t vel = 1000 * SPEEDSCALING;
 						int16_t torque = CarState.pedalreq * TORQUESCALING * (CarState.MaxTorque / MAXInverterTorque);
 
 						storeLEint32(vel, &msg[2]);

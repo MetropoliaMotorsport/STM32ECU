@@ -90,7 +90,8 @@ int Startup(uint32_t OperationLoops) {
 
 	ShutdownCircuitSet( false);
 	setNodeDevicePower(Inverters, false, 0); // turn off inverters
-	CarState.MaxTorque = 15;
+	CarState.MaxTorque = 10;
+	CarState.InvRunning = false;
 
 	setNodeDevicePower(LeftPump, true, 0); 
 

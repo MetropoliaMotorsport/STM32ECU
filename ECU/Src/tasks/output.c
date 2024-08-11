@@ -174,44 +174,26 @@ void OutputTask(void *argument) {
 	// (e.g. absence of failures is not actively indicated) must be illuminated
 	// for 1 s to 3 s for visible check after power cycling the LVMS.
 
-	for (int i = 0; i < OUTPUTCount; i++) {
-		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), On);
-	}
+	HAL_GPIO_WritePin(BMS_Output_Port, BMS_Output_Pin, SET);
+	HAL_GPIO_WritePin(IMD_Output_Port, IMD_Output_Pin, SET);
 
 	vTaskDelay(2000);
-
-	for (int i = 0; i < OUTPUTCount; i++) {
-		HAL_GPIO_WritePin(getGpioPort(i), getGpioPin(i), Off);
-	}
-
-	setOutputNOW(BMSLED, Off);
-
-	if (!CheckBMS()) {
-		setOutputNOW(BMSLED, On);
-	}
-
-	setOutputNOW(IMDLED, Off);
-
-	if (CheckIMD()) {
-		setOutputNOW(IMDLED, On);
-	}
-
-	setOutputNOW(TSOFFLED, On);
-
-	for (int i = 0; i < OUTPUTCount; i++) {
-		updateOutput(i);
-	}
-
-	TickType_t xLastWakeTime;
-
-	// Initialise the xLastWakeTime variable with the current time.
-	xLastWakeTime = xTaskGetTickCount();
-
-//	unsigned long counter;
+	
 	while (1) {
+
+
+		HAL_GPIO_WritePin(BMS_Output_Port, BMS_Output_Pin,
+				HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin));
+
+		HAL_GPIO_WritePin(IMD_Output_Port, IMD_Output_Pin,
+				HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin));
+
+		xEventGroupSync(xCycleSync, 0, 1, portMAX_DELAY); // wait for main cycle.
+	}
+
 		
 // change to not use que, just check data every 20ms and update states
-	}
+	
 
 	vTaskDelete(NULL);
 }

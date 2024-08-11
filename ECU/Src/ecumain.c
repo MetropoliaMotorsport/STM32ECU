@@ -239,6 +239,7 @@ static int HardwareInit(void) {
 	// Moved inverters after eeprom so that config value can be used.
 
 	initInv();
+	initOutput();
 
 	// after cubemx hardware inits, run our own initialisations to start up essential function.
 

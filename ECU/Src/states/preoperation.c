@@ -50,7 +50,6 @@ void setTestMotors( bool state) {
 #define READYTSALBIT		6
 #define READYTESTING		7
 
-uint8_t buz_timer = 0;
 // get external hardware upto state to allow entering operational state on request.
 int PreOperationState(uint32_t OperationLoops) {
 //	static int OperationLoops = 0;
@@ -70,21 +69,9 @@ int PreOperationState(uint32_t OperationLoops) {
 
 		CAN_SendDebug(EPOS_ID);
 
-		//DebugMsg("Entering Pre Operation State");
-
-		//SetErrorLogging( false);
 		preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
-		//InverterAllowTorqueAll(false);
-
-
-		//////////////////////////////TODO Fix LED control
-		//resetOutput(STARTLED, Off);
-		//resetOutput(TSLED, On);
-		//resetOutput(RTDMLED, Off);
-		//////////////////////////////
-
+	
 		ReadyToStart = 0;
-		// set startup powerstates to bring devices up.
 
 		initVectoring();
 
@@ -98,38 +85,10 @@ int PreOperationState(uint32_t OperationLoops) {
 	setNodeDevicePower(Inverters, true, 0);
 	vTaskDelay(2);
 	setNodeDevicePower(LeftPump, true, 0);
-/*
-	ReadyToStart = 0;
-	
-	vTaskDelay(5);
-
-	preoperationstate = DevicesOnline(preoperationstate);
-
-	// set drive mode
-
-	setCurConfig();
-
-	// allow APPS checking before RTDM
-	int16_t pedalreq;
-	float Torque_Req = PedalTorqueRequest(&pedalreq);
-
-	vectoradjust adj;
-	speedadjust spd;
-
-	doVectoring(Torque_Req, &adj, &spd, pedalreq);
-*/
-	ShutdownCircuitSet(true);
 	
 	PedalTorqueRequest(NULL);
 
-
-	if(CarState.PRE_Done && buz_timer < 58)
-	{
-		buz_timer++;
-		setNodeDevicePower(Buzzer, (buz_timer < 56 ? true : false), 0);
-	}
-
-	//soundBuzzer();
+	return IdleState;
 
 	return PreOperationalState; // nothing caused entry to a different state, continue in current state.
 }
