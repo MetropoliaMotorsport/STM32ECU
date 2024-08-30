@@ -279,6 +279,7 @@ void InvTask(void *argument) {
 			if(!InverterState[i].appc_on){					
 					uint8_t msg[8] = { 0 };
 					uint8_t msg2[8] = {0};
+					uint8_t msg3[8] = {0};
 					
 					CAN1Send(LENZE_RPDO5_ID +  InverterState[i].COBID, 8, msg);
 
@@ -288,7 +289,7 @@ void InvTask(void *argument) {
 					{					
 
 						int32_t vel = 20000 * SPEEDSCALING;
-						int16_t torque = CarState.pedalreq * TORQUESCALING * (CarState.MaxTorque / MAXInverterTorque);
+						int16_t torque = CarState.pedalreq * TORQUESCALING; //* (CarState.MaxTorque / MAXInverterTorque);
 
 						storeLEint32(vel, &msg[2]);
 						storeLEint16(torque, &msg[6]);
@@ -300,13 +301,13 @@ void InvTask(void *argument) {
 											
 					}
 
-				if(!InverterState[i].MCChannel){
+
 					CAN1Send(LENZE_RPDO3_ID + InverterState[i].COBID, 8, msg);
 					CAN1Send(LENZE_RPDO1_ID + InverterState[i].COBID, 8, msg);
-				}else{
+
 					CAN1Send(LENZE_RPDO4_ID + InverterState[i].COBID, 8, msg2);
 					CAN1Send(LENZE_RPDO2_ID + InverterState[i].COBID, 8, msg2);
-				}
+
 			}
 
 			if((gettimer() - InverterState[i].rdo_time > 2000) && InverterState[i].appc_on && InverterState[i].rdo_ctnr != 0){

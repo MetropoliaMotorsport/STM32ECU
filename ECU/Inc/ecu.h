@@ -228,6 +228,7 @@ typedef struct {
 	int32_t MaxSpeed;
 
 	uint16_t InvTemp;
+	int16_t MotorTemp;
 
 } CarStateType;
 
