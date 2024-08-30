@@ -289,7 +289,12 @@ void InvTask(void *argument) {
 					{					
 
 						int32_t vel = 20000 * SPEEDSCALING;
-						int16_t torque = CarState.pedalreq * TORQUESCALING; //* (CarState.MaxTorque / MAXInverterTorque);
+						int16_t torque;
+						if(InverterState[i].COBID == 0xE)
+							torque = CarState.pedalreq * TORQUESCALING; //* (CarState.MaxTorque / MAXInverterTorque);
+						else
+							torque = CarState.pedalreq * TORQUESCALING * 0.5;
+
 
 						storeLEint32(vel, &msg[2]);
 						storeLEint16(torque, &msg[6]);
