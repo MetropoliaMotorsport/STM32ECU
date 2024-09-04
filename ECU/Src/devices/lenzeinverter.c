@@ -489,9 +489,9 @@ bool processTPDO3(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 	if (1) //abs(Speed) < 15000 && abs(Torque) < 1000 && abs(Current) < 1000 )
 	{
-		xTaskNotify(InvTaskHandle, (0x1 << (InverterState[inv].Motor * 3 + 1)),
-				eSetBits);
+
 		InverterState[inv].Speed = (Speed / SPEEDSCALING) / 16; // wheel rpm not inv. / 16;
+		CarState.Speed = (Speed / SPEEDSCALING); //Inverter rpm
 		InverterState[inv].InvTorque = Torque;
 		InverterState[inv].InvCurrent = Current;
 

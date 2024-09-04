@@ -79,13 +79,13 @@ void temp_ctl(){
 		SetPWM = 10;
 
 		setNodeDevicePWM(SideFans, SetPWM);
-		setNodeDevicePWM(RightPump, SetPWM * 20 );
-		setNodeDevicePWM(LeftPump, SetPWM * 20) ;
+		setNodeDevicePWM(RightPump, SetPWM * 3 );
+		setNodeDevicePWM(LeftPump, SetPWM * 3) ;
 	}
 	else
 	{
-		int SetPWM1 = (CarState.InvTemp - InvGoalTemp) * 5;
-		int SetPWM2 = (CarState.MotorTemp - MotorGoalTemp) * 5;
+		int SetPWM1 = (CarState.InvTemp - InvGoalTemp) * 7;
+		int SetPWM2 = (CarState.MotorTemp - MotorGoalTemp) * 15;
 
 		SetPWM = SetPWM1 > SetPWM2 ? SetPWM1 : SetPWM2;
 
@@ -139,7 +139,7 @@ void PowerTask(void *argument) {
 
 	while(1){
 
-		CheckDeviceState();
+		//CheckDeviceState();
 
 		temp_ctl();
 

@@ -42,7 +42,7 @@
 #define ANALOGNODES
 #define MATLAB
 #define LENZE
-//#define TWOWHEELS
+#define TWOWHEELS
 #ifdef TWOWHEELS
 	#define MOTORCOUNT		(2)
 #else
@@ -229,6 +229,7 @@ typedef struct {
 
 	uint16_t InvTemp;
 	int16_t MotorTemp;
+	int32_t Speed;
 
 } CarStateType;
 
