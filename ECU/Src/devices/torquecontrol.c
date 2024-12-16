@@ -253,14 +253,22 @@ int PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm reques
 
 	//The absolute value of the difference between the APPS (Accelerator Pedal Position Sensors)
 
+	if(BPPS_raw > 20){
+		CarState.pedalreq = 0;
+		return 1;
+	}
+
 
 	int difference = abs(APPS1_raw - APPS2_raw);
 
 	if( difference > TORQUE_DIFFERENCE){
 		CarState.APPSstatus = 0;
-		CarState.AllowTorque = 0;
+		//CarState.AllowTorque = 0;
 		CarState.Torque_Req = 0;
 		CarState.pedalreq = 0;
+
+
+
 	}
 	else{
 		CarState.APPSstatus = 1;
@@ -268,7 +276,7 @@ int PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm reques
 		float torqueperc = (APPS1_raw + APPS2_raw) / 2;
 		//torqueperc = getTorqueReqCurve(torqueperc); //TODO implement pedal curve
 		/////////////////// quick fix for now
-		torqueperc = (torqueperc < 5) ? 0 : torqueperc;
+		torqueperc = (torqueperc < 10) ? 0 : torqueperc;
 		//////////////////
 		CarState.pedalreq = torqueperc;
 	}

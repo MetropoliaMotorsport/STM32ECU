@@ -43,7 +43,7 @@ int TSActiveProcess(uint32_t OperationLoops) {
 
 	PedalTorqueRequest(NULL);
 
-	if(BTN2.data && BPPS.data > 10){
+	if(BTN1.data && BPPS.data > 10){
 		return RunningState;
 	}
 

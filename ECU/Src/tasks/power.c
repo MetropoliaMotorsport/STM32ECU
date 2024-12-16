@@ -69,11 +69,14 @@ void CheckDeviceState(){
 	}
 }
 
+#define FIXEDTEMP 0
 void temp_ctl(){
-	uint16_t GoalTemp = 30;
+	uint16_t InvGoalTemp = 60;
+	int16_t MotorGoalTemp = 70;
 	uint8_t SetPWM = 0;
 
-	if (CarState.InvTemp < GoalTemp) 
+#if FIXEDTEMP
+	if (CarState.InvTemp < InvGoalTemp && CarState.MotorTemp < MotorGoalTemp)
 	{
 		SetPWM = 10;
 
@@ -83,16 +86,25 @@ void temp_ctl(){
 	}
 	else
 	{
-		SetPWM = (CarState.InvTemp - GoalTemp) * 5;
+		int SetPWM1 = (CarState.InvTemp - InvGoalTemp) * 7;
+		int SetPWM2 = (CarState.MotorTemp - MotorGoalTemp) * 15;
+
+		SetPWM = SetPWM1 > SetPWM2 ? SetPWM1 : SetPWM2;
+
 		SetPWM = SetPWM > 100 ? 100 : SetPWM;
 
 		setNodeDevicePWM(SideFans, SetPWM);
-		
-		SetPWM = SetPWM + 15 > 100 ? 100 : SetPWM;
+
+		SetPWM = SetPWM + 15 > 90 ? 90 : SetPWM;
 		setNodeDevicePWM(RightPump, SetPWM);
 		setNodeDevicePWM(LeftPump, SetPWM) ;
 	}
+#endif
 	
+		setNodeDevicePWM(SideFans, 20);
+		setNodeDevicePWM(RightPump, 90);
+		setNodeDevicePWM(LeftPump, 90) ;
+
 }
 	
 
@@ -134,7 +146,7 @@ void PowerTask(void *argument) {
 
 	while(1){
 
-		CheckDeviceState();
+		//CheckDeviceState();
 
 		temp_ctl();
 

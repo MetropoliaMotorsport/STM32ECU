@@ -19,7 +19,7 @@
 
 #define MAXERROROUTPUT       (40)
 
-#define TORQUE_DIFFERENCE	 (30)
+#define TORQUE_DIFFERENCE	 (5)
 #define TORQUE_LEFT_PRIMARY
 
 #define HPF20
@@ -42,7 +42,7 @@
 #define ANALOGNODES
 #define MATLAB
 #define LENZE
-//#define TWOWHEELS
+#define TWOWHEELS
 #ifdef TWOWHEELS
 	#define MOTORCOUNT		(2)
 #else
@@ -241,6 +241,8 @@ typedef struct {
 	int32_t MaxSpeed;
 
 	uint16_t InvTemp;
+	int16_t MotorTemp;
+	int32_t Speed;
 
 } CarStateType;
 

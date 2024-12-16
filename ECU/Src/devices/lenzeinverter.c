@@ -489,9 +489,8 @@ bool processTPDO3(const uint8_t CANRxData[8], const uint32_t DataLength,
 
 	if (1) //abs(Speed) < 15000 && abs(Torque) < 1000 && abs(Current) < 1000 )
 	{
-		xTaskNotify(InvTaskHandle, (0x1 << (InverterState[inv].Motor * 3 + 1)),
-				eSetBits);
 		InverterState[inv].Speed = (Speed / SPEEDSCALING) / 16; // wheel rpm not inv. / 16;
+		CarState.Speed = (Speed / SPEEDSCALING); //Inverter rpm
 		InverterState[inv].InvTorque = Torque;
 		InverterState[inv].InvCurrent = Current;
 
@@ -519,21 +518,16 @@ bool processTPDO4(const uint8_t CANRxData[8], const uint32_t DataLength,
 //	int16_t volSActFiltered = getLEint16(&CANRxData[4]);
 	int16_t PowerModTemp = getLEint16(&CANRxData[6]) / 16;
 
-	xTaskNotify(InvTaskHandle, (0x1 << (InverterState[inv].Motor * 3 + 2)),
-			eSetBits);
 	// don't actually have anything to do with these right now.
 
 	if (abs(MotorTemp) > 0 && abs(MotorTemp) < 200 && abs(PowerModTemp) > 0
 			&& abs(PowerModTemp) < 200) {
 		InverterState[inv].MotorTemp = MotorTemp;
 		InverterState[inv].InvTemp = PowerModTemp;
-	} else // bad data.
-	{
-#ifdef errorLED
-		blinkOutput(IMDLED_Output,LEDBLINK_FOUR,255);
-#endif
-		return false;
+		CarState.MotorTemp = MotorTemp;
 	}
+	 
+	
 
 	return true;
 
