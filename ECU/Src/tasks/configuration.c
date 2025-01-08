@@ -6,7 +6,7 @@
  */
 
 #include "ecumain.h"
-#include "configuration.h"
+
 #include "input.h"
 #include "timerecu.h"
 #include "eeprom.h"
@@ -15,7 +15,6 @@
 #include "taskpriorities.h"
 #include "power.h"
 #include "inverter.h"
-#include "debug.h"
 #include "canecu.h"
 #include "torquecontrol.h"
 
@@ -197,15 +196,15 @@ bool doPedalCalibration(uint16_t input) {
 
 	if (APPSL_close || APPSR_close) {
 		if (debugconfig && redraw) {
-			DebugPrintf("Press APPS & Regen");
-			DebugPrintf(" No brake pressure!");
-			DebugPrintf(str);
+			//DebugPrintf("Press APPS & Regen");
+			//DebugPrintf(" No brake pressure!");
+			//DebugPrintf(str);
 		}
 	} else if (REG_close) {
 		if (debugconfig && redraw) {
-			DebugPrintf("");
-			DebugPrintf("Press Regen");
-			DebugPrintf(str);
+			//DebugPrintf("");
+			//DebugPrintf("Press Regen");
+			//DebugPrintf(str);
 		}
 	} else {
 		int APPSL = 100.0 / (APPSL_max - APPSL_min)
@@ -224,15 +223,15 @@ bool doPedalCalibration(uint16_t input) {
 
 		snprintf(str, 21, "Cur L%2d%%  R%2d%%  B%2d%%", APPSL, APPSR, REGEN);
 		if (debugconfig && redraw)
-			DebugPrintf(str);
+			//DebugPrintf(str);
 
 		snprintf(str, 21, "Mn %5d %5d %5d", APPSL_min, APPSR_min, REG_min);
 		if (debugconfig && redraw)
-			DebugPrintf(str);
+			//DebugPrintf(str);
 
 		snprintf(str, 21, "Mx %5d %5d %5d", APPSL_max, APPSR_max, REG_max);
-		if (debugconfig && redraw)
-			DebugPrintf(str);
+
+			//DebugPrintf(str);
 	}
 
 	if (input == KEY_ENTER) {
@@ -319,7 +318,7 @@ bool DoMenuTorque(uint16_t input) {
 	if (menu.selection == 0 && input == KEY_ENTER) // CheckButtonPressed(Config_Input) )
 	{
 		redraw = true;
-		DebugPrintf("Leaving torque menu");
+		//DebugPrintf("Leaving torque menu");
 		menu.inedit = false;
 		return false;
 	}
@@ -327,11 +326,11 @@ bool DoMenuTorque(uint16_t input) {
 	strcpy(MenuLines[0], "Vectoring Menu:");
 	sprintf(MenuLines[1], "%cBack...", (menu.selection == 0) ? '>' : ' ');
 	if (debugconfig && redraw)
-		DebugPrintf(MenuLines[0]);
+		//DebugPrintf(MenuLines[0]);
 
 	for (int i = 0; i < 3; i++) {
-		if (debugconfig && redraw)
-			DebugPrintf(MenuLines[i + menu.top + 1]);
+
+			//DebugPrintf(MenuLines[i + menu.top + 1]);
 	}
 	redraw = false;
 
@@ -354,7 +353,7 @@ bool DoMenu(uint16_t input) {
 		{
 			inmenu = false;
 			menu.inedit = false;
-			DebugPrintf("\nSaving settings\n");
+			//DebugPrintf("\nSaving settings\n");
 
 			writeFullConfigEEPROM();
 
@@ -408,7 +407,7 @@ bool DoMenu(uint16_t input) {
 				REG_min = UINT16_MAX;
 				REG_max = 0;
 			} else {
-				DebugPrintf("Err:  Not ready.");
+				//DebugPrintf("Err:  Not ready.");
 				input = 0; // input has been seen, null it.
 			}
 		}
@@ -464,10 +463,10 @@ bool DoMenu(uint16_t input) {
 			if (SteeringAngle.data != 0xFFFF) {
 				getEEPROMBlock(0)->steerCalib = 180 - SteeringAngle.data;
 				// value should update on display. add a set message.
-				DebugPrintf("Steering angle calibrated to offset %d",
-						180 - SteeringAngle.data);
+				//DebugPrintf("Steering angle calibrated to offset %d",
+						//180 - SteeringAngle.data);
 			} else {
-				DebugPrintf("Steering angle no data to calibrate");
+				//DebugPrintf("Steering angle no data to calibrate");
 			}
 		}
 
@@ -498,15 +497,15 @@ bool DoMenu(uint16_t input) {
 #endif
 
 		if (debugconfig && redraw)
-			DebugPrintf(MenuLines[0]);
+			//DebugPrintf(MenuLines[0]);
 
 		for (int i = 0; i < 3; i++) {
-			if (debugconfig && redraw)
-				DebugPrintf(MenuLines[i + menu.top + 1]);
+
+				//DebugPrintf(MenuLines[i + menu.top + 1]);
 		}
 
 		if (debugconfig && redraw)
-			DebugPrintf("------\n");
+			//DebugPrintf("------\n");
 
 		redraw = false; // updated, unflag till something changes.
 		return true;
@@ -519,7 +518,7 @@ bool DoMenu(uint16_t input) {
 
 		if (debugconfig) {
 			redraw = true; // starting menu, draw it.
-			DebugPrintf("------\n");
+			//DebugPrintf("------\n");
 		}
 
 		return true;

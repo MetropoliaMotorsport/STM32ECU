@@ -31,10 +31,9 @@
 #include "timerecu.h"
 #include "imu.h"
 #include "inverter.h"
-#include "debug.h"
-#include "configuration.h"
+
+
 #include "operationalprocess.h"
-#include "uartecu.h"
 #include "taskpriorities.h"
 #include "node_device.h"
 
@@ -153,7 +152,7 @@ void MainTask(void *argument) {
 
 		if (xLastWakeTime - startloop > CYCLETIME)
 			CAN_SendDebug(Too_Long_Loop);
-			//DebugMsg("Long process loop!");
+			////DebugMsg("Long process loop!");
 			
 	}
 	// shouldn't get here, but terminate thread gracefully if do somehow.
@@ -206,15 +205,11 @@ static int HardwareInit(void) {
 	MX_GPIO_Init(); // no failure return value
 	MX_RNG_Init();
 
-	initUART();
-
-	initDebug();
-
 	// startup LCD first
 	ShutdownCircuitSet( false); // ensure shutdown circuit is closed at start
 
 	if (watchdogRebooted()) {
-		DebugMsg("Watchdog Rebooted!");
+		//DebugMsg("Watchdog Rebooted!");
 	}
 
 	initTimer();

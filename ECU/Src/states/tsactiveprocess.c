@@ -16,7 +16,7 @@
 #include "timerecu.h"
 #include "power.h"
 #include "errors.h"
-#include "debug.h"
+
 #include "brake.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -33,7 +33,7 @@ int TSActiveProcess(uint32_t OperationLoops) {
 
 	if (OperationLoops == 0) // reset state on entering/rentering.
 			{
-		DebugMsg("Entering TS Active State");
+		//DebugMsg("Entering TS Active State");
 		CAN_SendDebug(ETSAS_ID);
 
 		ShutdownCircuitSet(true);

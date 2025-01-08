@@ -10,7 +10,7 @@
 #include "ecumain.h"
 #include "runningprocess.h"
 #include "preoperation.h"
-#include "configuration.h"
+
 #include "errors.h"
 #include "power.h"
 #include "node_device.h"
@@ -20,7 +20,7 @@
 #include "inverter.h"
 #include "powernode.h"
 #include "timerecu.h"
-#include "debug.h"
+
 #include "ivt.h"
 #include "eeprom.h"
 #include "canecu.h"
@@ -58,9 +58,6 @@ int PreOperationState(uint32_t OperationLoops) {
 	static uint16_t ReadyToStart;
 	static uint32_t ledtimer;
 	static bool TSLEDstate;
-
-	char str[80] = "";
-
 
 	if (OperationLoops == 0) {
 		

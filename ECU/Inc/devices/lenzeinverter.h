@@ -37,11 +37,7 @@
     #define Inverter1_NodeID            (0xE)
     #define Inverter2_NodeID			(1)
 #else
-    #ifdef HPF2023
     #define Inverter1_NodeID			(6)
-    #else
-    #define Inverter1_NodeID			(2)
-    #endif
     #define Inverter2_NodeID			(0xE)
 #endif
 
@@ -58,6 +54,8 @@
 #define NMSCALING					(90)
 #define SPEEDSCALING				(0x4000)
 #define TORQUESCALING				(10)
+
+
 extern CANData InverterCANMotorRDO[MOTORCOUNT];
 
 

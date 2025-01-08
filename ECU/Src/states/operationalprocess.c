@@ -20,7 +20,7 @@
 #include "timerecu.h"
 #include "power.h"
 #include "inverter.h"
-#include "debug.h"
+
 
 static int LastOperationalState = 0;
 static int NewOperationalState = 0;
@@ -157,10 +157,6 @@ int OperationalProcess(void) {
 
 	case PreOperationalState: // pre operation - configuration, wait for device presence announcements in pre operation state.
 		NewOperationalState = PreOperationState(loopcount);
-		break;
-
-	case OperationalReadyState: // operation has been requested, get all devices to operational ready state and check sanity.
-		NewOperationalState = OperationReadyness(loopcount);
 		break;
 
 	case IdleState: // idle, inverters on. Ready to enter TS, everything should be ready to go at this stage.

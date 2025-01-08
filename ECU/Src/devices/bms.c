@@ -11,7 +11,7 @@
 #include "bms.h"
 #include "output.h"
 #include "power.h"
-#include "debug.h"
+
 
 // bms operation mode, byte 4   normal mode, data logging.
 // byte 5, cell with min voltage - mv, use to trigger
@@ -40,7 +40,7 @@ CANData BMSSOC = { &DeviceState.BMS, BMSSOC_ID, 8, processBMSSOC, BMSTimeout,
 
 void BMSTimeout(uint16_t id) {
 	//setOutputNOW(BMSLED, On);
-	DebugMsg("BMS Timeout");
+	//DebugMsg("BMS Timeout");
 	CAN_SendErrorStatus(199, 0, 0);
 	if (DeviceState.BMS != OFFLINE) {
 		CarState.VoltageBMS = 0;

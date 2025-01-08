@@ -15,7 +15,6 @@
 #include "eeprom.h"
 #include "inverter.h"
 #include "taskpriorities.h"
-#include "debug.h"
 #include "timerecu.h"
 #include "semphr.h"
 #include "output.h"
@@ -165,10 +164,10 @@ bool CheckBMS(void) // returns true if shutdown circuit other than ECU is closed
 {
 
 	if (HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin)) {
-		DebugMsg("BMS input PIN");
+		//DebugMsg("BMS input PIN");
 	}
 	if (DeviceState.BMS != OPERATIONAL) {
-		DebugMsg("BMS NOT operational");
+		//DebugMsg("BMS NOT operational");
 	}
 	return (!(HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin)
 			|| DeviceState.BMS != OPERATIONAL));
@@ -184,10 +183,10 @@ bool CheckIMD(void) // returns true if shutdown circuit other than ECU is closed
 {
 
 	if (HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin)) {
-		DebugMsg("IMD input PIN");
+		//DebugMsg("IMD input PIN");
 	}
 	if (DeviceState.BMS != OPERATIONAL) {
-		DebugMsg("BMS NOT operational in IMD check");
+		//DebugMsg("BMS NOT operational in IMD check");
 	}
 	return (HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin)
 			|| DeviceState.BMS != OPERATIONAL);
@@ -214,7 +213,7 @@ bool soundBuzzer(void) {
 }
 
 static void stopBuzzer(xTimerHandle pxTimer) {
-	DebugPrintf("Stopping buzzer\n");
+	//DebugPrintf("Stopping buzzer\n");
 	setNodeDevicePower(Buzzer, false, false);
 }
 

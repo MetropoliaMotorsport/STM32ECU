@@ -16,7 +16,6 @@
 #include "event_groups.h"
 #include "semphr.h"
 #include "taskpriorities.h"
-#include "debug.h"
 
 #define MAXWATCHDOGTASKS			10
 #define MAXWATCHDOGTASKNAMELENGTH 	20
@@ -261,7 +260,7 @@ int initWatchdog(void) {
 		counter++;
 		DWT_Delay(36*1000); // ensure that first trigger will be within window.
 		HAL_WWDG_Refresh(&hwwdg1);
-//		DebugPrintf("Watchdog call %d time: %d", counter, wdtime );
+//		//DebugPrintf("Watchdog call %d time: %d", counter, wdtime );
 
 	}
 #endif

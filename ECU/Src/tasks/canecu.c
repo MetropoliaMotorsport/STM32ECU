@@ -10,8 +10,6 @@
 #include "canecu.h"
 #include "node_device.h"
 #include "errors.h"
-#include "uartecu.h"
-#include "debug.h"
 #include "output.h"
 #include "timerecu.h"
 #include "power.h"
@@ -109,25 +107,6 @@ void UART_CANBufferAdd(const can_msg *msg) {
 //	UART_Transmit(UART2, canstr, len+msg.dlc+1);
 }
 
-void UART_CANBufferTransmit(void) {
-	if (CANTxBuffer - CurCANTxBuffer > 1000 || gettimer() != CANTxLastsend) // buffer is nearly full or 1ms has ticked over
-			{
-		CANTxLastsend = gettimer();
-
-		if (CANTxBuffer - CurCANTxBuffer > 0) {
-			UART_Transmit(UART1, CurCANTxBuffer, CANTxBuffer - CurCANTxBuffer);
-
-			if (CurCANTxBuffer == CANTxBuffer1) {
-				CANTxBuffer = CANTxBuffer2;
-				CurCANTxBuffer = CANTxBuffer2;
-			} else {
-				CANTxBuffer = CANTxBuffer1;
-				CurCANTxBuffer = CANTxBuffer1;
-			}
-		}
-
-	}
-}
 
 void CANTxTask(void *argument) {
 
@@ -196,7 +175,7 @@ void CANTxTask(void *argument) {
 				TxHeader.DataLength = msg.dlc; // only two bytes defined in send protocol, check this
 
 				if (HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) == 0) {
-					DebugMsg("CAN Tx Buffer full, waiting for buffer empty.");
+					//DebugMsg("CAN Tx Buffer full, waiting for buffer empty.");
 
 					bool gotsem = false;
 
@@ -210,15 +189,15 @@ void CANTxTask(void *argument) {
 					}
 
 					if (!gotsem) {
-						DebugMsg("Buffer empty wait failed.");
+						//DebugMsg("Buffer empty wait failed.");
 					}
 				}
 
 				if (HAL_FDCAN_GetTxFifoFreeLevel(hfdcanp) != 0)
 					if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcanp, &TxHeader,
 							msg.data) != HAL_OK) {
-						DebugPrintf("CAN Tx Send Err code: %d",
-								hfdcanp->ErrorCode);
+						//DebugPrintf("CAN Tx Send Err code: %d",
+								//hfdcanp->ErrorCode);
 						if (pCANSendError != NULL)
 							(*pCANSendError)++;
 					}
@@ -228,13 +207,13 @@ void CANTxTask(void *argument) {
 				if (msg.bus == bus1) {
 					static bool busnotact = false;
 					if (!busnotact) {
-						DebugPrintf("CAN Tx Bus1 Down at (%lu)", gettimer());
+						//DebugPrintf("CAN Tx Bus1 Down at (%lu)", gettimer());
 						busnotact = true;
 					}
 				} else if (msg.bus == bus0) {
 					static bool busnotact = false;
 					if (!busnotact) {
-						DebugPrintf("CAN Tx Bus0 Down at (%lu)", gettimer());
+						//DebugPrintf("CAN Tx Bus0 Down at (%lu)", gettimer());
 						busnotact = true;
 					}
 				}
@@ -389,11 +368,11 @@ uint8_t CAN1Send(uint16_t id, uint8_t dlc, const uint8_t *pTxData) {
 
 	if (xPortIsInsideInterrupt()) {
 		if (!xQueueSendFromISR(CANTxQueue, (void* ) &msg, NULL)) {
-			DebugMsg("failed to add canmsg to bus1 queue!");
+			//DebugMsg("failed to add canmsg to bus1 queue!");
 		}
 	} else {
 		if (!xQueueSend(CANTxQueue, (void* ) &msg, (TickType_t ) 0)) {
-			DebugMsg("failed to add canmsg to bus1 queue!");
+			//DebugMsg("failed to add canmsg to bus1 queue!");
 		}
 	}
 	return 0;
@@ -414,13 +393,13 @@ uint8_t CAN2Send(uint16_t id, uint8_t dlc, const uint8_t *pTxData) {
 		if (!xQueueSendFromISR(CANTxQueue, (void* ) &msg, NULL)) {
 
 			i++;
-			DebugMsg("failed to add canmsg to bus0 queue!");
+			//DebugMsg("failed to add canmsg to bus0 queue!");
 		}
 	} else {
 		if (!xQueueSend(CANTxQueue, (void* ) &msg, (TickType_t ) 0)) {
 
 			i += 2;
-			DebugMsg("failed to add canmsg to bus0 queue!");
+			//DebugMsg("failed to add canmsg to bus0 queue!");
 		}
 	}
 
@@ -443,7 +422,7 @@ uint8_t CANSendSDO(enum canbus bus, uint16_t id, uint16_t idx, uint8_t sub,
 			"InvSDOsend Id 0x%3X on %s [%2X %2X %2X %2X data %lu] (%lu)",
 			COBSDOS_ID + id, bus == bus0 ? "bus0" : "bus1", msg[0], msg[1],
 			msg[2], msg[3], data, gettimer());
-	DebugMsg(str);
+	//DebugMsg(str);
 #endif
 	if (bus == bus0) {
 		CAN1Send( COBSDOS_ID + id, 8, msg);
@@ -715,7 +694,7 @@ int RegisterCan1Message(CANData *CanMessage) {
 		if (CanBUS1Messages[CanMessage->id] != NULL) {
 			snprintf(str, 80, "Tried to add a duplicate CAN id %3X on bus1!",
 					CanMessage->id);
-			DebugMsg(str);
+			//DebugMsg(str);
 		} else {
 			if (!RegisterCanTimeout(CanMessage))
 				return 1;
@@ -735,7 +714,7 @@ int RegisterCan2Message(CANData *CanMessage) {
 		if (CanBUS2Messages[CanMessage->id] != NULL) {
 			snprintf(str, 80, "Tried to add a duplicate CAN id %3X on bus0!",
 					CanMessage->id);
-			DebugMsg(str);
+			//DebugMsg(str);
 		} else {
 			if (!RegisterCanTimeout(CanMessage))
 				return 1;
@@ -918,7 +897,7 @@ void HAL_FDCAN_ErrorCallback(FDCAN_HandleTypeDef *canp) {
 }
 
 void HAL_FDCAN_TimeoutOccurredCallback(FDCAN_HandleTypeDef *hfdcan) {
-	DebugMsg("CanTX Timeout");
+	//DebugMsg("CanTX Timeout");
 
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -955,14 +934,14 @@ void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan,
 	if (hfdcan->Instance == FDCAN1) {
 		if (DeviceState.CAN1 == OPERATIONAL) {
 			if (ErrorStatusITs != FDCAN_ELEMENT_MASK_EFC) {
-				DebugPrintf("Can ErrorStatus bus1 %4x", ErrorStatusITs);
+				//DebugPrintf("Can ErrorStatus bus1 %4x", ErrorStatusITs);
 			}
 		}
 
 	} else if (hfdcan->Instance == FDCAN2) {
 		if (DeviceState.CAN0 == OPERATIONAL) {
-			if (ErrorStatusITs != FDCAN_ELEMENT_MASK_EFC)
-				DebugPrintf("Can ErrorStatus bus2 %4x", ErrorStatusITs);
+
+				//DebugPrintf("Can ErrorStatus bus2 %4x", ErrorStatusITs);
 		}
 	}
 }

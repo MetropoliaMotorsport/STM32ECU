@@ -25,7 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "ecumain.h"
 #include "output.h"
-#include "configuration.h"
+
 #include "power.h"
 /* USER CODE END Includes */
 

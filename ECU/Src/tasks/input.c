@@ -8,9 +8,7 @@
 #include "ecumain.h"
 #include "input.h"
 #include "timerecu.h"
-#include "configuration.h"
 #include "tim.h"
-#include "debug.h"
 #include "taskpriorities.h"
 
 // PWM Pin needs capacitor taken off to deactivate low pass filter.

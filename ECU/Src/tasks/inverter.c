@@ -16,7 +16,6 @@
 #include "torquecontrol.h"
 #include "watchdog.h"
 #include "power.h"
-#include "debug.h"
 #include "power.h"
 #include "taskpriorities.h"
 #include "timerecu.h"
@@ -173,7 +172,7 @@ void HandleInverter(InverterState_t *Inverter) {
 	if (Inverter->InvState == Inverter->InvRequested && Inverter->Changetime) {
 		snprintf(str, 80, "Inverter [%d] reached requested state %d (%lu)",
 				Inverter->Motor, Inverter->InvState, gettimer());
-		DebugMsg(str);
+		//DebugMsg(str);
 		Inverter->Changetime = 0;
 	}
 #endif
@@ -190,7 +189,7 @@ void HandleInverter(InverterState_t *Inverter) {
 #ifdef INVDEBUG
 			snprintf(str, 80, "Inverter Reset sent to Inv[%d] at (%lu)",
 					Inverter->Motor, gettimer());
-			DebugMsg(str);
+			//DebugMsg(str);
 #endif
 		} else {
 			InvSend(Inverter, false); // continue sending PDO.
@@ -211,8 +210,8 @@ bool InvSendSDO(uint16_t id, uint16_t idx, uint8_t sub, uint32_t data) {
 	if (xQueueSend(InvCfgQueue, &msg, 0))
 		return true;
 	else {
-		DebugPrintf("Failed to add SDO %d %4X to queue at (%lu)", id, idx,
-				gettimer());
+		//DebugPrintf("Failed to add SDO %d %4X to queue at (%lu)", id, idx,
+				//gettimer());
 		return false;
 	}
 }
@@ -255,7 +254,7 @@ void InvTask(void *argument) {
 
 	TickType_t lastseen[MOTORCOUNT];
 	
-	DebugMsg("Inv Waiting setup");
+	//DebugMsg("Inv Waiting setup");
 	CAN_SendErrorStatus(8, 0, 0);
 
 	uint32_t InvReceived = 0;

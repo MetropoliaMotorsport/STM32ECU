@@ -7,10 +7,9 @@
 
 #include "ecumain.h"
 #include "errors.h"
-#include "debug.h"
+
 #include "inverter.h"
 #include "input.h"
-#include "configuration.h"
 #include "output.h"
 #include "power.h"
 #include "timerecu.h"
@@ -48,7 +47,7 @@ void LogError(char *message) {
 		strncpy(error.msg, message, MAXERRORMSGLENGTH);
 		xQueueSendToBack(ERRORQueue, &error, 0); // send it to error state handler queue for display to user.
 	}
-	DebugMsg(message); // also send it to UART output immediately.
+	//DebugMsg(message); // also send it to UART output immediately.
 }
 
 void SetErrorLogging( bool log) {
@@ -79,7 +78,7 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 
 		sprintf(str, "Loc:%.2X Code:%.4X", Errors.ErrorPlace,
 				Errors.ErrorReason);
-		DebugMsg(str);
+		//DebugMsg(str);
 
 		InverterAllowTorqueAll( false); // immedietly stop allowing torque request.
 
@@ -145,7 +144,7 @@ int OperationalErrorHandler(uint32_t OperationLoops) {
 
 void SetCriticalError(uint8_t err) {
 	criticalerrorset |= (1 << err);
-	DebugPrintf("Logging critical error %lu", err);
+	//DebugPrintf("Logging critical error %lu", err);
 }
 
 uint8_t CheckCriticalError(void) {

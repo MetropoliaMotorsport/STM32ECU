@@ -14,7 +14,6 @@
 //#include "stm32h7xx_hal.h"
 #include "tim.h"
 #include "taskpriorities.h"
-#include "debug.h"
 
 uint16_t Memory_Address;
 volatile int Remaining_Bytes;
@@ -553,7 +552,7 @@ int startupReadEEPROM(void) {
 	}
 
 	if (!checkversion((char*) EEPROMdata.buffer)) {
-		DebugPrintf("EEprom version bad, resetting data\n\r");
+		//DebugPrintf("EEprom version bad, resetting data\n\r");
 		resetEEPROM();
 
 		UARTwrite("Eeprom reset.\r\n");
@@ -572,17 +571,17 @@ int startupReadEEPROM(void) {
 
 	result = readEEPROMAddr(offset, sizeof(eepromdata));
 	if (result != HAL_OK) {
-		DebugPrintf("EEprom read fail");
+		//DebugPrintf("EEprom read fail");
 		return result;
 	}
 
 	if (checkversion((char*) getEEPROMBlock(0))) {
-		DebugPrintf("EEprom active block %d OK", EEPROMdata.active);
+		//DebugPrintf("EEprom active block %d OK", EEPROMdata.active);
 		return retval;
 	}
 	// right now, active block is never switched in practice.
-	DebugPrintf(
-			"EEprom active config data  not found, resetting and using 1\n\r");
+	//DebugPrintf(
+			//"EEprom active config data  not found, resetting and using 1\n\r");
 	resetEEPROM();
 	return retval;
 	// headers ok, continue.
@@ -595,7 +594,7 @@ int readEEPROMAddr(uint16_t address, uint16_t size) {
 	if (HAL_I2C_Mem_Read_IT(&hi2c2, (uint16_t) EEPROM_ADDRESS, address,
 	I2C_MEMADD_SIZE_16BIT, (uint8_t*) &EEPROMdata.buffer[address], size)
 			!= HAL_OK) {
-		DebugPrintf("EEPROM read failed to start");
+		//DebugPrintf("EEPROM read failed to start");
 		/* Reading process Error */
 		return 1; // Error_Handler(); // failed to read data for some reason.
 	}
@@ -611,7 +610,7 @@ int readEEPROMAddr(uint16_t address, uint16_t size) {
 	};
 
 	if (!eepromreceivedone) {
-		DebugPrintf("EEPROM read failed to finish");
+		//DebugPrintf("EEPROM read failed to finish");
 		return 2;
 	}
 	return 0;
@@ -782,7 +781,7 @@ bool resetEEPROM(void) {
 	while (EEPROMBusy()) {
 		vTaskDelay(20);
 	}
-	DebugPrintf("EEPROM Reset");
+	//DebugPrintf("EEPROM Reset");
 }
 
 bool clearEEPROM(void) {

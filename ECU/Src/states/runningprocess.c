@@ -17,7 +17,7 @@
 #include "input.h"
 #include "output.h"
 #include "inverter.h"
-#include "debug.h"
+
 #include "node_device.h"
 #include "imu.h"
 #include "eeprom.h"
@@ -37,7 +37,7 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 
 	if (OperationLoops == 0) // reset state on entering/rentering.
 			{
-		DebugMsg("Entering RTDM State");
+		//DebugMsg("Entering RTDM State");
 		CAN_SendDebug(ERDTM_ID);
 		/* EV 4.12.1
 		 * The vehicle must make a characteristic sound, continuously for at least one second and a maximum of three seconds when it enters ready-to-drive mode.
