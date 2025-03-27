@@ -242,6 +242,7 @@ typedef struct {
 
 	uint16_t InvTemp;
 	int16_t MotorTemp;
+	int16_t WaterTemp;
 	int32_t Speed;
 
 } CarStateType;

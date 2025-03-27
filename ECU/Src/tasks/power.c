@@ -67,15 +67,77 @@ void CheckDeviceState(){
 		}
 	}
 }
+#define FIXEDTEMP 0	 //To use the PI controllers, you need to change the value of FIXEDTEMP to 1.
+#define Kp_fan 5.0   // Proportional coefficient for the fans
+#define Ki_fan 0.1   // Integral coefficient for the fans
 
-#define FIXEDTEMP 0
+#define Kp_pump 7.0  // // Proportional coefficient for the pumps
+#define Ki_pump 0.2  // Integral coefficient for the pumps
+#define DT 0.1
+
+float fan_integral = 0;
+float pump_integral = 0;
+
 void temp_ctl(){
-	uint16_t InvGoalTemp = 60;
+
+	uint16_t WaterGoalTemp = 50;  // Target water temp (°C)
+	uint16_t MaxGoalTemp = 70;    // Target temp for motor or inverter (°C)
+
+	int16_t WaterTemp = CarState.WaterTemp;  // current water temp
+	uint16_t InvTemp = CarState.InvTemp;      // current inverter temp
+	int16_t MotorTemp = CarState.MotorTemp;  // current motor temp
+
+	uint16_t MaxTemp = (MotorTemp > InvTemp) ? MotorTemp : InvTemp;
+
+	/*uint16_t InvGoalTemp = 60;
 	int16_t MotorGoalTemp = 70;
-	uint8_t SetPWM = 0;
+	uint8_t SetPWM = 0;*/
 
 #if FIXEDTEMP
-	if (CarState.InvTemp < InvGoalTemp && CarState.MotorTemp < MotorGoalTemp)
+
+	//PI controller for fans (based on water temperature)
+	float fan_error = WaterTemp - WaterGoalTemp;
+
+	if (fan_error < 0) {
+		fan_error = 0;
+		fan_integral *= 0.9;
+	} else {
+		fan_integral += fan_error * DT;
+	}
+
+	if (fan_integral > 100) fan_integral = 100;
+
+	float fan_PWM = (Kp_fan * fan_error) + (Ki_fan * fan_integral);
+
+	if (fan_PWM > 100) fan_PWM = 100;
+	if (fan_PWM < 10) fan_PWM = 10;
+
+
+	//PI controller for pumps (based on MaxTemp temperature)
+	float pump_error = MaxTemp - MaxGoalTemp;
+
+	if (pump_error < 0) {
+		pump_error = 0;
+		pump_integral *= 0.9;
+	} else {
+		pump_integral += pump_error * DT;
+	}
+
+	if (pump_integral > 100) pump_integral = 100;
+
+	float pump_PWM = (Kp_pump * pump_error) + (Ki_pump * pump_integral);
+
+	if (pump_PWM > 100) pump_PWM = 100;
+	if (pump_PWM < 30) pump_PWM = 30;
+
+	setNodeDevicePWM(SideFans, (uint8_t)fan_PWM);
+	setNodeDevicePWM(RightPump, (uint8_t)pump_PWM);
+	setNodeDevicePWM(LeftPump, (uint8_t)pump_PWM);
+
+
+	// The code in the comment section can be removed once the PI controllers are tested
+
+	/*if (CarState.InvTemp < InvGoalTemp && CarState.MotorTemp < MotorGoalTemp)
 	{
 		SetPWM = 10;
 
@@ -97,7 +159,8 @@ void temp_ctl(){
 		SetPWM = SetPWM + 15 > 90 ? 90 : SetPWM;
 		setNodeDevicePWM(RightPump, SetPWM);
 		setNodeDevicePWM(LeftPump, SetPWM) ;
-	}
+	}*/
+
 #endif
 	
 		setNodeDevicePWM(SideFans, 20);
