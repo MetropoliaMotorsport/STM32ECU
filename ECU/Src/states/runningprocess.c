@@ -52,7 +52,8 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 		buz_timer++;
 		setNodeDevicePower(Buzzer, (buz_timer < 56 ? true : false), 0);
 	}
-	////////////////////////
+
+	//////////////////////
 
 	PedalTorqueRequest(NULL);
 
@@ -66,7 +67,8 @@ int RunningProcess(uint32_t OperationLoops, uint32_t targettime) {
 
 	if(!CarState.HV_on){
 		ShutdownCircuitSet(false);
-		return TestingState;
+		buz_timer = 0;
+		return StartupState;
 	}
 	
 
