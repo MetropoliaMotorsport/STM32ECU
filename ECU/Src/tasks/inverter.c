@@ -388,68 +388,80 @@ int8_t getInverterControlWord(const InverterState_t *Inverter) // returns respon
 
 	TXState = 0; // default  do nothing state.
 	// process regular state machine sequence
-	switch (State) {
-	case OFFLINE: // state 0: Not ready to switch on, no can message. Internal state only at startup.
-		TXState = 0b10000000; // send bit 128 reset message to enter state 1 in case in fault. - fault reset.
-		break;
+  switch (State) {
+		case OFFLINE: // state 0: Not ready to switch on, no can message. Internal
+                  // state only at startup.
+    TXState = 0b10000000; // send bit 128 reset message to enter state 1 in
+                          // case in fault. - fault reset.
+    break;
 
-	case BOOTUP: // State 1: Switch on Disabled.
-		TXState = 0b00000110; // send 0110 shutdown message to request move to State 2.
-		break;
+		case BOOTUP: // State 1: Switch on Disabled.
+    TXState =
+        0b00000110; // send 0110 shutdown message to request move to State 2.
+    break;
 
-	case STOPPED: // State 2: Ready to switch on
-		// We are ready to turn on, so allow high voltage.
-		// we are in state 2, process.
-		// process shutdown request here, to move to move to state 1.
-		if (CarState.PRE_Done) { // TS enable button pressed and both inverters are marked HV ready proceed to state 3.
+		case STOPPED: // State 2: Ready to switch on
+    // We are ready to turn on, so allow high voltage.
+    // we are in state 2, process.
+    // process shutdown request here, to move to move to state 1.
+    if (CarState.PRE_Done) { // TS enable button pressed and both inverters
+                             // are marked HV ready proceed to state 3.
 
-			TXState = 0b00001111; // Lenze doesn't want to go to pre operational from stopped, have to skip straight to operational.
+      // TXState = 0b00001111; // Lenze doesn't want to go to pre operational
+      // from stopped, have to skip straight to operational.
+      TXState = 0b00000111 // Advance to state 3 instead of skipping straight to
+                           // operational
 
-		} else {
-			TXState = 0b00000110; // no change, continue to request State 2.
-		}
-		break;
+    } else {
+      TXState = 0b00000110; // no change, continue to request State 2.
+                            // continuously send shutdown command
+    }
+    break;
 
-	case PREOPERATIONAL: // State 3: Switched on   <---- check this case.
-		// we are powered on, so allow high voltage if available
-		if (CarState.PRE_Done)			  // IdleState ) <-
-		{ // TS enable button has been pressed, proceed to request power on if all inverters on.
-			TXState = 0b00001111; // Request Enable operation, State 4.
-		} else if (!CarState.PRE_Done) { // return to switched on state.
-			TXState = 0b00000000; // 0b00000000; // request Disable Voltage, drop to ready state.
-		} else {  // no change, continue to request State 3.
-			TXState = 0b00000000;
-		}
-		break;
+		case PREOPERATIONAL: // State 3: Switched on   <---- check this case.
+    // we are powered on, so allow high voltage if available
+    if (CarState.PRE_Done) // IdleState ) <-
+    { // TS enable button has been pressed, proceed to request power on if
+      // all inverters on.
+      TXState = 0b00001111; // Request Enable operation, State 4.
+    } else {                // no change, continue to request State 3.
+      TXState = 0b00000110; // send to READY_TO_SWITCH ON 0111 State 2
+                            // or send to SWITCH_ON_DISABLED 0100 State 1 (safer
+                            // but slower?)
+    }
+    break;
 
-	case OPERATIONAL: // State 4: Operation Enable
-		// we are powered on, so allow high voltage.
-		if(CarState.PRE_Done){
-			TXState = 0b00001111;
-		}
-		else{
-			TXState = 0b00000000;
-		}
-		
-		break;
-	case QUICKSTOP:
+	  case OPERATIONAL: // State 4: Operation Enable
+    // we are powered on, so allow high voltage.
+    if (CarState.PRE_Done) {
+      TXState = 0b00001111;
+    } else {
+      TXState = 0b00000111; // send back to SWITCHED_ON State 3
+                            // or send to READY_TO_SWITCH (110)
+    }
 
-			TXState = 0b00000010;
+    break;
+		case QUICKSTOP:
 
-		break;
-		//	case -1 : //5 Quick Stop Active - Fall through to default to reset state.
+    TXState = 0b00000010;
 
-		//	case -2 : //98 Fault Reason Active
+    break;
+    //	case -1 : //5 Quick Stop Active - Fall through to default to
+    // reset state.
 
-		//	case -99 : //99 Fault
+    //	case -2 : //98 Fault Reason Active
 
-	case INERROR:
-		TXState = 0b10000000; // 128
-	default: // unknown identifier encountered, ignore. Shouldn't be possible to get here due to filters.
+    //	case -99 : //99 Fault
+	  case INERROR:
+    // TXState = 0b10000000; // 128 Reboot: back to BOOTUP -> may be safer
+    TXState = 0b00000111; // send to SWITCH_ON_DISABLED State 2
+  default: // unknown identifier encountered, ignore. Shouldn't be possible
+           // to get here due to filters.
 
-		TXState = 0b00000000; // 0 don't transmit any command for error, deal with it seperately.
-		break;
-	}
+    TXState = 0b00000000; // 0 don't transmit any command for error, deal
+                          // with it seperately.
+    break;
+  }
 
 	return TXState;
 }
