@@ -42,7 +42,7 @@
 #define ANALOGNODES
 #define MATLAB
 #define LENZE
-#define TWOWHEELS
+//#define TWOWHEELS
 #ifdef TWOWHEELS
 	#define MOTORCOUNT		(2)
 #else
@@ -257,6 +257,7 @@ typedef enum DeviceStatustype {
 	BOOTUP,
 	PREOPERATIONAL,
 	OPERATIONAL,
+	QUICKSTOP
 } DeviceStatus;
 
 typedef struct {

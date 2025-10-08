@@ -353,7 +353,7 @@ DeviceStatus InternalInverterState(uint16_t Status) // status 104, failed to tur
 		return OPERATIONAL;
 	} else if (((Status & 0b01101111) == 0b00000111)
 			|| ((Status & 0b00011111) == 0b00010011)) { // Quick Stop Active
-		return INERRORSTOPPING;
+		return QUICKSTOP;
 	} else if (((Status & 0b01001111) == 0b00001111)
 			|| ((Status & 0b01001111) == 0b00001001)) { // fault reaction active, will move to fault status next
 		return INERRORSTOPPING;
@@ -416,9 +416,9 @@ int8_t getInverterControlWord(const InverterState_t *Inverter) // returns respon
 		{ // TS enable button has been pressed, proceed to request power on if all inverters on.
 			TXState = 0b00001111; // Request Enable operation, State 4.
 		} else if (!CarState.PRE_Done) { // return to switched on state.
-			TXState = 0b00000111; // 0b00000000; // request Disable Voltage, drop to ready state.
+			TXState = 0b00000000; // 0b00000000; // request Disable Voltage, drop to ready state.
 		} else {  // no change, continue to request State 3.
-			TXState = 0b00000111;
+			TXState = 0b00000000;
 		}
 		break;
 
@@ -428,11 +428,15 @@ int8_t getInverterControlWord(const InverterState_t *Inverter) // returns respon
 			TXState = 0b00001111;
 		}
 		else{
-			TXState = 0b00000111;
+			TXState = 0b00000000;
 		}
 		
 		break;
+	case QUICKSTOP:
 
+			TXState = 0b00000010;
+
+		break;
 		//	case -1 : //5 Quick Stop Active - Fall through to default to reset state.
 
 		//	case -2 : //98 Fault Reason Active
