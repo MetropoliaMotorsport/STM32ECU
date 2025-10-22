@@ -36,7 +36,24 @@ BS_:
 BU_: ECU PowerNode1 PowerNode2 AnalogNode1 AnalogNode2 DashBoard
 
 
-BO_ 1 NewMessage_0001: 8 PowerNode1
+BO_ 1 Error_ECU: 8 ECU
+ SG_ Critical_Error : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Error_too_many_loops : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ BMS_Fail : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ IVT_Fail : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 2 Error_PowerNode1: 8 PowerNode1
+ SG_ Over_Current : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 3 Error_PowerNode2: 8 PowerNode2
+
+BO_ 4 Errror_AnalogNode1: 8 AnalogNode1
+
+BO_ 5 Error_AnalogNode2: 8 AnalogNode2
+
+BO_ 3221225472 VECTOR__INDEPENDENT_SIG_MSG: 0 Vector__XXX
+ SG_ Under_Current : 0|0@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Warning_Current : 0|0@1+ (1,0) [0|0] "" Vector__XXX
 
 
 
