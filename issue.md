@@ -94,3 +94,17 @@
 - WaterLevel
 - HeavesRear
 - Rolls2
+
+## Layout
+
+| CAN ID Range | Base Object / Message Type                 | Sender/Receiver Node(s)              |
+| :----------- | :----------------------------------------- | :----------------------------------- |
+| 1 - 5        | Errors For This Subtype                    | ECU, PowerNodes (PN), Inverters, BMS |
+| 6 - 99       | Core Control & High-Priority Device Status | ECU, PowerNodes (PN), Inverters, BMS |
+| 100 - 199    | Analog & Digital Sensor Data               | AnalogNodes (AN), DashBoard          |
+| 200 - 299    | Driver/Dash Interface & User Input         | DashBoard, ECU                       |
+| 300 - 305    | ECU Errors                                 | ECU                                  |
+| 306 - 349    | ECU State Transitions                      | ECU                                  |
+| 350 - 399    | ECU State Requests/Commands                | ECU                                  |
+| 400 - 499    | External Devices & Telemetry               | IVT_Mod, AMS, GPS                    |
+| 500++        | Absolutely Nothing                         | None                                 |

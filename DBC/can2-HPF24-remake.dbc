@@ -36,27 +36,80 @@ BS_:
 BU_: ECU PowerNode1 PowerNode2 AnalogNode1 AnalogNode2 DashBoard
 
 
-BO_ 1 Error_ECU: 8 ECU
- SG_ Critical_Error : 0|8@1+ (1,0) [0|0] "" Vector__XXX
- SG_ Error_too_many_loops : 8|8@1+ (1,0) [0|0] "" Vector__XXX
- SG_ BMS_Fail : 16|8@1+ (1,0) [0|0] "" Vector__XXX
- SG_ IVT_Fail : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+BO_ 768 ECU_Errors: 8 ECU
+ SG_ Critical_Error : 0|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Error_too_many_loops : 1|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ BMS_Fail : 2|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ IVT_Fail : 3|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Readyness_Power_Fail : 4|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ TS_BAD : 5|1@1+ (1,0) [0|0] "" Vector__XXX
 
-BO_ 2 Error_PowerNode1: 8 PowerNode1
- SG_ Over_Current : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+BO_ 32 PN_Errors: 8 PowerNode1
+ SG_ Node_ID M : 0|3@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Over_Current m1 : 8|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Under_Current m1 : 9|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Warning_Current m1 : 10|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Over_Current m2 : 8|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Under_Current m2 : 9|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Warning_Current m2 : 10|1@1+ (1,0) [0|0] "" Vector__XXX
 
-BO_ 3 Error_PowerNode2: 8 PowerNode2
+BO_ 848 ECU_Request: 8 Vector__XXX
+ SG_ Power_Off_Inv_Req : 2|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Power_Request : 3|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Disabling_Brake_Regen : 4|1@1+ (1,0) [0|0] "" Vector__XXX
 
-BO_ 4 Errror_AnalogNode1: 8 AnalogNode1
+BO_ 774 ECU_Current_State: 8 Vector__XXX
+ SG_ Entering_Error_State : 0|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Waiting_Precharge : 1|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Start_Pressed : 2|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Entering_PreOperational_State : 3|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Entering_Readyness_Check_State : 4|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Entering_Startup_State : 5|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Entering_Idle_State : 6|1@1+ (1,0) [0|0] "" Vector__XXX
 
-BO_ 5 Error_AnalogNode2: 8 AnalogNode2
+BO_ 786 RDTM_State: 8 Vector__XXX
+ SG_ RDTM_Pressed : 1|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Entering_RDTM_State : 2|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ RDTM_Activation_No_Braking : 0|1@1+ (1,0) [0|0] "" Vector__XXX
 
-BO_ 3221225472 VECTOR__INDEPENDENT_SIG_MSG: 0 Vector__XXX
- SG_ Under_Current : 0|0@1+ (1,0) [0|0] "" Vector__XXX
- SG_ Warning_Current : 0|0@1+ (1,0) [0|0] "" Vector__XXX
+BO_ 787 TS_State: 8 Vector__XXX
+ SG_ TS_ON : 0|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ TS_LoV : 1|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Entering_TS_Active_State : 2|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ TS_OFF : 3|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ TS_Activation_Req_NReady : 4|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ TS_Activation_Req_Ready : 5|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Ready_To_Enable_TS : 6|1@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 864 PN_Command: 16 Vector__XXX
+ SG_ Select_PWM_GPIO m1 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Select_Output m1 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Node_ID M : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Select_PWM_GPIO m2 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Select_Output m2 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ State m1 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ State m2 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 33 PN_Status: 8 Vector__XXX
+ SG_ Node_ID M : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ PN_Device_Status m1 : 8|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ PN_Device_Status m2 : 8|1@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1024 RTDM_TA: 8 Vector__XXX
 
 
 
+
+CM_ SG_ 848 Disabling_Brake_Regen "Disables Regenerative Braking";
+CM_ BO_ 786 "Rear Drive Torque Management";
+CM_ BO_ 787 "Traction System";
+CM_ BO_ 1024 "Real-Time Data Monitoring (Telemetry Adapter)";
 BA_DEF_  "BusType" STRING ;
+BA_DEF_ BO_  "GenMsgCycleTime" INT 0 65535;
 BA_DEF_DEF_  "BusType" "CAN";
+BA_DEF_DEF_  "GenMsgCycleTime" 0;
+
+
+
+
 
