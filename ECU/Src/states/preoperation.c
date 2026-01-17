@@ -54,21 +54,9 @@ void setTestMotors( bool state) {
 int PreOperationState(uint32_t OperationLoops) {
 //	static int OperationLoops = 0;
 
-	static uint16_t preoperationstate;
-	static uint16_t ReadyToStart;
-	static uint32_t ledtimer;
-	static bool TSLEDstate;
-
 	if (OperationLoops == 0) {
-		
-		TSLEDstate = false;
-		ledtimer = gettimer();
 
 		CAN_SendDebug(EPOS_ID);
-
-		preoperationstate = 0xFFFF; // should be 0 at point of driveability, so set to opposite in initial state.
-	
-		ReadyToStart = 0;
 
 		initVectoring();
 

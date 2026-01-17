@@ -66,11 +66,6 @@ InverterState_t* getInvState(uint8_t inv) {
 	}
 }
 
-void InverterAllowTorque(uint8_t inv, bool allow) {
-	if (inv >= 0 && inv < MOTORCOUNT)
-		InverterState[inv].AllowTorque = allow;
-}
-;
 
 void InverterAllowTorqueAll( bool allow) {
 	for (int i = 0; i < MOTORCOUNT; i++) {
@@ -78,40 +73,6 @@ void InverterAllowTorqueAll( bool allow) {
 	}
 }
 
-void InverterSetTorque(vectoradjust *adj, speedadjust *spd) {
-	xSemaphoreTake(InvUpdating, portMAX_DELAY);
-	InverterState[invRL].Torque_Req = adj->RL;
-	InverterState[invFL].Torque_Req = adj->FL;
-	InverterState[invRR].Torque_Req = adj->RR;
-	InverterState[invFR].Torque_Req = adj->FR;
-	InverterState[invRL].MaxSpeed = spd->RL; // convert to right value as needed.
-	InverterState[invFL].MaxSpeed = spd->FL;
-	InverterState[invRR].MaxSpeed = spd->RR;
-	InverterState[invFR].MaxSpeed = spd->FR;
-	xSemaphoreGive(InvUpdating);
-}
-
-void InverterSetTorqueInd(uint8_t inv, float req, int16_t speed) {
-	xSemaphoreTake(InvUpdating, portMAX_DELAY);
-	InverterState[inv].Torque_Req = req;
-	InverterState[inv].MaxSpeed = speed; // convert to right value as needed.
-	xSemaphoreGive(InvUpdating);
-}
-
-int InverterGetSpeed(void) {
-	// TODO implement conversion for gear ratio..
-	int32_t speed = 0;
-
-	// find slowest wheel to define speed.
-	for (int i = 0; i < MOTORCOUNT; i++) {
-//		if (InverterState[i].Speed < speed )
-		speed += InverterState[i].Speed;
-	}
-
-	speed = (speed / MOTORCOUNT);
-
-	return speed;
-}
 
 // task shall take power handling request, and forward them to nodes.
 // ensure contact is kept with brake light board as brake light is SCS.
@@ -120,86 +81,7 @@ int InverterGetSpeed(void) {
 
 volatile bool invertersinerror = false;
 
-//DeviceStatus RequestedState[MOTORCOUNT];
-uint16_t command;
-
-bool checkStatusCode(uint8_t status) {
-	switch (status) {
-	case 49: // ready to switch on.
-	case 51: // on
-	case 55: // operation
-	case 64: // startup
-	case 96: //
-	case 104: // error
-	case 200: // very error // c0   c8     192-200 errors.
-		return true;
-		break;
-	default:
-		return false;
-	}
-}
-
 DeviceStatus InverterStates[MOTORCOUNT];
-
-void HandleInverter(InverterState_t *Inverter) {
-	char str[80];
-	// only process inverter state if inverters have been seen and not in error state.
-	if (Inverter->InvState != OFFLINE) // && InverterStates[Inverter->Motor] != OFFLINE )
-			{
-		// run the state machine response and get command to match current situation.
-		command = getInverterControlWord(Inverter);
-		Inverter->InvReqCommand = command;
-
-		// only change command if we're not in wanted state to try and transition towards it.
-		if (Inverter->InvState != Inverter->InvRequested
-				&& Inverter->InvState > INERROR) {
-//			if ( Inverter->Motor == 1 )
-			// check if we've got voltage available for moving up states, otherwise stay up.
-			if (Inverter->HighVoltageAvailable
-					&& ((1 << Inverter->Motor)
-							& getEEPROMBlock(0)->EnabledMotors)
-#ifdef TIMEINVSTATECHANGE
-					&& (Inverter->Changetime == 0
-							|| (Inverter->Changetime
-									&& gettimer() > Inverter->Changetime))
-#endif
-					) {
-				Inverter->InvCommand = command;
-			}
-		}
-	}
-#ifdef TIMEINVSTATECHANGE
-	if (Inverter->InvState == Inverter->InvRequested && Inverter->Changetime) {
-		snprintf(str, 80, "Inverter [%d] reached requested state %d (%lu)",
-				Inverter->Motor, Inverter->InvState, gettimer());
-		//DebugMsg(str);
-		Inverter->Changetime = 0;
-	}
-#endif
-#define INVDEBUG
-	// initial testing, use maximum possible error reset period regardless of error.
-	if (Inverter->InvState == INERROR) {
-		// only reset errors when we've got HV otherwise will always have motor conn error.
-		if (gettimer() - Inverter->errortime > ERRORTYPE1RESETTIME
-				&& Inverter->HighVoltageAvailable) {
-
-			InvResetError(Inverter);
-			Inverter->errortime = gettimer();
-			Inverter->InvRequested = BOOTUP;
-#ifdef INVDEBUG
-			snprintf(str, 80, "Inverter Reset sent to Inv[%d] at (%lu)",
-					Inverter->Motor, gettimer());
-			//DebugMsg(str);
-#endif
-		} else {
-			InvSend(Inverter, false); // continue sending PDO.
-		}
-	} else {
-//			xSemaphoreTake(InvUpdating, portMAX_DELAY);
-		InvSend(Inverter, false);
-//			xSemaphoreGive(InvUpdating);
-	}
-}
 
 bool InvSendSDO(uint16_t id, uint16_t idx, uint8_t sub, uint32_t data) {
 	InvCfg_msg msg;
@@ -216,22 +98,6 @@ bool InvSendSDO(uint16_t id, uint16_t idx, uint8_t sub, uint32_t data) {
 	}
 }
 
-char* getMotorsEnabledStr(void) {
-	static char enabledstr[MOTORCOUNT + 1];
-	uint8_t motorsenabled = getEEPROMBlock(0)->EnabledMotors;
-	snprintf(enabledstr, MOTORCOUNT + 1, "%s%s%s%s",
-			(1 << 0) & motorsenabled ? "0" : "",
-			(1 << 1) & motorsenabled ? "1" : "",
-			(1 << 2) & motorsenabled ? "2" : "",
-			(1 << 3) & motorsenabled ? "3" : "");
-	return enabledstr;
-}
-
-volatile int invertersonline = 0;
-
-int getInvOnlineCount(void) {
-	return invertersonline;
-}
 
 // task to manage inverter state.
 void InvTask(void *argument) {
@@ -245,31 +111,16 @@ void InvTask(void *argument) {
 
 	DeviceState.Inverter = OFFLINE;
 
-	uint32_t invexpected[MOTORCOUNT];
-
-	for (int i = 0; i < MOTORCOUNT; i++) {
-		invexpected[i] = getInvExpected(i);
-
-	}
-
-	TickType_t lastseen[MOTORCOUNT];
-	
 	//DebugMsg("Inv Waiting setup");
 	CAN_SendErrorStatus(8, 0, 0);
 
 	uint32_t InvReceived = 0;
-
-	bool firstactive[4] = { false };
-	bool firstreceive[4] = { false };
-	bool firstbad[4] = { false };
 
 	CarState.AllowTorque = true; // hack for now, this should be controlled somewhere.
 
 	for (int i = 0; i < MOTORCOUNT; i++)
 		InverterState[i].appc_on = true;
 
-
-	uint8_t state_test = 1;
 
 	while (1) {
 
@@ -278,7 +129,6 @@ void InvTask(void *argument) {
 			if(!InverterState[i].appc_on){					
 					uint8_t msg[8] = { 0 };
 					uint8_t msg2[8] = {0};
-					uint8_t msg3[8] = {0};
 
 					CAN1Send(LENZE_RPDO5_ID +  InverterState[i].COBID, 8, msg);
 
@@ -371,12 +221,7 @@ DeviceStatus GetInverterState(void) {
 	return DeviceState.Inverter;
 }
 
-bool invertersStateCheck(const DeviceStatus state) {
-	if (DeviceState.Inverter == state)
-		return true;
-	else
-		return false;
-}
+
 
 int8_t getInverterControlWord(const InverterState_t *Inverter) // returns response to send inverter based on current state.
 {
@@ -454,29 +299,6 @@ int8_t getInverterControlWord(const InverterState_t *Inverter) // returns respon
 	return TXState;
 }
 
-long getInvSpeedValue(uint8_t *data) {
-	//		 Speed_Right_Inverter.data.longint * (1/4194304) * 60; - convert to rpm.
-	return getLEint32(&data[2]) * (1.0 / 4194304) * 60;
-}
-
-uint8_t invRequestState(DeviceStatus state) {
-	int invcount = 0;
-
-	for (int i = 0; i < MOTORCOUNT; i++) {
-		if (getInvState(i)->InvState == state) {
-			invcount++;
-		}
-	}
-
-	if (invcount < MOTORCOUNT) {
-		Inv_msg msg;
-		msg.state = state;
-		xQueueSend(InvQueue, &msg, 0);
-		return 0;
-	} else
-		return 1; // this is operating with cansync, no extra needed.
-}
-
 void resetInv(void) {
 //	InvInternalResetRDO();
 
@@ -519,11 +341,6 @@ void resetInv(void) {
 #endif
 
 	Errors.InverterError = 0; // reset logged errors.
-}
-
-int initNoInv(void) {
-	resetInv();
-	return 0;
 }
 
 int initInv(void) {

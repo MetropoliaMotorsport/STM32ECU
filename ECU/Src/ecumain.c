@@ -97,6 +97,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 volatile CarStateType CarState;
 volatile DeviceStateType DeviceState;
+volatile CarStateType CarConfig;
 
 #define MAINTASKSTACK_SIZE 128*24
 #define MAINTASKTASKNAME  "MainTaskTask"

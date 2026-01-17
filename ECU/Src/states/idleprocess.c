@@ -40,11 +40,6 @@ bool sht_timer_on = false;
 int IdleProcess(uint32_t OperationLoops) // idle, inverters on.
 {
 	static uint16_t readystate;
-	static uint8_t TSRequested;
-
-	static uint32_t HVEnableTimer;
-
-	static uint32_t nextmsg;
 
 	// request ready states from devices.
 

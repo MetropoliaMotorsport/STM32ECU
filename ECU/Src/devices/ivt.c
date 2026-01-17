@@ -13,7 +13,7 @@
 #include "errors.h"
 #include "eeprom.h"
 
-bool processIVTData(const uint8_t *CANRxData, const uint32_t DataLength,
+bool processIVTData(const uint8_t *CANRxData,const uint32_t DataLength,
 		CANData *datahandle);
 
 void IVTTimeout(uint16_t id);

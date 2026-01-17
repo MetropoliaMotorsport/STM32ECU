@@ -119,30 +119,6 @@ void PowerTask(void *argument) {
 	resetPowerLost();
 	xQueueReset(PowerErrorQueue);
 
-	uint32_t powernodesOnline = 0;
-	uint32_t lastpowernodesOnline = 0;
-	uint32_t powernodesOnlineSince = 0;
-	uint32_t count = 0;
-	uint32_t lastseenHV = 0;
-	uint32_t lastseenpumpR = 0;
-	uint32_t lastseenpumpL = 0;
-	uint32_t restartpumpR = 0;
-	uint32_t restartpumpL = 0;
-	bool HVactive = false;
-
-	uint32_t lastseenall = 0;
-
-	uint32_t oldestcritical = 0;
-
-	bool fanssent = false;
-
-	bool LVdown = false;
-	uint32_t LVdowntime = 0;
-
-	bool IMDset = false;
-	bool TSOFFset = true;
-	bool BMSset = false;
-
 	while(1){
 
 		//CheckDeviceState();

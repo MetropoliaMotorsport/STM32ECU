@@ -24,12 +24,6 @@
 #include "ecumain.h"
 
 int TSActiveProcess(uint32_t OperationLoops) {
-	static uint16_t readystate;
-
-	static uint32_t prechargetimer = 0;
-	static uint32_t nextprechargemsg = 0;
-
-	char str[80] = "";
 
 	if (OperationLoops == 0) // reset state on entering/rentering.
 			{

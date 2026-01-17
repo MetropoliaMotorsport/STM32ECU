@@ -155,8 +155,6 @@ bool doPedalCalibration(uint16_t input) {
 
 	count++;
 
-	char str[21];
-
 	bool baddata = false;
 
 	//TODO implement
@@ -191,9 +189,6 @@ bool doPedalCalibration(uint16_t input) {
 	int32_t APPSR_close = abs(APPSR_max - APPSR_min) < 500 ? 1 : 0;
 	int32_t REG_close = abs(REG_max - REG_min) < 50 ? 1 : 0;
 
-	snprintf(str, 21, "L%5d R%5d B%5d", APPS1.data, APPS2.data,
-			BPPS.data);
-
 	if (APPSL_close || APPSR_close) {
 		if (debugconfig && redraw) {
 			//DebugPrintf("Press APPS & Regen");
@@ -217,19 +212,6 @@ bool doPedalCalibration(uint16_t input) {
 		if (APPSR > 99)
 			APPSR = 99;
 
-		int REGEN = 100.0 / (REG_max - REG_min) * (BPPS.data - REG_min);
-		if (APPSR > 99)
-			APPSR = 99;
-
-		snprintf(str, 21, "Cur L%2d%%  R%2d%%  B%2d%%", APPSL, APPSR, REGEN);
-		if (debugconfig && redraw)
-			//DebugPrintf(str);
-
-		snprintf(str, 21, "Mn %5d %5d %5d", APPSL_min, APPSR_min, REG_min);
-		if (debugconfig && redraw)
-			//DebugPrintf(str);
-
-		snprintf(str, 21, "Mx %5d %5d %5d", APPSL_max, APPSR_max, REG_max);
 
 			//DebugPrintf(str);
 	}
@@ -563,8 +545,6 @@ bool inConfig(void) {
 // checks if device initial values appear OK.
 void ConfigTask(void *argument) {
 	xEventGroupSync(xStartupSync, 0, 1, portMAX_DELAY); // ensure that tasks don't start before all initialisation done.
-
-	ConfigInput_msg confinp;
 
 	while (1) {
 		

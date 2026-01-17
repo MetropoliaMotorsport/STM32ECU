@@ -246,11 +246,6 @@ int PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm reques
 
 	//100 ms, allow ~8 10ms loops before triggering?
 
-	static uint32_t APPSTriggerTime = 0;
-
-	static char No_Torque_Until_Pedal_Released = 0; // persistent local variable
-	uint16_t Torque_drivers_request = 0;
-
 	//The absolute value of the difference between the APPS (Accelerator Pedal Position Sensors)
 
 	if(BPPS_raw > 20){
@@ -280,6 +275,7 @@ int PedalTorqueRequest(int16_t *used_pedal_percent) // returns current Nm reques
 		//////////////////
 		CarState.pedalreq = torqueperc;
 	}
+	return 0;
 }
 
 bool SetupInterpolationTables(eepromdata* data) {

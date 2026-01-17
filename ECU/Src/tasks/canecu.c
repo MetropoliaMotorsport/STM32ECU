@@ -231,18 +231,13 @@ void CANRxTask(void *argument) {
 	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
 	configASSERT(CANRxQueue);
 
-	can_msg msg, uartmsg;
+	can_msg msg;
 
 	uint8_t watchdogBit = registerWatchdogBit("CANTxTask");
 
 	portTickType cycletick = xTaskGetTickCount();
 
 	portTickType waittick = CYCLETIME;
-
-	bool transmitUARTCan = false;
-
-	uint8_t uartrxstate = 0;
-	uint8_t uartin[7] = { 0 }; // zero out array to ensure it ends in 0, for string termination.
 
 	while (1) {
 		portTickType curtick = xTaskGetTickCount();
