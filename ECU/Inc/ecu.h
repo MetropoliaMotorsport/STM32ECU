@@ -306,6 +306,25 @@ typedef struct {
 
 } DeviceStateType;
 
+
+
+typedef struct {
+	uint8_t MaxOutputPower; //Max output power of the car in kw. Maximum total Power that inverters can output.
+	uint16_t MaxInverterRPM;
+	uint8_t MaxDrivePower; //Max power available during the drive
+	uint16_t MaxDriveRPM;
+	uint8_t DriveMode; // 0 - 4WD, 1 - RWD, 2 - FWD
+	uint8_t FrontRearPowerDistribution; //Power Distribution between front and rear wheels. 	0% - all power deilvered to front wheels	50% - power evenly splitted	100% - all power goes to rear wheels
+	uint8_t MaxRegenPower; //Maximum regen power of inverters
+	uint8_t MaxDriveRegenPower; //Maximum power to be regenerated during the drive
+	uint8_t MaxOutputTorque;
+	uint8_t MaxDriveTorque;
+	bool TorqueVectoringOn;
+	bool TractionControlOn;
+	bool RegenBrakingOn;
+} CarConfigType;
+
+
 // helpers
 void storeBEint32(const uint32_t input, uint8_t Data[4]);
 void storeBEint16(const uint16_t input, uint8_t Data[2]);
