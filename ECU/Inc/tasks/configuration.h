@@ -14,7 +14,7 @@ typedef struct
 } menustruct_t;
 
 #define ConfigInputQUEUE_LENGTH 2
-#define ConfigInputITEMSIZE sizeof(ConfigInput_msg)
+#define ConfigInputITEMSIZE sizeof(uint32_t)
 #define ConfigSTACK_SIZE 128 * 8
 #define ConfigTASKNAME "ConfigTask"
 
@@ -37,7 +37,11 @@ bool GetConfigCmd(const uint8_t CANRxData[8], const uint32_t DataLength, const C
 #define MENU_TELEMETRY (15)
 #define MENU_HV (16)
 #define MENU_LAST (MENU_HV)
-
 #define MAINMENUSIZE (MENU_LAST + 1)
+
+#define CAN_MENU_SET_VALUE 1
+#define CAN_MENU_SAVE 2
+#define CAN_MENU_APPLY 3
+#define CAN_MENU_RESET 4
 
 #endif
