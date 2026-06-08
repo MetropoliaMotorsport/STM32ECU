@@ -333,6 +333,7 @@ bool DoMenu(uint16_t input)
       menu.inedit = false;
       DebugPrintf("\nSaving settings\n");
 
+      // NOTE: saving does not work properly due to EEPROM not working properly
       if (dofullsave)
       {
         writeFullConfigEEPROM();
