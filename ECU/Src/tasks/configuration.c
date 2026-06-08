@@ -417,6 +417,7 @@ bool DoMenu(uint16_t input)
     snprintf(MenuLines[1 + MENU_TORQUE], sizeof(MenuLines[0]), "%cTorqueVect...",
              (menu.selection == MENU_TORQUE) ? '>' : ' ');
 
+    // TODO: condition never true?
     uint16_t currpm = getEEPROMBlock(0)->maxRpm;
 
     if (currpm != getEEPROMBlock(0)->maxRpm)
@@ -558,7 +559,6 @@ bool inConfig(void)
   return configstate; // uxSemaphoreGetCount( xInConfig );
 }
 
-// TODO: implement this
 void ConfigTask(void* argument)
 {
   xEventGroupSync(xStartupSync, 0, 1, portMAX_DELAY);
@@ -574,8 +574,7 @@ void ConfigTask(void* argument)
       ECUConfignewdata = false;
       taskEXIT_CRITICAL();
 
-      // TODO: make this function
-      // ProcessCANConfigMessage(msg);
+      ProcessCANConfigMessage(msg);
     }
 
     vTaskDelay(pdMS_TO_TICKS(10));

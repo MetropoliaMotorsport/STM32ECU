@@ -11,6 +11,7 @@
 #include "output.h"
 #include "i2c.h"
 #include "timerecu.h"
+#include <stdbool.h>
 //#include "stm32h7xx_hal.h"
 #include "tim.h"
 #include "taskpriorities.h"

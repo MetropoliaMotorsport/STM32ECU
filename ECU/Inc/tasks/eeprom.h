@@ -8,6 +8,7 @@
 #ifndef EEPROM_H_
 #define EEPROM_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 #define EEPROMWC_GPIO_Port GPIOF
 #define EEPROMWC_Pin GPIO_PIN_2
