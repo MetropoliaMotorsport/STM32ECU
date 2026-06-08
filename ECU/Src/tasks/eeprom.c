@@ -107,9 +107,9 @@ static time_t lastruntimesaved = 0;
 
 xTimerHandle timerHndlRunningData;
 
+// TODO: make this properly schedule queue writes
 void EEPROMTask(void* argument)
 {
-
   ReceiveInProgress = false;
   ReceiveType = 0;
   TransferSize = 0;
@@ -125,8 +125,40 @@ void EEPROMTask(void* argument)
   configASSERT(EEPROMQueue);
 
   EEPROM_msg msg;
+  HAL_TIM_Base_Start_IT(&htim6);
 
   lastruntimesaved = EEPROMdata.runtimedata.time;
+
+  while (1)
+  {
+    if (xQueueReceive(EEPROMQueue, &msg, portMAX_DELAY) == pdTRUE)
+    {
+      while (EEPROMBusy())
+        vTaskDelay(10);
+
+      switch (msg.cmd)
+      {
+      case EEPROMCurConf:
+        break;
+      case EEPROMRunningData:
+        break;
+      case writeEEPROM0:
+        break;
+      case writeEEPROM1:
+        break;
+      case writeEEPROMC:
+        break;
+      case FullConfigEEPROM:
+        break;
+      case FullEEPROM:
+        break;
+      case zeroEEPROM:
+        break;
+      default:
+        break;
+      }
+    }
+  }
 
   vTaskDelete(NULL);
 }
@@ -750,6 +782,7 @@ void commitEEPROM(void) // progress EEPROM writing by sending next block over i2
   }
 }
 
+// TODO: process the enqueued data
 int writeFullEEPROM(void)
 {
   EEPROM_msg msg = {FullEEPROM};
