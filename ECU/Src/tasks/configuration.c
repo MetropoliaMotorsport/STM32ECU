@@ -32,9 +32,12 @@ static uint8_t ECUConfigdata[8] = {0};
 static bool ECUConfignewdata = false;
 static uint32_t ECUConfigDataTime = 0;
 
+// NOTE: ID of 0x21 triggers CAN config change
 CANData ECUConfig = {NULL, 0x21, 8, GetConfigCmd, NULL, 0};
 TaskHandle_t ConfigTaskHandle = NULL;
 QueueHandle_t ConfigInputQueue = {0};
+
+char ConfStr[40] = "";
 
 static bool configReset = false;
 static bool redraw = false;
@@ -165,7 +168,6 @@ bool doPedalCalibration(uint16_t input)
   bool baddata = false;
 
   // TODO implement
-  // TODO: implement what?
   if (APPS1.data > (UINT16_MAX * MAXTHRESH) || APPS1.data < 0 // (UINT16_MAX*MINTHRESH)
   )
   {
@@ -312,7 +314,7 @@ bool DoMenuTorque(uint16_t input)
   return true; // done with menu
 }
 
-// TODO: CAN menu ?
+// TODO: implement features from this function to the SetEEPROMBlockValue
 bool DoMenu(uint16_t input)
 {
   static bool inmenu = false;
@@ -333,7 +335,6 @@ bool DoMenu(uint16_t input)
       menu.inedit = false;
       DebugPrintf("\nSaving settings\n");
 
-      // NOTE: saving does not work properly due to EEPROM not working properly
       if (dofullsave)
       {
         writeFullConfigEEPROM();
@@ -539,11 +540,9 @@ bool ConfigInput(uint16_t input)
                             0); // send it to error state handler queue for display to user.
 }
 
-char ConfStr[40] = "";
-
 char* getConfStr(void)
 {
-  // TODO add a mutex
+  // TODO: add a mutex
   if (ConfStr[0] == 0)
     return NULL;
   else
@@ -582,56 +581,72 @@ void ConfigTask(void* argument)
   }
 }
 
+static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
+{
+
+  eepromdata* data = getEEPROMBlock(0);
+
+  if (data == NULL)
+    return false;
+
+  switch (item)
+  {
+  case MENU_NM:
+    data->MaxTorque = value;
+    break;
+
+  case MENU_LIMPDIS:
+    data->LimpMode = value ? true : false;
+    break;
+
+  case MENU_FANS:
+    data->Fans = value ? true : false;
+    break;
+
+  case MENU_FANMAX:
+    data->FanMax = value > 255 ? 255 : value;
+    break;
+
+  case MENU_RPM:
+    data->maxRpm = value;
+    break;
+
+  case MENU_REGEN:
+    data->Regen = value ? true : false;
+    break;
+
+  case MENU_REGENMAX:
+    data->regenMax = value > 255 ? 255 : value;
+    break;
+
+  case MENU_REGENMAXR:
+    data->regenMaxR = value > 255 ? 255 : value;
+    break;
+  case MENU_TELEMETRY:
+    data->Telemetry = value ? true : false;
+    break;
+  case MENU_HV:
+    data->alwaysHV = value ? true : false;
+    break;
+
+  default:
+    return false;
+  }
+
+  setCurConfig();
+  return true;
+}
+
 static void ProcessCANConfigMessage(uint8_t msg[8])
 {
   uint8_t cmd = msg[0];
   uint8_t item = msg[1];
   uint16_t value = msg[2] | (msg[3] << 8);
 
-  eepromdata* data = getEEPROMBlock(0);
-
   switch (cmd)
   {
   case CAN_MENU_SET_VALUE:
-    switch (item)
-    {
-    case MENU_NM:
-      data->MaxTorque = value;
-      break;
-
-    case MENU_LIMPDIS:
-      data->LimpMode = value ? true : false;
-      break;
-
-    case MENU_FANS:
-      data->Fans = value ? true : false;
-      break;
-
-    case MENU_FANMAX:
-      data->FanMax = value > 255 ? 255 : value;
-      break;
-
-    case MENU_RPM:
-      data->maxRpm = value;
-      break;
-
-    case MENU_REGEN:
-      data->Regen = value ? true : false;
-      break;
-
-    case MENU_REGENMAX:
-      data->regenMax = value > 255 ? 255 : value;
-      break;
-
-    case MENU_REGENMAXR:
-      data->regenMaxR = value > 255 ? 255 : value;
-      break;
-
-    default:
-      break;
-    }
-
-    setCurConfig();
+    SetEEPROMBlockValue(item, value);
     break;
 
   case CAN_MENU_SAVE:
