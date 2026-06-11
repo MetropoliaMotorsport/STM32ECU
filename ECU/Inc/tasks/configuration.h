@@ -41,7 +41,8 @@ bool GetConfigCmd(const uint8_t CANRxData[8], const uint32_t DataLength, const C
 
 #define CAN_MENU_SET_VALUE 1
 #define CAN_MENU_SAVE 2
-#define CAN_MENU_APPLY 3
-#define CAN_MENU_RESET 4
+#define CAN_MENU_FULLSAVE 3
+#define CAN_MENU_APPLY 4
+#define CAN_MENU_RESET 5
 
 #endif

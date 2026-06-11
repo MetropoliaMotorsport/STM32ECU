@@ -599,6 +599,10 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
     data->LimpMode = value ? true : false;
     break;
 
+  case MENU_NMBAL:
+    data->TorqueBal = value > 255 ? 255 : value;
+    break;
+
   case MENU_FANS:
     data->Fans = value ? true : false;
     break;
@@ -615,6 +619,10 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
     data->Regen = value ? true : false;
     break;
 
+  case MENU_INVEN:
+    data->InvEnabled = value ? true : false;
+    break;
+
   case MENU_REGENMAX:
     data->regenMax = value > 255 ? 255 : value;
     break;
@@ -622,11 +630,14 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
   case MENU_REGENMAXR:
     data->regenMaxR = value > 255 ? 255 : value;
     break;
+
   case MENU_TELEMETRY:
     data->Telemetry = value ? true : false;
     break;
+
   case MENU_HV:
     data->alwaysHV = value ? true : false;
+    ShutdownCircuitSet(data->alwaysHV);
     break;
 
   default:
@@ -651,6 +662,10 @@ static void ProcessCANConfigMessage(uint8_t msg[8])
 
   case CAN_MENU_SAVE:
     writeEEPROMCurConf();
+    break;
+
+  case CAN_MENU_FULLSAVE:
+    writeFullConfigEEPROM();
     break;
 
   case CAN_MENU_APPLY:
