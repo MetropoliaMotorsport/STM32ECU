@@ -39,6 +39,7 @@ QueueHandle_t ConfigInputQueue = {0};
 
 char ConfStr[40] = "";
 
+static void ProcessCANConfigMessage(uint8_t msg[8]);
 static bool configReset = false;
 static bool redraw = false;
 static bool debugconfig = false;
