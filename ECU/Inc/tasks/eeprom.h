@@ -8,6 +8,7 @@
 #ifndef EEPROM_H_
 #define EEPROM_H_
 
+#include "canecu.h"
 #include <stdbool.h>
 #include <stdint.h>
 #define EEPROMWC_GPIO_Port GPIOF
