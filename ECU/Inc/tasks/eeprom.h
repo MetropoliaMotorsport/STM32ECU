@@ -53,7 +53,7 @@ bool GetEEPROMCmd(const uint8_t CANRxData[8], const uint32_t DataLength, const C
  Config block: 16 blocks for current state { operating mode, any disabled devices?, torque steering
  max etc., 64 bytes.} adc config block: 16-32blocks. other config info: 2 blocks.
 
- // writeblock(0/1);
+ writeblock(0/1);
 
  accelerator travel, linear L & R
 

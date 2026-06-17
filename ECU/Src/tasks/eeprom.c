@@ -17,7 +17,7 @@
 #include "tim.h"
 
 uint16_t Memory_Address;
-volatile int Remaining_Bytes;
+volatile uint32_t Remaining_Bytes;
 
 typedef union
 { // EEPROMU
@@ -125,10 +125,11 @@ void EEPROMTask(void* argument)
   configASSERT(EEPROMQueue);
 
   EEPROM_msg msg;
-  HAL_TIM_Base_Start_IT(&htim6);
+  // HAL_TIM_Base_Start_IT(&htim6);
 
   lastruntimesaved = EEPROMdata.runtimedata.time;
 
+  // TODO: process received queue
   while (1)
   {
     if (xQueueReceive(EEPROMQueue, &msg, portMAX_DELAY) == pdTRUE)
@@ -136,31 +137,66 @@ void EEPROMTask(void* argument)
       while (EEPROMBusy())
         vTaskDelay(10);
 
+      uint16_t address = 0;
+      uint32_t size = 0;
       switch (msg.cmd)
       {
       case EEPROMCurConf:
         break;
+
       case EEPROMRunningData:
         break;
+
       case writeEEPROM0:
         break;
+
       case writeEEPROM1:
         break;
+
       case writeEEPROMC:
         break;
+
       case FullConfigEEPROM:
         break;
+
       case FullEEPROM:
         break;
+
       case zeroEEPROM:
-        break;
+        memset(EEPROMData.buffer, sizeof(EEPROMData));
+        return;
+
       default:
         break;
       }
     }
+    StartEEPROMWrite(address, size);
   }
 
   vTaskDelete(NULL);
+}
+
+static bool StartEEPROMWrite(uint16_t address, uint32_t size)
+{
+  if (size <= 0)
+    return false;
+
+  if (eepromwritinginprogress)
+    return false;
+
+  Memory_Address = address;
+  Remaining_Bytes = size;
+  eepromwritinginprogress = true;
+
+  HAL_GPIO_WritePin(EEPROMWC_GPIO_Port, EEPROMWC_Pin, GPIO_PIN_RESET);
+
+  if (HAL_TIM_Base_Start_IT(&htim16) != HAL_OK)
+  {
+    eepromwritinginprogress = false;
+    HAL_GPIO_WritePin(EEPROMWC_GPIO_Port, EEPROMWC_Pin, GPIO_PIN_SET);
+    return false;
+  }
+  return true;
 }
 
 bool GetEEPROMCmd(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData* datahandle)
@@ -182,7 +218,7 @@ void DoEEPROMTimeouts(void)
   if (ReceiveInProgress && gettimer() > EEPROMConfigDataTime + MS1000)
   { // don't get stuck in receiving data for more than 1 second if data flow stopped.
     ReceiveInProgress = false;
-    // TODO send timeout error
+    // TODO: send timeout error
   }
 
   if (SendInProgress && gettimer() > SendLast + MS1000)
@@ -268,7 +304,7 @@ int DoEEPROM(void)
         resetReceive();
         CAN_SendStatus(ReceivingData, ReceiveErr, 0);
 
-        // TODO receive error
+        // TODO: receive error
       }
       else // position good, continue.
       {
@@ -314,8 +350,8 @@ int DoEEPROM(void)
 
             // don't commit to eeprom unless get write request.
 
-            // TODO verify eeprom, move to eeprom.c
-            //	memcpy(getEEPROMBuffer(), Buffer, 4096); // copy received data into local eeprom
+            // TODO: verify eeprom, move to eeprom.c
+            // memcpy(getEEPROMBuffer(), Buffer, 4096); // copy received data into local eeprom
             // buffer before write.
 
             // what to do with received data depends on what data was. Flag complete.
@@ -694,7 +730,7 @@ int readEEPROMAddr(uint16_t address, uint16_t size)
   {
     //__WFI();
     HAL_Delay(10);
-    if (gettimer() > startread + MS1000 * 4) // TODO check right way round.
+    if (gettimer() > startread + MS1000 * 4) // TODO: check right way round.
     {
       return 1;
     }
@@ -752,7 +788,7 @@ void commitEEPROM(void) // progress EEPROM writing by sending next block over i2
                 &hi2c2, (uint16_t)EEPROM_ADDRESS, Memory_Address, I2C_MEMADD_SIZE_16BIT,
                 (uint8_t*)(EEPROMdata.buffer + Memory_Address), EEPROM_PAGESIZE) != HAL_OK)
         {
-          Error_Handler(); // TODO error here is not a hard error, don't hang code.
+          Error_Handler(); // TODO: error here is not a hard error, don't hang code.
         }
         errorcount = 0;
         Remaining_Bytes -= EEPROM_PAGESIZE;
@@ -782,7 +818,6 @@ void commitEEPROM(void) // progress EEPROM writing by sending next block over i2
   }
 }
 
-// TODO: process the enqueued data
 int writeFullEEPROM(void)
 {
   EEPROM_msg msg = {FullEEPROM};
