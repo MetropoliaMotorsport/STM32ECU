@@ -11,6 +11,7 @@
 #include "canecu.h"
 #include <stdbool.h>
 #include <stdint.h>
+
 #define EEPROMWC_GPIO_Port GPIOF
 #define EEPROMWC_Pin GPIO_PIN_2
 
@@ -28,15 +29,13 @@ typedef enum EEPROM_cmd
   writeEEPROMC,
   FullConfigEEPROM,
   FullEEPROM,
-  clearEEPROM,
+  eraseEEPROM,
 } EEPROM_cmd;
 
 typedef struct EEPROM_msg
 {
   EEPROM_cmd cmd;
 } EEPROM_msg;
-
-bool GetEEPROMCmd(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData* datahandle);
 
 /*
  *
@@ -60,45 +59,28 @@ bool GetEEPROMCmd(const uint8_t CANRxData[8], const uint32_t DataLength, const C
  : pedal profiles for modes->at least 5
 
  */
-typedef union
-{ // EEPROMU
-  uint8_t buffer[4096];
-  struct
-  {
-    char version[32]; // block 0  32 bytes
-    uint8_t active;   // block 1 32 bytes
-    uint8_t paddingact[31];
-    union
-    {
-      uint8_t reserved1[32 * 8]; // blocks 2-9 256 bytes.
-      runtimedata_t runtimedata;
-    };
-    union
-    {
-      uint8_t padding1[32 * 50]; // force the following structure to be aligned to start of a 50
-                                 // block area.
-      eepromdata block1;         // block 10-59
-    };
-    union
-    {
-      uint8_t padding2[32 * 50];
-      eepromdata block2; // block 60-109
-    };
 
-    uint8_t reserved2[32 * 14]; // block 110-123  448 bytes
-    uint8_t errorlogs[32 * 4];  // block 124-127  128 bytes
-  };
-} EEPROMdataType;
+typedef struct pedalcurvestruct pedalcurve;
+typedef struct eepromdatastruct eepromdata;
+typedef struct runtimedata_t runtimedata_t;
 
-typedef struct pedalcurvestruct
+struct pedalcurvestruct
 {
   //  uint8_t PedalCurveSize
   uint16_t PedalCurveInput[16];
   uint16_t PedalCurveOutput[16]; //   64 bytes. * 5
-} pedalcurve;
+};
 
 // uint8_t ADCSteeringSize; // don't need size, can use 0 to terminate.
-typedef struct eepromdatastruct
+
+struct runtimedata_t
+{
+  uint32_t time;
+  uint16_t maxIVTI;
+  uint16_t maxMotorI[4];
+};
+
+struct eepromdatastruct
 {
   union
   {
@@ -162,18 +144,43 @@ typedef struct eepromdatastruct
     uint8_t TorqueBal;
     uint8_t Blockend;
   };
-} eepromdata; // max 1600bytes=50*32byte blocks.
+}; // max 1600bytes=50*32byte blocks.
 
-typedef struct
-{
-  uint32_t time;
-  uint16_t maxIVTI;
-  uint16_t maxMotorI[4];
-} runtimedata_t;
+typedef union
+{ // EEPROMU
+  uint8_t buffer[4096];
+  struct
+  {
+    char version[32]; // block 0  32 bytes
+    uint8_t active;   // block 1 32 bytes
+    uint8_t paddingact[31];
+    union
+    {
+      uint8_t reserved1[32 * 8]; // blocks 2-9 256 bytes.
+      runtimedata_t runtimedata;
+    };
+    union
+    {
+      uint8_t padding1[32 * 50]; // force the following structure to be aligned to start of a 50
+                                 // block area.
+      eepromdata block1;         // block 10-59
+    };
+    union
+    {
+      uint8_t padding2[32 * 50];
+      eepromdata block2; // block 60-109
+    };
+
+    uint8_t reserved2[32 * 14]; // block 110-123  448 bytes
+    uint8_t errorlogs[32 * 4];  // block 124-127  128 bytes
+  };
+} EEPROMdataType;
 
 extern runtimedata_t* runtimedata_p;
 
 // 503 - 16 blocks. allocate 50 blocks : 128 blocks total
+
+bool GetEEPROMCmd(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData* datahandle);
 
 bool initEEPROM(void);
 bool resetEEPROM(void);

@@ -114,50 +114,66 @@ void EEPROMTask(void* argument)
       switch (msg.cmd)
       {
       case EEPROMCurConf:
+      {
         eepromdata* block = getEEPROMBlock(0);
         offset = (uint16_t)((uint8_t*)block - EEPROMdata.buffer);
         size = sizeof(*block);
         break;
+      }
 
       case EEPROMRunningData:
+      {
         offset = (uint16_t)((uint8_t*)&EEPROMdata.runtimedata - EEPROMdata.buffer);
         size = sizeof(runtimedata_t);
         break;
+      }
 
       case writeEEPROM1:
+      {
         eepromdata* block = getEEPROMBlock(1);
         offset = (uint16_t)((uint8_t*)block - EEPROMdata.buffer);
         size = sizeof(*block);
         break;
+      }
 
       case writeEEPROM2:
+      {
         eepromdata* block = getEEPROMBlock(2);
         offset = (uint16_t)((uint8_t*)block - EEPROMdata.buffer);
         size = sizeof(*block);
         break;
+      }
 
       case writeEEPROMC: // what the fuck is this?
+      {
         eepromdata* block = getEEPROMBlock(0);
         offset = (uint16_t)((uint8_t*)block - EEPROMdata.buffer);
         size = sizeof(*block);
         break;
+      }
 
       case FullConfigEEPROM:
+      {
         eepromdata* block = getEEPROMBlock(1);
         offset = (uint16_t)((uint8_t*)block - EEPROMdata.buffer);
         size = 3200; // sizeof bank1 + bank2
         break;
+      }
 
       case FullEEPROM:
+      {
         offset = 0;
         size = sizeof(EEPROMdata);
         break;
+      }
 
-      case clearEEPROM:
+      case eraseEEPROM:
+      {
         memset(EEPROMdata.buffer, 0xFF, sizeof(EEPROMdata));
         offset = 0;
         size = sizeof(EEPROMdata);
         break;
+      }
 
       default:
         break;
@@ -936,7 +952,7 @@ bool resetEEPROM(void)
 
 bool clearEEPROM(void)
 {
-  EEPROM_msg msg = {clearEEPROM};
+  EEPROM_msg msg = {eraseEEPROM};
   return xQueueSend(EEPROMQueue, &msg, 0);
 }
 
