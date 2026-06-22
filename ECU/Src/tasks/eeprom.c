@@ -778,20 +778,23 @@ void commitEEPROM(void) // progress EEPROM writing by sending next block over i2
     {
       if (hi2c2.State == HAL_I2C_STATE_READY)
       {
-        uint16_t remaining_page_space = EEPROM_PAGESIZE - (Memory_Offset % EEPROM_PAGESIZE);
-        uint16_t write_size = Remaining_Bytes;
-
-        if (write_size > remaining_page_space)
-          write_size = remaining_page_space;
-
-        if (HAL_I2C_Mem_Write_IT(&hi2c2, EEPROM_ADDRESS, Memory_Offset, I2C_MEMADD_SIZE_16BIT,
-                                 &EEPROMdata.buffer[Memory_Offset], write_size) != HAL_OK)
+        if (HAL_I2C_IsDeviceReady(&hi2c2, EEPROM_ADDRESS, 1, 1) == HAL_OK)
         {
-          Error_Handler(); // TODO: not a hard error, don't hang code.
+          uint16_t remaining_page_space = EEPROM_PAGESIZE - (Memory_Offset % EEPROM_PAGESIZE);
+          uint16_t write_size = Remaining_Bytes;
+
+          if (write_size > remaining_page_space)
+            write_size = remaining_page_space;
+
+          if (HAL_I2C_Mem_Write_IT(&hi2c2, EEPROM_ADDRESS, Memory_Offset, I2C_MEMADD_SIZE_16BIT,
+                                   &EEPROMdata.buffer[Memory_Offset], write_size) != HAL_OK)
+          {
+            Error_Handler(); // TODO: not a hard error, don't hang code.
+          }
+          errorcount = 0;
+          Remaining_Bytes -= write_size;
+          Memory_Offset += write_size;
         }
-        errorcount = 0;
-        Remaining_Bytes -= write_size;
-        Memory_Offset += write_size;
       }
       else
       {
