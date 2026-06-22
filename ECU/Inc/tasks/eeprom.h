@@ -23,12 +23,12 @@ typedef enum EEPROM_cmd
 {
   EEPROMCurConf,
   EEPROMRunningData,
-  writeEEPROM0,
   writeEEPROM1,
+  writeEEPROM2,
   writeEEPROMC,
   FullConfigEEPROM,
   FullEEPROM,
-  zeroEEPROM
+  clearEEPROM,
 } EEPROM_cmd;
 
 typedef struct EEPROM_msg
@@ -60,6 +60,35 @@ bool GetEEPROMCmd(const uint8_t CANRxData[8], const uint32_t DataLength, const C
  : pedal profiles for modes->at least 5
 
  */
+typedef union
+{ // EEPROMU
+  uint8_t buffer[4096];
+  struct
+  {
+    char version[32]; // block 0  32 bytes
+    uint8_t active;   // block 1 32 bytes
+    uint8_t paddingact[31];
+    union
+    {
+      uint8_t reserved1[32 * 8]; // blocks 2-9 256 bytes.
+      runtimedata_t runtimedata;
+    };
+    union
+    {
+      uint8_t padding1[32 * 50]; // force the following structure to be aligned to start of a 50
+                                 // block area.
+      eepromdata block1;         // block 10-59
+    };
+    union
+    {
+      uint8_t padding2[32 * 50];
+      eepromdata block2; // block 60-109
+    };
+
+    uint8_t reserved2[32 * 14]; // block 110-123  448 bytes
+    uint8_t errorlogs[32 * 4];  // block 124-127  128 bytes
+  };
+} EEPROMdataType;
 
 typedef struct pedalcurvestruct
 {
