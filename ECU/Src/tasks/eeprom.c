@@ -110,6 +110,7 @@ void EEPROMTask(void* argument)
 
       uint16_t offset = 0;
       uint32_t size = 0;
+
       switch (msg.cmd)
       {
       case EEPROMCurConf:
@@ -775,20 +776,22 @@ void commitEEPROM(void) // progress EEPROM writing by sending next block over i2
     }
     else
     {
-      if (hi2c2.State == HAL_I2C_STATE_READY && Remaining_Bytes > 0)
-      { // i2c not busy
+      if (hi2c2.State == HAL_I2C_STATE_READY)
+      {
+        uint16_t remaining_page_space = EEPROM_PAGESIZE - (Memory_Offset % EEPROM_PAGESIZE);
+        uint16_t write_size = Remaining_Bytes;
 
-        if (HAL_I2C_Mem_Write_IT(
-                &hi2c2, (uint16_t)EEPROM_ADDRESS, Memory_Address, I2C_MEMADD_SIZE_16BIT,
-                (uint8_t*)(EEPROMdata.buffer + Memory_Address), EEPROM_PAGESIZE) != HAL_OK)
+        if (write_size > remaining_page_space)
+          write_size = remaining_page_space;
+
+        if (HAL_I2C_Mem_Write_IT(&hi2c2, EEPROM_ADDRESS, Memory_Offset, I2C_MEMADD_SIZE_16BIT,
+                                 &EEPROMdata.buffer[Memory_Offset], write_size) != HAL_OK)
         {
-          Error_Handler(); // TODO: error here is not a hard error, don't hang code.
+          Error_Handler(); // TODO: not a hard error, don't hang code.
         }
         errorcount = 0;
-        Remaining_Bytes -= EEPROM_PAGESIZE;
-        if (Remaining_Bytes < 0)
-          Remaining_Bytes = 0;
-        Memory_Address += EEPROM_PAGESIZE;
+        Remaining_Bytes -= write_size;
+        Memory_Offset += write_size;
       }
       else
       {
@@ -805,8 +808,9 @@ void commitEEPROM(void) // progress EEPROM writing by sending next block over i2
       }
       else if (errorcount > EEPROMMAXERROR)
       {
-        Errors.eepromerror++; // true; // failed to send complete message
+        Errors.eepromerror++;
         eepromwritinginprogress = false;
+        HAL_GPIO_WritePin(EEPROMWC_GPIO_Port, EEPROMWC_Pin, GPIO_PIN_SET);
       }
     }
   }
