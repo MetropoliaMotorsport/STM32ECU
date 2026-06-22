@@ -16,38 +16,8 @@
 #include "taskpriorities.h"
 #include "tim.h"
 
-uint16_t Memory_Address;
-volatile uint32_t Remaining_Bytes;
-
-typedef union
-{ // EEPROMU
-  uint8_t buffer[4096];
-  struct
-  {
-    char version[32]; // block 0  32 bytes
-    uint8_t active;   // block 1 32 bytes
-    uint8_t paddingact[31];
-    union
-    {
-      uint8_t reserved1[32 * 8]; // blocks 2-9 256 bytes.
-      runtimedata_t runtimedata;
-    };
-    union
-    {
-      uint8_t padding1[32 * 50]; // force the following structure to be aligned to start of a 50
-                                 // block area.
-      eepromdata block1;         // block 10-59
-    };
-    union
-    {
-      uint8_t padding2[32 * 50];
-      eepromdata block2; // block 60-109
-    };
-
-    uint8_t reserved2[32 * 14]; // block 110-123  448 bytes
-    uint8_t errorlogs[32 * 4];  // block 124-127  128 bytes
-  };
-} EEPROMdataType;
+static uint16_t Memory_Offset;
+static volatile uint32_t Remaining_Bytes;
 
 DMA_BUFFER EEPROMdataType EEPROMdata;
 
@@ -107,7 +77,8 @@ static time_t lastruntimesaved = 0;
 
 xTimerHandle timerHndlRunningData;
 
-// TODO: make this properly schedule queue writes
+static bool startEEPROMWrite(uint16_t offset, uint32_t size);
+
 void EEPROMTask(void* argument)
 {
   ReceiveInProgress = false;
@@ -137,46 +108,68 @@ void EEPROMTask(void* argument)
       while (EEPROMBusy())
         vTaskDelay(10);
 
-      uint16_t address = 0;
+      uint16_t offset = 0;
       uint32_t size = 0;
       switch (msg.cmd)
       {
       case EEPROMCurConf:
+        eepromdata* block = getEEPROMBlock(0);
+        offset = (uint16_t)((uint8_t*)block - EEPROMdata.buffer);
+        size = sizeof(*block);
         break;
 
       case EEPROMRunningData:
-        break;
-
-      case writeEEPROM0:
+        offset = (uint16_t)((uint8_t*)&EEPROMdata.runtimedata - EEPROMdata.buffer);
+        size = sizeof(runtimedata_t);
         break;
 
       case writeEEPROM1:
+        eepromdata* block = getEEPROMBlock(1);
+        offset = (uint16_t)((uint8_t*)block - EEPROMdata.buffer);
+        size = sizeof(*block);
         break;
 
-      case writeEEPROMC:
+      case writeEEPROM2:
+        eepromdata* block = getEEPROMBlock(2);
+        offset = (uint16_t)((uint8_t*)block - EEPROMdata.buffer);
+        size = sizeof(*block);
+        break;
+
+      case writeEEPROMC: // what the fuck is this?
+        eepromdata* block = getEEPROMBlock(0);
+        offset = (uint16_t)((uint8_t*)block - EEPROMdata.buffer);
+        size = sizeof(*block);
         break;
 
       case FullConfigEEPROM:
+        eepromdata* block = getEEPROMBlock(1);
+        offset = (uint16_t)((uint8_t*)block - EEPROMdata.buffer);
+        size = 3200; // sizeof bank1 + bank2
         break;
 
       case FullEEPROM:
+        offset = 0;
+        size = sizeof(EEPROMdata);
         break;
 
-      case zeroEEPROM:
-        memset(EEPROMData.buffer, sizeof(EEPROMData));
-        return;
+      case clearEEPROM:
+        memset(EEPROMdata.buffer, 0xFF, sizeof(EEPROMdata));
+        offset = 0;
+        size = sizeof(EEPROMdata);
+        break;
 
       default:
         break;
       }
+      if (size > 0)
+        startEEPROMWrite(offset, size);
     }
-    StartEEPROMWrite(address, size);
   }
 
   vTaskDelete(NULL);
 }
 
-static bool StartEEPROMWrite(uint16_t address, uint32_t size)
+static bool startEEPROMWrite(uint16_t offset, uint32_t size)
 {
   if (size <= 0)
     return false;
@@ -184,7 +177,7 @@ static bool StartEEPROMWrite(uint16_t address, uint32_t size)
   if (eepromwritinginprogress)
     return false;
 
-  Memory_Address = address;
+  Memory_Offset = offset;
   Remaining_Bytes = size;
   eepromwritinginprogress = true;
 
@@ -274,6 +267,7 @@ int DoEEPROM(void)
 
           sprintf(str, "Send: %s %.4lu ", datatype, BufferPos);
 
+          // NOTE: why the fuck does this call the CAN ID for configuration change
           CAN1Send(0x21, 8, CANTxData);
           BufferPos += SendSize;
           SendLast = gettimer();
@@ -336,9 +330,8 @@ int DoEEPROM(void)
                 TransferSize = sizeof(eepromdata);
                 // copy block to both memory areas.
                 memcpy(getEEPROMBlock(1), Buffer, TransferSize);
-                memcpy(getEEPROMBlock(2), Buffer, TransferSize);
                 break;
-                //								case 2 : // Block 2
+              case 2: // Block 2
                 TransferSize = sizeof(eepromdata);
                 memcpy(getEEPROMBlock(2), Buffer, TransferSize);
                 break;
@@ -350,7 +343,7 @@ int DoEEPROM(void)
 
             // don't commit to eeprom unless get write request.
 
-            // TODO: verify eeprom, move to eeprom.c
+            // TODO: verify eeprom
             // memcpy(getEEPROMBuffer(), Buffer, 4096); // copy received data into local eeprom
             // buffer before write.
 
@@ -588,8 +581,9 @@ void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef* I2cHandle)
   //	toggleOutput(44);
   //		sendnext = true;
   {
-    //			HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 1); // lock eeprom again to prevent
-    // false writes. 			senti2c = true;
+    // HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 1); lock eeprom again to prevent false
+    // writes.
+    //  senti2c = true;
   }
 
   // if all sent i2csendinprogress
@@ -683,7 +677,7 @@ int startupReadEEPROM(void)
   }
 
   // only read active block in.
-  Memory_Address = &EEPROMdata.active - EEPROMdata.buffer;
+  Memory_Offset = &EEPROMdata.active - EEPROMdata.buffer;
 
   result = readEEPROMAddr(&EEPROMdata.active - EEPROMdata.buffer, 1);
   if (result != HAL_OK)
@@ -728,7 +722,7 @@ int readEEPROMAddr(uint16_t address, uint16_t size)
 
   while (!eepromreceivedone) // 4 sec read timeout so will still startup regardless.
   {
-    //__WFI();
+    // __WFI();
     HAL_Delay(10);
     if (gettimer() > startread + MS1000 * 4) // TODO: check right way round.
     {
@@ -835,7 +829,7 @@ int writeEEPROM(int bank) // write one of the two config banks to EEPROM
   if (bank > 1 || bank < 0)
     return 0; // invalid bank number given.
 
-  EEPROM_msg msg = {bank ? writeEEPROM1 : writeEEPROM0};
+  EEPROM_msg msg = {bank ? writeEEPROM2 : writeEEPROM1};
   return xQueueSend(EEPROMQueue, &msg, 0);
 }
 
@@ -849,7 +843,6 @@ int writeEEPROMRunningData(void) // write emergency packet to end of EEPROM.
 {
   EEPROM_msg msg = {EEPROMRunningData};
   return xQueueSend(EEPROMQueue, &msg, 0);
-  return 0;
 }
 
 int writeEEPROMEmergency(void) // write emergency packet to end of EEPROM.
@@ -919,7 +912,7 @@ bool resetEEPROM(void)
   data->pedalcurves[2].PedalCurveOutput[2] = 1000;
   data->pedalcurves[2].PedalCurveOutput[3] = 0;
   Remaining_Bytes = sizeof(EEPROMdata);
-  Memory_Address = 0;
+  Memory_Offset = 0;
   eepromwritinginprogress = true;
   HAL_GPIO_WritePin(EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0); // enable write pin.
   if (HAL_TIM_Base_Start_IT(&htim16) != HAL_OK)           // start write timer.
@@ -936,7 +929,7 @@ bool resetEEPROM(void)
 
 bool clearEEPROM(void)
 {
-  EEPROM_msg msg = {zeroEEPROM};
+  EEPROM_msg msg = {clearEEPROM};
   return xQueueSend(EEPROMQueue, &msg, 0);
 }
 
@@ -945,7 +938,6 @@ bool initEEPROM(void)
 
   bool EEPROMInitok = true;
 
-  MX_I2C2_Init();
   int eepromstatus = startupReadEEPROM();
 
   switch (eepromstatus)
