@@ -96,11 +96,9 @@ void EEPROMTask(void* argument)
   configASSERT(EEPROMQueue);
 
   EEPROM_msg msg;
-  // HAL_TIM_Base_Start_IT(&htim6);
 
   lastruntimesaved = EEPROMdata.runtimedata.time;
 
-  // TODO: process received queue
   while (1)
   {
     if (xQueueReceive(EEPROMQueue, &msg, portMAX_DELAY) == pdTRUE)
@@ -251,6 +249,7 @@ void DoEEPROMTimeouts(void)
   }
 }
 
+// TODO:god save the queen
 int DoEEPROM(void)
 {
   int returnval = 0;
@@ -595,15 +594,10 @@ eepromdata* getEEPROMBlock(int block)
 void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef* I2cHandle)
 {
   /* Turn LED1 on: Transfer in transmission process is correct */
-  //	toggleOutput(44);
-  //		sendnext = true;
+  if (I2cHandle->Instance == &hi2c2)
   {
-    // HAL_GPIO_WritePin( EEPROMWC_GPIO_Port, EEPROMWC_Pin, 1); lock eeprom again to prevent false
-    // writes.
-    //  senti2c = true;
+    toggleOutput(44);
   }
-
-  // if all sent i2csendinprogress
 }
 
 /**
