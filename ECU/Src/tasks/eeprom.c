@@ -550,7 +550,7 @@ int EEPROMSend(void)
 
 bool checkversion(char* data)
 {
-  if (strcmp((char*)data, EEPROMVERSIONSTR) == 0)
+  if (strcmp(data, EEPROMVERSIONSTR) == 0)
     return true;
   else
     return false;
@@ -563,10 +563,6 @@ uint8_t* getEEPROMBuffer()
 
 eepromdata* getEEPROMBlock(int block)
 {
-
-  /*		if ( activeblock==1 )
-   return EEPROMdata.block1
-   */
 
   if (block == 0)
   {
@@ -594,7 +590,7 @@ eepromdata* getEEPROMBlock(int block)
 void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef* I2cHandle)
 {
   /* Turn LED1 on: Transfer in transmission process is correct */
-  if (I2cHandle->Instance == &hi2c2)
+  if (I2cHandle == &hi2c2)
   {
     toggleOutput(44);
   }
@@ -654,7 +650,6 @@ int startupReadEEPROM(void)
 #ifdef READFULLEEPROM
 
   eepromreceivedone = false;
-  // start reading eeprom into ram, done t bootup so don't ne
 
   int result = readEEPROMAddr(0, sizeof(EEPROMdata) + 1);
   if (result != HAL_OK)
@@ -662,7 +657,7 @@ int startupReadEEPROM(void)
     return result;
   }
 
-  if (checkversion(EEPROMdata.buffer))
+  if (checkversion(EEPROMdata.version))
   {
     return 0;
   }
@@ -670,32 +665,31 @@ int startupReadEEPROM(void)
     return 1;
 #else
 
-  // read version header.
-
+  // load version header.
   int result = readEEPROMAddr(0, 32);
   if (result != HAL_OK)
   {
     return result;
   }
 
-  if (!checkversion((char*)EEPROMdata.buffer))
+  if (!checkversion(EEPROMdata.version))
   {
     // DebugPrintf("EEprom version bad, resetting data\n\r");
     resetEEPROM();
-
-    UARTwrite("Eeprom reset.\r\n");
+    // No function definition found?
+    // UARTwrite("Eeprom reset.\r\n");
     retval = 1;
   }
 
-  // only read active block in.
+  // load active section
   Memory_Offset = &EEPROMdata.active - EEPROMdata.buffer;
-
-  result = readEEPROMAddr(&EEPROMdata.active - EEPROMdata.buffer, 1);
+  result = readEEPROMAddr(Memory_Offset, 1);
   if (result != HAL_OK)
   {
     return result;
   }
 
+  // load currently active block
   uint16_t offset = (uint8_t*)getEEPROMBlock(0) - EEPROMdata.buffer;
 
   result = readEEPROMAddr(offset, sizeof(eepromdata));
@@ -705,14 +699,13 @@ int startupReadEEPROM(void)
     return result;
   }
 
-  if (checkversion((char*)getEEPROMBlock(0)))
+  if (checkversion(getEEPROMBlock(0)->VersionString))
   {
     // DebugPrintf("EEprom active block %d OK", EEPROMdata.active);
     return retval;
   }
   // right now, active block is never switched in practice.
-  // DebugPrintf(
-  //"EEprom active config data  not found, resetting and using 1\n\r");
+  // DebugPrintf( "EEprom active config data  not found, resetting and using 1\n\r");
   resetEEPROM();
   return retval;
   // headers ok, continue.
@@ -728,7 +721,7 @@ int readEEPROMAddr(uint16_t address, uint16_t size)
   {
     // DebugPrintf("EEPROM read failed to start");
     /* Reading process Error */
-    return 1; // Error_Handler(); // failed to read data for some reason.
+    return HAL_ERROR; // Error_Handler(); // failed to read data for some reason.
   }
 
   while (!eepromreceivedone) // 4 sec read timeout so will still startup regardless.
@@ -737,16 +730,16 @@ int readEEPROMAddr(uint16_t address, uint16_t size)
     HAL_Delay(10);
     if (gettimer() > startread + MS1000 * 4) // TODO: check right way round.
     {
-      return 1;
+      return HAL_ERROR;
     }
   };
 
   if (!eepromreceivedone)
   {
     // DebugPrintf("EEPROM read failed to finish");
-    return 2;
+    return HAL_BUSY;
   }
-  return 0;
+  return HAL_OK;
 }
 
 int readEEPROM(void)
@@ -766,7 +759,7 @@ int readEEPROM(void)
 #define EEPROMMAXERROR (5)
 
 void commitEEPROM(void) // progress EEPROM writing by sending next block over i2c, call from writing
-                        // loop ( interrupt )
+                        // loop (interrupt)
 {
   HAL_TIM_Base_Stop_IT(&htim16);
 
@@ -898,14 +891,14 @@ bool resetEEPROM(void)
 {
   memset(EEPROMdata.buffer, 0, sizeof(EEPROMdata));
 
-  snprintf(EEPROMdata.version, "%s", EEPROMVERSIONSTR);
+  snprintf(EEPROMdata.version, sizeof(EEPROMVERSIONSTR), "%s", EEPROMVERSIONSTR);
 
   eepromdata* data = &EEPROMdata.block1;
   EEPROMdata.active = 1;
 
   data->EnabledMotors = 0b1100; // for rear motors only
   data->InvEnabled = 1;
-  snprintf(data->VersionString, "%s", EEPROMVERSIONSTR);
+  snprintf(data->VersionString, sizeof(EEPROMVERSIONSTR), "%s", EEPROMVERSIONSTR);
   data->pedalcurves[0].PedalCurveInput[0] = 50;
   data->pedalcurves[0].PedalCurveInput[1] = 950;
   data->pedalcurves[0].PedalCurveInput[2] = 0;
@@ -942,6 +935,7 @@ bool resetEEPROM(void)
     vTaskDelay(20);
   }
   // DebugPrintf("EEPROM Reset");
+  return true;
 }
 
 bool clearEEPROM(void)
@@ -952,7 +946,6 @@ bool clearEEPROM(void)
 
 bool initEEPROM(void)
 {
-
   bool EEPROMInitok = true;
 
   int eepromstatus = startupReadEEPROM();
