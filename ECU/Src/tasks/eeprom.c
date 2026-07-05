@@ -249,7 +249,6 @@ void DoEEPROMTimeouts(void)
   }
 }
 
-// TODO:god save the queen
 int DoEEPROM(void)
 {
   int returnval = 0;
@@ -274,7 +273,8 @@ int DoEEPROM(void)
           if (BufferPos + SendSize > TransferSize)
             SendSize = TransferSize - BufferPos;
 
-          uint8_t CANTxData[8] = {9, BufferPos >> 8, BufferPos, SendSize, 0, 0, 0, 0};
+          uint8_t CANTxData[8] = {
+              9, (uint8_t)(BufferPos >> 8), (uint8_t)BufferPos, SendSize, 0, 0, 0, 0};
 
           for (int i = 0; i < SendSize; i++)
           {
@@ -283,7 +283,6 @@ int DoEEPROM(void)
 
           sprintf(str, "Send: %s %.4lu ", datatype, BufferPos);
 
-          // NOTE: why the fuck does this call the CAN ID for configuration change
           CAN1Send(0x21, 8, CANTxData);
           BufferPos += SendSize;
           SendLast = gettimer();
@@ -386,7 +385,14 @@ int DoEEPROM(void)
     }
     else if (EEPROMConfigdata[0] != 0)
     {
-      //		returnvalue = ReceivingConfig;
+      // returnvalue = ReceivingConfig;
+      /*
+        8   = start receiving EEPROM data
+        9   = EEPROM data chunk
+        10  = send EEPROM data
+        11  = write received/copied data to physical EEPROM
+        30  = ACK/error for send flow
+      */
       switch (EEPROMConfigdata[0])
       {
       case 8: // start receiving data packet. bytes 2 & 3 define how much data being sent.
@@ -426,7 +432,7 @@ int DoEEPROM(void)
           break;
 
       case 30:
-        //				CAN_SendStatus(ReceivingData,ReceiveErr,0);
+        CAN_SendStatus(ReceivingData, ReceiveErr, 0);
         break;
 
       default: // unknown request.
@@ -448,10 +454,10 @@ void SetDataType(char* str, uint8_t datatype)
   case 0: // Full EEPROM
     strcpy(str, "FullEEPROM");
     break;
-  case 1: // Full EEPROM
+  case 1: // Bank1
     strcpy(str, "EEBank1");
     break;
-  case 2: // Full EEPROM
+  case 2: // Bank2
     strcpy(str, "EEBank2");
     break;
   }
@@ -563,7 +569,6 @@ uint8_t* getEEPROMBuffer()
 
 eepromdata* getEEPROMBlock(int block)
 {
-
   if (block == 0)
   {
     if (EEPROMdata.active == 1)
