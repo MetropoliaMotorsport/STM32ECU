@@ -18,9 +18,13 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "ecumain.h"
+#include "adc.h"
+#include "comp.h"
 #include "dwt_delay.h"
 #include "eeprom.h"
 #include "errors.h"
+#include "fdcan.h"
+#include "i2c.h"
 #include "input.h"
 #include "output.h"
 #include "powernode.h"

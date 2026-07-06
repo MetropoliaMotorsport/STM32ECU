@@ -88,7 +88,7 @@ typedef void (*TimeoutHandler)( uint16_t id );
 
 
 typedef volatile struct CanDataType {
-	volatile uint8_t *devicestate;
+	volatile DeviceStatus *devicestate;
 	uint16_t id;
 	uint8_t dlcsize;
 	DataHandler getData;

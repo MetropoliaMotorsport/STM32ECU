@@ -5,32 +5,32 @@
  *      Author: Visa
  */
 
-#include "ecumain.h"
-#include "limits.h"
-#include "task.h"
 #include "power.h"
+#include "ecumain.h"
+#include "eeprom.h"
+#include "errors.h"
+#include "input.h"
+#include "inverter.h"
+#include "limits.h"
+#include "output.h"
 #include "powerloss.h"
 #include "powernode.h"
-#include "errors.h"
-#include "eeprom.h"
-#include "inverter.h"
+#include "semphr.h"
+#include "task.h"
 #include "taskpriorities.h"
 #include "timerecu.h"
-#include "semphr.h"
-#include "output.h"
-#include "input.h"
 
 TaskHandle_t PowerTaskHandle = NULL;
 
-#define POWERSTACK_SIZE 128*6
-#define PowerITEMSIZE		sizeof( Power_msg )
-#define POWERTASKNAME  "PowerTask"
+#define POWERSTACK_SIZE 128 * 6
+#define PowerITEMSIZE sizeof(Power_msg)
+#define POWERTASKNAME "PowerTask"
 StaticTask_t xPOWERTaskBuffer;
 StackType_t xPOWERStack[POWERSTACK_SIZE];
 
-#define PowerQUEUE_LENGTH    20
-#define PowerErrorQUEUE_LENGTH    20
-#define PowerErrorITEMSIZE		sizeof( Power_Error_msg )
+#define PowerQUEUE_LENGTH 20
+#define PowerErrorQUEUE_LENGTH 20
+#define PowerErrorITEMSIZE sizeof(Power_Error_msg)
 
 /* The variable used to hold the queue's data structure. */
 static StaticQueue_t PowerStaticQueue;
@@ -57,172 +57,175 @@ uint32_t curpowernodesOnline = 0;
 /*
 Function makes sure that devices are in the state they are expected to be in.
 */
-void CheckDeviceState(){
-	for(int i = 0; i < DEVICE_COUNT; i++) {
-		if (&DevicePowerList[i] != NULL){
-			if (DevicePowerList[i].expectedstate != DevicePowerList[i].actualstate) {
-				setNodeDevicePower(DevicePowerList[i].device, DevicePowerList[i].expectedstate, false);
-				vTaskDelay(1);
-			}
-		}
-	}
+void CheckDeviceState()
+{
+  for (int i = 0; i < DEVICE_COUNT; i++)
+  {
+    if (&DevicePowerList[i] != NULL)
+    {
+      if (DevicePowerList[i].expectedstate != DevicePowerList[i].actualstate)
+      {
+        setNodeDevicePower(DevicePowerList[i].device, DevicePowerList[i].expectedstate, false);
+        vTaskDelay(1);
+      }
+    }
+  }
 }
 
 #define FIXEDTEMP 0
-void temp_ctl(){
-	uint16_t InvGoalTemp = 60;
-	int16_t MotorGoalTemp = 70;
-	uint8_t SetPWM = 0;
+void temp_ctl()
+{
+  uint16_t InvGoalTemp = 60;
+  int16_t MotorGoalTemp = 70;
+  uint8_t SetPWM = 0;
 
 #if FIXEDTEMP
-	if (CarState.InvTemp < InvGoalTemp && CarState.MotorTemp < MotorGoalTemp)
-	{
-		SetPWM = 10;
+  if (CarState.InvTemp < InvGoalTemp && CarState.MotorTemp < MotorGoalTemp)
+  {
+    SetPWM = 10;
 
-		setNodeDevicePWM(SideFans, SetPWM);
-		setNodeDevicePWM(RightPump, SetPWM * 3 );
-		setNodeDevicePWM(LeftPump, SetPWM * 3) ;
-	}
-	else
-	{
-		int SetPWM1 = (CarState.InvTemp - InvGoalTemp) * 7;
-		int SetPWM2 = (CarState.MotorTemp - MotorGoalTemp) * 15;
+    setNodeDevicePWM(SideFans, SetPWM);
+    setNodeDevicePWM(RightPump, SetPWM * 3);
+    setNodeDevicePWM(LeftPump, SetPWM * 3);
+  }
+  else
+  {
+    int SetPWM1 = (CarState.InvTemp - InvGoalTemp) * 7;
+    int SetPWM2 = (CarState.MotorTemp - MotorGoalTemp) * 15;
 
-		SetPWM = SetPWM1 > SetPWM2 ? SetPWM1 : SetPWM2;
+    SetPWM = SetPWM1 > SetPWM2 ? SetPWM1 : SetPWM2;
 
-		SetPWM = SetPWM > 100 ? 100 : SetPWM;
+    SetPWM = SetPWM > 100 ? 100 : SetPWM;
 
-		setNodeDevicePWM(SideFans, SetPWM);
+    setNodeDevicePWM(SideFans, SetPWM);
 
-		SetPWM = SetPWM + 15 > 90 ? 90 : SetPWM;
-		setNodeDevicePWM(RightPump, SetPWM);
-		setNodeDevicePWM(LeftPump, SetPWM) ;
-	}
+    SetPWM = SetPWM + 15 > 90 ? 90 : SetPWM;
+    setNodeDevicePWM(RightPump, SetPWM);
+    setNodeDevicePWM(LeftPump, SetPWM);
+  }
 #endif
-	
-		setNodeDevicePWM(SideFans, 20);
-		setNodeDevicePWM(RightPump, 90);
-		setNodeDevicePWM(LeftPump, 90) ;
 
+  setNodeDevicePWM(SideFans, 20);
+  setNodeDevicePWM(RightPump, 90);
+  setNodeDevicePWM(LeftPump, 90);
 }
-	
 
 uint32_t PowerReceived = 0;
 
-void PowerTask(void *argument) {
-	xEventGroupSync(xStartupSync, 0, 1, portMAX_DELAY);
+void PowerTask(void* argument)
+{
+  xEventGroupSync(xStartupSync, 0, 1, portMAX_DELAY);
 
-	/* pxQueueBuffer was not NULL so xQueue should not be NULL. */
-	configASSERT(PowerQueue);
+  /* pxQueueBuffer was not NULL so xQueue should not be NULL. */
+  configASSERT(PowerQueue);
 
+  resetPowerLost();
+  xQueueReset(PowerErrorQueue);
 
-	resetPowerLost();
-	xQueueReset(PowerErrorQueue);
+  while (1)
+  {
 
-	while(1){
+    // CheckDeviceState();
 
-		//CheckDeviceState();
+    temp_ctl();
 
-		temp_ctl();
+    xEventGroupSync(xCycleSync, 0, 1, portMAX_DELAY); // wait for main cycle.
+    // after synced, send current state for next cycle. Higher priority task, so should be received
+    // first.
+    xTaskNotifyWait(pdFALSE, ULONG_MAX, &PowerReceived, 0);
+  }
 
-
-		xEventGroupSync(xCycleSync, 0, 1, portMAX_DELAY); // wait for main cycle.
-		// after synced, send current state for next cycle. Higher priority task, so should be received first.
-		xTaskNotifyWait( pdFALSE, ULONG_MAX, &PowerReceived, 0);
-	}
-
-
-	vTaskDelete(NULL);
+  vTaskDelete(NULL);
 }
-
 
 bool CheckBMS(void) // returns true if shutdown circuit other than ECU is closed
 {
 
-	if (HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin)) {
-		//DebugMsg("BMS input PIN");
-	}
-	if (DeviceState.BMS != OPERATIONAL) {
-		//DebugMsg("BMS NOT operational");
-	}
-	return (!(HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin)
-			|| DeviceState.BMS != OPERATIONAL));
-
+  if (HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin))
+  {
+    // DebugMsg("BMS input PIN");
+  }
+  if (DeviceState.BMS != OPERATIONAL)
+  {
+    // DebugMsg("BMS NOT operational");
+  }
+  return (!(HAL_GPIO_ReadPin(BMS_Input_Port, BMS_Input_Pin) || DeviceState.BMS != OPERATIONAL));
 }
 
 bool CheckTSOff(void) // returns true if shutdown circuit other than ECU is closed
 {
-	//return Shutdown.TS_OFF;
+  return ShutdownCircuitState();
 }
 
 bool CheckIMD(void) // returns true if shutdown circuit other than ECU is closed
 {
 
-	if (HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin)) {
-		//DebugMsg("IMD input PIN");
-	}
-	if (DeviceState.BMS != OPERATIONAL) {
-		//DebugMsg("BMS NOT operational in IMD check");
-	}
-	return (HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin)
-			|| DeviceState.BMS != OPERATIONAL);
+  if (HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin))
+  {
+    // DebugMsg("IMD input PIN");
+  }
+  if (DeviceState.BMS != OPERATIONAL)
+  {
+    // DebugMsg("BMS NOT operational in IMD check");
+  }
+  return (HAL_GPIO_ReadPin(IMD_Input_Port, IMD_Input_Pin) || DeviceState.BMS != OPERATIONAL);
 }
 
-#define MAXSHUTDOWNSTR	40
+#define MAXSHUTDOWNSTR 40
 
-
-void ShutdownCircuitSet( bool state) {
-	HAL_GPIO_WritePin( DO15_GPIO_Port, DO15_Pin, state);
-	HAL_GPIO_WritePin( Shutdown_GPIO_Port, Shutdown_Pin, state);
+void ShutdownCircuitSet(bool state)
+{
+  HAL_GPIO_WritePin(DO15_GPIO_Port, DO15_Pin, state);
+  HAL_GPIO_WritePin(Shutdown_GPIO_Port, Shutdown_Pin, state);
 }
 
-int ShutdownCircuitState(void) {
-	return HAL_GPIO_ReadPin(Shutdown_GPIO_Port, Shutdown_Pin);
+int ShutdownCircuitState(void)
+{
+  return HAL_GPIO_ReadPin(Shutdown_GPIO_Port, Shutdown_Pin);
 }
 
 xTimerHandle timerHndlBuzzer;
 
-bool soundBuzzer(void) {
-	setNodeDevicePower(Buzzer, true, false);
-	xTimerStart(timerHndlBuzzer, 0);
-	return true;
+bool soundBuzzer(void)
+{
+  setNodeDevicePower(Buzzer, true, false);
+  xTimerStart(timerHndlBuzzer, 0);
+  return true;
 }
 
-static void stopBuzzer(xTimerHandle pxTimer) {
-	//DebugPrintf("Stopping buzzer\n");
-	setNodeDevicePower(Buzzer, false, false);
+static void stopBuzzer(xTimerHandle pxTimer)
+{
+  // DebugPrintf("Stopping buzzer\n");
+  setNodeDevicePower(Buzzer, false, false);
 }
 
-int initPower(void) {
+int initPower(void)
+{
 
-	HVLost = false;
+  HVLost = false;
 
-	waitStr = xSemaphoreCreateMutex();
+  waitStr = xSemaphoreCreateMutex();
 
-	PowerQueue = xQueueCreateStatic(PowerQUEUE_LENGTH, PowerITEMSIZE,
-			PowerQueueStorageArea, &PowerStaticQueue);
+  PowerQueue = xQueueCreateStatic(PowerQUEUE_LENGTH, PowerITEMSIZE, PowerQueueStorageArea,
+                                  &PowerStaticQueue);
 
-	vQueueAddToRegistry(PowerQueue, "PowerQueue");
+  vQueueAddToRegistry(PowerQueue, "PowerQueue");
 
-	PowerErrorQueue = xQueueCreateStatic(PowerErrorQUEUE_LENGTH,
-			PowerErrorITEMSIZE, PowerErrorQueueStorageArea,
-			&PowerErrorStaticQueue);
+  PowerErrorQueue = xQueueCreateStatic(PowerErrorQUEUE_LENGTH, PowerErrorITEMSIZE,
+                                       PowerErrorQueueStorageArea, &PowerErrorStaticQueue);
 
-	vQueueAddToRegistry(PowerErrorQueue, "PowerErrorQueue");
+  vQueueAddToRegistry(PowerErrorQueue, "PowerErrorQueue");
 
-	timerHndlBuzzer = xTimerCreate("buzzertimer", /* name */
-	pdMS_TO_TICKS(1000), /* period/time */
-	pdFALSE, /* auto reload */
-	(void*) 0, /* timer ID */
-	stopBuzzer); /* callback */
+  timerHndlBuzzer = xTimerCreate("buzzertimer",       /* name */
+                                 pdMS_TO_TICKS(1000), /* period/time */
+                                 pdFALSE,             /* auto reload */
+                                 (void*)0,            /* timer ID */
+                                 stopBuzzer);         /* callback */
 
-	PowerTaskHandle = xTaskCreateStatic(PowerTask,
-	POWERTASKNAME,
-	POWERSTACK_SIZE, (void*) 1,
-	POWERTASKPRIORITY, xPOWERStack, &xPOWERTaskBuffer);
+  PowerTaskHandle = xTaskCreateStatic(PowerTask, POWERTASKNAME, POWERSTACK_SIZE, (void*)1,
+                                      POWERTASKPRIORITY, xPOWERStack, &xPOWERTaskBuffer);
 
-	initPowerLossHandling();
+  initPowerLossHandling();
 
-	return 0;
+  return 0;
 }
-

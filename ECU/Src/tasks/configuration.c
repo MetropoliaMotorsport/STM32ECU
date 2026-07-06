@@ -32,7 +32,6 @@ static uint8_t ECUConfigdata[8] = {0};
 static bool ECUConfignewdata = false;
 static uint32_t ECUConfigDataTime = 0;
 
-// NOTE: ID of 0x21 triggers CAN config change
 CANData ECUConfig = {NULL, 0x21, 8, GetConfigCmd, NULL, 0};
 TaskHandle_t ConfigTaskHandle = NULL;
 QueueHandle_t ConfigInputQueue = {0};
@@ -52,8 +51,8 @@ bool checkConfigReset(void)
     configReset = false;
     return true;
   }
-  else
-    return false;
+
+  return false;
 }
 
 void ConfigReset(void)
@@ -61,7 +60,7 @@ void ConfigReset(void)
   configReset = false;
 }
 
-bool GetConfigCmd(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData* datahandle)
+bool GetConfigCmd(const uint8_t CANRxData[8], const uint32_t DataLength, CANData* datahandle)
 {
   if ((CANRxData[0] >= 8 && CANRxData[0] <= 11) || (CANRxData[0] == 30)) // eeprom command.
   {
@@ -208,8 +207,8 @@ bool doPedalCalibration(uint16_t input)
   {
     if (debugconfig && redraw)
     {
-      DebugPrintf("Press APPS & Regen");
-      DebugPrintf(" No brake pressure!");
+      // DebugPrintf("Press APPS & Regen");
+      // DebugPrintf(" No brake pressure!");
       // DebugPrintf(str);
     }
   }
@@ -217,8 +216,8 @@ bool doPedalCalibration(uint16_t input)
   {
     if (debugconfig && redraw)
     {
-      DebugPrintf("");
-      DebugPrintf("Press Regen");
+      // DebugPrintf("");
+      // DebugPrintf("Press Regen");
       // DebugPrintf(str);
     }
   }
@@ -303,19 +302,18 @@ bool DoMenuTorque(uint16_t input)
   strcpy(MenuLines[0], "Vectoring Menu:");
   sprintf(MenuLines[1], "%cBack...", (menu.selection == 0) ? '>' : ' ');
   if (debugconfig && redraw)
-    DebugPrintf(MenuLines[0]);
+    // DebugPrintf(MenuLines[0]);
 
-  for (int i = 0; i < 3; i++)
-  {
+    for (int i = 0; i < 3; i++)
+    {
 
-    // DebugPrintf(MenuLines[i + menu.top + 1]);
-  }
+      // DebugPrintf(MenuLines[i + menu.top + 1]);
+    }
   redraw = false;
 
   return true; // done with menu
 }
 
-// TODO: implement features from this function to the SetEEPROMBlockValue
 bool DoMenu(uint16_t input)
 {
   static bool inmenu = false;
@@ -334,7 +332,7 @@ bool DoMenu(uint16_t input)
     {
       inmenu = false;
       menu.inedit = false;
-      DebugPrintf("\nSaving settings\n");
+      // DebugPrintf("\nSaving settings\n");
 
       if (dofullsave)
       {
@@ -446,7 +444,7 @@ bool DoMenu(uint16_t input)
     snprintf(MenuLines[1 + MENU_CALIB], sizeof(MenuLines[0]), "%cAPPS Calib",
              (menu.selection == MENU_CALIB) ? '>' : ' ');
 
-    snprintf(MenuLines[1 + MENU_STEERING], sizeof(MenuLines[0]), "%cSteeringCalib %+4d",
+    snprintf(MenuLines[1 + MENU_STEERING], sizeof(MenuLines[0]), "%cSteeringCalib %4lu",
              (menu.selection == MENU_STEERING) ? '>' : ' ', SteeringAngle.data);
 
     if (menu.selection == MENU_STEERING && input == KEY_ENTER)

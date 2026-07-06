@@ -18,7 +18,9 @@ typedef struct
 #define ConfigSTACK_SIZE 128 * 8
 #define ConfigTASKNAME "ConfigTask"
 
-bool GetConfigCmd(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData* datahandle);
+bool GetConfigCmd(const uint8_t CANRxData[8], const uint32_t DataLength, CANData* datahandle);
+bool checkConfigReset(void);
+void ConfigReset(void);
 
 #define MENU_NM (1)
 #define MENU_NMBAL (2)

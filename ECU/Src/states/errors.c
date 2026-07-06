@@ -11,6 +11,7 @@
 #include "inverter.h"
 #include "input.h"
 #include "output.h"
+#include "configuration.h"
 #include "power.h"
 #include "timerecu.h"
 #include "semphr.h"

@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ecumain.h"
+#include "configuration.h"
 #include "output.h"
 
 #include "power.h"
