@@ -315,7 +315,7 @@ int DoEEPROM(void)
 
         // TODO: receive error
       }
-      else // position good, continue.
+      else // correct position, continue.
       {
 
         if (BufferPos + EEPROMConfigdata[3] <= TransferSize)
