@@ -953,8 +953,8 @@ static int eepromtest(void)
   /*
     test to manually trigger eeprom write to track what happens
   */
-  eepromdata* cfg = getEEPROMBlock(0);
-  cfg->MaxTorque = 42;
+  eepromdata* data = getEEPROMBlock(0);
+  data->MaxTorque = 42;
 
   if (writeEEPROMCurConf() != pdPASS)
   {
@@ -1021,6 +1021,9 @@ bool initEEPROM(void)
   EEPROMTaskHandle = xTaskCreateStatic(EEPROMTask, EEPROMTASKNAME, EEPROMSTACK_SIZE, (void*)1,
                                        EEPROMTASKPRIORITY, xEEPROMStack, &xEEPROMTaskBuffer);
   eepromtest();
+  eepromdata* data = getEEPROMBlock(0);
+  uint32_t max_torque = data->MaxTorque;
+  uint32_t fan_max = data->FanMax;
 
   return EEPROMInitok;
 }

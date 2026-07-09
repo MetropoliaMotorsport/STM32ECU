@@ -33,7 +33,7 @@ static bool ECUConfignewdata = false;
 static uint32_t ECUConfigDataTime = 0;
 
 CANData ECUConfig = {NULL, 0x21, 8, GetConfigCmd, NULL, 0};
-TaskHandle_t ConfigTaskHandle = NULL;
+TaskHandle_t ConfigTaskHandle = {0};
 QueueHandle_t ConfigInputQueue = {0};
 
 char ConfStr[40] = "";
@@ -68,7 +68,8 @@ bool GetConfigCmd(const uint8_t CANRxData[8], const uint32_t DataLength, CANData
   }
   else if (ECUConfignewdata)
   {
-    // TODO: received data before processing old, send error?
+    // NOTE: temporary error message
+    CAN_SendErrorStatus(49, 99, 404);
   }
   else
   {
