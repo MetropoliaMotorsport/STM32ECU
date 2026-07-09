@@ -375,7 +375,7 @@ int DoEEPROM(void)
         }
         else
         {
-          // TODO tried to receive too much data! error.
+          // TODO: tried to receive too much data! error.
           resetReceive();
           CAN_SendStatus(ReceivingData, ReceiveErr, 0);
         }
@@ -672,6 +672,7 @@ int startupReadEEPROM(void)
 
   // load version header.
   int result = readEEPROMAddr(0, 32);
+
   if (result != HAL_OK)
   {
     return result;
@@ -926,14 +927,10 @@ bool resetEEPROM(void)
   data->pedalcurves[2].PedalCurveOutput[1] = 400;
   data->pedalcurves[2].PedalCurveOutput[2] = 1000;
   data->pedalcurves[2].PedalCurveOutput[3] = 0;
-  Remaining_Bytes = sizeof(EEPROMdata);
-  Memory_Offset = 0;
-  eepromwritinginprogress = true;
-  HAL_GPIO_WritePin(EEPROMWC_GPIO_Port, EEPROMWC_Pin, 0); // enable write pin.
-  if (HAL_TIM_Base_Start_IT(&htim16) != HAL_OK)           // start write timer.
-    Error_Handler();
 
-  // wait for write
+  memcpy(&EEPROMdata.block2, &EEPROMdata.block1, sizeof(eepromdata));
+  startEEPROMWrite(0, sizeof(EEPROMdata));
+
   vTaskDelay(20);
   while (EEPROMBusy())
   {
@@ -947,6 +944,46 @@ bool clearEEPROM(void)
 {
   EEPROM_msg msg = {eraseEEPROM};
   return xQueueSend(EEPROMQueue, &msg, 0);
+}
+
+static int eepromtest(void)
+{
+  vTaskDelay(pdMS_TO_TICKS(1000));
+
+  /*
+    test to manually trigger eeprom write to track what happens
+  */
+  eepromdata* cfg = getEEPROMBlock(0);
+  cfg->MaxTorque = 42;
+
+  if (writeEEPROMCurConf() != pdPASS)
+  {
+    Error_Handler();
+  }
+
+  vTaskDelay(pdMS_TO_TICKS(20));
+
+  TickType_t start = xTaskGetTickCount();
+
+  while (!EEPROMBusy())
+  {
+    if ((xTaskGetTickCount() - start) >= pdMS_TO_TICKS(1000))
+    {
+      Error_Handler();
+    }
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+
+  while (EEPROMBusy())
+  {
+    if ((xTaskGetTickCount() - start) >= pdMS_TO_TICKS(5000))
+    {
+      Error_Handler();
+    }
+    vTaskDelay(pdMS_TO_TICKS(20));
+  }
+
+  return 0;
 }
 
 bool initEEPROM(void)
@@ -983,6 +1020,7 @@ bool initEEPROM(void)
 
   EEPROMTaskHandle = xTaskCreateStatic(EEPROMTask, EEPROMTASKNAME, EEPROMSTACK_SIZE, (void*)1,
                                        EEPROMTASKPRIORITY, xEEPROMStack, &xEEPROMTaskBuffer);
+  eepromtest();
 
   return EEPROMInitok;
 }

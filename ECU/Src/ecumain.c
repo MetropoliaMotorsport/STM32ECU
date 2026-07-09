@@ -230,6 +230,7 @@ static int HardwareInit(void)
   initBMS();
   initInput();
   initECU();
+  initEEPROM();
 
 #ifdef POWERNODES
   initPowerNodes();
