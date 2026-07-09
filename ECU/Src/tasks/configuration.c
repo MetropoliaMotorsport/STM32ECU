@@ -580,6 +580,35 @@ void ConfigTask(void* argument)
   }
 }
 
+void Test_Func(void)
+{
+  vTaskDelay(pdMS_TO_TICKS(1000));
+
+  uint8_t config[8] = {CAN_MENU_SET_VALUE, MENU_FANMAX, 255, 0, 0, 0, 0, 0};
+
+  taskENTER_CRITICAL();
+  memcpy(ECUConfigdata, config, sizeof(config));
+  ECUConfignewdata = true;
+  taskEXIT_CRITICAL();
+
+  vTaskDelay(pdMS_TO_TICKS(20));
+
+  eepromdata* data = getEEPROMBlock(0);
+  uint16_t fan_max = data->FanMax;
+
+  config[0] = CAN_MENU_SAVE;
+  config[1] = 0;
+  config[2] = 0;
+  config[3] = 0;
+
+  taskENTER_CRITICAL();
+  memcpy(ECUConfigdata, config, sizeof(config));
+  ECUConfignewdata = true;
+  taskEXIT_CRITICAL();
+
+  vTaskDelay(pdMS_TO_TICKS(20));
+}
+
 static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
 {
 
@@ -692,6 +721,9 @@ bool initConfig(void)
 
   ConfigTaskHandle = xTaskCreateStatic(ConfigTask, ConfigTASKNAME, ConfigSTACK_SIZE, (void*)1,
                                        ConfigTASKPRIORITY, xConfigStack, &xConfigTaskBuffer);
+
+  vTaskDelay(pdMS_TO_TICKS(1000));
+  Test_Func();
 
   return true;
 }
