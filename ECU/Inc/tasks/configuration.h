@@ -32,7 +32,7 @@ void ConfigReset(void);
 #define MENU_FANMAX (8)
 #define MENU_CALIB (9)
 #define MENU_STEERING (10)
-#define MENU_INVEN (11)
+#define MENU_INV (11)
 #define MENU_REGEN (12)
 #define MENU_REGENMAX (13)
 #define MENU_REGENMAXR (14)

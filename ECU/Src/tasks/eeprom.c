@@ -928,6 +928,41 @@ bool resetEEPROM(void)
   data->pedalcurves[2].PedalCurveOutput[2] = 1000;
   data->pedalcurves[2].PedalCurveOutput[3] = 0;
 
+  data->MaxTorque = 10;
+  data->PedalProfile = 0;
+  data->LimpMode = true;
+  data->LimpNM = LIMPNM;
+
+  data->TorqueVectoring = 0;
+  data->TractionControl = 0;
+
+  data->Fans = true;
+  data->FanMax = 255;
+
+  data->InvEnabled = true;
+  data->EnabledMotors = 0b1100;
+
+  data->DrivingMode = TEST;
+
+  data->maxRpm = 12000; // or whatever is sane
+  data->Regen = true;
+  data->regenMax = 0;
+  data->regenMaxR = 0;
+
+  data->alwaysHV = false;
+  data->Telemetry = true;
+  data->TorqueBal = 50;
+
+  data->APPSBrakeLightCfg = APPSBrakeLight;
+  data->APPSBrakeHardCfg = APPSBrakeHard;
+  data->APPSBrakeReleaseCfg = APPSBrakeRelease;
+  data->RTDMBrakePressureCfg = RTDMBRAKEPRESSURE;
+
+  data->MaxOutputPower = 0;
+  data->MaxDrivePower = 0;
+
+  data->Blockend = 0xA5;
+
   memcpy(&EEPROMdata.block2, &EEPROMdata.block1, sizeof(eepromdata));
   startEEPROMWrite(0, sizeof(EEPROMdata));
 

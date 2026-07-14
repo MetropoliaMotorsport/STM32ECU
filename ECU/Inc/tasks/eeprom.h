@@ -121,29 +121,50 @@ struct eepromdatastruct
     uint8_t MaxTorque;
     uint8_t ConfigStart;
   };
+
   uint8_t PedalProfile;
   bool LimpMode;
+  uint8_t LimpNM;
+
   uint8_t TorqueVectoring;
+  uint8_t TractionControl;
+
   bool Fans;
   uint8_t FanMax;
-  bool InvEnabled; // 519 bytes
+
+  bool InvEnabled;
   uint8_t EnabledMotors;
+
+  uint8_t DrivingMode;
+
   uint16_t AccelRpms;
   uint16_t maxRpm;
+
   uint8_t regenMax;
-  uint16_t TorqueSlope;
-  bool alwaysHV;
-  uint16_t DecelRpms;
-  uint8_t Regen;
-  int16_t steerCalib;
   uint8_t regenMaxR;
-  uint8_t AvailableByte;
+  uint8_t Regen;
+
+  uint16_t TorqueSlope;
+  uint16_t DecelRpms;
+
+  bool alwaysHV;
+  int16_t steerCalib;
+
   bool Telemetry;
-  union
-  {
-    uint8_t TorqueBal;
-    uint8_t Blockend;
-  };
+
+  uint8_t TorqueBal;
+
+  uint8_t APPSBrakeLightCfg;
+  uint8_t APPSBrakeHardCfg;
+  uint8_t APPSBrakeReleaseCfg;
+  uint8_t RTDMBrakePressureCfg;
+
+  uint8_t MaxOutputPower;
+  uint8_t MaxDrivePower;
+
+  uint8_t ReservedConfigBytes[16];
+
+  uint8_t Blockend;
 }; // max 1600bytes=50*32byte blocks.
 
 typedef union

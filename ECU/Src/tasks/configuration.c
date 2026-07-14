@@ -648,7 +648,7 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
     data->Regen = value ? true : false;
     break;
 
-  case MENU_INVEN:
+  case MENU_INV:
     data->InvEnabled = value ? true : false;
     break;
 
@@ -667,6 +667,59 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
   case MENU_HV:
     data->alwaysHV = value ? true : false;
     ShutdownCircuitSet(data->alwaysHV);
+    break;
+  case MENU_LIMPNM:
+    data->LimpNM = value > 255 ? 255 : value;
+    break;
+
+  case MENU_PEDAL_PROFILE:
+    if (value <= 2)
+      data->PedalProfile = value;
+    else
+      return false;
+    break;
+
+  case MENU_DRIVING_MODE:
+    if (value <= ENDURANCE)
+      data->DrivingMode = value;
+    else
+      return false;
+    break;
+
+  case MENU_ENABLED_MOTORS:
+    data->EnabledMotors = value & 0x0F;
+    break;
+
+  case MENU_APPS_BRAKE_LIGHT:
+    data->APPSBrakeLightCfg = value > 255 ? 255 : value;
+    break;
+
+  case MENU_APPS_BRAKE_HARD:
+    data->APPSBrakeHardCfg = value > 255 ? 255 : value;
+    break;
+
+  case MENU_APPS_BRAKE_RELEASE:
+    data->APPSBrakeReleaseCfg = value > 255 ? 255 : value;
+    break;
+
+  case MENU_RTDM_BRAKE_PRESSURE:
+    data->RTDMBrakePressureCfg = value > 255 ? 255 : value;
+    break;
+
+  case MENU_TV_ENABLE:
+    data->TorqueVectoring = value ? 1 : 0;
+    break;
+
+  case MENU_TC_ENABLE:
+    data->TractionControl = value ? 1 : 0;
+    break;
+
+  case MENU_MAX_POWER:
+    data->MaxOutputPower = value > 255 ? 255 : value;
+    break;
+
+  case MENU_MAX_DRIVE_POWER:
+    data->MaxDrivePower = value > 255 ? 255 : value;
     break;
 
   default:
