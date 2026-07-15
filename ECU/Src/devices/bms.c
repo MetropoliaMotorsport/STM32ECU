@@ -5,81 +5,84 @@
  *      Author: drago
  */
 
+#include "bms.h"
+#include "canecu.h"
 #include "ecumain.h"
 #include "errors.h"
-#include "canecu.h"
-#include "bms.h"
 #include "output.h"
 #include "power.h"
-
 
 // bms operation mode, byte 4   normal mode, data logging.
 // byte 5, cell with min voltage - mv, use to trigger
 // 0x9   byte 6-7 last two.
 
-
-bool processBMSSOC(const uint8_t CANRxData[8], const uint32_t DataLength, const CANData *datahandle){
-	return true;
+bool processBMSSOC(const uint8_t CANRxData[8], const uint32_t DataLength, CANData* datahandle)
+{
+  return true;
 }
 
+bool processBMS_PRE_Done(const uint8_t CANRxData[8], const uint32_t DataLength, CANData* datahandle)
+{
 
-
-bool processBMS_PRE_Done(const uint8_t CANRxData[8], const uint32_t DataLength, CANData *datahandle){
-	
-	CarState.PRE_Done = CANRxData[0];
-	return true;
+  CarState.PRE_Done = CANRxData[0];
+  return true;
 }
 
-CANData BMS_PRE_Done = { &DeviceState.BMS, BMS_PRE_Done_ID, 8, processBMS_PRE_Done, NULL, 0 };
-
+CANData BMS_PRE_Done = {&DeviceState.BMS, BMS_PRE_Done_ID, 8, processBMS_PRE_Done, NULL, 0};
 
 void BMSTimeout(uint16_t id);
 
-CANData BMSSOC = { &DeviceState.BMS, BMSSOC_ID, 8, processBMSSOC, BMSTimeout,
-		6000 };
+CANData BMSSOC = {&DeviceState.BMS, BMSSOC_ID, 8, processBMSSOC, BMSTimeout, 6000};
 
-void BMSTimeout(uint16_t id) {
-	//setOutputNOW(BMSLED, On);
-	//DebugMsg("BMS Timeout");
-	CAN_SendErrorStatus(199, 0, 0);
-	if (DeviceState.BMS != OFFLINE) {
-		CarState.VoltageBMS = 0;
-		SetCriticalError(CRITERRBMSTIMEOUT);
-	}
+void BMSTimeout(uint16_t id)
+{
+  // setOutputNOW(BMSLED, On);
+  // DebugMsg("BMS Timeout");
+  CAN_SendErrorStatus(199, 0, 0);
+  if (DeviceState.BMS != OFFLINE)
+  {
+    CarState.VoltageBMS = 0;
+    SetCriticalError(CRITERRBMSTIMEOUT);
+  }
 }
 
-int receiveBMS(void) { // TODO update it as per the new code.
-	if (DeviceState.BMS == OFFLINE) {
-		return 0;
-	}
+int receiveBMS(void)
+{ // TODO update it as per the new code.
+  if (DeviceState.BMS == OFFLINE)
+  {
+    return 0;
+  }
 
-	if (DeviceState.BMS == OPERATIONAL) {
-		// check for timeout.
-		if (BMSSOC.timeout) {
-			BMSTimeout(BMSSOC.id);
-		}
-	}
+  if (DeviceState.BMS == OPERATIONAL)
+  {
+    // check for timeout.
+    if (BMSSOC.timeout)
+    {
+      BMSTimeout(BMSSOC.id);
+    }
+  }
 
-	return 0;
+  return 0;
 }
 
-void resetBMS() {
+void resetBMS()
+{
 #ifdef BMSEnable
-	DeviceState.BMSEnabled = ENABLED;
+  DeviceState.BMSEnabled = ENABLED;
 #else
-	DeviceState.BMSEnabled = DISABLED;
+  DeviceState.BMSEnabled = DISABLED;
 #endif
 
-	DeviceState.BMS = OFFLINE;
-	CarState.VoltageBMS = 0;
+  DeviceState.BMS = OFFLINE;
+  CarState.VoltageBMS = 0;
 }
 
-int initBMS(void) {
-	RegisterResetCommand(resetBMS);
-	resetBMS();
-	//RegisterCan2Message(&BMSSOC);
-	RegisterCan1Message(&BMS_PRE_Done);
+int initBMS(void)
+{
+  RegisterResetCommand(resetBMS);
+  resetBMS();
+  // RegisterCan2Message(&BMSSOC);
+  RegisterCan1Message(&BMS_PRE_Done);
 
-	return 0;
+  return 0;
 }
-

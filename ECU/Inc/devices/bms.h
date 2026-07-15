@@ -8,16 +8,15 @@
 #ifndef BMS_H_
 #define BMS_H_
 
-
+#include "canecu.h"
 extern CANData BMSSOC;
 
-void sendBMS( void );
+void sendBMS(void);
 
-int receiveBMS( void );
+int receiveBMS(void);
 
-void resetBMS( void );
+void resetBMS(void);
 
-int initBMS( void );
+int initBMS(void);
 
 #endif /* BMS_H_ */
-

@@ -10,6 +10,7 @@
 #include "ecumain.h"
 #include "operationalprocess.h"
 #include "idleprocess.h"
+#include "powernode.h"
 #include "runningprocess.h"
 #include "tsactiveprocess.h"
 #include "preoperation.h"

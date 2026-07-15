@@ -395,7 +395,7 @@ uint8_t CAN1Send(uint16_t id, uint8_t dlc, const uint8_t* pTxData)
   msg.dlc = dlc;
   msg.bus = bus1;
   taskENTER_CRITICAL();
-  memcpy(msg.data, pTxData, 8);
+  memcpy(msg.data, pTxData, dlc);
   taskEXIT_CRITICAL();
 
   if (xPortIsInsideInterrupt())
@@ -506,7 +506,7 @@ char CAN_NMTSyncRequest(void)
   // send can id 0x80 to can 0 value 1. Call once per update loop.
 
   uint8_t CANTxData[1] = {1};
-  CAN1Send(0x80, 0, CANTxData); // return values.
+  CAN1Send(0x80, sizeof(CANTxData), CANTxData); // return values.
 
   return 1;
   // send to both buses.
@@ -622,8 +622,8 @@ char CAN_NMT(uint8_t command, uint8_t node)
 
   //	DWT_Delay(100); // delay of ~ > 80us needed, or messages entangle and error frame somehow if
   // both can outputs are connected. unknown bug.
-  uint8_t CANTxData[2] = {command, node}; // 0 sends command to all nodes.
-  CAN1Send(0, 2, CANTxData);              // send command to both buses.
+  uint8_t CANTxData[2] = {command, node};    // 0 sends command to all nodes.
+  CAN1Send(0, sizeof(CANTxData), CANTxData); // send command to both buses.
   return 1;
 }
 

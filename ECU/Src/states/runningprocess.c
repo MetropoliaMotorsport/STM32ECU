@@ -11,6 +11,7 @@
 #include "idleprocess.h"
 #include "errors.h"
 #include "power.h"
+#include "powernode.h"
 #include "timerecu.h"
 #include "brake.h"
 #include "torquecontrol.h"
