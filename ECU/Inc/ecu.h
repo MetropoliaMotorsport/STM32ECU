@@ -62,7 +62,7 @@
 #define RTDMBRAKEPRESSURE                                                                          \
   6 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
 
-#define LIMPNM 10 // limp mode torque
+#define DEFAULT_LIMPNM 10 // limp mode torque
 
 // Minimum acceptable voltage on TS for startup.
 #define MINHV 500 // minimum voltage to allow TS enable.

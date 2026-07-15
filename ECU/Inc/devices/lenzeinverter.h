@@ -12,7 +12,7 @@
 
 // Inverter specific definitions. Called functions are defined in Inverter module for some level of device independance abstraction.
 
-#define INVERTERCOUNT				(MOTORCOUNT/2)
+#define INVERTERCOUNT				(MAX_MOTORCOUNT/2)
 
 #define LENZE_RPDO1_ID				(0x200) //RxPDO1_InverterASetpoint1_14
 #define LENZE_RPDO2_ID				(0x300) //RxPDO2_InverterASetpoint2_14
@@ -56,7 +56,7 @@
 #define TORQUESCALING				(10)
 
 
-extern CANData InverterCANMotorRDO[MOTORCOUNT];
+extern CANData InverterCANMotorRDO[MAX_MOTORCOUNT];
 
 
 

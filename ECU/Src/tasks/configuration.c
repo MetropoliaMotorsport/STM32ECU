@@ -83,7 +83,7 @@ static inline uint8_t get_motorcount(uint8_t EnabledMotors)
 {
   uint8_t count = 0;
 
-  for (uint8_t i = 0; i < MAX_MOTORCOUNT; i++)
+  for (uint8_t i = 0; i < MAX_MAX_MOTORCOUNT; i++)
   {
     if (EnabledMotors & (1 << i))
       count++;

@@ -140,7 +140,7 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 		return OperationalReadyState; // maintain current state.
 	} else // if ( GetInverterState() >= STOPPED  ) // Ready to switch on
 	{
-		for (int i = 0; i < MOTORCOUNT; i++) {
+		for (int i = 0; i < MAX_MOTORCOUNT; i++) {
 			if (getInvState(i)->Device != OFFLINE) {
 				invcount++;
 			}
@@ -152,7 +152,7 @@ int OperationReadyness(uint32_t OperationLoops) // process function for operatio
 				getDeviceStatusStr(getInvState(2)->Device),
 				getDeviceStatusStr(getInvState(3)->Device));*/
 
-		if (invcount == MOTORCOUNT) {
+		if (invcount == MAX_MOTORCOUNT) {
 			// everything is ok to continue.
 			return IdleState; // ready to move onto TS activated but not operational state, idle waiting for RTDM activation.
 		}

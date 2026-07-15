@@ -55,11 +55,11 @@ QueueHandle_t InvQueue, InvCfgQueue;
 
 SemaphoreHandle_t InvUpdating;
 
-InverterState_t InverterState[MOTORCOUNT];
+InverterState_t InverterState[MAX_MOTORCOUNT];
 InverterState_t invalidinv = { 0 };
 
 InverterState_t* getInvState(uint8_t inv) {
-	if (inv >= 0 && inv < MOTORCOUNT)
+	if (inv >= 0 && inv < MAX_MOTORCOUNT)
 		return &InverterState[inv];
 	else {
 		return &invalidinv;
@@ -68,7 +68,7 @@ InverterState_t* getInvState(uint8_t inv) {
 
 
 void InverterAllowTorqueAll( bool allow) {
-	for (int i = 0; i < MOTORCOUNT; i++) {
+	for (int i = 0; i < MAX_MOTORCOUNT; i++) {
 		InverterState[i].AllowTorque = allow;
 	}
 }
@@ -81,7 +81,7 @@ void InverterAllowTorqueAll( bool allow) {
 
 volatile bool invertersinerror = false;
 
-DeviceStatus InverterStates[MOTORCOUNT];
+DeviceStatus InverterStates[MAX_MOTORCOUNT];
 
 bool InvSendSDO(uint16_t id, uint16_t idx, uint8_t sub, uint32_t data) {
 	InvCfg_msg msg;
@@ -118,13 +118,13 @@ void InvTask(void *argument) {
 
 	CarState.AllowTorque = true; // hack for now, this should be controlled somewhere.
 
-	for (int i = 0; i < MOTORCOUNT; i++)
+	for (int i = 0; i < MAX_MOTORCOUNT; i++)
 		InverterState[i].appc_on = true;
 
 
 	while (1) {
 
-		for(int i = 0; i < MOTORCOUNT; i++)
+		for(int i = 0; i < MAX_MOTORCOUNT; i++)
 		{			
 			if(!InverterState[i].appc_on){					
 					uint8_t msg[8] = { 0 };
@@ -304,7 +304,7 @@ void resetInv(void) {
 
 	DeviceState.Inverter = OFFLINE;
 
-	for (int i = 0; i < MOTORCOUNT; i++) {
+	for (int i = 0; i < MAX_MOTORCOUNT; i++) {
 		InverterState[i].InvState = OFFLINE;
 		InverterState[i].Device = OFFLINE;
 		InverterState[i].InvCommand = 0x0;
@@ -332,7 +332,7 @@ void resetInv(void) {
 	InverterState[0].MCChannel = 0;
 	InverterState[1].MCChannel = 1;
 
-#if MOTORCOUNT > 2
+#if MAX_MOTORCOUNT > 2
 	InverterState[2].COBID = Inverter2_NodeID;
 	InverterState[3].COBID = Inverter2_NodeID;
 

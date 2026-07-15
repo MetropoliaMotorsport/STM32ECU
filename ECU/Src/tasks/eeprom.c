@@ -931,7 +931,7 @@ bool resetEEPROM(void)
   data->MaxTorque = 10;
   data->PedalProfile = 0;
   data->LimpMode = true;
-  data->LimpNM = LIMPNM;
+  data->LimpNM = DEFAULT_LIMPNM;
 
   data->TorqueVectoring = 0;
   data->TractionControl = 0;

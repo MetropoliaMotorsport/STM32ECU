@@ -20,7 +20,7 @@
 typedef struct {
 	uint16_t OperationalReceiveError;
 	uint16_t State;
-	uint8_t  InvAllowReset[MOTORCOUNT];
+	uint8_t  InvAllowReset[MAX_MOTORCOUNT];
 //	uint8_t  LeftInvAllowReset;
 //    uint8_t  RightInvAllowReset;
 	uint16_t ErrorReason;
@@ -45,9 +45,9 @@ typedef struct {
 	uint16_t ADCTimeout;
 	uint16_t ADCErrorState;
 
-	uint16_t INVReceiveStatus[MOTORCOUNT];
-	uint16_t INVReceiveSpd[MOTORCOUNT];
-	uint16_t INVReceiveTorque[MOTORCOUNT];
+	uint16_t INVReceiveStatus[MAX_MOTORCOUNT];
+	uint16_t INVReceiveSpd[MAX_MOTORCOUNT];
+	uint16_t INVReceiveTorque[MAX_MOTORCOUNT];
 
 	uint32_t CANSendError1;
 	uint32_t CANSendError2;

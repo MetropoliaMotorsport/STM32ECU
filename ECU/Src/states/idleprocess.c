@@ -28,7 +28,7 @@ uint32_t OperationalReceive(void)
     returnvalue |= (0x1 << InverterReceived);
 
   int invcount = 0;
-  for (int i = 0; i < MOTORCOUNT; i++)
+  for (int i = 0; i < MAX_MOTORCOUNT; i++)
   {
     if (getInvState(i)->Device == OFFLINE)
     {

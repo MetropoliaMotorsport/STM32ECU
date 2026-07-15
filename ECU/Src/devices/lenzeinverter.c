@@ -37,19 +37,19 @@ CANData InverterCANErr[4] = {
 		{ NULL, Inverter2_NodeID + COBERR_ID, 8, processINVError, NULL, 0, 2 },
 		{ NULL, Inverter2_NodeID + COBERR_ID + LENZE_MOTORB_OFFSET, 8, processINVError, NULL, 0, 3 }};
 
-CANData InverterCANMotorStatus[MOTORCOUNT] = { // status values
+CANData InverterCANMotorStatus[MAX_MOTORCOUNT] = { // status values
 		{ NULL, Inverter1_NodeID + LENZE_TPDO2_ID, 8, processTPDO2, NULL, 0, 0 },
 		{ NULL, Inverter1_NodeID + LENZE_TPDO2_ID + 0x100, 8, processTPDO2, NULL, 0, 1 },
 		{ NULL, Inverter2_NodeID + LENZE_TPDO2_ID, 8, processTPDO2, NULL, 0, 2 },
 		{ NULL, Inverter2_NodeID + LENZE_TPDO2_ID + 0x100, 8, processTPDO2, NULL, 0, 3 }};
 
-CANData InverterCANMotorValues1[MOTORCOUNT] = { // speed/torque
+CANData InverterCANMotorValues1[MAX_MOTORCOUNT] = { // speed/torque
 		{ NULL, Inverter1_NodeID + LENZE_TPDO3_ID, 8, processTPDO3, NULL, INVERTERTIMEOUT, 0 },
 		{ NULL, Inverter1_NodeID + LENZE_TPDO3_ID + 0x100, 8, processTPDO3, NULL, INVERTERTIMEOUT, 1 },
 		{ NULL, Inverter2_NodeID + LENZE_TPDO3_ID, 8, processTPDO3, NULL, INVERTERTIMEOUT, 2 },
 		{ NULL, Inverter2_NodeID + LENZE_TPDO3_ID + 0x100, 8, processTPDO3, NULL, INVERTERTIMEOUT, 3 }};
 
-CANData InverterCANMotorValues2[MOTORCOUNT] = { // speed
+CANData InverterCANMotorValues2[MAX_MOTORCOUNT] = { // speed
 		{ NULL, Inverter1_NodeID + LENZE_TPDO4_ID, 8, processTPDO4,	NULL, 0, 0 },
 		{ NULL, Inverter1_NodeID + LENZE_TPDO4_ID + 0x100, 8, processTPDO4, NULL, 0, 1 },
 		{ NULL, Inverter2_NodeID + LENZE_TPDO4_ID, 8, processTPDO4,	NULL, 0, 2 },
@@ -64,7 +64,7 @@ CANData InverterCANAPPCStatus[INVERTERCOUNT] =	{
 		{ NULL, Inverter2_NodeID + LENZE_TPDO1_ID, 8, processTPDO1,	NULL, 0, 2 }};
 
 // use APPC RDO1 sending as trigger to signify online.
-CANData InverterCANMotorRDO[MOTORCOUNT] = { // torque
+CANData InverterCANMotorRDO[MAX_MOTORCOUNT] = { // torque
 		{ NULL, Inverter1_NodeID + LENZE_RDO_ID, 8, processINVRDO, NULL, 0, 0 },
 		{ NULL, Inverter1_NodeID + LENZE_RDO_ID + LENZE_MOTORB_OFFSET, 8, processINVRDO, NULL, 0, 1 },
 		{ NULL, Inverter2_NodeID + LENZE_RDO_ID, 8, processINVRDO, NULL,0, 2 },
@@ -165,7 +165,7 @@ bool processINVError(const uint8_t CANRxData[8], const uint32_t DataLength,	CAND
 	 *
 	 */
 
-	errorid = 0xFF - MOTORCOUNT + datahandle->index; // calculate so that inverter 4 = 0xFF, inverter 1 = 0xFC
+	errorid = 0xFF - MAX_MOTORCOUNT + datahandle->index; // calculate so that inverter 4 = 0xFF, inverter 1 = 0xFC
 
 	if (Errors.InverterErrorHistoryPosition < 8) // add error data to log.
 			{
@@ -574,7 +574,7 @@ bool processINVRDO(const uint8_t CANRxData[8], const uint32_t DataLength, CANDat
 			CAN_SendDebug(inverters_received);
 			if (memcmp(RDODone, CANRxData, 4) == 0) {
 				////////////////////////
-				for (int i = 0; i < MOTORCOUNT; i++) {
+				for (int i = 0; i < MAX_MOTORCOUNT; i++) {
 					InverterState[i].Device = OPERATIONAL;
 				}
 				////////////////////////
@@ -599,7 +599,7 @@ bool processINVRDO(const uint8_t CANRxData[8], const uint32_t DataLength, CANDat
 }
 
 bool registerInverterCAN(void) {
-	for (int i = 0; i < MOTORCOUNT; i++) {
+	for (int i = 0; i < MAX_MOTORCOUNT; i++) {
 		RegisterCan1Message(&InverterCANErr[i]);
 
 		// TPDO 2 - status from inverter A
@@ -619,7 +619,7 @@ bool registerInverterCAN(void) {
 	RegisterCan1Message(&InverterCANAPPCRDO[0]);
 	RegisterCan1Message(&InverterCANAPPCStatus[0]);
 
-#if MOTORCOUNT > 2
+#if MAX_MOTORCOUNT > 2
 	RegisterCan1Message(&InverterCANNMT[1]);
 	RegisterCan1Message(&InverterCANAPPCRDO[1]);
 	RegisterCan1Message(&InverterCANAPPCStatus[1]);
