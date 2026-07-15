@@ -2075,30 +2075,34 @@ BO_ 151 SOC: 8 AMS
    SG_ Max_temp : 48|16@1+ (1,0) [0|0] "" Vector__XXX
 
 BO_ 2147483681 Config: 8 Vector__XXX
-   SG_ ConfigCommand : 0|1@1+ (1,0) [1|5] "" ECU
-   SG_ ConfigItem : 8|1@1+ (1,0) [1|30] "" ECU
-   SG_ ConfigValue : 16|1@1+ (1,0) [0|255] "" ECU
+   SG_ ConfigCommand : 0|8@1+ (1,0) [1|5] "" ECU
+   SG_ ConfigItem : 8|8@1+ (1,0) [1|30] "" ECU
+   SG_ ConfigValue : 16|16@1+ (1,0) [0|255] "" Vector__XXX
 
 CM_ BO_ 2147483648 "This is a message for not used signals, created by Vector CANdb++ DBC OLE DB Provider.";
 BA_DEF_ BU_ "Manufacturer" STRING ;
 BA_DEF_ BU_ "ILUsed" ENUM "No","Yes";
 BA_DEF_ BO_ "GenMsgStartDelayTime" INT 0 1000;
-BA_DEF_ SG_ "NWM_WakeupAllowed" ENUM "No","Yes","no","yes";
-BA_DEF_ BO_ "NmMessage" ENUM "No","Yes","no","yes","no","yes";
-BA_DEF_ BO_ "GenMsgILSupport" ENUM "No","Yes","no","yes","no","yes","No","Yes";
-BA_DEF_ BU_ "NmNode" ENUM "No","Yes","no","yes","no","yes","No","Yes","no","yes";
+BA_DEF_ SG_ "NWM_WakeupAllowed" ENUM "No","Yes","No","Yes","no","yes";
+BA_DEF_ BO_ "NmMessage" ENUM "No","Yes","No","Yes","no","yes","No","Yes","no","yes","no","yes";
+BA_DEF_ BO_ "GenMsgILSupport" ENUM "No","Yes","No","Yes","no","yes","No","Yes","no","yes","no","yes","No","Yes","no","yes","no","yes","No","Yes";
+BA_DEF_ BU_ "NmNode" ENUM "No","Yes","No","Yes","no","yes","No","Yes","no","yes","no","yes","No","Yes","no","yes","no","yes","No","Yes","No","Yes","no","yes","no","yes","No","Yes","no","yes";
 BA_DEF_ BU_ "NmStationAddress" INT 0 63;
 BA_DEF_ BO_ "GenMsgCycleTimeFast" INT 0 1000;
 BA_DEF_ "BusType" STRING ;
 BA_DEF_ BO_ "GenMsgCycleTime" INT 0 1000;
 BA_DEF_ BO_ "GenMsgDelayTime" INT 0 1000;
 BA_DEF_ BO_ "GenMsgNrOfRepetition" INT 0 10;
-BA_DEF_ BO_ "GenMsgSendType" ENUM "No","Yes","no","yes","no","yes","No","Yes","no","yes","Cyclic","NotUsed","NotUsed","NotUsed","NotUsed","Cyclic","NotUsed","IfActive","NoMsgSendType","NotUsed","vector_leerstring";
+BA_DEF_ BO_ "GenMsgSendType" ENUM "No","Yes","No","Yes","no","yes","No","Yes","no","yes","no","yes","No","Yes","no","yes","no","yes","No","Yes","No","Yes","no","yes","no","yes","No","Yes","no","yes","No","Yes","no","yes","no","yes","No","Yes","no","yes","Cyclic","NotUsed","NotUsed","NotUsed","NotUsed","Cyclic","NotUsed","IfActive","NoMsgSendType","NotUsed","vector_leerstring";
 BA_DEF_ SG_ "GenSigInactiveValue" INT 0 100000;
-BA_DEF_ SG_ "GenSigSendType" ENUM "No","Yes","no","yes","no","yes","No","Yes","no","yes","Cyclic","NotUsed","NotUsed","NotUsed","NotUsed","Cyclic","NotUsed","IfActive","NoMsgSendType","NotUsed","vector_leerstring","Cyclic","OnWrite","OnWriteWithRepetition","OnChange","OnChangeWithRepetition","IfActive","IfActiveWithRepetition","NoSigSendType","NotUsed","NotUsed","NotUsed","NotUsed","NotUsed";
-BA_DEF_ SG_ "GenSigStartValue" FLOAT 0 1.21575e+09;
+BA_DEF_ SG_ "GenSigSendType" ENUM "No","Yes","No","Yes","no","yes","No","Yes","no","yes","no","yes","No","Yes","no","yes","no","yes","No","Yes","No","Yes","no","yes","no","yes","No","Yes","no","yes","No","Yes","no","yes","no","yes","No","Yes","no","yes","Cyclic","NotUsed","NotUsed","NotUsed","NotUsed","Cyclic","NotUsed","IfActive","NoMsgSendType","NotUsed","vector_leerstring","No","Yes","no","yes","no","yes","No","Yes","no","yes","Cyclic","NotUsed","NotUsed","NotUsed","NotUsed","Cyclic","NotUsed","IfActive","NoMsgSendType","NotUsed","vector_leerstring","Cyclic","OnWrite","OnWriteWithRepetition","OnChange","OnChangeWithRepetition","IfActive","IfActiveWithRepetition","NoSigSendType","NotUsed","NotUsed","NotUsed","NotUsed","NotUsed";
+BA_DEF_ SG_ "GenSigStartValue" FLOAT 0 1;
 BA_DEF_ BO_ "GenMsgBackgroundColor" STRING ;
 BA_DEF_ BO_ "GenMsgForegroundColor" STRING ;
+BA_DEF_ BO_ "matchingcriteria" INT 0 0;
+BA_DEF_ BO_ "filterlabeling" INT 0 0;
+BA_DEF_ BO_ "matchingcriteria" INT 0 0;
+BA_DEF_ BO_ "filterlabeling" INT 0 0;
 BA_DEF_ BO_ "matchingcriteria" INT 0 0;
 BA_DEF_ BO_ "filterlabeling" INT 0 0;
 BA_DEF_ BO_ "matchingcriteria" INT 0 0;
@@ -2123,12 +2127,11 @@ BA_DEF_DEF_ "GenSigStartValue" 0;
 BA_DEF_DEF_ "GenMsgBackgroundColor" "#ffffff";
 BA_DEF_DEF_ "GenMsgForegroundColor" "#000000";
 BA_DEF_DEF_ "matchingcriteria" 0;
+BA_DEF_DEF_ "filterlabeling" 1;
+BA_DEF_DEF_ "matchingcriteria" 0;
 BA_DEF_DEF_ "filterlabeling" 0;
 BA_DEF_DEF_ "matchingcriteria" 0;
 BA_DEF_DEF_ "filterlabeling" 1;
-BA_ "ILUsed" BU_ 1;
-BA_ "NmNode" BU_ 1;
-BA_ "Manufacturer" BU_ "Isabellenhuette";
 BA_ "GenSigStartValue" SG_ 2147483648 commmand_specifier 0;
 BA_ "GenSigStartValue" SG_ 2147483648 NodeID 0;
 BA_ "GenSigStartValue" SG_ 398 Device_dc_link_vol_14 0;
