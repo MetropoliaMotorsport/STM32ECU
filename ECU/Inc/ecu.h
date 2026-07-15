@@ -51,6 +51,8 @@
 #define retransmitIMU
 #endif
 
+#define MAX_MOTORCOUNT (4)
+
 // Brake pressure values
 
 // changed new BPsensors from 240bar 1v-5v to 140bar 0,5v-4,5v
@@ -322,10 +324,14 @@ typedef struct
   uint8_t FrontRearPowerDistribution; // Power Distribution between front and rear wheels. 	0% - all
                                       // power deilvered to front wheels	50% - power evenly
                                       // splitted	100% - all power goes to rear wheels
-  uint8_t MaxRegenPower;      // Maximum regen power of inverters
-  uint8_t MaxDriveRegenPower; // Maximum power to be regenerated during the drive
+  uint8_t MaxRegenPower;              // Maximum regen power of inverters
+  uint8_t MaxDriveRegenPower;         // Maximum power to be regenerated during the drive
   uint8_t MaxOutputTorque;
   uint8_t MaxDriveTorque;
+
+  uint8_t EnabledMotors;
+  uint8_t MotorCount;
+
   bool TorqueVectoringOn;
   bool TractionControlOn;
   bool RegenBrakingOn;

@@ -427,7 +427,7 @@ bool SetupInterpolationTables(eepromdata* data) {
 }
 
 void SetupTorque(uint8_t pedal) {
-	//TODO implement
+	// TODO: implement
 	InterpolationTables.TorqueCurve.Input = TorqueInputs[pedal];
 	InterpolationTables.TorqueCurve.Output = TorqueOutputs[pedal];
 	InterpolationTables.TorqueCurve.Elements = TorqueCurveSize[pedal];

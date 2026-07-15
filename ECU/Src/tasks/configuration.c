@@ -43,7 +43,6 @@ static bool configReset = false;
 static bool redraw = false;
 static bool debugconfig = false;
 
-// TODO: this shit does nothing ?
 bool checkConfigReset(void)
 {
   if (configReset)
@@ -80,17 +79,40 @@ bool GetConfigCmd(const uint8_t CANRxData[8], const uint32_t DataLength, CANData
   return true;
 }
 
+static inline uint8_t get_motorcount(uint8_t EnabledMotors)
+{
+  uint8_t count = 0;
+
+  for (uint8_t i = 0; i < MAX_MOTORCOUNT; i++)
+  {
+    if (EnabledMotors & (1 << i))
+      count++;
+  }
+
+  return count;
+}
+
 void setCurConfig(void)
 {
   //	EEPROMdata
 
+  eepromdata* data = getEEPROMBlock(0);
   if (DeviceState.EEPROM == ENABLED)
   {
-    CarState.PedalProfile = getEEPROMBlock(0)->PedalProfile;
+    CarState.PedalProfile = data->PedalProfile;
     SetupTorque(CarState.PedalProfile);
-    CarState.LimpDisable = !getEEPROMBlock(0)->LimpMode;
-    CarState.Torque_Req_Max = getEEPROMBlock(0)->MaxTorque;
-    CarState.FanPowered = getEEPROMBlock(0)->Fans;
+    CarState.LimpDisable = !data->LimpMode;
+    CarState.Torque_Req_Max = data->MaxTorque;
+    CarState.MaxTorque = data->MaxTorque;
+    CarState.FanPowered = data->Fans;
+    CarState.LimpNM = data->LimpNM;
+    CarState.TorqueVectoring = data->TorqueVectoring;
+
+    CarConfig.EnabledMotors = data->EnabledMotors;
+    CarConfig.MotorCount = get_motorcount(data->EnabledMotors);
+
+    CarConfig.MaxRegenPower = data->regenMax;
+    CarConfig.MaxDrivePower = data->MaxDrivePower;
   }
   else
   {

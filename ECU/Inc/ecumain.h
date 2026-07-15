@@ -43,6 +43,7 @@ extern CANData ECUCAN;
 extern volatile CarStateType CarState;
 
 extern volatile DeviceStateType DeviceState;
+extern volatile CarConfigType CarConfig;
 
 extern EventGroupHandle_t xStartupSync;
 extern EventGroupHandle_t xCycleSync;
