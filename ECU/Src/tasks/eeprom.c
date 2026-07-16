@@ -931,7 +931,7 @@ bool resetEEPROM(void)
   data->MaxTorque = 10;
   data->PedalProfile = 0;
   data->LimpMode = true;
-  data->LimpNM = DEFAULT_LIMPNM;
+  data->LimpNM = DefaultLIMPNM;
 
   data->TorqueVectoring = 0;
   data->TractionControl = 0;
@@ -953,10 +953,10 @@ bool resetEEPROM(void)
   data->Telemetry = true;
   data->TorqueBal = 50;
 
-  data->APPSBrakeLightCfg = APPSBrakeLight;
-  data->APPSBrakeHardCfg = APPSBrakeHard;
-  data->APPSBrakeReleaseCfg = APPSBrakeRelease;
-  data->RTDMBrakePressureCfg = RTDMBRAKEPRESSURE;
+  data->APPSBrakeLight = DefaultAPPSBrakeLight;
+  data->APPSBrakeHard = DefaultAPPSBrakeHard;
+  data->APPSBrakeRelease = DefaultAPPSBrakeRelease;
+  data->RTDMBrakePressure = DefaultRTDMBRAKEPRESSURE;
 
   data->MaxOutputPower = 0;
   data->MaxDrivePower = 0;

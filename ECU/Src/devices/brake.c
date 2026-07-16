@@ -11,25 +11,25 @@
 
 
 bool getBrakeLight(void) {
-	return (CarState.RegenLight ||BrakeRear.data >= APPSBrakeLight
-			|| BrakeFront.data >= APPSBrakeLight);
+	return (CarState.RegenLight ||BrakeRear.data >= DefaultAPPSBrakeLight
+			|| BrakeFront.data >= DefaultAPPSBrakeLight);
 }
 
 bool getBrakeLow(void) {
 //	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && BPPS.data_Percent < 500 ) return true;
-	return (BrakeRear.data < APPSBrakeRelease
-			|| BrakeFront.data < APPSBrakeRelease);
+	return (BrakeRear.data < DefaultAPPSBrakeRelease
+			|| BrakeFront.data < DefaultAPPSBrakeRelease);
 }
 
 uint8_t getBrakeHigh(void) {
 //	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && BPPS.data_Percent > 500 ) return true;
-	return BrakeRear.data >= APPSBrakeHard || BrakeFront.data >= APPSBrakeHard;
+	return BrakeRear.data >= DefaultAPPSBrakeHard || BrakeFront.data >= DefaultAPPSBrakeHard;
 }
 
 uint8_t getBrakeRTDM(void) {
 //	if ( CarState.AllowRegen && getEEPROMBlock(0)->Regen && BPPS.data_Percent > 500 ) return true;
-	return BrakeRear.data >= RTDMBRAKEPRESSURE
-			|| BrakeFront.data >= RTDMBRAKEPRESSURE;
+	return BrakeRear.data >= DefaultRTDMBRAKEPRESSURE
+			|| BrakeFront.data >= DefaultRTDMBRAKEPRESSURE;
 }
 
 void resetBrake(void) {

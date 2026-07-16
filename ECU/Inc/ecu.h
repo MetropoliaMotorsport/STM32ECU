@@ -56,13 +56,13 @@
 // Brake pressure values
 
 // changed new BPsensors from 240bar 1v-5v to 140bar 0,5v-4,5v
-#define APPSBrakeLight 42
-#define APPSBrakeHard 58    //
-#define APPSBrakeRelease 42 //
-#define RTDMBRAKEPRESSURE                                                                          \
+#define DefaultAPPSBrakeLight 42
+#define DefaultAPPSBrakeHard 58    //
+#define DefaultAPPSBrakeRelease 42 //
+#define DefaultRTDMBRAKEPRESSURE                                                                   \
   6 // set a CAN trigger to allow this easier without reprogramming for wheels up testing.
 
-#define DEFAULT_LIMPNM 10 // limp mode torque
+#define DefaultLIMPNM 10 // limp mode torque
 
 // Minimum acceptable voltage on TS for startup.
 #define MINHV 500 // minimum voltage to allow TS enable.
@@ -331,6 +331,7 @@ typedef struct
 
   uint8_t EnabledMotors;
   uint8_t MotorCount;
+  uint8_t RTDMBrakePressure;
 
   bool TorqueVectoringOn;
   bool TractionControlOn;
@@ -342,6 +343,16 @@ void storeBEint32(const uint32_t input, uint8_t Data[4]);
 void storeBEint16(const uint16_t input, uint8_t Data[2]);
 void storeLEint32(const uint32_t input, uint8_t Data[4]);
 void storeLEint16(const uint16_t input, uint8_t Data[2]);
+static inline uint8_t getMotorCount(uint8_t EnabledMotors)
+{
+  uint8_t count = 0;
+  for (uint8_t i = 0; i < MAX_MOTORCOUNT; i++)
+  {
+    if (EnabledMotors & (1 << i))
+      count++;
+  }
+  return count;
+}
 
 uint32_t getLEint32(const uint8_t data[4]);
 uint16_t getLEint16(const uint8_t data[2]);

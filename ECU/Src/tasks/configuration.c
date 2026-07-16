@@ -79,19 +79,6 @@ bool GetConfigCmd(const uint8_t CANRxData[8], const uint32_t DataLength, CANData
   return true;
 }
 
-static inline uint8_t get_motorcount(uint8_t EnabledMotors)
-{
-  uint8_t count = 0;
-
-  for (uint8_t i = 0; i < MAX_MAX_MOTORCOUNT; i++)
-  {
-    if (EnabledMotors & (1 << i))
-      count++;
-  }
-
-  return count;
-}
-
 void setCurConfig(void)
 {
   //	EEPROMdata
@@ -106,13 +93,20 @@ void setCurConfig(void)
     CarState.MaxTorque = data->MaxTorque;
     CarState.FanPowered = data->Fans;
     CarState.LimpNM = data->LimpNM;
-    CarState.TorqueVectoring = data->TorqueVectoring;
+    CarState.DrivingMode = data->DrivingMode;
 
+    CarState.AllowTC = data->TractionControl;
+    CarState.AllowTV = data->TorqueVectoring;
+    CarState.AllowRegen = data->Regen;
+
+    CarConfig.TorqueVectoringOn = data->TorqueVectoring;
     CarConfig.EnabledMotors = data->EnabledMotors;
-    CarConfig.MotorCount = get_motorcount(data->EnabledMotors);
+    CarConfig.MotorCount = getMotorCount(data->EnabledMotors);
+    CarConfig.RTDMBrakePressure = data->RTDMBrakePressure;
 
     CarConfig.MaxRegenPower = data->regenMax;
     CarConfig.MaxDrivePower = data->MaxDrivePower;
+    CarConfig.RegenBrakingOn = data->Regen;
   }
   else
   {
@@ -651,7 +645,7 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
     break;
 
   case MENU_NMBAL:
-    data->TorqueBal = value > 255 ? 255 : value;
+    data->TorqueBal = value & 0xFF;
     break;
 
   case MENU_FANS:
@@ -659,7 +653,7 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
     break;
 
   case MENU_FANMAX:
-    data->FanMax = value > 255 ? 255 : value;
+    data->FanMax = value & 0xFF;
     break;
 
   case MENU_RPM:
@@ -675,11 +669,11 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
     break;
 
   case MENU_REGENMAX:
-    data->regenMax = value > 255 ? 255 : value;
+    data->regenMax = value & 0xFF;
     break;
 
   case MENU_REGENMAXR:
-    data->regenMaxR = value > 255 ? 255 : value;
+    data->regenMaxR = value & 0xFF;
     break;
 
   case MENU_TELEMETRY:
@@ -691,7 +685,7 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
     ShutdownCircuitSet(data->alwaysHV);
     break;
   case MENU_LIMPNM:
-    data->LimpNM = value > 255 ? 255 : value;
+    data->LimpNM = value & 0xFF;
     break;
 
   case MENU_PEDAL_PROFILE:
@@ -713,19 +707,22 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
     break;
 
   case MENU_APPS_BRAKE_LIGHT:
-    data->APPSBrakeLightCfg = value > 255 ? 255 : value;
+    data->APPSBrakeLight = value & 0xFF;
     break;
 
   case MENU_APPS_BRAKE_HARD:
-    data->APPSBrakeHardCfg = value > 255 ? 255 : value;
+    data->APPSBrakeHard = value & 0xFF;
     break;
 
   case MENU_APPS_BRAKE_RELEASE:
-    data->APPSBrakeReleaseCfg = value > 255 ? 255 : value;
+    data->APPSBrakeRelease = value & 0xFF;
     break;
 
+  case MENU_TORQUE_SLOPE:
+    data->TorqueSlope = value & 0xFFFF;
+
   case MENU_RTDM_BRAKE_PRESSURE:
-    data->RTDMBrakePressureCfg = value > 255 ? 255 : value;
+    data->RTDMBrakePressure = value & 0xFF;
     break;
 
   case MENU_TV_ENABLE:
@@ -737,11 +734,11 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
     break;
 
   case MENU_MAX_POWER:
-    data->MaxOutputPower = value > 255 ? 255 : value;
+    data->MaxOutputPower = value & 0xFF;
     break;
 
   case MENU_MAX_DRIVE_POWER:
-    data->MaxDrivePower = value > 255 ? 255 : value;
+    data->MaxDrivePower = value & 0xFF;
     break;
 
   default:
@@ -791,9 +788,6 @@ bool initConfig(void)
   vQueueAddToRegistry(ConfigInputQueue, "Config Input");
 
   xInConfig = xSemaphoreCreateBinaryStatic(&xInConfigBuffer);
-
-  CarState.Torque_Req_Max = 0;
-  CarState.Torque_Req_CurrentMax = 0;
 
   ConfigTaskHandle = xTaskCreateStatic(ConfigTask, ConfigTASKNAME, ConfigSTACK_SIZE, (void*)1,
                                        ConfigTASKPRIORITY, xConfigStack, &xConfigTaskBuffer);

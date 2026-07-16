@@ -154,10 +154,10 @@ struct eepromdatastruct
 
   uint8_t TorqueBal;
 
-  uint8_t APPSBrakeLightCfg;
-  uint8_t APPSBrakeHardCfg;
-  uint8_t APPSBrakeReleaseCfg;
-  uint8_t RTDMBrakePressureCfg;
+  uint8_t APPSBrakeLight;
+  uint8_t APPSBrakeHard;
+  uint8_t APPSBrakeRelease;
+  uint8_t RTDMBrakePressure;
 
   uint8_t MaxOutputPower;
   uint8_t MaxDrivePower;

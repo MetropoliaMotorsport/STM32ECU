@@ -51,7 +51,8 @@ void ConfigReset(void);
 
 #define MENU_TV_ENABLE (25)
 #define MENU_TC_ENABLE (26)
-#define MENU_REGEN_BRAKING (27)
+
+#define MENU_TORQUE_SLOPE (27)
 
 #define MENU_POWER_BALANCE (28)
 #define MENU_MAX_POWER (29)
