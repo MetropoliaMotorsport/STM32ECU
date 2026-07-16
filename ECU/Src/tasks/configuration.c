@@ -98,6 +98,7 @@ void setCurConfig(void)
     CarState.AllowTC = data->TractionControl;
     CarState.AllowTV = data->TorqueVectoring;
     CarState.AllowRegen = data->Regen;
+    CarState.HV_on = data->alwaysHV;
 
     CarConfig.TorqueVectoringOn = data->TorqueVectoring;
     CarConfig.EnabledMotors = data->EnabledMotors;
@@ -498,14 +499,14 @@ bool DoMenu(uint16_t input)
       getEEPROMBlock(0)->regenMaxR = regenmaxR;
     }
 
-#if (MENU_LAST == MENU_HV)
+    // #if (MENU_LAST == MENU_HV)
     bool curhvState = getEEPROMBlock(0)->alwaysHV;
     if (curhvState != getEEPROMBlock(0)->alwaysHV)
     {
       getEEPROMBlock(0)->alwaysHV = curhvState;
       ShutdownCircuitSet(curhvState);
     }
-#endif
+    // #endif
 
     if (debugconfig && redraw)
       // DebugPrintf(MenuLines[0]);
