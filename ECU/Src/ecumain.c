@@ -20,6 +20,7 @@
 #include "ecumain.h"
 #include "adc.h"
 #include "comp.h"
+#include "configuration.h"
 #include "dwt_delay.h"
 #include "eeprom.h"
 #include "errors.h"
@@ -231,6 +232,7 @@ static int HardwareInit(void)
   initInput();
   initECU();
   initEEPROM();
+  initConfig();
 
 #ifdef POWERNODES
   initPowerNodes();

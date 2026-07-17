@@ -602,14 +602,14 @@ void Test_Func(void)
 {
   vTaskDelay(pdMS_TO_TICKS(1000));
 
-  uint8_t config[8] = {CAN_MENU_SET_VALUE, MENU_FANMAX, 255, 0, 0, 0, 0, 0};
+  uint8_t config[8] = {CAN_MENU_SET_VALUE, MENU_FANMAX, 200, 0, 0, 0, 0, 0};
 
   taskENTER_CRITICAL();
   memcpy(ECUConfigdata, config, sizeof(config));
   ECUConfignewdata = true;
   taskEXIT_CRITICAL();
 
-  vTaskDelay(pdMS_TO_TICKS(20));
+  vTaskDelay(pdMS_TO_TICKS(300));
 
   eepromdata* data = getEEPROMBlock(0);
   uint16_t fan_max = data->FanMax;
@@ -721,6 +721,7 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
 
   case MENU_TORQUE_SLOPE:
     data->TorqueSlope = value & 0xFFFF;
+    break;
 
   case MENU_RTDM_BRAKE_PRESSURE:
     data->RTDMBrakePressure = value & 0xFF;
@@ -752,6 +753,8 @@ static bool SetEEPROMBlockValue(uint8_t item, uint16_t value)
 
 static void ProcessCANConfigMessage(uint8_t msg[8])
 {
+  // uint8_t* vals = NULL;
+  // memcpy(vals, msg, 8);
   uint8_t cmd = msg[0];
   uint8_t item = msg[1];
   uint16_t value = msg[2] | (msg[3] << 8);
@@ -794,7 +797,7 @@ bool initConfig(void)
                                        ConfigTASKPRIORITY, xConfigStack, &xConfigTaskBuffer);
 
   vTaskDelay(pdMS_TO_TICKS(1000));
-  Test_Func();
+  setCurConfig();
 
   return true;
 }

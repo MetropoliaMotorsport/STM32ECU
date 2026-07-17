@@ -18,10 +18,6 @@ typedef struct
 #define ConfigSTACK_SIZE 128 * 8
 #define ConfigTASKNAME "ConfigTask"
 
-bool GetConfigCmd(const uint8_t CANRxData[8], const uint32_t DataLength, CANData* datahandle);
-bool checkConfigReset(void);
-void ConfigReset(void);
-
 #define MENU_NM (1)
 #define MENU_NMBAL (2)
 #define MENU_TORQUE (3)
@@ -66,5 +62,10 @@ void ConfigReset(void);
 #define CAN_MENU_FULLSAVE 3
 #define CAN_MENU_APPLY 4
 #define CAN_MENU_RESET 5
+
+bool GetConfigCmd(const uint8_t CANRxData[8], const uint32_t DataLength, CANData* datahandle);
+bool checkConfigReset(void);
+void ConfigReset(void);
+bool initConfig(void);
 
 #endif
