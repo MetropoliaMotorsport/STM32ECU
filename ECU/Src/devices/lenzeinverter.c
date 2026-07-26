@@ -498,6 +498,11 @@ bool processTPDO3(const uint8_t CANRxData[8], const uint32_t DataLength,
 			runtimedata_p->maxMotorI[inv] = Current;
 			runtimedata_p->time = getTime();
 		}
+
+#ifdef retransmitInverterSpeed
+		reTransmitOnCan2(datahandle->id, CANRxData, DataLength);
+#endif
+
 		return true;
 	} else // bad data.
 	{

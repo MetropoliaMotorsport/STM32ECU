@@ -122,6 +122,7 @@ char CAN_SendDebug(uint16_t id);
 
 char reTransmitError(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength );
 char reTransmitOnCan1(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength );
+char reTransmitOnCan2(uint32_t canid, const uint8_t *CANRxData, uint32_t DataLength );
 
 char CAN_SendTimeBase( void );
 

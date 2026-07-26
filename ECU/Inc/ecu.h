@@ -49,6 +49,7 @@
 #define MOTORCOUNT		(4)
 #endif
 #define retransmitIMU
+#define retransmitInverterSpeed
 #endif
 
 // Brake pressure values

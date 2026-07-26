@@ -455,6 +455,13 @@ char reTransmitOnCan1(uint32_t canid, const uint8_t *CANRxData,
 	return 0;
 }
 
+char reTransmitOnCan2(uint32_t canid, const uint8_t *CANRxData,
+		uint32_t DataLength) {
+// only retransmit if can1 and can2 are not sharing lines.
+	CAN2Send(canid, DataLength >> 16, CANRxData); // return values.
+	return 0;
+}
+
 char CAN_NMTSyncRequest(void) {
 	// NMT sync request message.
 
