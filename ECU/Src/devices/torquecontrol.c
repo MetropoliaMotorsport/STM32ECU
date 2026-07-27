@@ -228,7 +228,8 @@ Sets APPS torque request according to pedal position and pedal curve.
 int PedalTorqueRequest(int16_t* used_pedal_percent) // returns current Nm request amount.
 {
 
-  int16_t APPS1_raw = APPS1.data;
+  // int16_t APPS1_raw = APPS1.data;
+  int16_t APPS1_raw = APPS2.data;
   int16_t APPS2_raw = APPS2.data;
   int16_t BPPS_raw = BPPS.data;
 
