@@ -872,7 +872,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t RxFifo0ITs)
 
     can_msg msg;
 
-    volatile uint8_t CANRxData[8];
+    uint8_t CANRxData[8];
 
     if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, CANRxData) != HAL_OK)
     {
@@ -922,7 +922,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t RxFifo0ITs)
 void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef* hfdcan, uint32_t RxFifo1ITs)
 {
   FDCAN_RxHeaderTypeDef RxHeader;
-  volatile uint8_t CANRxData[8];
+  uint8_t CANRxData[8];
 
   if (hfdcan->Instance == FDCAN1)
   {
