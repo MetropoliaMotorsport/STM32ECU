@@ -10,25 +10,32 @@
 #include "powernode.h"
 
 #include "node_device.h"
+int16_t APPS_out = 0;
 
 // TODO: Keep it updated with the devices you want to use in the car
 bool processNodeDevice(const uint8_t CANRxData[8], const uint32_t DataLength, CANData* datahandle)
 {
-  volatile uint16_t message = 0;
+  if (datahandle == NULL)
+    return false;
+
+  if (datahandle->dlcsize > 2)
+    return false;
+
+  uint16_t message = 0;
 
   for (int i = 0; i < datahandle->dlcsize; i++)
   {
     message |= CANRxData[i] << (i * 8);
   }
-
-  datahandle->data = message;
+  datahandle->data = (int16_t)message;
+  APPS_out = message;
 
   return 1;
 }
 
 bool processBPPS(const uint8_t CANRxData[8], const uint32_t DataLength, CANData* datahandle)
 {
-  volatile uint16_t message = 0;
+  uint16_t message = 0;
 
   for (int i = 0; i < datahandle->dlcsize; i++)
   {

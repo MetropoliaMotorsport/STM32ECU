@@ -142,7 +142,7 @@ void doVectoring(float Torque_Req, vectoradjust* adj, speedadjust* spd, int16_t 
 
   Regeneration_U.static_P_min_lim =
       -44; // regeneration power that we can regen always with from -100 - 0 kW should be negative
-  Regeneration_U.Torque_pedal = (int16_t)APPS2.data / 10.0;
+  Regeneration_U.Torque_pedal = APPS2.data / 10.0;
   Regeneration_U.brake_pedal_position = BPPS.data / 10.0;
   Regeneration_U.pedal_rege_thresh_endurance_max = 10; // allow regen if throttle less than 10%
   Regeneration_U.IVT_WhCalculated = CarState.Wh;

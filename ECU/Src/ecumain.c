@@ -29,6 +29,8 @@
 #include "input.h"
 #include "output.h"
 #include "powernode.h"
+#include "tim.h"
+#include "usart.h"
 #include "watchdog.h"
 
 #include "bms.h"
@@ -44,6 +46,7 @@
 #include "dma.h"
 #include "gpio.h"
 #include "rng.h"
+#include "wwdg.h"
 
 // Hello worldS
 
@@ -287,6 +290,18 @@ int realmain(void)
   MX_FDCAN1_Init();
   MX_FDCAN2_Init();
   MX_I2C2_Init();
+  MX_I2C3_Init();
+  MX_I2C4_Init();
+  MX_TIM3_Init();
+  MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
+  MX_TIM16_Init();
+  MX_TIM7_Init();
+  MX_TIM6_Init();
+  MX_TIM8_Init();
+  MX_WWDG1_Init();
+  MX_RNG_Init();
+  MX_UART7_Init();
 
   xStartupSync = xEventGroupCreate();
   xCycleSync = xEventGroupCreate();
