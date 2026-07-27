@@ -162,11 +162,19 @@ BO_ 29 PN1_Device_Status: 1 PowerNode1
 
 BO_ 30 PN2_Device_Status: 1 PowerNode2
 
+BO_ 2147483683 APPSRetMSG: 8 AnalogNode1
+   SG_ Value : 0|8@1+ (1,0) [255|1] "" Vector__XXX
+
 BA_DEF_ BO_ "GenMsgBackgroundColor" STRING ;
 BA_DEF_ BO_ "GenMsgForegroundColor" STRING ;
+BA_DEF_ BO_ "matchingcriteria" INT 0 0;
+BA_DEF_ BO_ "filterlabeling" INT 0 0;
 BA_DEF_ BO_ "matchingcriteria" INT 0 0;
 BA_DEF_ BO_ "filterlabeling" INT 0 0;
 BA_DEF_DEF_ "GenMsgBackgroundColor" "#ffffff";
 BA_DEF_DEF_ "GenMsgForegroundColor" "#000000";
 BA_DEF_DEF_ "matchingcriteria" 0;
 BA_DEF_DEF_ "filterlabeling" 0;
+BA_DEF_DEF_ "matchingcriteria" 0;
+BA_DEF_DEF_ "filterlabeling" 0;
+VAL_ 2147483683 Value 200 "STATUS_OK" 1 "STATUS_NULL_PTR" 2 "STATUS_INVALID_SLOT" 3 "STATUS_INVALID_INDEX" 4 "STATUS_INVALID_RAM_PROFILE" 5 "STATUS_INVALID_FLASH_PROFILE" 6 "STATUS_FLASH_ERASE_FAILED" 7 "STATUS_FLASH_WRITE_FAILED";
