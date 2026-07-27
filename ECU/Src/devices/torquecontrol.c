@@ -267,8 +267,6 @@ int PedalTorqueRequest(int16_t* used_pedal_percent) // returns current Nm reques
     float torqueperc = (APPS2_raw + APPS1_raw) / 2.0;
     // torqueperc = getTorqueReqCurve(torqueperc); //TODO implement pedal curve
     /////////////////// quick fix for now
-    torqueperc = (torqueperc < 10) ? 0 : torqueperc;
-    //////////////////
     CarState.pedalreq = torqueperc;
   }
   return 0;
