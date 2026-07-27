@@ -2,6 +2,7 @@
 #ifndef NODE_DEVICES_H_
 #define NODE_DEVICES_H_
 
+#include "canecu.h"
 extern CANData BPPS;
 extern CANData APPS1;
 extern CANData APPS2;
@@ -18,9 +19,9 @@ extern CANData BTN1;
 extern CANData BTN2;
 extern CANData BTN3;
 
-//TODO finnish this
-uint32_t getAnalogueNodesOnline( void );
+// TODO: finnish this
+uint32_t getAnalogueNodesOnline(void);
 
-void initNodeDevices( void );
+void initNodeDevices(void);
 
 #endif /* NODE_DEVICES_H_ */

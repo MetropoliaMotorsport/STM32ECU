@@ -9,97 +9,99 @@
 #define INVERTER_H_
 
 #include "ecumain.h"
-#include "torquecontrol.h"
 #include "lenzeinverter.h"
+#include "torquecontrol.h"
 
-typedef struct Inv_msg {
-	DeviceStatus state;
-	uint8_t inverter;
+typedef struct Inv_msg
+{
+  DeviceStatus state;
+  uint8_t inverter;
 } Inv_msg;
 
-typedef struct InvCfg_msg {
-	uint8_t id;
-	uint16_t idx;
-	uint8_t sub;
-	uint32_t data;
+typedef struct InvCfg_msg
+{
+  uint8_t id;
+  uint16_t idx;
+  uint8_t sub;
+  uint32_t data;
 } InvCfg_msg;
 
 extern QueueHandle_t InvQueue, InvCfgQueue;
 
-#define ERRORTYPE1RESETTIME  (5500)
-#define ERRORTYPE2RESETTIME  (150)
+#define ERRORTYPE1RESETTIME (5500)
+#define ERRORTYPE2RESETTIME (150)
 
-typedef struct { // new structure for inverter related data, so that it can be used as general pointer.
-	uint8_t Motor; // index value, for when passed as an individual struct
+typedef struct
+{ // new structure for inverter related data, so that it can be used as general pointer.
+  uint8_t Motor; // index value, for when passed as an individual struct
 
-	bool HighVoltageAvailable;
-	uint32_t Changetime;
+  bool HighVoltageAvailable;
+  uint32_t Changetime;
 
-	DeviceStatus Device;
+  DeviceStatus Device;
 
-	uint8_t SetupState;
-	uint8_t SetupTries;
-	uint32_t SetupLastSeenTime;
+  uint8_t SetupState;
+  uint8_t SetupTries;
+  uint32_t SetupLastSeenTime;
 
-	DeviceStatus InvState;
-	bool FatalError;
-	DeviceStatus InvRequested;
-	uint16_t InvCommand;
-	uint16_t InvReqCommand;
+  DeviceStatus InvState;
+  bool FatalError;
+  DeviceStatus InvRequested;
+  uint16_t InvCommand;
+  uint16_t InvReqCommand;
 
-	bool AllowTorque;
-	//bool AllowRegen;
-	bool AllowReset;
+  bool AllowTorque;
+  bool AllowRegen;
+  bool AllowReset;
 
-	int16_t MaxSpeed;
-	float Torque_Req;
-	int16_t InvTorque;
-	int16_t InvCurrent;
-	uint32_t errortime;
-	uint8_t errortype;
-	uint32_t latchedStatus1;
-	uint16_t latchedStatus2;
+  int16_t MaxSpeed;
+  float Torque_Req;
+  int16_t InvTorque;
+  int16_t InvCurrent;
+  uint32_t errortime;
+  uint8_t errortype;
+  uint32_t latchedStatus1;
+  uint16_t latchedStatus2;
 
-	int32_t Speed;
-	uint8_t COBID; // COBID for inverter.
-	bool MCChannel;
+  int32_t Speed;
+  uint8_t COBID; // COBID for inverter.
+  bool MCChannel;
 
-	int16_t AmbTemp;
-	int16_t InvVolt;
-	int16_t InvTemp;
-	int16_t MotorTemp;
-	int16_t InvPower;
+  int16_t AmbTemp;
+  int16_t InvVolt;
+  int16_t InvTemp;
+  int16_t MotorTemp;
+  int16_t InvPower;
 
-	uint16_t rdo_ctnr;
-	uint32_t rdo_time;
-	uint16_t rdo_state;
+  uint16_t rdo_ctnr;
+  uint32_t rdo_time;
+  uint16_t rdo_state;
 
-	bool appc_on;
+  bool appc_on;
 
-} InverterState_t;  // define external into realmain?
+} InverterState_t; // define external into realmain?
 
 extern DeviceStatus Inverter;
 
 // public functions for control of inverter modules.
 
-void InverterAllowTorqueAll( bool allow );
-InverterState_t * getInvState(uint8_t inv );
+void InverterAllowTorqueAll(bool allow);
+InverterState_t* getInvState(uint8_t inv);
 
-bool registerInverterCAN( void );
-DeviceStatus InternalInverterState ( uint16_t Status );
+bool registerInverterCAN(void);
+DeviceStatus InternalInverterState(uint16_t Status);
 
-DeviceStatus GetInverterState( void );
-void resetInv( void );
-int initInv( void );
+DeviceStatus GetInverterState(void);
+void resetInv(void);
+int initInv(void);
 
 // internal functions.
-uint8_t InvSend( volatile InverterState_t *Inverter, bool reset );
-void InvResetError( volatile InverterState_t *Inverter );
-void InvReset( volatile InverterState_t *Inverter );
+uint8_t InvSend(volatile InverterState_t* Inverter, bool reset);
+void InvResetError(volatile InverterState_t* Inverter);
+void InvReset(volatile InverterState_t* Inverter);
 
-bool InvSendSDO( uint16_t id, uint16_t idx, uint8_t sub, uint32_t data);
+bool InvSendSDO(uint16_t id, uint16_t idx, uint8_t sub, uint32_t data);
 
 extern TaskHandle_t InvTaskHandle;
 
 #endif /* INVERTER_H_ */
-
