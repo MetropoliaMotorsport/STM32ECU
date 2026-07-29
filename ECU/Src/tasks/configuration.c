@@ -758,6 +758,7 @@ static void ProcessCANConfigMessage(uint8_t msg[8])
   uint8_t cmd = msg[0];
   uint8_t item = msg[1];
   uint16_t value = msg[2] | (msg[3] << 8);
+  // TODO: process unused 4 last bytes
 
   switch (cmd)
   {
