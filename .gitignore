@@ -1,4 +1,5 @@
 # Object files
+compile_commands.json
 *.o
 *.ko
 *.obj
